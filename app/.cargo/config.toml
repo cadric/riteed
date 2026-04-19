@@ -1,0 +1,11 @@
+[build]
+target-dir = "target"
+
+[env]
+GSK_RENDERER = "cairo"
+
+[source.crates-io]
+replace-with = "vendored-sources"
+
+[source.vendored-sources]
+directory = "vendor"
