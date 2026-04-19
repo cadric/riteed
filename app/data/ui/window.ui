@@ -7,7 +7,7 @@
     <property name="default-height">620</property>
     <property name="title" translatable="yes">Riteed</property>
     <property name="content">
-      <object class="AdwToolbarView">
+      <object class="AdwToolbarView" id="toolbar_view">
         <child type="top">
           <object class="AdwHeaderBar">
             <child type="start">

@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: io.github.cadric.Riteed 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/cadric/riteed/issues\n"
-"POT-Creation-Date: 2026-04-19 00:00+0000\n"
+"POT-Creation-Date: 2026-04-19 16:10+0000\n"
 "PO-Revision-Date: 2026-04-19 00:00+0000\n"
 "Last-Translator: cadric\n"
 "Language-Team: Danish\n"
@@ -12,7 +12,20 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+msgid "%d match"
+msgid_plural "%d matches"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid ""
+"Added in-document search and replace, optional line numbers, and a status "
+"bar for cursor position and modified state."
+msgstr ""
+
 msgid "Choose a Save Location Before Saving This Document."
+msgstr ""
+
+msgid "Controls whether Riteed shows line numbers in the editor gutter."
 msgstr ""
 
 msgid ""
@@ -23,22 +36,57 @@ msgstr ""
 msgid "Controls whether long lines wrap inside the editor."
 msgstr ""
 
+msgid "Current Document"
+msgstr ""
+
+msgid "Cursor Position"
+msgstr ""
+
 msgid "Edit Plain Text Files"
 msgstr ""
 
 msgid ""
-"It provides a focused editing surface, standard file actions, and a small "
-"settings dialog."
+"Enable line numbers in Preferences when you want more structure while "
+"reading longer text files."
+msgstr ""
+
+msgid ""
+"It provides tabbed plain-text editing with search, replace, line numbers, "
+"and lightweight status feedback."
+msgstr ""
+
+msgid "Modification State"
+msgstr ""
+
+msgid "Modified"
 msgstr ""
 
 msgid "No Save Location Is Available"
 msgstr ""
 
+msgid "No matches"
+msgstr ""
+
 msgid "Only Local Files Are Supported"
+msgstr ""
+
+msgid ""
+"Open Keyboard Shortcuts from the main menu to review the available file, "
+"tab, search, and app commands."
+msgstr ""
+
+msgid ""
+"Press Ctrl+F to search in the selected document, Ctrl+H to show replace, and "
+"F3 or Shift+F3 to move between matches."
 msgstr ""
 
 msgid "Recent Files"
 msgstr ""
+
+msgid "Replaced %d match"
+msgid_plural "Replaced %d matches"
+msgstr[0] ""
+msgstr[1] ""
 
 msgid "Riteed"
 msgstr ""
@@ -49,7 +97,17 @@ msgstr ""
 msgid "Riteed Only Supports Local Plain Text Files in This Version."
 msgstr ""
 
+msgid ""
+"Riteed is a lightweight GNOME editor for plain UTF-8 text files, with tabs, "
+"search, and session restore."
+msgstr ""
+
 msgid "Riteed is a small GNOME text editor for editing plain UTF-8 text files."
+msgstr ""
+
+msgid ""
+"Riteed tracks unsaved changes per tab and restores saved files from your "
+"previous session when it starts again."
 msgstr ""
 
 msgid "Save Changes Before Continuing?"
@@ -59,6 +117,9 @@ msgid "Selected Session File"
 msgstr ""
 
 msgid "Session Files"
+msgstr ""
+
+msgid "Show Line Numbers"
 msgstr ""
 
 msgid "Some files could not be opened."
@@ -106,6 +167,11 @@ msgid "Unable to Open the File"
 msgstr ""
 
 msgid "Unable to Save the File"
+msgstr ""
+
+msgid ""
+"Use New Tab to start another document, and Open to load plain text files "
+"into separate tabs."
 msgstr ""
 
 msgid "Window Height"
@@ -176,6 +242,42 @@ msgctxt "file filter"
 msgid "Plain Text Files"
 msgstr ""
 
+msgctxt "help dialog"
+msgid "Help"
+msgstr ""
+
+msgctxt "help page"
+msgid "Overview"
+msgstr ""
+
+msgctxt "help row"
+msgid "Editor Tools"
+msgstr ""
+
+msgctxt "help row"
+msgid "More Shortcuts"
+msgstr ""
+
+msgctxt "help row"
+msgid "Saving Work"
+msgstr ""
+
+msgctxt "help row"
+msgid "Search and Replace"
+msgstr ""
+
+msgctxt "help row"
+msgid "Tabs and Files"
+msgstr ""
+
+msgctxt "help section"
+msgid "Everyday Editing"
+msgstr ""
+
+msgctxt "help section"
+msgid "Getting Started"
+msgstr ""
+
 msgctxt "menu item"
 msgid "About"
 msgstr ""
@@ -204,8 +306,44 @@ msgctxt "menu item"
 msgid "Recent Files"
 msgstr ""
 
+msgctxt "menu item"
+msgid "Search"
+msgstr ""
+
 msgctxt "save file name"
 msgid "Untitled.txt"
+msgstr ""
+
+msgctxt "search action"
+msgid "Close Search"
+msgstr ""
+
+msgctxt "search action"
+msgid "Next Match"
+msgstr ""
+
+msgctxt "search action"
+msgid "Previous Match"
+msgstr ""
+
+msgctxt "search action"
+msgid "Replace"
+msgstr ""
+
+msgctxt "search action"
+msgid "Replace All"
+msgstr ""
+
+msgctxt "search field placeholder"
+msgid "Replace With"
+msgstr ""
+
+msgctxt "search option"
+msgid "Match Case"
+msgstr ""
+
+msgctxt "status position"
+msgid "Ln %1$d, Col %2$d"
 msgstr ""
 
 msgctxt "theme choice"

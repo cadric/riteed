@@ -5,6 +5,7 @@ use std::rc::Rc;
 use gettextrs::pgettext;
 use gtk4::{gdk, gio, prelude::*};
 use libadwaita as adw;
+use sourceview5::prelude::*;
 
 use crate::document::DocumentState;
 use crate::editor_io::{self, LoadedDocument, SavedDocument};
@@ -25,8 +26,8 @@ struct EditorTabState {
 
 pub struct EditorTab {
     root: gtk4::ScrolledWindow,
-    text_view: gtk4::TextView,
-    text_buffer: gtk4::TextBuffer,
+    text_view: sourceview5::View,
+    text_buffer: sourceview5::Buffer,
     settings: AppSettings,
     state: RefCell<EditorTabState>,
     page: OnceCell<adw::TabPage>,
@@ -37,18 +38,17 @@ pub struct EditorTab {
 impl EditorTab {
     #[must_use]
     pub fn new(settings: &AppSettings) -> Rc<Self> {
-        let text_view = gtk4::TextView::builder()
-            .accepts_tab(true)
-            .bottom_margin(12)
-            .left_margin(12)
-            .monospace(true)
-            .right_margin(12)
-            .top_margin(12)
-            .wrap_mode(gtk4::WrapMode::None)
-            .build();
+        let text_buffer = sourceview5::Buffer::builder().enable_undo(true).build();
+        let text_view = sourceview5::View::with_buffer(&text_buffer);
+        text_view.set_accepts_tab(true);
+        text_view.set_bottom_margin(12);
+        text_view.set_left_margin(12);
+        text_view.set_monospace(true);
+        text_view.set_right_margin(12);
+        text_view.set_show_line_numbers(settings.show_line_numbers());
+        text_view.set_top_margin(12);
         settings.apply_word_wrap(&text_view);
 
-        let text_buffer = text_view.buffer();
         let root = gtk4::ScrolledWindow::builder()
             .hscrollbar_policy(gtk4::PolicyType::Automatic)
             .vscrollbar_policy(gtk4::PolicyType::Automatic)
@@ -104,13 +104,12 @@ impl EditorTab {
 
     #[must_use]
     pub fn is_dirty(&self) -> bool {
-        self.state.borrow().document.is_dirty(&self.buffer_text())
+        self.text_buffer.is_modified()
     }
 
     #[must_use]
     pub fn is_clean_untitled(&self) -> bool {
-        let state = self.state.borrow();
-        state.document.path().is_none() && !state.document.is_dirty(&self.buffer_text())
+        self.state.borrow().document.path().is_none() && !self.text_buffer.is_modified()
     }
 
     #[must_use]
@@ -155,6 +154,41 @@ impl EditorTab {
         self.settings.apply_word_wrap(&self.text_view);
     }
 
+    pub fn apply_line_numbers(&self) {
+        self.text_view
+            .set_show_line_numbers(self.settings.show_line_numbers());
+    }
+
+    #[must_use]
+    pub fn text_buffer(&self) -> sourceview5::Buffer {
+        self.text_buffer.clone()
+    }
+
+    #[must_use]
+    pub fn text_view(&self) -> sourceview5::View {
+        self.text_view.clone()
+    }
+
+    #[must_use]
+    pub fn single_line_selection_text(&self) -> Option<String> {
+        let (start, end) = self.text_buffer.selection_bounds()?;
+        if start.line() != end.line() || start.offset() == end.offset() {
+            return None;
+        }
+        Some(self.text_buffer.text(&start, &end, true).to_string())
+    }
+
+    #[must_use]
+    pub fn cursor_position(&self) -> (u32, u32) {
+        let iter = self
+            .text_buffer
+            .iter_at_mark(&self.text_buffer.get_insert());
+        (
+            (iter.line() + 1).cast_unsigned(),
+            (iter.line_offset() + 1).cast_unsigned(),
+        )
+    }
+
     pub fn load_file(
         self: &Rc<Self>,
         file: &gio::File,
@@ -170,10 +204,14 @@ impl EditorTab {
                         Ok(LoadedDocument { path, text, uri }) => {
                             {
                                 let mut state = tab.state.borrow_mut();
-                                state.document = DocumentState::from_loaded(path, text.clone());
+                                state.document = DocumentState::from_loaded(path);
                                 state.suppress_changes = true;
                             }
+                            let undo_enabled = tab.text_buffer.enables_undo();
+                            tab.text_buffer.set_enable_undo(false);
                             tab.text_buffer.set_text(&text);
+                            tab.text_buffer.set_enable_undo(undo_enabled);
+                            tab.text_buffer.set_modified(false);
                             tab.state.borrow_mut().suppress_changes = false;
                             tab.set_loading(false);
                             tab.sync_presentation();
@@ -211,6 +249,23 @@ impl EditorTab {
         self.sync_presentation();
     }
 
+    #[cfg(test)]
+    pub(crate) fn select_offsets_for_tests(&self, start: i32, end: i32) {
+        let start_iter = self.text_buffer.iter_at_offset(start);
+        let end_iter = self.text_buffer.iter_at_offset(end);
+        self.text_buffer.select_range(&start_iter, &end_iter);
+    }
+
+    #[cfg(test)]
+    pub(crate) fn undo_for_tests(&self) {
+        self.text_buffer.undo();
+    }
+
+    #[cfg(test)]
+    pub(crate) fn shows_line_numbers_for_tests(&self) -> bool {
+        self.text_view.shows_line_numbers()
+    }
+
     fn install_callbacks(self: &Rc<Self>) {
         let weak = Rc::downgrade(self);
         self.text_buffer.connect_changed(move |_| {
@@ -219,6 +274,25 @@ impl EditorTab {
                 if should_update {
                     tab.sync_presentation();
                 }
+            }
+        });
+
+        let weak = Rc::downgrade(self);
+        self.text_buffer.connect_modified_changed(move |_| {
+            if let Some(tab) = weak.upgrade() {
+                let should_update = !tab.state.borrow().suppress_changes;
+                if should_update {
+                    tab.sync_presentation();
+                }
+            }
+        });
+
+        let weak = Rc::downgrade(self);
+        self.text_buffer.connect_cursor_moved(move |_| {
+            if let Some(tab) = weak.upgrade()
+                && let Some(callback) = tab.on_visual_change.get()
+            {
+                callback();
             }
         });
 
@@ -277,12 +351,13 @@ impl EditorTab {
         let weak = Rc::downgrade(self);
         editor_io::save_utf8_file(
             path,
-            text,
+            &text,
             Rc::new(move |result| {
                 if let Some(tab) = weak.upgrade() {
                     match result {
-                        Ok(SavedDocument { path, text, uri }) => {
-                            tab.state.borrow_mut().document.set_saved(path, text);
+                        Ok(SavedDocument { path, uri }) => {
+                            tab.state.borrow_mut().document.set_saved(path);
+                            tab.text_buffer.set_modified(false);
                             tab.set_loading(false);
                             tab.sync_presentation();
                             tab.grab_focus();

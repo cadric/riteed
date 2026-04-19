@@ -16,7 +16,6 @@ pub struct LoadedDocument {
 #[derive(Clone, Debug)]
 pub struct SavedDocument {
     pub path: PathBuf,
-    pub text: String,
     pub uri: String,
 }
 
@@ -48,14 +47,14 @@ pub fn load_utf8_file(file: &gio::File, callback: Rc<dyn Fn(Result<LoadedDocumen
 
 pub fn save_utf8_file(
     path: &Path,
-    text: String,
+    text: &str,
     callback: Rc<dyn Fn(Result<SavedDocument, AppError>)>,
 ) {
     let path = path.to_path_buf();
     let file = gio::File::for_path(&path);
     let save_file = file.clone();
     file.replace_contents_async(
-        text.clone().into_bytes(),
+        text.as_bytes().to_vec(),
         None,
         false,
         gio::FileCreateFlags::REPLACE_DESTINATION,
@@ -63,7 +62,6 @@ pub fn save_utf8_file(
         move |result| match result {
             Ok((_etag, _)) => callback(Ok(SavedDocument {
                 path: path.clone(),
-                text: text.clone(),
                 uri: save_file.uri().to_string(),
             })),
             Err((_bytes, error)) => callback(Err(AppError::WriteFailed(

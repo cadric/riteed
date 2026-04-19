@@ -66,6 +66,9 @@ fn assert_settings_apply() {
         adw::StyleManager::default().color_scheme(),
         adw::ColorScheme::PreferDark
     );
+    assert!(!settings.show_line_numbers());
+    settings.set_show_line_numbers(true);
+    assert!(settings.show_line_numbers());
 }
 
 fn assert_app_actions_exist() {
@@ -166,7 +169,7 @@ fn exercise_window_tab_flow(test_app: &adw::Application) {
     });
     dialogs::present_error(window.widget(), &AppError::Internal(String::from("error")));
     dialogs::present_error(window.widget(), &AppError::Cancelled);
-    dialogs::launch_help(window.widget(), |_error| {});
+    window.show_help();
 
     let _removed = fs::remove_file(first_path);
     let _removed = fs::remove_file(second_path);
@@ -390,6 +393,79 @@ fn exercise_app_actions_more() {
     drain_events(12);
 }
 
+fn exercise_search_and_status(test_app: &adw::Application) {
+    let search_window = build_window(test_app);
+    assert!(search_window.is_some());
+    let Some(search_window) = search_window else {
+        return;
+    };
+    search_window.ensure_default_tab();
+    assert!(!search_window.selected_line_numbers_visible_for_tests());
+    assert_eq!(
+        search_window.status_labels_for_tests(),
+        (
+            String::from("Untitled"),
+            String::new(),
+            String::from("Ln 1, Col 1")
+        )
+    );
+
+    search_window.set_selected_text_for_tests("alpha beta alpha");
+    search_window.select_offsets_for_tests(0, 5);
+    search_window.open_search(false);
+    spin_until("search opens with prefill", || {
+        search_window.search_visible_for_tests()
+            && search_window.search_query_for_tests() == "alpha"
+    });
+    assert!(!search_window.replace_visible_for_tests());
+    spin_until("search count becomes known", || {
+        !search_window.search_result_for_tests().is_empty()
+    });
+    assert_eq!(search_window.search_result_for_tests(), "2 matches");
+
+    search_window.open_search(true);
+    drain_events(8);
+    search_window.set_replace_text_for_tests("omega");
+    search_window.replace_current_for_tests();
+    drain_events(8);
+    assert_eq!(search_window.selected_text_for_tests(), "omega beta alpha");
+
+    search_window.set_replace_text_for_tests("z");
+    search_window.replace_all_for_tests();
+    drain_events(8);
+    assert_eq!(search_window.selected_text_for_tests(), "omega beta z");
+    assert_eq!(search_window.search_result_for_tests(), "Replaced 1 match");
+    search_window.undo_selected_for_tests();
+    drain_events(8);
+    assert_eq!(search_window.selected_text_for_tests(), "omega beta alpha");
+
+    let multiline_window = build_window(test_app);
+    assert!(multiline_window.is_some());
+    let Some(multiline_window) = multiline_window else {
+        return;
+    };
+    multiline_window.ensure_default_tab();
+    multiline_window.set_selected_text_for_tests("line one\nline two");
+    multiline_window.select_offsets_for_tests(0, 10);
+    multiline_window.open_search(false);
+    drain_events(8);
+    assert!(multiline_window.search_query_for_tests().is_empty());
+
+    let line_window = build_window(test_app);
+    assert!(line_window.is_some());
+    let Some(line_window) = line_window else {
+        return;
+    };
+    line_window.ensure_default_tab();
+    line_window.set_line_numbers_for_tests(true);
+    assert!(line_window.selected_line_numbers_visible_for_tests());
+    line_window.request_new();
+    spin_until("new tab keeps line numbers enabled", || {
+        line_window.tab_count_for_tests() == 2
+    });
+    assert!(line_window.selected_line_numbers_visible_for_tests());
+}
+
 #[test]
 fn gtk_surfaces_and_editor_flow_work() {
     let _guard = crate::test_support::init_gtk_for_tests();
@@ -407,4 +483,5 @@ fn gtk_surfaces_and_editor_flow_work() {
     exercise_close_flows(&test_app);
     exercise_app_open_actions();
     exercise_app_actions_more();
+    exercise_search_and_status(&test_app);
 }

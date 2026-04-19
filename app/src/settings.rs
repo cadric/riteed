@@ -8,6 +8,7 @@ use crate::APP_ID;
 
 const KEY_THEME: &str = "theme";
 const KEY_WORD_WRAP: &str = "word-wrap";
+const KEY_SHOW_LINE_NUMBERS: &str = "show-line-numbers";
 const KEY_WINDOW_WIDTH: &str = "window-width";
 const KEY_WINDOW_HEIGHT: &str = "window-height";
 const KEY_RECENT_FILES: &str = "recent-files";
@@ -74,6 +75,7 @@ enum SettingsBackend {
 struct MemorySettings {
     theme: ThemePreference,
     word_wrap: bool,
+    show_line_numbers: bool,
     window_width: i32,
     window_height: i32,
     recent_files: Vec<String>,
@@ -101,6 +103,7 @@ impl AppSettings {
             backend: SettingsBackend::Memory(Rc::new(Mutex::new(MemorySettings {
                 theme: ThemePreference::System,
                 word_wrap: false,
+                show_line_numbers: false,
                 window_width: 840,
                 window_height: 620,
                 recent_files: Vec::new(),
@@ -159,7 +162,26 @@ impl AppSettings {
         }
     }
 
-    pub fn apply_word_wrap(&self, text_view: &gtk4::TextView) {
+    #[must_use]
+    pub fn show_line_numbers(&self) -> bool {
+        match &self.backend {
+            SettingsBackend::GSettings(settings) => settings.boolean(KEY_SHOW_LINE_NUMBERS),
+            SettingsBackend::Memory(memory) => with_memory(memory, |state| state.show_line_numbers),
+        }
+    }
+
+    pub fn set_show_line_numbers(&self, enabled: bool) {
+        match &self.backend {
+            SettingsBackend::GSettings(settings) => {
+                let _changed = settings.set_boolean(KEY_SHOW_LINE_NUMBERS, enabled);
+            }
+            SettingsBackend::Memory(memory) => {
+                with_memory_mut(memory, |state| state.show_line_numbers = enabled);
+            }
+        }
+    }
+
+    pub fn apply_word_wrap<T: IsA<gtk4::TextView>>(&self, text_view: &T) {
         let wrap_mode = if self.word_wrap() {
             gtk4::WrapMode::WordChar
         } else {

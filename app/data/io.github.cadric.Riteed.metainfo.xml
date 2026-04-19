@@ -11,9 +11,13 @@
   <url type="bugtracker">https://github.com/cadric/riteed/issues</url>
   <description>
     <p>Riteed is a small GNOME text editor for editing plain UTF-8 text files.</p>
-    <p>It provides a focused editing surface, standard file actions, and a small settings dialog.</p>
+    <p>It provides tabbed plain-text editing with search, replace, line numbers, and lightweight status feedback.</p>
   </description>
   <releases>
-    <release version="0.1.0" date="2026-04-19"/>
+    <release version="0.1.0" date="2026-04-19">
+      <description>
+        <p>Added in-document search and replace, optional line numbers, and a status bar for cursor position and modified state.</p>
+      </description>
+    </release>
   </releases>
 </component>

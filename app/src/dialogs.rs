@@ -82,13 +82,71 @@ pub fn show_about(parent: &impl IsA<gtk4::Widget>) {
     dialog.present(Some(parent));
 }
 
-pub fn launch_help(parent: &impl IsA<gtk4::Window>, on_error: impl Fn(AppError) + 'static) {
-    let launcher = gtk4::UriLauncher::new(REPO_URL);
-    launcher.launch(Some(parent), None::<&gio::Cancellable>, move |result| {
-        if let Err(error) = result {
-            on_error(AppError::HelpLaunchFailed(error.message().to_string()));
-        }
-    });
+pub fn show_help(parent: &impl IsA<gtk4::Widget>) {
+    let dialog = adw::PreferencesDialog::builder()
+        .title(pgettext("help dialog", "Help"))
+        .content_width(560)
+        .content_height(420)
+        .build();
+
+    let overview = adw::PreferencesPage::builder()
+        .title(pgettext("help page", "Overview"))
+        .build();
+
+    let getting_started = adw::PreferencesGroup::builder()
+        .title(pgettext("help section", "Getting Started"))
+        .description(gettext(
+            "Riteed is a lightweight GNOME editor for plain UTF-8 text files, with tabs, search, and session restore.",
+        ))
+        .build();
+    getting_started.add(&help_row(
+        &pgettext("help row", "Tabs and Files"),
+        &gettext(
+            "Use New Tab to start another document, and Open to load plain text files into separate tabs.",
+        ),
+    ));
+    getting_started.add(&help_row(
+        &pgettext("help row", "Saving Work"),
+        &gettext(
+            "Riteed tracks unsaved changes per tab and restores saved files from your previous session when it starts again.",
+        ),
+    ));
+
+    let editing = adw::PreferencesGroup::builder()
+        .title(pgettext("help section", "Everyday Editing"))
+        .build();
+    editing.add(&help_row(
+        &pgettext("help row", "Search and Replace"),
+        &gettext(
+            "Press Ctrl+F to search in the selected document, Ctrl+H to show replace, and F3 or Shift+F3 to move between matches.",
+        ),
+    ));
+    editing.add(&help_row(
+        &pgettext("help row", "Editor Tools"),
+        &gettext(
+            "Enable line numbers in Preferences when you want more structure while reading longer text files.",
+        ),
+    ));
+    editing.add(&help_row(
+        &pgettext("help row", "More Shortcuts"),
+        &gettext(
+            "Open Keyboard Shortcuts from the main menu to review the available file, tab, search, and app commands.",
+        ),
+    ));
+
+    overview.add(&getting_started);
+    overview.add(&editing);
+    dialog.add(&overview);
+    dialog.present(Some(parent));
+}
+
+fn help_row(title: &str, subtitle: &str) -> adw::ActionRow {
+    let row = adw::ActionRow::builder()
+        .title(title)
+        .subtitle(subtitle)
+        .build();
+    row.set_activatable(false);
+    row
 }
 
 #[cfg(test)]

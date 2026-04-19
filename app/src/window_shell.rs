@@ -5,6 +5,7 @@ use crate::error::AppError;
 
 pub struct WindowShell {
     pub window: adw::ApplicationWindow,
+    pub toolbar_view: adw::ToolbarView,
     pub title_widget: adw::WindowTitle,
     pub toast_overlay: adw::ToastOverlay,
     pub workspace_box: gtk4::Box,
@@ -12,6 +13,7 @@ pub struct WindowShell {
     pub preferences_dialog: adw::PreferencesDialog,
     pub theme_row: adw::ComboRow,
     pub word_wrap_row: adw::SwitchRow,
+    pub line_numbers_row: adw::SwitchRow,
 }
 
 impl WindowShell {
@@ -21,6 +23,7 @@ impl WindowShell {
     pub fn new(app: &adw::Application) -> Result<Self, AppError> {
         let builder = gtk4::Builder::from_resource("/io/github/cadric/Riteed/ui/window.ui");
         let window: adw::ApplicationWindow = builder_object(&builder, "window")?;
+        let toolbar_view: adw::ToolbarView = builder_object(&builder, "toolbar_view")?;
         let title_widget: adw::WindowTitle = builder_object(&builder, "window_title")?;
         let toast_overlay: adw::ToastOverlay = builder_object(&builder, "toast_overlay")?;
         let workspace_box: gtk4::Box = builder_object(&builder, "workspace_box")?;
@@ -33,6 +36,8 @@ impl WindowShell {
             builder_object(&preferences_builder, "preferences_dialog")?;
         let theme_row: adw::ComboRow = builder_object(&preferences_builder, "theme_row")?;
         let word_wrap_row: adw::SwitchRow = builder_object(&preferences_builder, "word_wrap_row")?;
+        let line_numbers_row: adw::SwitchRow =
+            builder_object(&preferences_builder, "line_numbers_row")?;
 
         let shortcuts_builder =
             gtk4::Builder::from_resource("/io/github/cadric/Riteed/ui/shortcuts.ui");
@@ -44,6 +49,7 @@ impl WindowShell {
 
         Ok(Self {
             window,
+            toolbar_view,
             title_widget,
             toast_overlay,
             workspace_box,
@@ -51,6 +57,7 @@ impl WindowShell {
             preferences_dialog,
             theme_row,
             word_wrap_row,
+            line_numbers_row,
         })
     }
 }

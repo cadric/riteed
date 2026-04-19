@@ -1,0 +1,211 @@
+[options]
+deprecate_by_min_version = true
+generate_safety_asserts = true
+girs_directories = ["../gir-files", "../"]
+library = "GtkSource"
+min_cfg_version = "5.0"
+single_version_file = true
+target_path = "."
+version = "5"
+work_mode = "normal"
+generate_builder = true
+use_gi_docgen = true
+trust_return_value_nullability = true
+
+external_libraries = [
+    "GLib",
+    "GObject",
+    "Gdk",
+    "GdkPixbuf",
+    "Gio",
+    "Gtk",
+    "Pango",
+]
+
+generate = [
+    "GtkSource.Annotation",
+    "GtkSource.AnnotationStyle",
+    "GtkSource.AnnotationProvider",
+    "GtkSource.Annotations",
+    "GtkSource.BackgroundPatternType",
+    "GtkSource.BracketMatchType",
+    "GtkSource.Buffer",
+    "GtkSource.ChangeCaseType",
+    "GtkSource.Completion",
+    "GtkSource.CompletionActivation",
+    "GtkSource.CompletionCell",
+    "GtkSource.CompletionColumn",
+    "GtkSource.CompletionContext",
+    "GtkSource.CompletionProposal",
+    "GtkSource.CompletionProvider",
+    "GtkSource.CompletionSnippets",
+    "GtkSource.CompletionWords",
+    "GtkSource.CompressionType",
+    "GtkSource.Encoding",
+    "GtkSource.FileLoaderError",
+    "GtkSource.FileSaverError",
+    "GtkSource.FileSaverFlags",
+    "GtkSource.Gutter",
+    "GtkSource.GutterLines",
+    "GtkSource.GutterRenderer",
+    "GtkSource.GutterRendererAlignmentMode",
+    "GtkSource.GutterRendererPixbuf",
+    "GtkSource.GutterRendererText",
+    "GtkSource.Hover",
+    "GtkSource.HoverDisplay",
+    "GtkSource.HoverProvider",
+    "GtkSource.Indenter",
+    "GtkSource.Language",
+    "GtkSource.LanguageManager",
+    "GtkSource.Map",
+    "GtkSource.Mark",
+    "GtkSource.MarkAttributes",
+    "GtkSource.MountOperationFactory",
+    "GtkSource.NewlineType",
+    "GtkSource.PrintCompositor",
+    "GtkSource.Region",
+    "GtkSource.SearchSettings",
+    "GtkSource.SmartHomeEndType",
+    "GtkSource.Snippet",
+    "GtkSource.SnippetChunk",
+    "GtkSource.SnippetContext",
+    "GtkSource.SnippetManager",
+    "GtkSource.SortFlags",
+    "GtkSource.SpaceDrawer",
+    "GtkSource.SpaceLocationFlags",
+    "GtkSource.SpaceTypeFlags",
+    "GtkSource.Style",
+    "GtkSource.StyleScheme",
+    "GtkSource.StyleSchemeChooser",
+    "GtkSource.StyleSchemeChooserButton",
+    "GtkSource.StyleSchemeChooserWidget",
+    "GtkSource.StyleSchemeManager",
+    "GtkSource.Tag",
+    "GtkSource.ViewGutterPosition",
+    "GtkSource.VimIMContext",
+]
+
+manual = [
+    "GLib.Error",
+    "GObject.Object",
+    "GLib.Priority",
+    "GLib.Quark",
+    "GLib.Variant",
+    "Gdk.Cursor",
+    "Gdk.ModifierType",
+    "Gdk.Paintable",
+    "Gdk.Rectangle",
+    "Gdk.RGBA",
+    "GdkPixbuf.Pixbuf",
+    "Gio.Cancellable",
+    "Gio.File",
+    "Gio.Icon",
+    "Gio.InputStream",
+    "Gio.ListModel",
+    "Gio.MenuModel",
+    "Gio.MountOperation",
+    "Gio.Settings",
+    "Gio.SettingsBindFlags",
+    "Gtk.Accessible",
+    "Gtk.AccessibleRole",
+    "Gtk.AccessibleText",
+    "Gtk.Actionable",
+    "Gtk.Adjustment",
+    "Gtk.Align",
+    "Gtk.Buildable",
+    "Gtk.Button",
+    "Gtk.ConstraintTarget",
+    "Gtk.IMContext",
+    "Gtk.InputHints",
+    "Gtk.InputPurpose",
+    "Gtk.Justification",
+    "Gtk.LayoutManager",
+    "Gtk.PrintContext",
+    "Gtk.Overflow",
+    "Gtk.Scrollable",
+    "Gtk.ScrollablePolicy",
+    "Gtk.TextBuffer",
+    "Gtk.TextDirection",
+    "Gtk.TextIter",
+    "Gtk.TextMark",
+    "Gtk.TextTag",
+    "Gtk.TextTagTable",
+    "Gtk.TextView",
+    "Gtk.TextWindowType",
+    "Gtk.Unit",
+    "Gtk.Widget",
+    "Gtk.WrapMode",
+    "GtkSource.RegionIter",
+    "Pango.AttrList",
+    "Pango.FontDescription",
+    "Pango.Overline",
+    "Pango.ShowFlags",
+    "Pango.Stretch",
+    "Pango.Style",
+    "Pango.TabArray",
+    "Pango.TextTransform",
+    "Pango.Underline",
+    "Pango.Variant",
+    "Pango.Weight",
+]
+
+[[object]]
+name = "GtkSource.*"
+status = "generate"
+
+[[object]]
+name = "GtkSource.SearchContext"
+status = "generate"
+    [[object.function]]
+    name = "replace_all"
+    manual = true # unexpected return type for a function that throws a gerror
+
+[[object]]
+generate_builder = true
+name = "GtkSource.File"
+status = "generate"
+trait_name = "SourceFileExt" # confilcts with gio::prelude::FileExt
+
+[[object]]
+generate_builder = true
+name = "GtkSource.FileLoader"
+status = "generate"
+    [[object.function]]
+    name = "set_candidate_encodings"
+    ignore = true # manual
+    [[object.function]]
+    name = "load_async"
+    # Multiple callbacks
+    manual = true
+
+[[object]]
+generate_builder = true
+name = "GtkSource.FileSaver"
+status = "generate"
+    [[object.function]]
+    name = "save_async"
+    # Multiple callbacks
+    manual = true
+
+[[object]]
+name = "GtkSource.View"
+status = "generate"
+manual_traits = ["ViewManualExt"]
+    [[object.function]]
+    name = "get_mark_attributes"
+    ignore = true # manual
+    [[object.function]]
+    name = "push_snippet"
+    ignore = true # manual
+
+[[object]]
+name = "GtkSource.StyleSchemePreview"
+status = "generate"
+version = "5.4"
+
+[[object]]
+name = "GtkSource.HoverContext"
+status = "generate"
+    [[object.function]]
+    name = "get_iter"
+    manual = true

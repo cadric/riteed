@@ -84,6 +84,10 @@ fn install_accels(app: &adw::Application) {
     app.set_accels_for_action("win.save", &["<Ctrl>s"]);
     app.set_accels_for_action("win.save-as", &["<Ctrl><Shift>s"]);
     app.set_accels_for_action("win.close", &["<Ctrl>w"]);
+    app.set_accels_for_action("win.search", &["<Ctrl>f"]);
+    app.set_accels_for_action("win.replace", &["<Ctrl>h"]);
+    app.set_accels_for_action("win.find-next", &["F3"]);
+    app.set_accels_for_action("win.find-prev", &["<Shift>F3"]);
     app.set_accels_for_action("app.preferences", &["<Ctrl>comma"]);
     app.set_accels_for_action("win.show-help-overlay", &["<Ctrl>question"]);
     app.set_accels_for_action("app.help", &["F1"]);

@@ -74,7 +74,7 @@ pub(crate) fn on_page_detached(workspace: &Rc<Workspace>, page: &libadwaita::Tab
             state.close_flow = None;
         }
     }
-    workspace.refresh_selected_state();
+    workspace.handle_selected_tab_changed();
     workspace.persist_session_state_if_needed();
     if workspace.tab_view.n_pages() == 0 {
         workspace.shell.close();

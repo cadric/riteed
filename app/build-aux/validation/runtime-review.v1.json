@@ -27,7 +27,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 93,
+      "line": 97,
       "match": "fn install_actions(app: &adw::Application, state: &Rc<RefCell<AppState>>, factory: WindowFactory) {",
       "kind": "runtime-shared-state",
       "ownership": "App-scoped actions borrow shared application state.",
@@ -35,7 +35,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 197,
+      "line": 201,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "Activation and open lifecycle callbacks borrow shared application state.",
@@ -43,7 +43,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 240,
+      "line": 244,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The window-creation helper updates shared application state.",
@@ -58,20 +58,28 @@
       "justification": "Unsaved tab-close, window-close, and quit flows need mutable queue progress without leaking state into the window shell."
     },
     {
+      "path": "src/editor_search.rs",
+      "line": 38,
+      "match": "state: RefCell<SearchState>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The search controller owns one mutable binding to the active tab and active search context.",
+      "justification": "Workspace-level search preserves query state while rebinding highlights, match counts, and replace state to the selected tab."
+    },
+    {
       "path": "src/editor_tab.rs",
-      "line": 31,
+      "line": 32,
       "match": "state: RefCell<EditorTabState>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns its mutable document and loading state.",
-      "justification": "A tab must update saved identity, loading flags, and dirty suppression across async open/save callbacks."
+      "justification": "A tab must update saved identity, loading flags, and dirty suppression while the SourceView buffer drives modified state and async open/save callbacks."
     },
     {
       "path": "src/workspace.rs",
-      "line": 42,
+      "line": 46,
       "match": "pub(crate) state: RefCell<WorkspaceState>,",
       "kind": "runtime-shared-state",
       "ownership": "The workspace owns tab collection, recent/session caches, restore gating, and active close flow.",
-      "justification": "Tabbed document coordination requires shared mutable state across menu rebuilds, session persistence, selection changes, and drag-and-drop."
+      "justification": "Tabbed document coordination requires shared mutable state across menu rebuilds, session persistence, search/status rebinding, selection changes, and drag-and-drop."
     },
     {
       "path": "src/workspace_open.rs",

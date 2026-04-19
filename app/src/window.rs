@@ -16,6 +16,10 @@ pub struct Window {
     save_action: gio::SimpleAction,
     save_as_action: gio::SimpleAction,
     close_action: gio::SimpleAction,
+    search_action: gio::SimpleAction,
+    replace_action: gio::SimpleAction,
+    find_next_action: gio::SimpleAction,
+    find_prev_action: gio::SimpleAction,
     settings: AppSettings,
     workspace: Rc<Workspace>,
 }
@@ -45,12 +49,21 @@ impl Window {
 
     fn build(app: &adw::Application, settings: AppSettings) -> Result<Rc<Self>, AppError> {
         let shell = WindowShell::new(app)?;
+        sourceview5::init();
         let save_action = gio::SimpleAction::new("save", None);
         let save_as_action = gio::SimpleAction::new("save-as", None);
         let close_action = gio::SimpleAction::new("close", None);
+        let search_action = gio::SimpleAction::new("search", None);
+        let replace_action = gio::SimpleAction::new("replace", None);
+        let find_next_action = gio::SimpleAction::new("find-next", None);
+        let find_prev_action = gio::SimpleAction::new("find-prev", None);
         shell.window.add_action(&save_action);
         shell.window.add_action(&save_as_action);
         shell.window.add_action(&close_action);
+        shell.window.add_action(&search_action);
+        shell.window.add_action(&replace_action);
+        shell.window.add_action(&find_next_action);
+        shell.window.add_action(&find_prev_action);
 
         let themes = gtk4::StringList::new(&[
             &pgettext("theme choice", "System Default"),
@@ -60,6 +73,9 @@ impl Window {
         shell.theme_row.set_model(Some(&themes));
         shell.theme_row.set_selected(settings.theme().index());
         shell.word_wrap_row.set_active(settings.word_wrap());
+        shell
+            .line_numbers_row
+            .set_active(settings.show_line_numbers());
         settings.apply_theme();
 
         let (width, height) = settings.window_size();
@@ -67,6 +83,7 @@ impl Window {
 
         let workspace = Workspace::new(WorkspaceParts {
             shell: &shell.window,
+            toolbar_view: &shell.toolbar_view,
             title_widget: &shell.title_widget,
             toast_overlay: &shell.toast_overlay,
             workspace_box: &shell.workspace_box,
@@ -82,6 +99,10 @@ impl Window {
             save_action,
             save_as_action,
             close_action,
+            search_action,
+            replace_action,
+            find_next_action,
+            find_prev_action,
             settings,
             workspace,
         });
@@ -134,6 +155,18 @@ impl Window {
         self.workspace.request_close_selected_tab();
     }
 
+    pub fn open_search(self: &Rc<Self>, replace_mode: bool) {
+        self.workspace.open_search(replace_mode);
+    }
+
+    pub fn find_next(self: &Rc<Self>) {
+        self.workspace.find_next();
+    }
+
+    pub fn find_previous(self: &Rc<Self>) {
+        self.workspace.find_previous();
+    }
+
     pub fn show_preferences(&self) {
         self.shell
             .preferences_dialog
@@ -145,10 +178,7 @@ impl Window {
     }
 
     pub fn show_help(&self) {
-        dialogs::launch_help(&self.shell.window, {
-            let shell = self.shell.window.clone();
-            move |error| dialogs::present_error(&shell, &error)
-        });
+        dialogs::show_help(&self.shell.window);
     }
 
     #[cfg(test)]
@@ -206,6 +236,68 @@ impl Window {
         self.workspace.shortcuts_enabled()
     }
 
+    #[cfg(test)]
+    pub(crate) fn search_visible_for_tests(&self) -> bool {
+        self.workspace.search_visible()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn replace_visible_for_tests(&self) -> bool {
+        self.workspace.replace_visible()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn search_query_for_tests(&self) -> String {
+        self.workspace.search_query()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn search_result_for_tests(&self) -> String {
+        self.workspace.search_result()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn status_labels_for_tests(&self) -> (String, String, String) {
+        self.workspace.status_labels()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn selected_line_numbers_visible_for_tests(&self) -> bool {
+        self.workspace.selected_line_numbers_visible()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn select_offsets_for_tests(&self, start: i32, end: i32) {
+        self.workspace.select_offsets_in_selected(start, end);
+    }
+
+    #[cfg(test)]
+    pub(crate) fn undo_selected_for_tests(&self) {
+        self.workspace.undo_selected();
+    }
+
+    #[cfg(test)]
+    pub(crate) fn replace_current_for_tests(self: &Rc<Self>) {
+        self.workspace.replace_current_for_tests();
+    }
+
+    #[cfg(test)]
+    pub(crate) fn replace_all_for_tests(self: &Rc<Self>) {
+        self.workspace.replace_all_for_tests();
+    }
+
+    #[cfg(test)]
+    pub(crate) fn set_replace_text_for_tests(&self, text: &str) {
+        self.workspace.set_replace_text_for_tests(text);
+    }
+
+    #[cfg(test)]
+    pub(crate) fn set_line_numbers_for_tests(&self, enabled: bool) {
+        self.settings.set_show_line_numbers(enabled);
+        self.shell.line_numbers_row.set_active(enabled);
+        self.refresh_line_numbers();
+    }
+
     fn install_callbacks(self: &Rc<Self>) {
         let weak = Rc::downgrade(self);
         self.shell.window.connect_close_request(move |_| {
@@ -235,6 +327,34 @@ impl Window {
             }
         });
 
+        let weak = Rc::downgrade(self);
+        self.search_action.connect_activate(move |_, _| {
+            if let Some(window) = weak.upgrade() {
+                window.open_search(false);
+            }
+        });
+
+        let weak = Rc::downgrade(self);
+        self.replace_action.connect_activate(move |_, _| {
+            if let Some(window) = weak.upgrade() {
+                window.open_search(true);
+            }
+        });
+
+        let weak = Rc::downgrade(self);
+        self.find_next_action.connect_activate(move |_, _| {
+            if let Some(window) = weak.upgrade() {
+                window.find_next();
+            }
+        });
+
+        let weak = Rc::downgrade(self);
+        self.find_prev_action.connect_activate(move |_, _| {
+            if let Some(window) = weak.upgrade() {
+                window.find_previous();
+            }
+        });
+
         let settings = self.settings.clone();
         self.shell.theme_row.connect_selected_notify(move |row| {
             let theme = ThemePreference::from_index(row.selected());
@@ -250,6 +370,17 @@ impl Window {
                 window.refresh_word_wrap();
             }
         });
+
+        let settings = self.settings.clone();
+        let weak = Rc::downgrade(self);
+        self.shell
+            .line_numbers_row
+            .connect_active_notify(move |row| {
+                settings.set_show_line_numbers(row.is_active());
+                if let Some(window) = weak.upgrade() {
+                    window.refresh_line_numbers();
+                }
+            });
     }
 
     fn on_close_request(self: &Rc<Self>) -> glib::Propagation {
@@ -262,6 +393,10 @@ impl Window {
 
     fn refresh_word_wrap(&self) {
         self.workspace.apply_word_wrap_to_tabs();
+    }
+
+    fn refresh_line_numbers(&self) {
+        self.workspace.apply_line_numbers_to_tabs();
     }
 
     fn persist_window_size(&self) {

@@ -3,7 +3,7 @@
   "sites": [
     {
       "path": "src/settings.rs",
-      "line": 126,
+      "line": 129,
       "match": "let _changed = settings.set_string(KEY_THEME, preference.stored());",
       "kind": "gsettings-write",
       "key": "theme",
@@ -11,7 +11,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 154,
+      "line": 157,
       "match": "let _changed = settings.set_boolean(KEY_WORD_WRAP, enabled);",
       "kind": "gsettings-write",
       "key": "word-wrap",
@@ -19,7 +19,15 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 190,
+      "line": 176,
+      "match": "let _changed = settings.set_boolean(KEY_SHOW_LINE_NUMBERS, enabled);",
+      "kind": "gsettings-write",
+      "key": "show-line-numbers",
+      "trigger": "Explicit line-number toggle in the preferences dialog."
+    },
+    {
+      "path": "src/settings.rs",
+      "line": 212,
       "match": "let _changed_width = settings.set_int(KEY_WINDOW_WIDTH, width);",
       "kind": "gsettings-write",
       "key": "window-width",
@@ -27,7 +35,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 191,
+      "line": 213,
       "match": "let _changed_height = settings.set_int(KEY_WINDOW_HEIGHT, height);",
       "kind": "gsettings-write",
       "key": "window-height",
@@ -35,7 +43,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 220,
+      "line": 242,
       "match": "let _changed = settings.set_strv(KEY_RECENT_FILES, values);",
       "kind": "gsettings-write",
       "key": "recent-files",
@@ -43,7 +51,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 246,
+      "line": 268,
       "match": "let _changed = settings.set_strv(KEY_SESSION_FILES, values);",
       "kind": "gsettings-write",
       "key": "session-files",
@@ -51,7 +59,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 269,
+      "line": 291,
       "match": "let _changed = settings.set_string(KEY_SESSION_SELECTED_FILE, uri);",
       "kind": "gsettings-write",
       "key": "session-selected-file",

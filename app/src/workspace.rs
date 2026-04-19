@@ -6,6 +6,8 @@ use gtk4::{gdk, gio, glib, prelude::*};
 use libadwaita as adw;
 
 use crate::close_flow::CloseCoordinator;
+use crate::editor_search::EditorSearch;
+use crate::editor_status::EditorStatusBar;
 use crate::editor_tab::{EditorTab, SaveOutcome};
 use crate::error::AppError;
 use crate::settings::AppSettings;
@@ -39,12 +41,15 @@ pub struct Workspace {
     pub(crate) close_action: gio::SimpleAction,
     pub(crate) settings: AppSettings,
     pub(crate) tab_view: adw::TabView,
+    pub(crate) search: Rc<EditorSearch>,
+    pub(crate) status_bar: EditorStatusBar,
     pub(crate) state: RefCell<WorkspaceState>,
 }
 
 #[derive(Clone, Copy)]
 pub struct WorkspaceParts<'a> {
     pub shell: &'a adw::ApplicationWindow,
+    pub toolbar_view: &'a adw::ToolbarView,
     pub title_widget: &'a adw::WindowTitle,
     pub toast_overlay: &'a adw::ToastOverlay,
     pub workspace_box: &'a gtk4::Box,
@@ -71,6 +76,12 @@ impl Workspace {
         parts.workspace_box.append(&tab_bar);
         parts.workspace_box.append(&tab_view);
 
+        let search = EditorSearch::new(parts.shell);
+        parts.toolbar_view.add_top_bar(search.widget());
+
+        let status_bar = EditorStatusBar::new();
+        parts.toolbar_view.add_bottom_bar(status_bar.widget());
+
         let workspace = Rc::new(Self {
             shell: parts.shell.clone(),
             title_widget: parts.title_widget.clone(),
@@ -81,6 +92,8 @@ impl Workspace {
             close_action: parts.close_action.clone(),
             settings: parts.settings.clone(),
             tab_view,
+            search,
+            status_bar,
             state: RefCell::new(WorkspaceState {
                 tabs: Vec::new(),
                 recent_files: parts.settings.recent_files(),
@@ -160,6 +173,22 @@ impl Workspace {
         }
     }
 
+    pub fn open_search(self: &Rc<Self>, replace_mode: bool) {
+        let selected = self.selected_tab();
+        let prefill = selected
+            .as_ref()
+            .and_then(|tab| tab.single_line_selection_text());
+        self.search.open(selected, replace_mode, prefill);
+    }
+
+    pub fn find_next(self: &Rc<Self>) {
+        self.search.find_next();
+    }
+
+    pub fn find_previous(self: &Rc<Self>) {
+        self.search.find_previous();
+    }
+
     pub fn request_close_selected_tab(&self) {
         if let Some(page) = self.tab_view.selected_page() {
             self.tab_view.close_page(&page);
@@ -232,9 +261,77 @@ impl Workspace {
         self.tab_view.shortcuts() == adw::TabViewShortcuts::ALL_SHORTCUTS
     }
 
+    #[cfg(test)]
+    pub(crate) fn search_visible(&self) -> bool {
+        self.search.is_search_mode_for_tests()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn replace_visible(&self) -> bool {
+        self.search.is_replace_visible_for_tests()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn search_query(&self) -> String {
+        self.search.query_text_for_tests()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn search_result(&self) -> String {
+        self.search.result_text_for_tests()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn status_labels(&self) -> (String, String, String) {
+        self.status_bar.labels_for_tests()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn selected_line_numbers_visible(&self) -> bool {
+        self.selected_tab()
+            .is_some_and(|tab| tab.shows_line_numbers_for_tests())
+    }
+
+    #[cfg(test)]
+    pub(crate) fn select_offsets_in_selected(&self, start: i32, end: i32) {
+        if let Some(tab) = self.selected_tab() {
+            tab.select_offsets_for_tests(start, end);
+            self.refresh_selected_state();
+        }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn undo_selected(&self) {
+        if let Some(tab) = self.selected_tab() {
+            tab.undo_for_tests();
+            self.refresh_selected_state();
+        }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn replace_current_for_tests(self: &Rc<Self>) {
+        self.search.replace_current();
+    }
+
+    #[cfg(test)]
+    pub(crate) fn replace_all_for_tests(self: &Rc<Self>) {
+        self.search.replace_all();
+    }
+
+    #[cfg(test)]
+    pub(crate) fn set_replace_text_for_tests(&self, text: &str) {
+        self.search.set_replace_text_for_tests(text);
+    }
+
     pub fn apply_word_wrap_to_tabs(&self) {
         for tab in &self.state.borrow().tabs {
             tab.apply_word_wrap();
+        }
+    }
+
+    pub fn apply_line_numbers_to_tabs(&self) {
+        for tab in &self.state.borrow().tabs {
+            tab.apply_line_numbers();
         }
     }
 
@@ -242,7 +339,7 @@ impl Workspace {
         let weak = Rc::downgrade(self);
         self.tab_view.connect_selected_page_notify(move |_| {
             if let Some(workspace) = weak.upgrade() {
-                workspace.refresh_selected_state();
+                workspace.handle_selected_tab_changed();
                 workspace.persist_session_state_if_needed();
             }
         });
@@ -309,6 +406,7 @@ impl Workspace {
         if select {
             self.tab_view.set_selected_page(&page);
         }
+        tab.apply_line_numbers();
         tab
     }
 
@@ -395,12 +493,22 @@ impl Workspace {
     }
 
     pub(crate) fn rebuild_primary_menu(&self) {
-        let menu = crate::workspace_menu::build_primary_menu(&self.state.borrow().recent_files);
-        self.menu_button.set_menu_model(Some(&menu));
+        let popover =
+            crate::workspace_menu::build_primary_popover(&self.state.borrow().recent_files);
+        self.menu_button.set_popover(Some(&popover));
+    }
+
+    pub(crate) fn handle_selected_tab_changed(self: &Rc<Self>) {
+        let selected = self.selected_tab();
+        self.search.bind_tab(selected);
+        self.refresh_selected_state();
     }
 
     pub(crate) fn refresh_selected_state(&self) {
-        if let Some(tab) = self.selected_tab() {
+        let selected = self.selected_tab();
+        self.status_bar.update(selected.as_deref());
+
+        if let Some(tab) = selected {
             self.title_widget.set_title(&tab.title());
             self.title_widget.set_subtitle(&tab.subtitle());
             self.save_action.set_enabled(tab.is_dirty());

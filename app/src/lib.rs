@@ -6,6 +6,8 @@ pub mod close_flow;
 pub mod dialogs;
 pub mod document;
 pub mod editor_io;
+pub mod editor_search;
+pub mod editor_status;
 pub mod editor_tab;
 pub mod error;
 pub mod session;

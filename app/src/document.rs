@@ -5,24 +5,17 @@ use gtk4::{gio, prelude::*};
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct DocumentState {
     path: Option<PathBuf>,
-    last_saved_text: String,
 }
 
 impl DocumentState {
     #[must_use]
     pub fn new_empty() -> Self {
-        Self {
-            path: None,
-            last_saved_text: String::new(),
-        }
+        Self { path: None }
     }
 
     #[must_use]
-    pub fn from_loaded(path: PathBuf, text: String) -> Self {
-        Self {
-            path: Some(path),
-            last_saved_text: text,
-        }
+    pub fn from_loaded(path: PathBuf) -> Self {
+        Self { path: Some(path) }
     }
 
     #[must_use]
@@ -51,14 +44,8 @@ impl DocumentState {
         self.path.as_ref().map(|path| path.display().to_string())
     }
 
-    pub fn set_saved(&mut self, path: PathBuf, text: String) {
+    pub fn set_saved(&mut self, path: PathBuf) {
         self.path = Some(path);
-        self.last_saved_text = text;
-    }
-
-    #[must_use]
-    pub fn is_dirty(&self, current_text: &str) -> bool {
-        self.last_saved_text != current_text
     }
 
     #[must_use]
@@ -79,7 +66,6 @@ mod tests {
     #[test]
     fn empty_document_has_no_saved_identity() {
         let document = DocumentState::new_empty();
-        assert!(!document.is_dirty(""));
         assert_eq!(document.file_name(), None);
         assert_eq!(document.path_display(), None);
         assert_eq!(document.uri(), None);
@@ -87,7 +73,7 @@ mod tests {
 
     #[test]
     fn loaded_document_tracks_saved_identity() {
-        let document = DocumentState::from_loaded("notes.txt".into(), String::from("hello"));
+        let document = DocumentState::from_loaded("notes.txt".into());
         assert_eq!(document.file_name().as_deref(), Some("notes.txt"));
         assert_eq!(document.path_display().as_deref(), Some("notes.txt"));
         assert!(
@@ -96,8 +82,6 @@ mod tests {
                 .as_deref()
                 .is_some_and(|uri| uri.ends_with("/notes.txt"))
         );
-        assert!(!document.is_dirty("hello"));
-        assert!(document.is_dirty("changed"));
     }
 
     #[test]

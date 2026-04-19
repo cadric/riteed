@@ -11,6 +11,11 @@
       <summary>Word Wrap</summary>
       <description>Controls whether long lines wrap inside the editor.</description>
     </key>
+    <key name="show-line-numbers" type="b">
+      <default>false</default>
+      <summary>Show Line Numbers</summary>
+      <description>Controls whether Riteed shows line numbers in the editor gutter.</description>
+    </key>
     <key name="window-width" type="i">
       <default>840</default>
       <summary>Window Width</summary>

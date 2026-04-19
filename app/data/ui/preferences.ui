@@ -5,7 +5,7 @@
   <object class="AdwPreferencesDialog" id="preferences_dialog">
     <property name="title" translatable="yes">Preferences</property>
     <property name="content-width">420</property>
-    <property name="content-height">240</property>
+    <property name="content-height">320</property>
     <child>
       <object class="AdwPreferencesPage">
         <property name="title" translatable="yes">Editor</property>
@@ -22,6 +22,12 @@
               <object class="AdwSwitchRow" id="word_wrap_row">
                 <property name="title" translatable="yes">Word Wrap</property>
                 <property name="subtitle" translatable="yes">Wrap Long Lines Inside the Editor</property>
+              </object>
+            </child>
+            <child>
+              <object class="AdwSwitchRow" id="line_numbers_row">
+                <property name="title" translatable="yes">Line Numbers</property>
+                <property name="subtitle" translatable="yes">Show Line Numbers in the Editor Gutter</property>
               </object>
             </child>
           </object>
