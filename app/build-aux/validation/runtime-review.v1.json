@@ -1,0 +1,93 @@
+{
+  "version": 1,
+  "sites": [
+    {
+      "path": "src/app.rs",
+      "line": 16,
+      "match": "window: Rc<RefCell<Option<Rc<Window>>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Application controller owns the active-window slot for single-window lifecycle management.",
+      "justification": "Keeps one editor window alive and replaceable without global mutable state."
+    },
+    {
+      "path": "src/app.rs",
+      "line": 55,
+      "match": "pub(crate) fn install_for_tests(app: &adw::Application, state: &Rc<RefCell<Option<Rc<Window>>>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "GTK test hooks reuse the shared active-window slot.",
+      "justification": "Exercises action and lifecycle wiring against the same single-window state model used at runtime."
+    },
+    {
+      "path": "src/app.rs",
+      "line": 64,
+      "match": "state: &Rc<RefCell<Option<Rc<Window>>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "GTK test helper borrows the shared active-window slot.",
+      "justification": "Allows coverage of window reuse logic without introducing a second mutable state path."
+    },
+    {
+      "path": "src/app.rs",
+      "line": 81,
+      "match": "fn install_actions(app: &adw::Application, state: &Rc<RefCell<Option<Rc<Window>>>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "Application actions borrow the shared window slot.",
+      "justification": "Routes app-scoped commands to the active editor window without object data hacks."
+    },
+    {
+      "path": "src/app.rs",
+      "line": 145,
+      "match": "fn install_lifecycle(app: &adw::Application, state: &Rc<RefCell<Option<Rc<Window>>>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "Lifecycle handlers reuse the shared window slot.",
+      "justification": "Activation and file-open signals must reuse or create the single editor window."
+    },
+    {
+      "path": "src/app.rs",
+      "line": 167,
+      "match": "state: &Rc<RefCell<Option<Rc<Window>>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Window creation helper updates the active-window slot.",
+      "justification": "Creation and teardown need one mutable slot to avoid duplicate primary windows."
+    },
+    {
+      "path": "src/window.rs",
+      "line": 32,
+      "match": "document: RefCell<DocumentState>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Window controller owns the mutable document snapshot.",
+      "justification": "Document metadata changes independently of GTK widget ownership during async file operations."
+    },
+    {
+      "path": "src/window.rs",
+      "line": 33,
+      "match": "pending_action: RefCell<Option<PendingAction>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Window controller owns the deferred action slot.",
+      "justification": "Unsaved-changes confirmation needs to remember the next user action across dialog callbacks."
+    },
+    {
+      "path": "src/window.rs",
+      "line": 34,
+      "match": "closing_allowed: RefCell<bool>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Window controller owns the close-guard flag.",
+      "justification": "Prevents duplicate confirmation prompts after the user already approved closing."
+    },
+    {
+      "path": "src/gtk_tests.rs",
+      "line": 72,
+      "match": "state: &std::rc::Rc<std::cell::RefCell<Option<std::rc::Rc<Window>>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "GTK coverage helper reuses the single-window slot.",
+      "justification": "Test-only helper drives the same shared state shape as runtime action dispatch."
+    },
+    {
+      "path": "src/gtk_tests.rs",
+      "line": 161,
+      "match": "state: &std::rc::Rc<std::cell::RefCell<Option<std::rc::Rc<Window>>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "GTK dialog helper reuses the single-window slot.",
+      "justification": "Test-only helper validates dialog wiring against the runtime window ownership model."
+    }
+  ]
+}

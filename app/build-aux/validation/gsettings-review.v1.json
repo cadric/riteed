@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "sites": [
+    {
+      "path": "src/settings.rs",
+      "line": 117,
+      "match": "let _changed = settings.set_string(KEY_THEME, preference.stored());",
+      "kind": "gsettings-write",
+      "key": "theme",
+      "trigger": "Explicit theme selection in the preferences dialog."
+    },
+    {
+      "path": "src/settings.rs",
+      "line": 146,
+      "match": "let _changed = settings.set_boolean(KEY_WORD_WRAP, enabled);",
+      "kind": "gsettings-write",
+      "key": "word-wrap",
+      "trigger": "Explicit word-wrap toggle in the preferences dialog."
+    },
+    {
+      "path": "src/settings.rs",
+      "line": 182,
+      "match": "let _changed_width = settings.set_int(KEY_WINDOW_WIDTH, width);",
+      "kind": "gsettings-write",
+      "key": "window-width",
+      "trigger": "Main-window close handling after the user changes window size."
+    },
+    {
+      "path": "src/settings.rs",
+      "line": 183,
+      "match": "let _changed_height = settings.set_int(KEY_WINDOW_HEIGHT, height);",
+      "kind": "gsettings-write",
+      "key": "window-height",
+      "trigger": "Main-window close handling after the user changes window size."
+    }
+  ]
+}

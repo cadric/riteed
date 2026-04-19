@@ -1,0 +1,38 @@
+[package]
+name = "riteed"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+publish = false
+
+[dependencies]
+gtk4 = { version = "=0.11.2", features = ["v4_10"] }
+libadwaita = { version = "=0.9.1", features = ["v1_5"] }
+gettext-rs = { version = "=0.7.7" }
+
+[build-dependencies]
+glib-build-tools = "=0.22.0"
+
+[lints.rust]
+unsafe_code = "forbid"
+unsafe_op_in_unsafe_fn = "deny"
+unsafe_attr_outside_unsafe = "deny"
+missing_unsafe_on_extern = "deny"
+ffi_unwind_calls = "deny"
+elided_lifetimes_in_paths = "deny"
+unused_must_use = "deny"
+unexpected_cfgs = { level = "deny", check-cfg = ['cfg(coverage)'] }
+warnings = "deny"
+
+[lints.clippy]
+all = "deny"
+pedantic = "deny"
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+print_stdout = "deny"
+print_stderr = "deny"
+wildcard_imports = "deny"

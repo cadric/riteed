@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk" version="4.0"/>
+  <requires lib="libadwaita" version="1.5"/>
+  <object class="AdwApplicationWindow" id="window">
+    <property name="default-width">840</property>
+    <property name="default-height">620</property>
+    <property name="title" translatable="yes">Riteed</property>
+    <property name="content">
+      <object class="AdwToolbarView">
+        <child type="top">
+          <object class="AdwHeaderBar">
+            <child type="start">
+              <object class="GtkButton">
+                <property name="action-name">app.open</property>
+                <property name="icon-name">document-open-symbolic</property>
+                <property name="tooltip-text" translatable="yes">Open a Text File</property>
+              </object>
+            </child>
+            <property name="title-widget">
+              <object class="AdwWindowTitle" id="window_title">
+                <property name="title" translatable="yes">Untitled.txt</property>
+                <property name="subtitle" translatable="yes">Plain Text Document</property>
+              </object>
+            </property>
+            <child type="end">
+              <object class="GtkButton">
+                <property name="action-name">win.save</property>
+                <property name="icon-name">document-save-symbolic</property>
+                <property name="tooltip-text" translatable="yes">Save the Current Document</property>
+              </object>
+            </child>
+            <child type="end">
+              <object class="GtkMenuButton" id="primary_menu_button">
+                <property name="icon-name">open-menu-symbolic</property>
+                <property name="tooltip-text" translatable="yes">Main Menu</property>
+              </object>
+            </child>
+          </object>
+        </child>
+        <property name="content">
+          <object class="AdwToastOverlay" id="toast_overlay">
+            <property name="child">
+              <object class="GtkScrolledWindow">
+                <property name="hscrollbar-policy">automatic</property>
+                <property name="vscrollbar-policy">automatic</property>
+                <property name="child">
+                  <object class="GtkTextView" id="text_view">
+                    <property name="accepts-tab">true</property>
+                    <property name="bottom-margin">12</property>
+                    <property name="left-margin">12</property>
+                    <property name="monospace">true</property>
+                    <property name="right-margin">12</property>
+                    <property name="top-margin">12</property>
+                    <property name="wrap-mode">none</property>
+                  </object>
+                </property>
+              </object>
+            </property>
+          </object>
+        </property>
+      </object>
+    </property>
+  </object>
+</interface>

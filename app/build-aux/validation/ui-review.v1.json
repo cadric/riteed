@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "surfaces": [
+    {
+      "path": "data/ui/preferences.ui",
+      "line": 5,
+      "match": "<object class=\"AdwPreferencesDialog\" id=\"preferences_dialog\">",
+      "smallest_width": 320,
+      "adaptive_pattern": "Single-page preferences dialog using standard libadwaita rows.",
+      "collapse_behavior": "Rows stay vertically stacked and remain reachable without horizontal scrolling.",
+      "copy_reviewed": true,
+      "a11y_reviewed": true
+    },
+    {
+      "path": "data/ui/shortcuts.ui",
+      "line": 4,
+      "match": "<object class=\"GtkShortcutsWindow\" id=\"shortcuts_window\">",
+      "smallest_width": 360,
+      "adaptive_pattern": "Standard shortcuts window with grouped actions.",
+      "collapse_behavior": "Shortcut groups continue to stack in reading order as width decreases.",
+      "copy_reviewed": true,
+      "a11y_reviewed": true
+    },
+    {
+      "path": "data/ui/window.ui",
+      "line": 5,
+      "match": "<object class=\"AdwApplicationWindow\" id=\"window\">",
+      "smallest_width": 360,
+      "adaptive_pattern": "Single-column editor shell with toolbar and scrolling text area.",
+      "collapse_behavior": "Header bar keeps high-value actions visible and the content area shrinks without changing interaction order.",
+      "copy_reviewed": true,
+      "a11y_reviewed": true
+    },
+    {
+      "path": "data/ui/window.ui",
+      "line": 21,
+      "match": "<object class=\"AdwWindowTitle\" id=\"window_title\">",
+      "smallest_width": 320,
+      "adaptive_pattern": "Centered title element that keeps document name and subtitle in the header bar.",
+      "collapse_behavior": "Header title truncates naturally while primary actions stay visible.",
+      "copy_reviewed": true,
+      "a11y_reviewed": true
+    },
+    {
+      "path": "data/ui/window.ui",
+      "line": 44,
+      "match": "<object class=\"GtkScrolledWindow\">",
+      "smallest_width": 360,
+      "adaptive_pattern": "Scrollable editor content area with a single text view.",
+      "collapse_behavior": "Horizontal and vertical scrolling stay available when content exceeds the viewport.",
+      "copy_reviewed": true,
+      "a11y_reviewed": true
+    }
+  ]
+}

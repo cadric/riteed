@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+build_dir="$(mktemp -d)"
+trap 'rm -rf "${build_dir}"' EXIT
+
+glib-compile-schemas --strict --targetdir "${build_dir}" data/schemas
+GSETTINGS_SCHEMA_DIR="${build_dir}" cargo run -- "$@"

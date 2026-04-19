@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist gettext-domain="io.github.cadric.Riteed">
+  <schema id="io.github.cadric.Riteed" path="/io/github/cadric/Riteed/">
+    <key name="theme" type="s">
+      <default>'system'</default>
+      <summary>Theme Preference</summary>
+      <description>Controls Whether Riteed Uses the System Appearance, a Light Appearance, or a Dark Appearance.</description>
+    </key>
+    <key name="word-wrap" type="b">
+      <default>false</default>
+      <summary>Word Wrap</summary>
+      <description>Controls Whether Long Lines Wrap Inside the Editor.</description>
+    </key>
+    <key name="window-width" type="i">
+      <default>840</default>
+      <summary>Window Width</summary>
+      <description>Stores the Last Width Used for the Main Window.</description>
+    </key>
+    <key name="window-height" type="i">
+      <default>620</default>
+      <summary>Window Height</summary>
+      <description>Stores the Last Height Used for the Main Window.</description>
+    </key>
+  </schema>
+</schemalist>

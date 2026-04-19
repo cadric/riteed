@@ -1,0 +1,580 @@
+{
+  "$id": "policy/validation_tooling.v2.json",
+  "title": "Validation Tooling Policy",
+  "package_id": "gnome_rust_app_policy_pack.v1",
+  "machine_readable_for": [
+    "llm_agent",
+    "codex",
+    "claude"
+  ],
+  "purpose": "Hard-fail enforcement policy for AGENTS.md and validation tooling in a strict GNOME Rust application repository.",
+  "applies_to": [
+    "AGENTS.md",
+    "policy/**",
+    "tools/**",
+    "Cargo.toml",
+    "Cargo.lock",
+    "rust-toolchain.toml",
+    "src/**",
+    "crates/**",
+    "tests/**",
+    "benches/**",
+    "examples/**",
+    "data/**",
+    "po/**",
+    "build-aux/**",
+    "**/*.rs",
+    "**/*.ui",
+    "**/*.blp",
+    "**/*.css",
+    "**/*.gschema.xml",
+    "**/*.desktop.in",
+    "**/*.metainfo.xml.in",
+    "**/*.yml",
+    "**/*.yaml",
+    "**/*.json",
+    "**/*.desktop.in.in",
+    "**/*.metainfo.xml.in.in",
+    "**/*.desktop",
+    "**/*.metainfo.xml",
+    "**/*.gresource.xml",
+    "**/*.po",
+    "**/*.pot"
+  ],
+  "overlaps_with": [
+    "policy/rust.v4.json",
+    "policy/gtk4_rs.v1.json",
+    "policy/libadwaita.v2.json",
+    "policy/hig.v2.json",
+    "policy/gettext_i18n.v2.json",
+    "policy/gsettings.v2.json",
+    "policy/flatpak_metadata.v1.json"
+  ],
+  "conflict_resolution": "union_strictest",
+  "severity": "error",
+  "enforcement_model": {
+    "hard_fail_only": true,
+    "warnings_promoted_to_errors": true,
+    "best_effort_mode": "forbidden",
+    "missing_required_tool_is_error": true,
+    "policy_violations_must_exit_non_zero": true
+  },
+  "thresholds": {
+    "max_file_lines": 600,
+    "min_line_coverage_percent": 80.0
+  },
+  "required_policy_files": [
+    "policy/gnome-rust-app.bundle.json",
+    "policy/rust.policy.json",
+    "policy/gtk4-rs.policy.json",
+    "policy/libadwaita.policy.json",
+    "policy/hig.policy.json",
+    "policy/gettext-i18n.policy.json",
+    "policy/gsettings.policy.json",
+    "policy/flatpak-metadata.policy.json",
+    "policy/validation-tooling.policy.json"
+  ],
+  "required_tools": [
+    "cargo",
+    "rustc",
+    "xgettext",
+    "desktop-file-validate",
+    "appstreamcli",
+    "glib-compile-schemas",
+    "msgfmt",
+    "flatpak-builder"
+  ],
+  "line_limit_globs": [
+    "AGENTS.md",
+    "policy/README.md",
+    "policy/**/*.json",
+    "scripts/**",
+    "tools/**/*.py",
+    "src/**/*.rs",
+    "crates/**/*.rs",
+    "tests/**/*.rs",
+    "benches/**/*.rs",
+    "examples/**/*.rs",
+    "data/**/*.ui",
+    "data/**/*.blp",
+    "data/**/*.css",
+    "data/**/*.gschema.xml",
+    "data/**/*.desktop.in",
+    "data/**/*.metainfo.xml.in",
+    "build-aux/**/*.yml",
+    "build-aux/**/*.yaml",
+    "build-aux/**/*.json",
+    "data/**/*.desktop.in.in",
+    "data/**/*.metainfo.xml.in.in",
+    "data/**/*.gresource.xml",
+    "data/**/*.desktop",
+    "data/**/*.metainfo.xml",
+    "po/*.po",
+    "po/*.pot"
+  ],
+  "dependency_policy": {
+    "required_runtime_crates": [
+      "gtk4",
+      "libadwaita",
+      "gettext-rs"
+    ],
+    "forbidden_crates": [
+      "gettext",
+      "iced",
+      "egui",
+      "eframe",
+      "dioxus",
+      "slint",
+      "tauri",
+      "fltk",
+      "gtk",
+      "gtk3",
+      "relm",
+      "relm4",
+      "tokio",
+      "async-std",
+      "smol",
+      "confy",
+      "config",
+      "dirs",
+      "dirs-next",
+      "directories"
+    ]
+  },
+  "required_commands": [
+    "cargo fmt --all --check",
+    "cargo check --workspace --all-targets --all-features",
+    "cargo clippy --workspace --all-targets --all-features -- -D warnings",
+    "cargo test --workspace --all-targets --all-features"
+  ],
+  "conditional_validators": [
+    {
+      "when_glob": "data/schemas/**/*.gschema.xml",
+      "tool": "glib-compile-schemas",
+      "mode": "gsettings"
+    },
+    {
+      "when_glob": "po/*.po",
+      "tool": "msgfmt",
+      "mode": "po"
+    },
+    {
+      "when_glob": "data/*.desktop",
+      "tool": "desktop-file-validate",
+      "mode": "desktop"
+    },
+    {
+      "when_glob": "data/*.metainfo.xml",
+      "tool": "appstreamcli",
+      "mode": "metainfo"
+    },
+    {
+      "when_glob": "build-aux/*.yml",
+      "tool": "flatpak-builder",
+      "mode": "flatpak-manifest"
+    },
+    {
+      "when_glob": "build-aux/*.yaml",
+      "tool": "flatpak-builder",
+      "mode": "flatpak-manifest"
+    },
+    {
+      "when_glob": "build-aux/*.json",
+      "tool": "flatpak-builder",
+      "mode": "flatpak-manifest"
+    }
+  ],
+  "review_artifacts": {
+    "ui": {
+      "globs": [
+        "build-aux/validation/ui-review*.json"
+      ],
+      "sections": {
+        "surfaces": {
+          "kind": "surface",
+          "required_fields": [
+            "path",
+            "line",
+            "match",
+            "smallest_width",
+            "adaptive_pattern",
+            "collapse_behavior",
+            "copy_reviewed",
+            "a11y_reviewed"
+          ]
+        },
+        "menus": {
+          "kind": "menu",
+          "required_fields": [
+            "path",
+            "line",
+            "match",
+            "items",
+            "standard_items"
+          ]
+        },
+        "css": {
+          "kind": "css-file",
+          "required_fields": [
+            "path",
+            "line",
+            "match",
+            "reason",
+            "scope"
+          ]
+        }
+      }
+    },
+    "i18n": {
+      "globs": [
+        "build-aux/validation/i18n-review*.json"
+      ],
+      "sections": {
+        "strings": {
+          "required_fields": [
+            "path",
+            "line",
+            "match",
+            "resolution"
+          ]
+        }
+      }
+    },
+    "gsettings": {
+      "globs": [
+        "build-aux/validation/gsettings-review*.json"
+      ],
+      "sections": {
+        "sites": {
+          "required_fields": [
+            "path",
+            "line",
+            "match",
+            "kind",
+            "key",
+            "trigger"
+          ]
+        }
+      }
+    },
+    "runtime": {
+      "globs": [
+        "build-aux/validation/runtime-review*.json"
+      ],
+      "sections": {
+        "sites": {
+          "required_fields": [
+            "path",
+            "line",
+            "match",
+            "kind",
+            "ownership",
+            "justification"
+          ]
+        }
+      }
+    }
+  },
+  "forbidden_source_patterns": [
+    {
+      "message": "Rust source must not enable unstable language features.",
+      "pattern": "#!\\s*\\[\\s*feature\\s*\\(",
+      "paths": [
+        "src/**/*.rs",
+        "crates/**/*.rs",
+        "tests/**/*.rs",
+        "benches/**/*.rs",
+        "examples/**/*.rs"
+      ]
+    },
+    {
+      "message": "Rust source must not use unsafe blocks, functions, impls, traits, or extern blocks.",
+      "pattern": "\\bunsafe\\s*(\\{|fn\\b|impl\\b|trait\\b|extern\\b)",
+      "paths": [
+        "src/**/*.rs",
+        "crates/**/*.rs",
+        "tests/**/*.rs",
+        "benches/**/*.rs",
+        "examples/**/*.rs"
+      ]
+    },
+    {
+      "message": "Rust source must not declare C FFI.",
+      "pattern": "\\bextern\\s+\\\"C\\\"(?:\\s|\\{|$)",
+      "paths": [
+        "src/**/*.rs",
+        "crates/**/*.rs",
+        "tests/**/*.rs",
+        "benches/**/*.rs",
+        "examples/**/*.rs"
+      ]
+    },
+    {
+      "message": "Rust source must not use unsafe attributes such as no_mangle/export_name/link_section.",
+      "pattern": "#\\[\\s*unsafe\\((no_mangle|export_name|link_section)",
+      "paths": [
+        "src/**/*.rs",
+        "crates/**/*.rs",
+        "tests/**/*.rs",
+        "benches/**/*.rs",
+        "examples/**/*.rs"
+      ]
+    },
+    {
+      "message": "Rust source must not use static mut.",
+      "pattern": "\\bstatic\\s+mut\\b",
+      "paths": [
+        "src/**/*.rs",
+        "crates/**/*.rs",
+        "tests/**/*.rs",
+        "benches/**/*.rs",
+        "examples/**/*.rs"
+      ]
+    },
+    {
+      "message": "Rust source must not use transmute.",
+      "pattern": "\\btransmute\\b",
+      "paths": [
+        "src/**/*.rs",
+        "crates/**/*.rs",
+        "tests/**/*.rs",
+        "benches/**/*.rs",
+        "examples/**/*.rs"
+      ]
+    },
+    {
+      "message": "Runtime Rust source must not use unwrap().",
+      "pattern": "\\bunwrap\\s*\\(",
+      "paths": [
+        "src/**/*.rs",
+        "crates/**/*.rs"
+      ],
+      "exceptions": [
+        "tests/**",
+        "benches/**",
+        "examples/**"
+      ]
+    },
+    {
+      "message": "Runtime Rust source must not use expect().",
+      "pattern": "\\bexpect\\s*\\(",
+      "paths": [
+        "src/**/*.rs",
+        "crates/**/*.rs"
+      ],
+      "exceptions": [
+        "tests/**",
+        "benches/**",
+        "examples/**"
+      ]
+    },
+    {
+      "message": "Runtime Rust source must not use panic!().",
+      "pattern": "\\bpanic!\\s*\\(",
+      "paths": [
+        "src/**/*.rs",
+        "crates/**/*.rs"
+      ],
+      "exceptions": [
+        "tests/**"
+      ]
+    },
+    {
+      "message": "Runtime Rust source must not use todo!().",
+      "pattern": "\\btodo!\\s*\\(",
+      "paths": [
+        "src/**/*.rs",
+        "crates/**/*.rs",
+        "tests/**/*.rs",
+        "benches/**/*.rs",
+        "examples/**/*.rs"
+      ]
+    },
+    {
+      "message": "Runtime Rust source must not use unimplemented!().",
+      "pattern": "\\bunimplemented!\\s*\\(",
+      "paths": [
+        "src/**/*.rs",
+        "crates/**/*.rs",
+        "tests/**/*.rs",
+        "benches/**/*.rs",
+        "examples/**/*.rs"
+      ]
+    },
+    {
+      "message": "Runtime Rust source must not use dbg!().",
+      "pattern": "\\bdbg!\\s*\\(",
+      "paths": [
+        "src/**/*.rs",
+        "crates/**/*.rs",
+        "tests/**/*.rs",
+        "benches/**/*.rs",
+        "examples/**/*.rs"
+      ]
+    },
+    {
+      "message": "Runtime Rust source must not spawn external commands.",
+      "pattern": "\\bstd::process::Command\\b",
+      "paths": [
+        "src/**/*.rs",
+        "crates/**/*.rs",
+        "tests/**/*.rs",
+        "benches/**/*.rs",
+        "examples/**/*.rs"
+      ]
+    },
+    {
+      "message": "GTK application code must not call gtk::init().",
+      "pattern": "\\bgtk::init\\s*\\(",
+      "paths": [
+        "src/**/*.rs",
+        "crates/**/*.rs"
+      ],
+      "exceptions": [
+        "tests/**",
+        "examples/**"
+      ]
+    },
+    {
+      "message": "GTK application code must not call gtk::main().",
+      "pattern": "\\bgtk::main\\s*\\(",
+      "paths": [
+        "src/**/*.rs",
+        "crates/**/*.rs"
+      ],
+      "exceptions": [
+        "tests/**",
+        "examples/**"
+      ]
+    },
+    {
+      "message": "GTK UI must not be created from inline Builder strings.",
+      "pattern": "\\bBuilder::from_string\\s*\\(",
+      "paths": [
+        "src/**/*.rs",
+        "crates/**/*.rs"
+      ]
+    },
+    {
+      "message": "GTK UI must not be loaded from Builder::from_file().",
+      "pattern": "\\bBuilder::from_file\\s*\\(",
+      "paths": [
+        "src/**/*.rs",
+        "crates/**/*.rs"
+      ]
+    },
+    {
+      "message": "GTK main-thread code must not sleep the thread.",
+      "pattern": "\\bstd::thread::sleep\\s*\\(",
+      "paths": [
+        "src/**/*.rs",
+        "crates/**/*.rs",
+        "tests/**/*.rs",
+        "benches/**/*.rs",
+        "examples/**/*.rs"
+      ]
+    },
+    {
+      "message": "GTK styling must not depend on widget names.",
+      "pattern": "\\bset_widget_name\\s*\\(",
+      "paths": [
+        "src/**/*.rs",
+        "crates/**/*.rs"
+      ]
+    },
+    {
+      "message": "Packaged UI/CSS assets must not be loaded via Builder::from_file() or CssProvider::load_from_path().",
+      "pattern": "\\b(Builder::from_file|CssProvider::load_from_path)\\s*\\(",
+      "paths": [
+        "src/**/*.rs",
+        "crates/**/*.rs"
+      ]
+    },
+    {
+      "message": "Libadwaita apps must not force a custom color scheme.",
+      "pattern": "ColorScheme::Force(Light|Dark)",
+      "paths": [
+        "src/**/*.rs",
+        "crates/**/*.rs"
+      ]
+    },
+    {
+      "message": "GTK/libadwaita CSS must not define a global reset selector.",
+      "pattern": "^\\s*\\*\\s*\\{",
+      "paths": [
+        "data/**/*.css"
+      ]
+    }
+  ],
+  "required_source_patterns": [
+    {
+      "message": "Crate roots must forbid unsafe code.",
+      "pattern": "#!\\s*\\[\\s*forbid\\s*\\([^\\]]*\\bunsafe_code\\b[^\\]]*\\)\\s*\\]",
+      "paths": [
+        "src/main.rs",
+        "src/lib.rs",
+        "crates/**/src/main.rs",
+        "crates/**/src/lib.rs"
+      ]
+    },
+    {
+      "message": "Crate roots must deny unsafe operations inside unsafe fns.",
+      "pattern": "#!\\s*\\[\\s*deny\\s*\\([^\\]]*\\bunsafe_op_in_unsafe_fn\\b[^\\]]*\\)\\s*\\]",
+      "paths": [
+        "src/main.rs",
+        "src/lib.rs",
+        "crates/**/src/main.rs",
+        "crates/**/src/lib.rs"
+      ]
+    },
+    {
+      "message": "The application must use libadwaita application APIs.",
+      "pattern": "\\badw::Application\\b|\\blibadwaita::Application\\b",
+      "paths": [
+        "src/**/*.rs",
+        "crates/**/*.rs"
+      ]
+    },
+    {
+      "message": "The application must contain gettext bootstrap code before building UI.",
+      "pattern": "\\b(TextDomain::new|bindtextdomain|textdomain|bind_textdomain_codeset|setlocale)\\b",
+      "paths": [
+        "src/**/*.rs",
+        "crates/**/*.rs"
+      ]
+    }
+  ],
+  "official_sources": [
+    {
+      "name": "cargo-llvm-cov README",
+      "url": "https://github.com/taiki-e/cargo-llvm-cov",
+      "kind": "tool_docs"
+    },
+    {
+      "name": "Rust instrumentation-based coverage",
+      "url": "https://doc.rust-lang.org/rustc/instrument-coverage.html",
+      "kind": "official_docs"
+    },
+    {
+      "name": "Flatpak Builder Command Reference",
+      "url": "https://docs.flatpak.org/en/latest/flatpak-builder-command-reference.html",
+      "kind": "spec"
+    }
+  ],
+  "coverage_validation": {
+    "required_tools": [
+      "cargo",
+      "cargo-llvm-cov"
+    ],
+    "default_command": [
+      "cargo",
+      "llvm-cov",
+      "--workspace",
+      "--all-features",
+      "--json",
+      "--summary-only",
+      "--output-path",
+      "<output-path>"
+    ]
+  }
+}

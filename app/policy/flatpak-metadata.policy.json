@@ -1,0 +1,191 @@
+{
+  "$id": "policy/flatpak_metadata.v1.json",
+  "title": "Flatpak Metadata Policy (Flatpak 1.16.x / org.gnome.Platform 50)",
+  "package_id": "gnome_rust_app_policy_pack.v1",
+  "machine_readable_for": [
+    "llm_agent",
+    "codex",
+    "claude"
+  ],
+  "purpose": "Strict Flatpak manifest, desktop integration, sandbox, and metadata rules for GNOME Rust apps.",
+  "applies_to": [
+    "build-aux/**",
+    "data/**",
+    "**/*.yml",
+    "**/*.yaml",
+    "**/*.json",
+    "**/*.desktop.in",
+    "**/*.metainfo.xml.in",
+    "**/*.svg",
+    "**/*.png",
+    "**/*.desktop.in.in",
+    "**/*.metainfo.xml.in.in",
+    "**/*.desktop",
+    "**/*.metainfo.xml"
+  ],
+  "overlaps_with": [
+    "policy/rust.v4.json",
+    "policy/gtk4_rs.v1.json",
+    "policy/libadwaita.v2.json",
+    "policy/hig.v2.json",
+    "policy/gettext_i18n.v2.json",
+    "policy/gsettings.v2.json"
+  ],
+  "conflict_resolution": "union_strictest",
+  "severity": "error",
+  "targets": {
+    "flatpak": {
+      "stable_family": "1.16.x",
+      "runtime": "org.gnome.Platform",
+      "runtime_version": "50",
+      "sdk": "org.gnome.Sdk"
+    }
+  },
+  "manifest_identity": {
+    "top_level_id_required": true,
+    "deprecated_app_id_key_for_new_manifests": "forbidden",
+    "manifest_filename_should_equal_application_id": true,
+    "command_required": true,
+    "runtime_and_sdk_required": true
+  },
+  "desktop_integration": {
+    "desktop_file_required": true,
+    "metainfo_file_required": true,
+    "app_icon_required": true,
+    "exported_files_must_be_prefixed_with_application_id": true,
+    "desktop_file_basename_must_equal_application_id": true,
+    "metainfo_component_id_must_equal_application_id": true,
+    "metainfo_launchable_desktop_id_must_match_desktop_file": true
+  },
+  "sandbox_permissions": {
+    "minimize_permissions_required": true,
+    "portals_preferred_over_static_permissions": true,
+    "read_only_access_preferred_where_possible": true,
+    "xdg_base_directories_required_for_app_data": true,
+    "forbidden_by_default": [
+      "--filesystem=host",
+      "--filesystem=home",
+      "--filesystem=host-os",
+      "--filesystem=host-etc",
+      "--filesystem=/",
+      "--talk-name=*",
+      "--own-name=*",
+      "--system-talk-name=*",
+      "--allow=devel",
+      "--allow=multiarch",
+      "--socket=session-bus",
+      "--socket=system-bus"
+    ],
+    "requires_written_justification": [
+      "--socket=x11",
+      "--share=network",
+      "--socket=pulseaudio",
+      "--socket=pcsc",
+      "--device=input",
+      "--device=usb"
+    ],
+    "requires_written_justification_prefixes": [
+      "--talk-name=",
+      "--own-name=",
+      "--system-talk-name=",
+      "--filesystem=xdg-download",
+      "--filesystem=xdg-documents",
+      "--filesystem=xdg-pictures",
+      "--filesystem=xdg-videos"
+    ],
+    "permission_justification_file": "build-aux/permissions/flatpak-permissions.justifications.json",
+    "wayland_required_by_default_for_native_gtk4_apps": true
+  },
+  "portal_usage": {
+    "file_open_save_must_use_portal_friendly_apis": true,
+    "open_uri_must_use_portal_or_toolkit_integration": true,
+    "notifications_should_use_standard_portal_or_toolkit_paths": true,
+    "direct_filesystem_enumeration_outside_granted_paths": "forbidden"
+  },
+  "module_and_source_rules": {
+    "all_downloaded_sources_must_be_pinned_and_hash_verified": true,
+    "git_sources_must_be_pinned_to_commit": true,
+    "build_commands_must_not_download_unpinned_artifacts": true,
+    "prefer_cargo_vendor_or_flatpak_cargo_generator_style_locking": true
+  },
+  "compatibility_rules": {
+    "new_context_features_require_minimum_flatpak_version_when_needed": true,
+    "if_manifest_uses_device_input_or_device_usb": {
+      "require_version_at_least": "1.16.0"
+    }
+  },
+  "validation": {
+    "flatpak_builder_manifest_validation_required": true,
+    "desktop_file_validate_required": true,
+    "appstream_validate_required": true,
+    "manifest_permissions_review_required": true
+  },
+  "verifiers": {
+    "grep_checks": [
+      "^id:",
+      "runtime-version:",
+      "sdk:",
+      "command:",
+      "finish-args:"
+    ],
+    "grep_warnings": [
+      "--filesystem=host",
+      "--filesystem=home",
+      "--socket=x11",
+      "--talk-name=",
+      "--own-name=",
+      "--share=network"
+    ],
+    "command_checks": [
+      "desktop-file-validate",
+      "appstreamcli validate --no-net --pedantic",
+      "flatpak-builder --show-manifest <manifest>"
+    ]
+  },
+  "prohibited": [
+    "deprecated_app_id_manifest_key_in_new_projects",
+    "broad_host_or_home_filesystem_access",
+    "broad_bus_access",
+    "x11_permission_without_review",
+    "static_permissions_that_replace_portal_usage",
+    "exported_files_not_prefixed_by_application_id",
+    "unvalidated_desktop_or_metainfo_metadata"
+  ],
+  "official_sources": [
+    {
+      "name": "Flatpak manifests",
+      "url": "https://docs.flatpak.org/en/latest/manifests.html",
+      "kind": "spec"
+    },
+    {
+      "name": "Flatpak sandbox permissions",
+      "url": "https://docs.flatpak.org/en/latest/sandbox-permissions.html",
+      "kind": "spec"
+    },
+    {
+      "name": "Flatpak desktop integration",
+      "url": "https://docs.flatpak.org/en/latest/desktop-integration.html",
+      "kind": "spec"
+    },
+    {
+      "name": "Flathub org.gnome.Platform 50",
+      "url": "https://flathub.org/apps/org.gnome.Platform",
+      "kind": "runtime_listing"
+    },
+    {
+      "name": "Gio.Settings docs",
+      "url": "https://docs.gtk.org/gio/class.Settings.html",
+      "kind": "api_docs"
+    },
+    {
+      "name": "glib-compile-schemas",
+      "url": "https://gnome.pages.gitlab.gnome.org/libsoup/gio/glib-compile-schemas.html",
+      "kind": "tool_docs"
+    },
+    {
+      "name": "GNOME application ID guidance",
+      "url": "https://developer.gnome.org/documentation/tutorials/application-id.html",
+      "kind": "developer_guidance"
+    }
+  ]
+}

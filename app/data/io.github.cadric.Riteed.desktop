@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Riteed
+Comment=Edit Plain Text Files
+Exec=riteed %U
+Icon=io.github.cadric.Riteed
+StartupNotify=true
+Terminal=false
+Categories=Utility;TextEditor;GNOME;GTK;
+MimeType=text/plain;
+Keywords=text;editor;plain text;

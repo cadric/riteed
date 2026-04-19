@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk" version="4.0"/>
+  <requires lib="libadwaita" version="1.5"/>
+  <object class="AdwPreferencesDialog" id="preferences_dialog">
+    <property name="title" translatable="yes">Preferences</property>
+    <property name="content-width">420</property>
+    <property name="content-height">240</property>
+    <child>
+      <object class="AdwPreferencesPage">
+        <property name="title" translatable="yes">Editor</property>
+        <child>
+          <object class="AdwPreferencesGroup">
+            <property name="title" translatable="yes">Appearance</property>
+            <child>
+              <object class="AdwComboRow" id="theme_row">
+                <property name="title" translatable="yes">Theme</property>
+                <property name="subtitle" translatable="yes">Choose How Riteed Matches the Desktop Appearance</property>
+              </object>
+            </child>
+            <child>
+              <object class="AdwSwitchRow" id="word_wrap_row">
+                <property name="title" translatable="yes">Word Wrap</property>
+                <property name="subtitle" translatable="yes">Wrap Long Lines Inside the Editor</property>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+  </object>
+</interface>

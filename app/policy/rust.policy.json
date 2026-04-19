@@ -1,0 +1,382 @@
+{
+  "$id": "policy/rust.v4.json",
+  "title": "Rust GNOME App Coding Policy (Rust 1.95.x)",
+  "package_id": "gnome_rust_app_policy_pack.v1",
+  "machine_readable_for": [
+    "llm_agent",
+    "codex",
+    "claude"
+  ],
+  "purpose": "Strict Rust language and crate-usage policy for native GNOME desktop applications.",
+  "applies_to": [
+    "Cargo.toml",
+    "Cargo.lock",
+    "rust-toolchain.toml",
+    ".cargo/config.toml",
+    "src/**",
+    "crates/**",
+    "tests/**",
+    "benches/**",
+    "examples/**",
+    "build.rs",
+    "**/*.rs"
+  ],
+  "overlaps_with": [
+    "policy/gtk4_rs.v1.json",
+    "policy/libadwaita.v2.json",
+    "policy/hig.v2.json",
+    "policy/gettext_i18n.v2.json",
+    "policy/gsettings.v2.json",
+    "policy/flatpak_metadata.v1.json"
+  ],
+  "conflict_resolution": "union_strictest",
+  "severity": "error",
+  "targets": {
+    "rust": {
+      "version_source_of_truth": "rust-toolchain.toml",
+      "target_rust_family": "1.95.x",
+      "edition_required": "2024",
+      "stable_only": true,
+      "nightly_or_beta_in_production": "forbidden",
+      "unstable_features": "forbidden"
+    },
+    "native_stack": {
+      "preferred_crates": [
+        "glib",
+        "gio",
+        "gtk4",
+        "libadwaita",
+        "gettext-rs"
+      ],
+      "non_gnome_ui_frameworks": "forbidden",
+      "alternate_gtk_architecture_frameworks": "forbidden_by_default"
+    }
+  },
+  "toolchain": {
+    "cargo_required": true,
+    "cargo_lock_required": true,
+    "required_components": [
+      "rustfmt",
+      "clippy"
+    ],
+    "formatters_required": [
+      "cargo fmt --all --check"
+    ],
+    "standard_checks_required": [
+      "cargo check --workspace --all-targets --all-features",
+      "cargo clippy --workspace --all-targets --all-features -- -D warnings",
+      "cargo test --workspace --all-targets --all-features"
+    ],
+    "cargo_lints_table_required": true
+  },
+  "lint_baseline": {
+    "rust_lints_required": {
+      "unsafe_code": "forbid",
+      "unsafe_op_in_unsafe_fn": "deny",
+      "unsafe_attr_outside_unsafe": "deny",
+      "missing_unsafe_on_extern": "deny",
+      "ffi_unwind_calls": "deny",
+      "elided_lifetimes_in_paths": "deny",
+      "unused_must_use": "deny",
+      "warnings": "deny"
+    },
+    "clippy_lints_required": {
+      "all": "deny",
+      "pedantic": "deny",
+      "unwrap_used": "deny",
+      "expect_used": "deny",
+      "panic": "deny",
+      "todo": "deny",
+      "unimplemented": "deny",
+      "dbg_macro": "deny",
+      "print_stdout": "deny",
+      "print_stderr": "deny",
+      "wildcard_imports": "deny"
+    },
+    "crate_root_attributes_required": [
+      "#![forbid(unsafe_code)]",
+      "#![deny(unsafe_op_in_unsafe_fn)]"
+    ],
+    "allow_attributes": {
+      "scope": "smallest_possible_item_only",
+      "requires": [
+        "written_reason",
+        "issue_or_ticket_reference"
+      ]
+    }
+  },
+  "dependencies": {
+    "stdlib_first": true,
+    "default_features_false_by_default": true,
+    "feature_flags_must_be_explicit": true,
+    "git_dependencies": "forbidden_by_default",
+    "path_dependencies_outside_workspace": "forbidden",
+    "wildcard_version_requirements": "forbidden",
+    "pre_release_versions": "forbidden_by_default",
+    "build_dependencies": "forbidden_by_default",
+    "proc_macro_dependencies": "forbidden_by_default",
+    "native_code_via_sys_crates_or_build_scripts": "forbidden_by_default",
+    "gnome_stack_must_remain_primary": true,
+    "exceptions_require": [
+      "written_justification",
+      "security_review",
+      "supply_chain_review",
+      "maintenance_review",
+      "license_review",
+      "dependency_ledger_entry"
+    ]
+  },
+  "runtime": {
+    "ui_threading": {
+      "gtk_and_gobject_access_must_stay_on_main_thread": true,
+      "blocking_main_loop": "forbidden",
+      "background_work_requires_spawn_blocking_or_async_task": true,
+      "cross_thread_ui_mutation": "forbidden"
+    },
+    "callbacks_and_signals": {
+      "weak_captures_preferred_for_widget_references": true,
+      "reference_cycles_between_widgets_and_callbacks": "forbidden",
+      "panic_in_signal_handlers": "forbidden",
+      "panic_in_async_callbacks": "forbidden"
+    },
+    "resources": {
+      "ui_templates_css_icons_shortcuts_should_be_resource_backed": true,
+      "runtime_loading_from_relative_working_directory": "forbidden"
+    },
+    "errors": {
+      "unwrap_expect_in_runtime": "forbidden",
+      "todo_unimplemented_dbg_in_runtime": "forbidden",
+      "panic_in_request_or_ui_path": "forbidden",
+      "public_fallible_apis_must_return_result": true
+    },
+    "async_and_tasks": {
+      "detached_tasks": "forbidden",
+      "task_handles_must_be_owned_or_supervised": true,
+      "blocking_calls_inside_async_context": "forbidden_without_spawn_blocking",
+      "unbounded_channels": "forbidden_by_default"
+    },
+    "unsafe_and_ffi": {
+      "unsafe_code": "forbidden_by_default",
+      "unsafe_extern_blocks": "forbidden_by_default",
+      "unsafe_attributes": "forbidden_by_default",
+      "raw_pointer_dereference": "forbidden_by_default",
+      "union_field_access": "forbidden_by_default",
+      "transmute": "forbidden_by_default",
+      "inline_asm": "forbidden",
+      "ffi_unwind": "forbidden",
+      "safety_comment_required_for_every_unsafe_block": true,
+      "unsafe_block_must_be_minimized": true,
+      "approved_unsafe_requires": [
+        "design_note_with_invariants",
+        "proof_of_no_safe_alternative",
+        "smallest_scoped_unsafe_block",
+        "review_by_rust_code_owner",
+        "tests_covering_soundness_invariants",
+        "miri_run_in_ci_where_supported"
+      ]
+    },
+    "build_scripts": {
+      "network_access": "forbidden",
+      "downloading_tools_or_sources": "forbidden",
+      "code_generation": "forbidden_by_default",
+      "allowed_purposes": [
+        "compile_gresources_from_repo_tracked_files",
+        "embed_build_constants_from_environment",
+        "invoke_glib_build_tools_on_local_assets"
+      ]
+    }
+  },
+  "maintainability": {
+    "warn_file_loc_non_test": 550,
+    "max_file_loc_non_test": 600,
+    "warn_function_loc_non_test": 80,
+    "max_function_loc_non_test": 120,
+    "prefer_small_modules": true,
+    "macro_heavy_dsl_style": "forbidden_by_default",
+    "trait_objects_only_when_dynamic_dispatch_is_required": true,
+    "stringly_typed_state_machines": "forbidden_by_default",
+    "public_api_must_document_panics_errors_and_safety": true,
+    "warn_file_loc_test": 550,
+    "max_file_loc_test": 600
+  },
+  "enforcement": {
+    "spawn_call_patterns": [
+      "\\bthread::spawn\\s*\\(",
+      "\\bspawn_local\\s*\\(",
+      "\\bspawn_blocking\\s*\\("
+    ],
+    "blocking_call_patterns": [
+      "\\bstd::thread::sleep\\s*\\(",
+      "\\bblocking_recv\\s*\\(",
+      "\\bblocking_send\\s*\\("
+    ],
+    "hard_fail_patterns": [
+      {
+        "message": "Unbounded channels are forbidden by default.",
+        "pattern": "\\b(unbounded_channel|crossbeam_channel::unbounded)\\s*\\(",
+        "paths": [
+          "src/**/*.rs",
+          "crates/**/*.rs"
+        ]
+      }
+    ],
+    "review_required_patterns": [
+      {
+        "kind": "runtime-strong-capture",
+        "message": "Strong captures in glib::clone! require review coverage.",
+        "pattern": "\\bclone!\\s*\\([^\\n]*@strong",
+        "paths": [
+          "src/**/*.rs",
+          "crates/**/*.rs"
+        ]
+      },
+      {
+        "kind": "runtime-shared-state",
+        "message": "Shared mutable state patterns require review coverage.",
+        "pattern": "\\b(Arc<Mutex<|Rc<RefCell<|RefCell<|Cell<)\\b",
+        "paths": [
+          "src/**/*.rs",
+          "crates/**/*.rs"
+        ]
+      }
+    ]
+  },
+  "tests": {
+    "unit_tests_required": true,
+    "integration_tests_required_for_io_network_storage_and_ffi_edges": true,
+    "gtk_widget_tests_must_follow_gtk_policy": true,
+    "property_or_fuzz_tests_required_for_parsers_and_untrusted_inputs": true,
+    "coverage_mode": "enforced",
+    "unsafe_code_requires_additional_verification": [
+      "cargo test --release",
+      "cargo +nightly miri test"
+    ],
+    "min_line_coverage": 80
+  },
+  "verifiers": {
+    "grep_checks": [
+      "\\bunsafe\\b",
+      "\\bextern\\s+\"C\"(?:\\s|\\{|$)",
+      "#\\[\\s*unsafe\\((no_mangle|export_name|link_section)",
+      "\\bstatic\\s+mut\\b",
+      "\\btransmute\\b",
+      "\\bunwrap\\s*\\(",
+      "\\bexpect\\s*\\(",
+      "\\bpanic!\\s*\\(",
+      "\\btodo!\\s*\\(",
+      "\\bunimplemented!\\s*\\(",
+      "\\bdbg!\\s*\\(",
+      "\\bprintln!\\s*\\(",
+      "\\beprintln!\\s*\\(",
+      "\\bstd::process::Command\\b",
+      "\\bgtk::init\\s*\\(",
+      "\\bgtk::main\\s*\\("
+    ],
+    "grep_warnings": [
+      "\\bthread::spawn\\s*\\(",
+      "\\bspawn_blocking\\s*\\(",
+      "\\b(unbounded_channel|crossbeam_channel::unbounded)\\s*\\(",
+      "\\bArc<Mutex<",
+      "\\bRwLock<",
+      "\\bRefCell<",
+      "\\bCell<",
+      "\\bBox::leak\\b",
+      "\\bmem::forget\\b",
+      "\\bleak\\s*\\(",
+      "_\\s*=>",
+      "#\\[\\s*allow\\(",
+      "#\\[\\s*expect\\("
+    ],
+    "grep_exceptions": [
+      {
+        "pattern": "\\bunwrap\\s*\\(",
+        "paths": [
+          "tests/**",
+          "benches/**",
+          "examples/**"
+        ]
+      },
+      {
+        "pattern": "\\bexpect\\s*\\(",
+        "paths": [
+          "tests/**",
+          "benches/**",
+          "examples/**"
+        ]
+      },
+      {
+        "pattern": "\\bprintln!\\b",
+        "paths": [
+          "examples/**",
+          "src/bin/**"
+        ]
+      },
+      {
+        "pattern": "\\beprintln!\\b",
+        "paths": [
+          "examples/**",
+          "src/bin/**"
+        ]
+      },
+      {
+        "pattern": "\\bpanic!\\b",
+        "paths": [
+          "tests/**"
+        ]
+      },
+      {
+        "pattern": "\\bgtk::init\\s*\\(",
+        "paths": [
+          "tests/**",
+          "examples/**"
+        ]
+      },
+      {
+        "pattern": "\\bgtk::main\\s*\\(",
+        "paths": [
+          "tests/**",
+          "examples/**"
+        ]
+      }
+    ]
+  },
+  "prohibited": [
+    "nightly_features_in_production",
+    "any_unsafe_code_without_approved_exception",
+    "ffi_without_manual_signature_and_abi_review",
+    "transmute_based_type_punning",
+    "static_mut_or_unsynchronized_global_mutability",
+    "unwrap_expect_panic_todo_unimplemented_in_runtime_paths",
+    "detached_async_tasks",
+    "build_rs_that_downloads_or_compiles_native_code_without_review",
+    "non_gnome_ui_frameworks",
+    "runtime_loading_of_ui_assets_from_working_directory"
+  ],
+  "official_sources": [
+    {
+      "name": "Rust 1.95.0 release notes",
+      "url": "https://doc.rust-lang.org/releases.html",
+      "kind": "release_notes_index"
+    },
+    {
+      "name": "Rust 1.95.0 announcement",
+      "url": "https://blog.rust-lang.org/releases/2026/04/16/Rust-1.95.0/",
+      "kind": "release_notes"
+    },
+    {
+      "name": "gtk4 crate 0.11.2",
+      "url": "https://crates.io/crates/gtk4/0.11.2",
+      "kind": "crate_release"
+    },
+    {
+      "name": "gtk-rs GTK 4 book",
+      "url": "https://gtk-rs.org/gtk4-rs/stable/latest/book/",
+      "kind": "official_book"
+    },
+    {
+      "name": "gtk-rs core docs",
+      "url": "https://gtk-rs.org/gtk-rs-core/stable/latest/docs/",
+      "kind": "api_docs"
+    }
+  ]
+}

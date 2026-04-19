@@ -1,0 +1,24 @@
+id: io.github.cadric.Riteed
+runtime: org.gnome.Platform
+runtime-version: "50"
+sdk: org.gnome.Sdk
+command: riteed
+finish-args:
+  - --socket=wayland
+  - --socket=fallback-x11
+modules:
+  - name: riteed
+    buildsystem: simple
+    build-commands:
+      - cargo --offline --locked build --release
+      - msgfmt -o po/da.gmo po/da.po
+      - install -Dm755 target/release/riteed /app/bin/riteed
+      - install -Dm644 data/io.github.cadric.Riteed.desktop.in /app/share/applications/io.github.cadric.Riteed.desktop
+      - install -Dm644 data/io.github.cadric.Riteed.metainfo.xml.in /app/share/metainfo/io.github.cadric.Riteed.metainfo.xml
+      - install -Dm644 data/icons/hicolor/scalable/apps/io.github.cadric.Riteed.svg /app/share/icons/hicolor/scalable/apps/io.github.cadric.Riteed.svg
+      - install -Dm644 data/icons/hicolor/scalable/apps/io.github.cadric.Riteed.symbolic.svg /app/share/icons/hicolor/scalable/apps/io.github.cadric.Riteed.symbolic.svg
+      - install -Dm644 data/schemas/io.github.cadric.Riteed.gschema.xml /app/share/glib-2.0/schemas/io.github.cadric.Riteed.gschema.xml
+      - install -Dm644 po/da.gmo /app/share/locale/da/LC_MESSAGES/io.github.cadric.Riteed.mo
+    sources:
+      - type: dir
+        path: ..

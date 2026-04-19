@@ -1,0 +1,79 @@
+use std::path::PathBuf;
+
+use gettextrs::{gettext, pgettext};
+use gtk4::glib;
+
+#[derive(Clone, Debug)]
+pub enum AppError {
+    Cancelled,
+    Internal(String),
+    MissingSavePath,
+    NonLocalFile,
+    InvalidUtf8(PathBuf),
+    ReadFailed(PathBuf, String),
+    WriteFailed(PathBuf, String),
+    HelpLaunchFailed(String),
+}
+
+impl AppError {
+    #[must_use]
+    pub fn title(&self) -> String {
+        match self {
+            Self::Cancelled => pgettext("error title", "Action Cancelled"),
+            Self::Internal(_) => gettext("Unable to Build the Window"),
+            Self::MissingSavePath => gettext("No Save Location Is Available"),
+            Self::NonLocalFile => gettext("Only Local Files Are Supported"),
+            Self::InvalidUtf8(_) | Self::ReadFailed(_, _) => gettext("Unable to Open the File"),
+            Self::WriteFailed(_, _) => gettext("Unable to Save the File"),
+            Self::HelpLaunchFailed(_) => pgettext("error title", "Unable to Open Help"),
+        }
+    }
+
+    #[must_use]
+    pub fn body(&self) -> String {
+        match self {
+            Self::Cancelled => gettext("The Requested Action Was Cancelled."),
+            Self::Internal(message) | Self::HelpLaunchFailed(message) => message.clone(),
+            Self::MissingSavePath => gettext("Choose a Save Location Before Saving This Document."),
+            Self::NonLocalFile => {
+                gettext("Riteed Only Supports Local Plain Text Files in This Version.")
+            }
+            Self::InvalidUtf8(path) => {
+                gettext("The File Is Not Valid UTF-8 Text.") + "\n\n" + &path.display().to_string()
+            }
+            Self::ReadFailed(path, message) | Self::WriteFailed(path, message) => {
+                path.display().to_string() + "\n\n" + message
+            }
+        }
+    }
+}
+
+impl From<glib::Error> for AppError {
+    fn from(error: glib::Error) -> Self {
+        Self::Internal(error.message().to_string())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::AppError;
+
+    #[test]
+    fn titles_and_bodies_are_non_empty() {
+        let errors = [
+            AppError::Cancelled,
+            AppError::Internal(String::from("internal")),
+            AppError::MissingSavePath,
+            AppError::NonLocalFile,
+            AppError::InvalidUtf8("notes.txt".into()),
+            AppError::ReadFailed("notes.txt".into(), String::from("read")),
+            AppError::WriteFailed("notes.txt".into(), String::from("write")),
+            AppError::HelpLaunchFailed(String::from("help")),
+        ];
+
+        for error in errors {
+            assert!(!error.title().is_empty());
+            assert!(!error.body().is_empty());
+        }
+    }
+}
