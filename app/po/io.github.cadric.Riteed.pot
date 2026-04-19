@@ -1,15 +1,10 @@
-msgid ""
-msgstr ""
-"Project-Id-Version: io.github.cadric.Riteed 0.1.0\n"
-"Content-Type: text/plain; charset=UTF-8\n"
-
 msgid "Choose a Save Location Before Saving This Document."
 msgstr ""
 
-msgid "Controls Whether Long Lines Wrap Inside the Editor."
+msgid "Controls whether Riteed uses the system appearance, a light appearance, or a dark appearance."
 msgstr ""
 
-msgid "Controls Whether Riteed Uses the System Appearance, a Light Appearance, or a Dark Appearance."
+msgid "Controls whether long lines wrap inside the editor."
 msgstr ""
 
 msgid "Edit Plain Text Files"
@@ -24,6 +19,9 @@ msgstr ""
 msgid "Only Local Files Are Supported"
 msgstr ""
 
+msgid "Recent Files"
+msgstr ""
+
 msgid "Riteed"
 msgstr ""
 
@@ -36,19 +34,34 @@ msgstr ""
 msgid "Riteed is a small GNOME text editor for editing plain UTF-8 text files."
 msgstr ""
 
-msgid "Save Changes Before Continuing"
+msgid "Save Changes Before Continuing?"
 msgstr ""
 
-msgid "Stores the Last Height Used for the Main Window."
+msgid "Selected Session File"
 msgstr ""
 
-msgid "Stores the Last Width Used for the Main Window."
+msgid "Session Files"
 msgstr ""
 
-msgid "The Current Document Has Unsaved Changes."
+msgid "Some files could not be opened."
 msgstr ""
 
-msgid "The Document Was Saved."
+msgid "Some files from the last session could not be reopened."
+msgstr ""
+
+msgid "Stores the URI of the selected saved tab. An empty string means no saved tab is selected."
+msgstr ""
+
+msgid "Stores the currently open saved local text files as URIs in tab order."
+msgstr ""
+
+msgid "Stores the last height used for the main window."
+msgstr ""
+
+msgid "Stores the last width used for the main window."
+msgstr ""
+
+msgid "Stores the most recently opened local text files as URIs, newest first."
 msgstr ""
 
 msgid "The File Is Not Valid UTF-8 Text."
@@ -60,7 +73,13 @@ msgstr ""
 msgid "Theme Preference"
 msgstr ""
 
+msgid "This document has unsaved changes."
+msgstr ""
+
 msgid "Unable to Build the Window"
+msgstr ""
+
+msgid "Unable to Open Dropped Files"
 msgstr ""
 
 msgid "Unable to Open the File"
@@ -97,6 +116,14 @@ msgctxt "alert response"
 msgid "Save"
 msgstr ""
 
+msgctxt "document subtitle"
+msgid "Plain Text Document"
+msgstr ""
+
+msgctxt "document title"
+msgid "Untitled"
+msgstr ""
+
 msgctxt "error title"
 msgid "Action Cancelled"
 msgstr ""
@@ -114,7 +141,7 @@ msgid "Save"
 msgstr ""
 
 msgctxt "file dialog title"
-msgid "Open a Text File"
+msgid "Open Text Files"
 msgstr ""
 
 msgctxt "file dialog title"
@@ -142,7 +169,7 @@ msgid "Keyboard Shortcuts"
 msgstr ""
 
 msgctxt "menu item"
-msgid "New"
+msgid "New Tab"
 msgstr ""
 
 msgctxt "menu item"
@@ -154,7 +181,11 @@ msgid "Preferences"
 msgstr ""
 
 msgctxt "menu item"
-msgid "Quit"
+msgid "Recent Files"
+msgstr ""
+
+msgctxt "save file name"
+msgid "Untitled.txt"
 msgstr ""
 
 msgctxt "theme choice"
@@ -168,3 +199,4 @@ msgstr ""
 msgctxt "theme choice"
 msgid "System Default"
 msgstr ""
+

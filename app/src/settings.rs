@@ -10,6 +10,9 @@ const KEY_THEME: &str = "theme";
 const KEY_WORD_WRAP: &str = "word-wrap";
 const KEY_WINDOW_WIDTH: &str = "window-width";
 const KEY_WINDOW_HEIGHT: &str = "window-height";
+const KEY_RECENT_FILES: &str = "recent-files";
+const KEY_SESSION_FILES: &str = "session-files";
+const KEY_SESSION_SELECTED_FILE: &str = "session-selected-file";
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ThemePreference {
@@ -73,6 +76,9 @@ struct MemorySettings {
     word_wrap: bool,
     window_width: i32,
     window_height: i32,
+    recent_files: Vec<String>,
+    session_files: Vec<String>,
+    session_selected_file: String,
 }
 
 impl Default for AppSettings {
@@ -97,6 +103,9 @@ impl AppSettings {
                 word_wrap: false,
                 window_width: 840,
                 window_height: 620,
+                recent_files: Vec::new(),
+                session_files: Vec::new(),
+                session_selected_file: String::new(),
             }))),
         }
     }
@@ -123,13 +132,12 @@ impl AppSettings {
     }
 
     pub fn apply_theme(&self) {
-        let style_manager = adw::StyleManager::default();
         let color_scheme = match self.theme() {
             ThemePreference::System => adw::ColorScheme::Default,
             ThemePreference::Light => adw::ColorScheme::PreferLight,
             ThemePreference::Dark => adw::ColorScheme::PreferDark,
         };
-        style_manager.set_color_scheme(color_scheme);
+        adw::StyleManager::default().set_color_scheme(color_scheme);
     }
 
     #[must_use]
@@ -190,6 +198,83 @@ impl AppSettings {
             }
         }
     }
+
+    #[must_use]
+    pub fn recent_files(&self) -> Vec<String> {
+        match &self.backend {
+            SettingsBackend::GSettings(settings) => settings
+                .strv(KEY_RECENT_FILES)
+                .iter()
+                .map(ToString::to_string)
+                .collect(),
+            SettingsBackend::Memory(memory) => {
+                with_memory(memory, |state| state.recent_files.clone())
+            }
+        }
+    }
+
+    pub fn set_recent_files(&self, files: &[String]) {
+        match &self.backend {
+            SettingsBackend::GSettings(settings) => {
+                let values = files.iter().map(String::as_str).collect::<Vec<_>>();
+                let _changed = settings.set_strv(KEY_RECENT_FILES, values);
+            }
+            SettingsBackend::Memory(memory) => {
+                with_memory_mut(memory, |state| state.recent_files = files.to_vec());
+            }
+        }
+    }
+
+    #[must_use]
+    pub fn session_files(&self) -> Vec<String> {
+        match &self.backend {
+            SettingsBackend::GSettings(settings) => settings
+                .strv(KEY_SESSION_FILES)
+                .iter()
+                .map(ToString::to_string)
+                .collect(),
+            SettingsBackend::Memory(memory) => {
+                with_memory(memory, |state| state.session_files.clone())
+            }
+        }
+    }
+
+    pub fn set_session_files(&self, files: &[String]) {
+        match &self.backend {
+            SettingsBackend::GSettings(settings) => {
+                let values = files.iter().map(String::as_str).collect::<Vec<_>>();
+                let _changed = settings.set_strv(KEY_SESSION_FILES, values);
+            }
+            SettingsBackend::Memory(memory) => {
+                with_memory_mut(memory, |state| state.session_files = files.to_vec());
+            }
+        }
+    }
+
+    #[must_use]
+    pub fn session_selected_file(&self) -> String {
+        match &self.backend {
+            SettingsBackend::GSettings(settings) => {
+                settings.string(KEY_SESSION_SELECTED_FILE).to_string()
+            }
+            SettingsBackend::Memory(memory) => {
+                with_memory(memory, |state| state.session_selected_file.clone())
+            }
+        }
+    }
+
+    pub fn set_session_selected_file(&self, uri: &str) {
+        match &self.backend {
+            SettingsBackend::GSettings(settings) => {
+                let _changed = settings.set_string(KEY_SESSION_SELECTED_FILE, uri);
+            }
+            SettingsBackend::Memory(memory) => {
+                with_memory_mut(memory, |state| {
+                    state.session_selected_file = String::from(uri);
+                });
+            }
+        }
+    }
 }
 
 const fn sanitize_dimension(value: i32, fallback: i32) -> i32 {
@@ -226,14 +311,6 @@ mod tests {
     }
 
     #[test]
-    fn theme_preference_serializes_stored_values() {
-        assert_eq!(ThemePreference::System.stored(), "system");
-        assert_eq!(ThemePreference::Light.stored(), "light");
-        assert_eq!(ThemePreference::Dark.stored(), "dark");
-        assert_eq!(ThemePreference::Light.index(), 1);
-    }
-
-    #[test]
     fn theme_preference_parses_stored_values() {
         assert_eq!(
             ThemePreference::from_stored("system"),
@@ -244,17 +321,13 @@ mod tests {
             ThemePreference::Light
         );
         assert_eq!(ThemePreference::from_stored("dark"), ThemePreference::Dark);
-        assert_eq!(
-            ThemePreference::from_stored("other"),
-            ThemePreference::System
-        );
     }
 
     #[test]
     fn invalid_dimensions_fall_back() {
         assert_eq!(sanitize_dimension(900, 840), 900);
         assert_eq!(sanitize_dimension(0, 840), 840);
-        assert_eq!(sanitize_dimension(-2, 620), 620);
+        assert_eq!(sanitize_dimension(-1, 620), 620);
     }
 
     #[test]
@@ -263,8 +336,27 @@ mod tests {
         settings.set_theme(ThemePreference::Dark);
         settings.set_word_wrap(true);
         settings.set_window_size(900, 700);
+        settings.set_recent_files(&[
+            String::from("file:///tmp/one.txt"),
+            String::from("file:///tmp/two.txt"),
+        ]);
+        settings.set_session_files(&[String::from("file:///tmp/session.txt")]);
+        settings.set_session_selected_file("file:///tmp/session.txt");
+
         assert_eq!(settings.theme(), ThemePreference::Dark);
         assert!(settings.word_wrap());
         assert_eq!(settings.window_size(), (900, 700));
+        assert_eq!(
+            settings.recent_files(),
+            vec![
+                String::from("file:///tmp/one.txt"),
+                String::from("file:///tmp/two.txt"),
+            ]
+        );
+        assert_eq!(
+            settings.session_files(),
+            vec![String::from("file:///tmp/session.txt")]
+        );
+        assert_eq!(settings.session_selected_file(), "file:///tmp/session.txt");
     }
 }

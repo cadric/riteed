@@ -14,37 +14,60 @@
             <child>
               <object class="GtkShortcutsShortcut">
                 <property name="accelerator">&lt;Ctrl&gt;n</property>
-                <property name="title" translatable="yes">New Document</property>
+                <property name="title" translatable="yes">New Tab</property>
               </object>
             </child>
             <child>
               <object class="GtkShortcutsShortcut">
                 <property name="accelerator">&lt;Ctrl&gt;o</property>
-                <property name="title" translatable="yes">Open Document</property>
+                <property name="title" translatable="yes">Open Files</property>
               </object>
             </child>
             <child>
               <object class="GtkShortcutsShortcut">
                 <property name="accelerator">&lt;Ctrl&gt;s</property>
-                <property name="title" translatable="yes">Save Document</property>
+                <property name="title" translatable="yes">Save Selected Tab</property>
               </object>
             </child>
             <child>
               <object class="GtkShortcutsShortcut">
                 <property name="accelerator">&lt;Ctrl&gt;&lt;Shift&gt;s</property>
-                <property name="title" translatable="yes">Save Document As</property>
+                <property name="title" translatable="yes">Save Selected Tab As</property>
               </object>
             </child>
             <child>
               <object class="GtkShortcutsShortcut">
                 <property name="accelerator">&lt;Ctrl&gt;w</property>
-                <property name="title" translatable="yes">Close Window</property>
+                <property name="title" translatable="yes">Close Selected Tab</property>
               </object>
             </child>
             <child>
               <object class="GtkShortcutsShortcut">
                 <property name="accelerator">&lt;Ctrl&gt;q</property>
                 <property name="title" translatable="yes">Quit</property>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="GtkShortcutsGroup">
+            <property name="title" translatable="yes">Tabs</property>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="accelerator">&lt;Ctrl&gt;Tab</property>
+                <property name="title" translatable="yes">Next Tab</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="accelerator">&lt;Ctrl&gt;&lt;Shift&gt;Tab</property>
+                <property name="title" translatable="yes">Previous Tab</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="accelerator">&lt;Alt&gt;1</property>
+                <property name="title" translatable="yes">Jump to a Tab by Number</property>
               </object>
             </child>
           </object>

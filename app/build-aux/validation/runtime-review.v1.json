@@ -3,91 +3,91 @@
   "sites": [
     {
       "path": "src/app.rs",
-      "line": 16,
-      "match": "window: Rc<RefCell<Option<Rc<Window>>>>,",
+      "line": 24,
+      "match": "state: Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
-      "ownership": "Application controller owns the active-window slot for single-window lifecycle management.",
-      "justification": "Keeps one editor window alive and replaceable without global mutable state."
+      "ownership": "The application controller owns the shared single-window lifecycle state.",
+      "justification": "App actions and activation signals need one mutable slot for the active window and the one-shot session-restore gate."
     },
     {
       "path": "src/app.rs",
-      "line": 55,
-      "match": "pub(crate) fn install_for_tests(app: &adw::Application, state: &Rc<RefCell<Option<Rc<Window>>>>) {",
+      "line": 66,
+      "match": "pub(crate) fn install_for_tests(app: &adw::Application, state: &Rc<RefCell<AppState>>) {",
       "kind": "runtime-shared-state",
-      "ownership": "GTK test hooks reuse the shared active-window slot.",
-      "justification": "Exercises action and lifecycle wiring against the same single-window state model used at runtime."
+      "ownership": "GTK tests reuse the shared application-state slot.",
+      "justification": "The test harness drives the same window lifecycle and restore behavior as the runtime application wiring."
     },
     {
       "path": "src/app.rs",
-      "line": 64,
-      "match": "state: &Rc<RefCell<Option<Rc<Window>>>>,",
+      "line": 75,
+      "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
-      "ownership": "GTK test helper borrows the shared active-window slot.",
-      "justification": "Allows coverage of window reuse logic without introducing a second mutable state path."
+      "ownership": "The test-only window helper borrows the shared app-state slot.",
+      "justification": "Tests need controlled access to the active-window slot without introducing a second window-lifecycle path."
     },
     {
       "path": "src/app.rs",
-      "line": 81,
-      "match": "fn install_actions(app: &adw::Application, state: &Rc<RefCell<Option<Rc<Window>>>>) {",
+      "line": 93,
+      "match": "fn install_actions(app: &adw::Application, state: &Rc<RefCell<AppState>>, factory: WindowFactory) {",
       "kind": "runtime-shared-state",
-      "ownership": "Application actions borrow the shared window slot.",
-      "justification": "Routes app-scoped commands to the active editor window without object data hacks."
+      "ownership": "App-scoped actions borrow shared application state.",
+      "justification": "New, open, recent-open, and quit actions must reuse the current window or create one exactly once."
     },
     {
       "path": "src/app.rs",
-      "line": 145,
-      "match": "fn install_lifecycle(app: &adw::Application, state: &Rc<RefCell<Option<Rc<Window>>>>) {",
+      "line": 197,
+      "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
-      "ownership": "Lifecycle handlers reuse the shared window slot.",
-      "justification": "Activation and file-open signals must reuse or create the single editor window."
+      "ownership": "Activation and open lifecycle callbacks borrow shared application state.",
+      "justification": "Lifecycle routing needs the same active-window slot and restore gate as app actions."
     },
     {
       "path": "src/app.rs",
-      "line": 167,
-      "match": "state: &Rc<RefCell<Option<Rc<Window>>>>,",
+      "line": 240,
+      "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
-      "ownership": "Window creation helper updates the active-window slot.",
-      "justification": "Creation and teardown need one mutable slot to avoid duplicate primary windows."
+      "ownership": "The window-creation helper updates shared application state.",
+      "justification": "Creating and tearing down the primary window requires one mutable slot to avoid duplicate windows."
     },
     {
-      "path": "src/window.rs",
-      "line": 32,
-      "match": "document: RefCell<DocumentState>,",
+      "path": "src/close_flow.rs",
+      "line": 21,
+      "match": "state: RefCell<CloseState>,",
       "kind": "runtime-shared-state",
-      "ownership": "Window controller owns the mutable document snapshot.",
-      "justification": "Document metadata changes independently of GTK widget ownership during async file operations."
+      "ownership": "The close coordinator owns the active sequential close queue.",
+      "justification": "Unsaved tab-close, window-close, and quit flows need mutable queue progress without leaking state into the window shell."
     },
     {
-      "path": "src/window.rs",
-      "line": 33,
-      "match": "pending_action: RefCell<Option<PendingAction>>,",
+      "path": "src/editor_tab.rs",
+      "line": 31,
+      "match": "state: RefCell<EditorTabState>,",
       "kind": "runtime-shared-state",
-      "ownership": "Window controller owns the deferred action slot.",
-      "justification": "Unsaved-changes confirmation needs to remember the next user action across dialog callbacks."
+      "ownership": "Each editor tab owns its mutable document and loading state.",
+      "justification": "A tab must update saved identity, loading flags, and dirty suppression across async open/save callbacks."
     },
     {
-      "path": "src/window.rs",
-      "line": 34,
-      "match": "closing_allowed: RefCell<bool>,",
+      "path": "src/workspace.rs",
+      "line": 42,
+      "match": "pub(crate) state: RefCell<WorkspaceState>,",
       "kind": "runtime-shared-state",
-      "ownership": "Window controller owns the close-guard flag.",
-      "justification": "Prevents duplicate confirmation prompts after the user already approved closing."
+      "ownership": "The workspace owns tab collection, recent/session caches, restore gating, and active close flow.",
+      "justification": "Tabbed document coordination requires shared mutable state across menu rebuilds, session persistence, selection changes, and drag-and-drop."
     },
     {
-      "path": "src/gtk_tests.rs",
-      "line": 72,
-      "match": "state: &std::rc::Rc<std::cell::RefCell<Option<std::rc::Rc<Window>>>>,",
+      "path": "src/workspace_open.rs",
+      "line": 77,
+      "match": "fn process_open_request(workspace: &Rc<Workspace>, request: Rc<RefCell<OpenRequest>>) {",
       "kind": "runtime-shared-state",
-      "ownership": "GTK coverage helper reuses the single-window slot.",
-      "justification": "Test-only helper drives the same shared state shape as runtime action dispatch."
+      "ownership": "The shared open-request state tracks a multi-file open batch.",
+      "justification": "Multi-open, restore, and drag-and-drop need sequential progress, success/failure counts, and selected-tab restoration across async callbacks."
     },
     {
-      "path": "src/gtk_tests.rs",
-      "line": 161,
-      "match": "state: &std::rc::Rc<std::cell::RefCell<Option<std::rc::Rc<Window>>>>,",
+      "path": "src/workspace_open.rs",
+      "line": 155,
+      "match": "fn finish_open_request(workspace: &Rc<Workspace>, request: &Rc<RefCell<OpenRequest>>) {",
       "kind": "runtime-shared-state",
-      "ownership": "GTK dialog helper reuses the single-window slot.",
-      "justification": "Test-only helper validates dialog wiring against the runtime window ownership model."
+      "ownership": "The open-request finisher reads shared batch state.",
+      "justification": "Completion handling needs the accumulated batch results to decide between restore selection, aggregated toasts, and fallback UI state."
     }
   ]
 }

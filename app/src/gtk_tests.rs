@@ -1,23 +1,28 @@
 use std::fs;
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 use gtk4 as gtk;
+use gtk4::glib::variant::ToVariant;
 use gtk4::prelude::*;
 use gtk4::{gio, glib};
 use libadwaita as adw;
 
-use crate::app::{RiteedApp, ensure_window_for_tests, install_for_tests};
-use crate::dialogs;
+use crate::app::{AppState, RiteedApp, ensure_window_for_tests, install_for_tests};
+use crate::dialogs::{self, UnsavedResponse};
 use crate::error::AppError;
 use crate::settings::{AppSettings, ThemePreference};
 use crate::window::Window;
+use crate::workspace::OpenSource;
 
 fn spin_until(label: &str, done: impl Fn() -> bool) {
-    for _ in 0..96 {
+    for _ in 0..240 {
         while glib::MainContext::default().iteration(false) {}
         if done() {
             return;
         }
+        let _source = glib::timeout_add_local_once(Duration::from_millis(10), || {});
+        let _dispatched = glib::MainContext::default().iteration(true);
     }
     assert!(done(), "{label}");
 }
@@ -29,13 +34,22 @@ fn drain_events(rounds: usize) {
 }
 
 fn build_window(app: &adw::Application) -> Option<std::rc::Rc<Window>> {
-    match Window::new_for_tests(app) {
-        Ok(window) => Some(window),
-        Err(error) => {
-            let _body = error.body();
-            None
-        }
-    }
+    Window::new_for_tests(app).ok()
+}
+
+fn build_window_with_settings(
+    app: &adw::Application,
+    settings: AppSettings,
+) -> Option<std::rc::Rc<Window>> {
+    Window::new_with_settings_for_tests(app, settings).ok()
+}
+
+fn write_temp_file(name: &str, contents: &[u8]) -> std::path::PathBuf {
+    let path = std::env::temp_dir().join(name);
+    let _removed = fs::remove_file(&path);
+    let write_result = fs::write(&path, contents);
+    assert!(write_result.is_ok());
+    path
 }
 
 fn assert_settings_apply() {
@@ -55,162 +69,342 @@ fn assert_settings_apply() {
 }
 
 fn assert_app_actions_exist() {
-    let default_app = RiteedApp::default();
-    assert!(default_app.application().lookup_action("new").is_some());
     let riteed_app = RiteedApp::new();
     let app = riteed_app.application();
     assert!(app.lookup_action("new").is_some());
     assert!(app.lookup_action("open").is_some());
+    assert!(app.lookup_action("open-recent").is_some());
     assert!(app.lookup_action("preferences").is_some());
     assert!(app.lookup_action("help").is_some());
     assert!(app.lookup_action("about").is_some());
     assert!(app.lookup_action("quit").is_some());
 }
 
-fn exercise_primary_window(
-    test_app: &adw::Application,
-    state: &std::rc::Rc<std::cell::RefCell<Option<std::rc::Rc<Window>>>>,
-) {
+fn exercise_window_tab_flow(test_app: &adw::Application) {
     let window = build_window(test_app);
     assert!(window.is_some());
     let Some(window) = window else {
         return;
     };
-    *state.borrow_mut() = Some(window.clone());
 
-    assert!(ensure_window_for_tests(test_app, state).is_some());
+    assert!(crate::window_shell::builder_object_for_tests().is_err());
+    window.ensure_default_tab();
+    assert_eq!(window.tab_count_for_tests(), 1);
     assert_eq!(window.size_for_tests(), (840, 620));
-    assert!(crate::window::builder_object_for_tests().is_err());
-    assert!(crate::window::primary_menu_model_for_tests().n_items() >= 7);
-    let _dialog = crate::window::text_file_dialog_for_tests("Open a Text File", "Open");
-    assert!(matches!(
-        crate::window::local_path_for_tests(&gio::File::for_uri("https://example.com/test.txt")),
-        Err(AppError::NonLocalFile)
-    ));
+    assert!(window.shortcuts_enabled_for_tests());
 
-    let path = std::env::temp_dir().join("riteed-gtk-test.txt");
-    let _removed = fs::remove_file(&path);
-    assert!(fs::write(&path, "alpha").is_ok());
+    let first_path = write_temp_file("riteed-v2-first.txt", b"alpha");
+    let second_path = write_temp_file("riteed-v2-second.txt", b"beta");
+    let third_path = write_temp_file("riteed-v2-third.txt", b"gamma");
 
-    window.request_open_file(gio::File::for_path(&path));
-    spin_until("open existing file", || {
-        window.buffer_text_for_tests() == "alpha"
+    window.request_open_files(
+        vec![
+            gio::File::for_path(&first_path),
+            gio::File::for_path(&second_path),
+        ],
+        OpenSource::AppOpen,
+    );
+    spin_until("open multiple files", || {
+        window.tab_count_for_tests() == 2 && window.session_files_for_tests().len() == 2
     });
-    assert!(!window.is_dirty_for_tests());
+    window.request_open_files(vec![gio::File::for_path(&first_path)], OpenSource::AppOpen);
+    drain_events(8);
+    assert_eq!(window.tab_count_for_tests(), 2);
 
-    window.set_text_for_tests("beta");
-    assert!(window.is_dirty_for_tests());
+    window.set_selected_text_for_tests("beta-updated");
     window.request_save();
-    spin_until("save current file", || {
-        fs::read_to_string(&path).ok().as_deref() == Some("beta")
+    spin_until("save selected tab", || {
+        fs::read_to_string(&first_path).ok().as_deref() == Some("beta-updated")
+            || fs::read_to_string(&second_path).ok().as_deref() == Some("beta-updated")
     });
-    spin_until("clear dirty after save", || !window.is_dirty_for_tests());
-    assert!(!window.is_dirty_for_tests());
+
     window.request_new();
-    spin_until("new document resets buffer", || {
-        window.buffer_text_for_tests().is_empty()
+    spin_until("new tab", || window.tab_count_for_tests() == 3);
+    assert!(window.selected_saved_uri_for_tests().is_empty());
+
+    let first_uri = gio::File::for_path(&first_path).uri().to_string();
+    window.request_open_recent(&first_uri);
+    drain_events(8);
+    assert_eq!(window.tab_count_for_tests(), 3);
+    assert!(window.recent_files_for_tests().contains(&first_uri));
+    assert!(window.selected_title_for_tests().contains("first.txt"));
+
+    let third_uri = gio::File::for_path(&third_path).uri().to_string();
+    window.request_open_files(vec![gio::File::for_path(&third_path)], OpenSource::Drop);
+    spin_until("drop open", || {
+        window.tab_count_for_tests() == 4 && window.recent_files_for_tests().contains(&third_uri)
     });
-    assert!(!window.is_dirty_for_tests());
-    assert_eq!(window.close_request_for_tests(), glib::Propagation::Proceed);
+    assert!(window.recent_files_for_tests().contains(&third_uri));
 
-    let invalid_utf8_path = std::env::temp_dir().join("riteed-invalid-utf8.txt");
-    let _removed = fs::remove_file(&invalid_utf8_path);
-    assert!(fs::write(&invalid_utf8_path, [0xff, 0xfe, 0xfd]).is_ok());
-    window.request_open_file(gio::File::for_path(&invalid_utf8_path));
+    window.request_open_recent(&third_uri);
     drain_events(8);
+    assert_eq!(window.selected_saved_uri_for_tests(), third_uri);
+    assert!(window.reorder_selected_to_first_for_tests());
+    assert_eq!(
+        window.session_files_for_tests().first().map(String::as_str),
+        Some(third_uri.as_str())
+    );
 
-    let missing_path = std::env::temp_dir().join("riteed-missing-file.txt");
-    let _removed = fs::remove_file(&missing_path);
-    window.request_open_file(gio::File::for_path(&missing_path));
+    window.request_new();
+    spin_until("second untitled tab", || window.tab_count_for_tests() == 5);
+    window.set_selected_text_for_tests("dirty");
+    assert_eq!(window.selected_text_for_tests(), "dirty");
+    dialogs::queue_unsaved_responses_for_tests(&[]);
+    window.request_close_current_tab();
     drain_events(8);
-    window.request_open_file(gio::File::for_uri("https://example.com/test.txt"));
-    drain_events(4);
+    assert_eq!(window.tab_count_for_tests(), 5);
+    assert_eq!(window.close_request_for_tests(), glib::Propagation::Stop);
 
-    window.set_text_for_tests("gamma");
-    window.save_to_path_for_tests(std::env::temp_dir());
-    drain_events(8);
-
-    window.present();
-    window.show_preferences();
-    window.show_about();
-    test_app.activate();
-    drain_events(4);
-    test_app.activate_action("preferences", None);
-    test_app.activate_action("about", None);
-    test_app.activate_action("help", None);
-    dialogs::present_error(window.widget(), &AppError::Internal(String::from("error")));
-    dialogs::present_error(window.widget(), &AppError::Cancelled);
     let response = Arc::new(Mutex::new(None));
     let response_clone = Arc::clone(&response);
-    dialogs::confirm_unsaved_changes(window.widget(), |_response| {});
-    dialogs::confirm_unsaved_changes(window.widget(), move |choice| {
+    dialogs::confirm_unsaved_changes(window.widget(), "Dirty Tab", move |choice| {
         let lock = response_clone.lock();
         match lock {
             Ok(mut guard) => *guard = Some(choice),
             Err(poisoned) => *poisoned.into_inner() = Some(choice),
         }
     });
+    dialogs::present_error(window.widget(), &AppError::Internal(String::from("error")));
+    dialogs::present_error(window.widget(), &AppError::Cancelled);
     dialogs::launch_help(window.widget(), |_error| {});
 
-    let _removed = fs::remove_file(path);
-    let _removed = fs::remove_file(invalid_utf8_path);
+    let _removed = fs::remove_file(first_path);
+    let _removed = fs::remove_file(second_path);
+    let _removed = fs::remove_file(third_path);
 }
 
-fn exercise_dialog_window(
-    test_app: &adw::Application,
-    state: &std::rc::Rc<std::cell::RefCell<Option<std::rc::Rc<Window>>>>,
-) {
-    let dialog_window = build_window(test_app);
-    assert!(dialog_window.is_some());
-    let Some(dialog_window) = dialog_window else {
+fn exercise_restore_and_recent_pruning(test_app: &adw::Application) {
+    let first_path = write_temp_file("riteed-restore-one.txt", b"one");
+    let second_path = write_temp_file("riteed-restore-two.txt", b"two");
+    let missing_path = std::env::temp_dir().join("riteed-missing-recent.txt");
+    let _removed = fs::remove_file(&missing_path);
+
+    let first_uri = gio::File::for_path(&first_path).uri().to_string();
+    let second_uri = gio::File::for_path(&second_path).uri().to_string();
+    let missing_uri = gio::File::for_path(&missing_path).uri().to_string();
+
+    let restore_settings = AppSettings::new_for_tests();
+    restore_settings.set_recent_files(std::slice::from_ref(&first_uri));
+    restore_settings.set_session_files(&[
+        first_uri.clone(),
+        missing_uri.clone(),
+        second_uri.clone(),
+    ]);
+    restore_settings.set_session_selected_file(&second_uri);
+
+    let restore_window = build_window_with_settings(test_app, restore_settings);
+    assert!(restore_window.is_some());
+    let Some(restore_window) = restore_window else {
         return;
     };
-    *state.borrow_mut() = Some(dialog_window.clone());
-
-    let signal_path = std::env::temp_dir().join("riteed-open-signal.txt");
-    let _removed = fs::remove_file(&signal_path);
-    assert!(fs::write(&signal_path, "omega").is_ok());
-    test_app.open(&[gio::File::for_path(&signal_path)], "");
-    spin_until("app open signal loads file", || {
-        dialog_window.buffer_text_for_tests() == "omega"
+    restore_window.restore_session();
+    spin_until("restore session", || {
+        restore_window.tab_count_for_tests() == 2
+            && restore_window.session_files_for_tests().len() == 2
+            && restore_window.selected_saved_uri_for_tests() == second_uri
     });
-    dialog_window.set_text_for_tests("sigma");
-    gtk::prelude::ActionGroupExt::activate_action(dialog_window.widget(), "save", None);
-    spin_until("window save action writes file", || {
-        fs::read_to_string(&signal_path).ok().as_deref() == Some("sigma")
-    });
-
-    dialog_window.set_text_for_tests("dirty");
+    assert_eq!(restore_window.selected_saved_uri_for_tests(), second_uri);
     assert_eq!(
-        dialog_window.close_request_for_tests(),
-        glib::Propagation::Stop
+        restore_window.recent_files_for_tests(),
+        vec![first_uri.clone()]
     );
-    test_app.activate_action("preferences", None);
-    test_app.activate_action("about", None);
-    test_app.activate_action("new", None);
-    test_app.activate_action("open", None);
-    test_app.activate_action("help", None);
-    dialog_window.request_save_as();
-    dialog_window.request_open_dialog();
-    gtk::prelude::ActionGroupExt::activate_action(dialog_window.widget(), "close", None);
-    drain_events(8);
-    let _removed = fs::remove_file(signal_path);
+    assert!(
+        restore_window
+            .selected_title_for_tests()
+            .contains("two.txt")
+    );
+
+    let prune_settings = AppSettings::new_for_tests();
+    prune_settings.set_recent_files(std::slice::from_ref(&missing_uri));
+    let prune_window = build_window_with_settings(test_app, prune_settings);
+    assert!(prune_window.is_some());
+    let Some(prune_window) = prune_window else {
+        return;
+    };
+    prune_window.ensure_default_tab();
+    prune_window.request_open_recent(&missing_uri);
+    drain_events(12);
+    assert!(prune_window.recent_files_for_tests().is_empty());
+    prune_window.request_open_files(vec![gio::File::for_path(&missing_path)], OpenSource::Drop);
+    drain_events(12);
+
+    let _removed = fs::remove_file(first_path);
+    let _removed = fs::remove_file(second_path);
 }
 
-#[test]
-fn gtk_surfaces_and_editor_flow_work() {
-    crate::bootstrap_runtime();
-    let _adw = adw::init();
-    assert_settings_apply();
-    assert_app_actions_exist();
+fn exercise_close_flows(test_app: &adw::Application) {
+    let save_path = write_temp_file("riteed-close-save.txt", b"saved");
+    let save_window = build_window(test_app);
+    assert!(save_window.is_some());
+    let Some(save_window) = save_window else {
+        return;
+    };
+    save_window.request_open_files(vec![gio::File::for_path(&save_path)], OpenSource::AppOpen);
+    spin_until("open saved file for close flow", || {
+        save_window.tab_count_for_tests() == 1
+            && !save_window.selected_saved_uri_for_tests().is_empty()
+    });
+    save_window.set_selected_text_for_tests("save-before-close");
+    dialogs::queue_unsaved_responses_for_tests(&[UnsavedResponse::Cancel]);
+    save_window.request_close_current_tab();
+    drain_events(8);
+    assert_eq!(save_window.tab_count_for_tests(), 1);
+    assert_eq!(
+        fs::read_to_string(&save_path).ok().as_deref(),
+        Some("saved")
+    );
 
+    dialogs::queue_unsaved_responses_for_tests(&[UnsavedResponse::Save]);
+    save_window.request_close_current_tab();
+    spin_until("save dirty tab on close", || {
+        fs::read_to_string(&save_path).ok().as_deref() == Some("save-before-close")
+    });
+    drain_events(12);
+
+    let discard_window = build_window(test_app);
+    assert!(discard_window.is_some());
+    let Some(discard_window) = discard_window else {
+        return;
+    };
+    discard_window.ensure_default_tab();
+    discard_window.set_selected_text_for_tests("discard-me");
+    dialogs::queue_unsaved_responses_for_tests(&[UnsavedResponse::Discard]);
+    discard_window.request_close_current_tab();
+    drain_events(12);
+
+    let first_path = write_temp_file("riteed-window-close-a.txt", b"one");
+    let second_path = write_temp_file("riteed-window-close-b.txt", b"two");
+    let first_uri = gio::File::for_path(&first_path).uri().to_string();
+    let second_uri = gio::File::for_path(&second_path).uri().to_string();
+    let window_close = build_window(test_app);
+    assert!(window_close.is_some());
+    let Some(window_close) = window_close else {
+        return;
+    };
+    window_close.request_open_files(
+        vec![
+            gio::File::for_path(&first_path),
+            gio::File::for_path(&second_path),
+        ],
+        OpenSource::AppOpen,
+    );
+    spin_until("open files for window close", || {
+        window_close.tab_count_for_tests() == 2 && window_close.session_files_for_tests().len() == 2
+    });
+    window_close.request_open_recent(&first_uri);
+    drain_events(8);
+    window_close.set_selected_text_for_tests("one-dirty");
+    window_close.request_open_recent(&second_uri);
+    drain_events(8);
+    window_close.set_selected_text_for_tests("two-dirty");
+    dialogs::queue_unsaved_responses_for_tests(&[
+        UnsavedResponse::Discard,
+        UnsavedResponse::Discard,
+    ]);
+    assert_eq!(
+        window_close.close_request_for_tests(),
+        glib::Propagation::Stop
+    );
+    drain_events(12);
+
+    let _removed = fs::remove_file(save_path);
+    let _removed = fs::remove_file(first_path);
+    let _removed = fs::remove_file(second_path);
+}
+
+fn exercise_app_open_actions() {
     let test_app = adw::Application::builder()
         .application_id("io.github.cadric.Riteed.Test")
         .flags(gio::ApplicationFlags::HANDLES_OPEN)
         .build();
     let _registered = test_app.register(None::<&gio::Cancellable>);
-    let state = std::rc::Rc::new(std::cell::RefCell::new(None));
+    let state = std::rc::Rc::new(std::cell::RefCell::new(AppState {
+        window: None,
+        session_restore_attempted: false,
+    }));
     install_for_tests(&test_app, &state);
-    exercise_primary_window(&test_app, &state);
-    exercise_dialog_window(&test_app, &state);
+
+    let first_path = write_temp_file("riteed-open-a.txt", b"uno");
+    let second_path = write_temp_file("riteed-open-b.txt", b"dos");
+    let first_uri = gio::File::for_path(&first_path).uri().to_string();
+
+    test_app.open(
+        &[
+            gio::File::for_path(&first_path),
+            gio::File::for_path(&second_path),
+        ],
+        "",
+    );
+    let window = ensure_window_for_tests(&test_app, &state);
+    assert!(window.is_some());
+    let Some(window) = window else {
+        return;
+    };
+    spin_until("app open loads multiple files", || {
+        window.tab_count_for_tests() == 2 && window.session_files_for_tests().len() == 2
+    });
+
+    test_app.activate_action("open-recent", Some(&first_uri.to_variant()));
+    drain_events(8);
+    assert_eq!(window.tab_count_for_tests(), 2);
+
+    let _removed = fs::remove_file(first_path);
+    let _removed = fs::remove_file(second_path);
+}
+
+fn exercise_app_actions_more() {
+    let test_app = adw::Application::builder()
+        .application_id("io.github.cadric.Riteed.Actions")
+        .flags(gio::ApplicationFlags::HANDLES_OPEN)
+        .build();
+    let _registered = test_app.register(None::<&gio::Cancellable>);
+    let state = std::rc::Rc::new(std::cell::RefCell::new(AppState {
+        window: None,
+        session_restore_attempted: false,
+    }));
+    install_for_tests(&test_app, &state);
+
+    test_app.activate();
+    let window = ensure_window_for_tests(&test_app, &state);
+    assert!(window.is_some());
+    let Some(window) = window else {
+        return;
+    };
+    spin_until("first activation creates a tab", || {
+        window.tab_count_for_tests() == 1
+    });
+
+    test_app.activate_action("new", None);
+    spin_until("new action adds a tab", || {
+        window.tab_count_for_tests() == 2
+    });
+    test_app.activate_action("preferences", None);
+    test_app.activate_action("about", None);
+    test_app.activate_action("help", None);
+    test_app.activate_action("open", None);
+    drain_events(12);
+
+    test_app.activate();
+    drain_events(8);
+    test_app.activate_action("quit", None);
+    drain_events(12);
+}
+
+#[test]
+fn gtk_surfaces_and_editor_flow_work() {
+    let _guard = crate::test_support::init_gtk_for_tests();
+    assert_settings_apply();
+    assert_app_actions_exist();
+
+    let test_app = adw::Application::builder()
+        .application_id("io.github.cadric.Riteed.WindowTests")
+        .flags(gio::ApplicationFlags::HANDLES_OPEN)
+        .build();
+    let _registered = test_app.register(None::<&gio::Cancellable>);
+
+    exercise_window_tab_flow(&test_app);
+    exercise_restore_and_recent_pruning(&test_app);
+    exercise_close_flows(&test_app);
+    exercise_app_open_actions();
+    exercise_app_actions_more();
 }

@@ -3,7 +3,7 @@
   "sites": [
     {
       "path": "src/settings.rs",
-      "line": 117,
+      "line": 126,
       "match": "let _changed = settings.set_string(KEY_THEME, preference.stored());",
       "kind": "gsettings-write",
       "key": "theme",
@@ -11,7 +11,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 146,
+      "line": 154,
       "match": "let _changed = settings.set_boolean(KEY_WORD_WRAP, enabled);",
       "kind": "gsettings-write",
       "key": "word-wrap",
@@ -19,7 +19,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 182,
+      "line": 190,
       "match": "let _changed_width = settings.set_int(KEY_WINDOW_WIDTH, width);",
       "kind": "gsettings-write",
       "key": "window-width",
@@ -27,11 +27,35 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 183,
+      "line": 191,
       "match": "let _changed_height = settings.set_int(KEY_WINDOW_HEIGHT, height);",
       "kind": "gsettings-write",
       "key": "window-height",
       "trigger": "Main-window close handling after the user changes window size."
+    },
+    {
+      "path": "src/settings.rs",
+      "line": 220,
+      "match": "let _changed = settings.set_strv(KEY_RECENT_FILES, values);",
+      "kind": "gsettings-write",
+      "key": "recent-files",
+      "trigger": "Successful explicit open, recent reopen, drag-and-drop open, or local save updates the recent file list."
+    },
+    {
+      "path": "src/settings.rs",
+      "line": 246,
+      "match": "let _changed = settings.set_strv(KEY_SESSION_FILES, values);",
+      "kind": "gsettings-write",
+      "key": "session-files",
+      "trigger": "Opening, closing, reordering, or restoring saved tabs updates the persisted session snapshot outside restore mode."
+    },
+    {
+      "path": "src/settings.rs",
+      "line": 269,
+      "match": "let _changed = settings.set_string(KEY_SESSION_SELECTED_FILE, uri);",
+      "kind": "gsettings-write",
+      "key": "session-selected-file",
+      "trigger": "Selecting a saved tab updates the persisted selected-session URI outside restore mode."
     }
   ]
 }

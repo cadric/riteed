@@ -1,0 +1,462 @@
+use std::cell::RefCell;
+use std::rc::Rc;
+
+use gettextrs::pgettext;
+use gtk4::{gdk, gio, glib, prelude::*};
+use libadwaita as adw;
+
+use crate::close_flow::CloseCoordinator;
+use crate::editor_tab::{EditorTab, SaveOutcome};
+use crate::error::AppError;
+use crate::settings::AppSettings;
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum OpenSource {
+    Dialog,
+    AppOpen,
+    Recent,
+    SessionRestore,
+    Drop,
+}
+
+pub(crate) struct WorkspaceState {
+    pub(crate) tabs: Vec<Rc<EditorTab>>,
+    pub(crate) recent_files: Vec<String>,
+    pub(crate) stored_session_files: Vec<String>,
+    pub(crate) stored_selected_file: String,
+    pub(crate) restoring_session: bool,
+    pub(crate) close_flow: Option<Rc<CloseCoordinator>>,
+    pub(crate) allow_window_close: bool,
+}
+
+pub struct Workspace {
+    pub(crate) shell: adw::ApplicationWindow,
+    pub(crate) title_widget: adw::WindowTitle,
+    pub(crate) toast_overlay: adw::ToastOverlay,
+    pub(crate) menu_button: gtk4::MenuButton,
+    pub(crate) save_action: gio::SimpleAction,
+    pub(crate) save_as_action: gio::SimpleAction,
+    pub(crate) close_action: gio::SimpleAction,
+    pub(crate) settings: AppSettings,
+    pub(crate) tab_view: adw::TabView,
+    pub(crate) state: RefCell<WorkspaceState>,
+}
+
+#[derive(Clone, Copy)]
+pub struct WorkspaceParts<'a> {
+    pub shell: &'a adw::ApplicationWindow,
+    pub title_widget: &'a adw::WindowTitle,
+    pub toast_overlay: &'a adw::ToastOverlay,
+    pub workspace_box: &'a gtk4::Box,
+    pub menu_button: &'a gtk4::MenuButton,
+    pub save_action: &'a gio::SimpleAction,
+    pub save_as_action: &'a gio::SimpleAction,
+    pub close_action: &'a gio::SimpleAction,
+    pub settings: &'a AppSettings,
+}
+
+impl Workspace {
+    #[must_use]
+    pub fn new(parts: WorkspaceParts<'_>) -> Rc<Self> {
+        let tab_view = adw::TabView::new();
+        tab_view.set_hexpand(true);
+        tab_view.set_shortcuts(adw::TabViewShortcuts::ALL_SHORTCUTS);
+        tab_view.set_vexpand(true);
+
+        let tab_bar = adw::TabBar::new();
+        tab_bar.set_autohide(true);
+        tab_bar.set_view(Some(&tab_view));
+        parts.workspace_box.set_hexpand(true);
+        parts.workspace_box.set_vexpand(true);
+        parts.workspace_box.append(&tab_bar);
+        parts.workspace_box.append(&tab_view);
+
+        let workspace = Rc::new(Self {
+            shell: parts.shell.clone(),
+            title_widget: parts.title_widget.clone(),
+            toast_overlay: parts.toast_overlay.clone(),
+            menu_button: parts.menu_button.clone(),
+            save_action: parts.save_action.clone(),
+            save_as_action: parts.save_as_action.clone(),
+            close_action: parts.close_action.clone(),
+            settings: parts.settings.clone(),
+            tab_view,
+            state: RefCell::new(WorkspaceState {
+                tabs: Vec::new(),
+                recent_files: parts.settings.recent_files(),
+                stored_session_files: parts.settings.session_files(),
+                stored_selected_file: parts.settings.session_selected_file(),
+                restoring_session: false,
+                close_flow: None,
+                allow_window_close: false,
+            }),
+        });
+        workspace.install_callbacks(parts.workspace_box);
+        workspace.rebuild_primary_menu();
+        workspace.refresh_selected_state();
+        workspace
+    }
+
+    pub fn ensure_default_tab(self: &Rc<Self>) {
+        if self.tab_view.n_pages() == 0 {
+            let _tab = self.add_empty_tab(true);
+            self.refresh_selected_state();
+            self.persist_session_state_if_needed();
+        }
+    }
+
+    pub fn request_new_tab(self: &Rc<Self>) {
+        let _tab = self.add_empty_tab(true);
+        self.refresh_selected_state();
+        self.persist_session_state_if_needed();
+    }
+
+    pub fn request_open_dialog(self: &Rc<Self>, parent: &adw::ApplicationWindow) {
+        crate::workspace_open::request_open_dialog(self, parent);
+    }
+
+    pub fn request_open_recent(self: &Rc<Self>, uri: &str) {
+        self.ensure_default_tab();
+        self.request_open_files(vec![gio::File::for_uri(uri)], OpenSource::Recent);
+    }
+
+    pub fn request_open_files(self: &Rc<Self>, files: Vec<gio::File>, source: OpenSource) {
+        crate::workspace_open::open_files_internal(self, files, source, None);
+    }
+
+    pub fn restore_session(self: &Rc<Self>) {
+        let (session_files, selected_uri) = {
+            let state = self.state.borrow();
+            (
+                state.stored_session_files.clone(),
+                if state.stored_selected_file.is_empty() {
+                    None
+                } else {
+                    Some(state.stored_selected_file.clone())
+                },
+            )
+        };
+        if session_files.is_empty() {
+            self.ensure_default_tab();
+            return;
+        }
+
+        self.state.borrow_mut().restoring_session = true;
+        self.ensure_default_tab();
+        crate::workspace_open::open_files_internal(
+            self,
+            session_files
+                .into_iter()
+                .map(|uri| gio::File::for_uri(&uri))
+                .collect(),
+            OpenSource::SessionRestore,
+            selected_uri,
+        );
+    }
+
+    pub fn request_save_selected(self: &Rc<Self>, force_save_as: bool) {
+        if let Some(tab) = self.selected_tab() {
+            self.request_save_tab(&tab, force_save_as, Rc::new(|_result| {}));
+        }
+    }
+
+    pub fn request_close_selected_tab(&self) {
+        if let Some(page) = self.tab_view.selected_page() {
+            self.tab_view.close_page(&page);
+        } else {
+            self.shell.close();
+        }
+    }
+
+    pub fn handle_window_close_request(self: &Rc<Self>) -> glib::Propagation {
+        crate::workspace_close::handle_window_close_request(self)
+    }
+
+    #[must_use]
+    pub fn allow_window_close(&self) -> bool {
+        self.state.borrow().allow_window_close
+    }
+
+    #[cfg(test)]
+    pub(crate) fn tab_count(&self) -> i32 {
+        self.tab_view.n_pages()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn selected_title(&self) -> String {
+        self.selected_tab()
+            .map_or_else(|| pgettext("document title", "Untitled"), |tab| tab.title())
+    }
+
+    #[cfg(test)]
+    pub(crate) fn selected_text(&self) -> String {
+        self.selected_tab()
+            .map_or_else(String::new, |tab| tab.buffer_text())
+    }
+
+    #[cfg(test)]
+    pub(crate) fn set_selected_text(&self, text: &str) {
+        if let Some(tab) = self.selected_tab() {
+            tab.set_text_for_tests(text);
+            self.refresh_selected_state();
+        }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn recent_files(&self) -> Vec<String> {
+        self.state.borrow().recent_files.clone()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn session_files(&self) -> Vec<String> {
+        self.state.borrow().stored_session_files.clone()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn selected_saved_uri(&self) -> String {
+        self.selected_tab()
+            .and_then(|tab| tab.uri())
+            .unwrap_or_default()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn reorder_selected_to_first(&self) -> bool {
+        self.tab_view
+            .selected_page()
+            .as_ref()
+            .is_some_and(|page| self.tab_view.reorder_first(page))
+    }
+
+    #[cfg(test)]
+    pub(crate) fn shortcuts_enabled(&self) -> bool {
+        self.tab_view.shortcuts() == adw::TabViewShortcuts::ALL_SHORTCUTS
+    }
+
+    pub fn apply_word_wrap_to_tabs(&self) {
+        for tab in &self.state.borrow().tabs {
+            tab.apply_word_wrap();
+        }
+    }
+
+    fn install_callbacks(self: &Rc<Self>, workspace_box: &gtk4::Box) {
+        let weak = Rc::downgrade(self);
+        self.tab_view.connect_selected_page_notify(move |_| {
+            if let Some(workspace) = weak.upgrade() {
+                workspace.refresh_selected_state();
+                workspace.persist_session_state_if_needed();
+            }
+        });
+
+        let weak = Rc::downgrade(self);
+        self.tab_view.connect_close_page(move |_, page| {
+            weak.upgrade()
+                .map_or(glib::Propagation::Proceed, |workspace| {
+                    crate::workspace_close::on_close_page(&workspace, page)
+                })
+        });
+
+        let weak = Rc::downgrade(self);
+        self.tab_view
+            .connect_page_detached(move |_, page, _position| {
+                if let Some(workspace) = weak.upgrade() {
+                    crate::workspace_close::on_page_detached(&workspace, page);
+                }
+            });
+
+        let weak = Rc::downgrade(self);
+        self.tab_view.connect_page_reordered(move |_, _, _| {
+            if let Some(workspace) = weak.upgrade() {
+                workspace.persist_session_state_if_needed();
+            }
+        });
+
+        let drop_target =
+            gtk4::DropTarget::new(gdk::FileList::static_type(), gdk::DragAction::COPY);
+        drop_target.connect_drop({
+            let weak = Rc::downgrade(self);
+            move |_, value, _, _| {
+                let Some(workspace) = weak.upgrade() else {
+                    return false;
+                };
+                match value.get::<gdk::FileList>() {
+                    Ok(file_list) => {
+                        workspace.request_open_files(file_list.files(), OpenSource::Drop);
+                        true
+                    }
+                    Err(_) => false,
+                }
+            }
+        });
+        workspace_box.add_controller(drop_target);
+    }
+
+    pub(crate) fn add_empty_tab(self: &Rc<Self>, select: bool) -> Rc<EditorTab> {
+        let tab = EditorTab::new(&self.settings);
+        let weak = Rc::downgrade(self);
+        tab.set_visual_change_handler(Rc::new(move || {
+            if let Some(workspace) = weak.upgrade() {
+                workspace.refresh_selected_state();
+            }
+        }));
+        let weak = Rc::downgrade(self);
+        tab.set_file_drop_handler(Rc::new(move |files| {
+            if let Some(workspace) = weak.upgrade() {
+                workspace.request_open_files(files, OpenSource::Drop);
+            }
+        }));
+        let page = tab.attach(&self.tab_view);
+        self.state.borrow_mut().tabs.push(tab.clone());
+        if select {
+            self.tab_view.set_selected_page(&page);
+        }
+        tab
+    }
+
+    pub(crate) fn request_save_tab(
+        self: &Rc<Self>,
+        tab: &Rc<EditorTab>,
+        force_save_as: bool,
+        callback: Rc<dyn Fn(Result<SaveOutcome, AppError>)>,
+    ) {
+        let weak = Rc::downgrade(self);
+        tab.request_save(
+            &self.shell,
+            force_save_as,
+            Rc::new(move |result| {
+                if let Some(workspace) = weak.upgrade() {
+                    if let Ok(outcome) = &result {
+                        workspace.remember_recent_uri(&outcome.new_uri);
+                        workspace.persist_session_state_if_needed();
+                        workspace.refresh_selected_state();
+                        workspace.show_toast(&gettextrs::gettext("The Document Was Saved."));
+                    } else if let Err(error) = &result {
+                        crate::dialogs::present_error(&workspace.shell, error);
+                    }
+                    callback(result);
+                }
+            }),
+        );
+    }
+
+    pub(crate) fn remember_recent_uri(&self, uri: &str) {
+        let Ok(mut state) = self.state.try_borrow_mut() else {
+            return;
+        };
+        if state.restoring_session {
+            return;
+        }
+        let updated = crate::session::remember_recent(&state.recent_files, uri);
+        if crate::session::list_changed(&state.recent_files, &updated) {
+            self.settings.set_recent_files(&updated);
+            state.recent_files = updated;
+            drop(state);
+            self.rebuild_primary_menu();
+        }
+    }
+
+    pub(crate) fn prune_recent_uri(&self, uri: &str) {
+        let Ok(mut state) = self.state.try_borrow_mut() else {
+            return;
+        };
+        let updated = crate::session::forget_recent(&state.recent_files, uri);
+        if crate::session::list_changed(&state.recent_files, &updated) {
+            self.settings.set_recent_files(&updated);
+            state.recent_files = updated;
+            drop(state);
+            self.rebuild_primary_menu();
+        }
+    }
+
+    pub(crate) fn persist_session_state_if_needed(&self) {
+        let snapshot = crate::session::session_snapshot(
+            &self
+                .ordered_tabs()
+                .into_iter()
+                .map(|tab| tab.uri())
+                .collect::<Vec<_>>(),
+        );
+        let selected =
+            crate::session::selected_session_value(self.selected_tab().and_then(|tab| tab.uri()));
+
+        let Ok(mut state) = self.state.try_borrow_mut() else {
+            return;
+        };
+        if state.restoring_session {
+            return;
+        }
+        if crate::session::list_changed(&state.stored_session_files, &snapshot) {
+            self.settings.set_session_files(&snapshot);
+            state.stored_session_files = snapshot;
+        }
+        if crate::session::string_changed(&state.stored_selected_file, &selected) {
+            self.settings.set_session_selected_file(&selected);
+            state.stored_selected_file = selected;
+        }
+    }
+
+    pub(crate) fn rebuild_primary_menu(&self) {
+        let menu = crate::workspace_menu::build_primary_menu(&self.state.borrow().recent_files);
+        self.menu_button.set_menu_model(Some(&menu));
+    }
+
+    pub(crate) fn refresh_selected_state(&self) {
+        if let Some(tab) = self.selected_tab() {
+            self.title_widget.set_title(&tab.title());
+            self.title_widget.set_subtitle(&tab.subtitle());
+            self.save_action.set_enabled(tab.is_dirty());
+            self.save_as_action.set_enabled(true);
+            self.close_action.set_enabled(true);
+            return;
+        }
+
+        self.title_widget
+            .set_title(&pgettext("document title", "Untitled"));
+        self.title_widget
+            .set_subtitle(&pgettext("document subtitle", "Plain Text Document"));
+        self.save_action.set_enabled(false);
+        self.save_as_action.set_enabled(false);
+        self.close_action.set_enabled(false);
+    }
+
+    pub(crate) fn close_tab_if_clean(&self, tab: &EditorTab) {
+        if tab.is_clean_untitled()
+            && let Some(page) = tab.page()
+        {
+            self.tab_view.close_page(&page);
+        }
+    }
+
+    pub(crate) fn selected_tab(&self) -> Option<Rc<EditorTab>> {
+        self.tab_view
+            .selected_page()
+            .and_then(|page| self.find_tab_by_page(&page))
+    }
+
+    pub(crate) fn ordered_tabs(&self) -> Vec<Rc<EditorTab>> {
+        (0..self.tab_view.n_pages())
+            .filter_map(|position| self.find_tab_by_page(&self.tab_view.nth_page(position)))
+            .collect()
+    }
+
+    pub(crate) fn find_tab_by_page(&self, page: &adw::TabPage) -> Option<Rc<EditorTab>> {
+        self.state
+            .borrow()
+            .tabs
+            .iter()
+            .find(|tab| tab.page().as_ref().is_some_and(|item| item == page))
+            .cloned()
+    }
+
+    pub(crate) fn find_tab_by_uri(&self, uri: &str) -> Option<Rc<EditorTab>> {
+        self.state
+            .borrow()
+            .tabs
+            .iter()
+            .find(|tab| tab.uri().as_deref().is_some_and(|item| item == uri))
+            .cloned()
+    }
+
+    pub(crate) fn show_toast(&self, message: &str) {
+        self.toast_overlay.add_toast(adw::Toast::new(message));
+    }
+}

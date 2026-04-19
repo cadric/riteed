@@ -14,8 +14,19 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 
 ## Unreleased
 
+### Added
+- Embedded `app/` as the canonical reference target repository for Riteed, including the GTK4/libadwaita plain-text editor, app-local vendored policy/tooling copy, Flatpak metadata, gettext catalogs, GSettings schema, and review artifacts.
+- Added vendor-sync and CI support for the embedded app, including the vendored Cargo dependency tree needed for offline Flatpak-oriented builds.
+- Extended the embedded Riteed app to a tabbed v2 editor with multi-document tabs, recent files, session restore, unsaved-close coordination, and drag-and-drop file opening.
+
+### Changed
+- Documented the split between the root policy-pack role and the embedded `app/` target repository in the repo contract and documentation.
+- Refactored the embedded Riteed window controller into smaller workspace, tab, close-flow, session, and I/O modules so the GNOME app remains policy-compliant and maintainable as features grow.
+
 ### Fixed
 - Stabilized GTK coverage runs by teaching `tools.coverage_check` to invoke `cargo llvm-cov` with a deterministic `GSK_RENDERER=cairo` environment, with unit coverage for the new tool behavior.
+- Ignored embedded app build outputs such as `app/target/`, Flatpak cache directories, and app-local coverage directories so routine local validation does not keep leaving commit noise behind.
+- Polished the embedded Riteed v2 tabbed editor so the editor fills the full window, the tab bar hides when only one document is open, and file drag-and-drop still opens documents in tabs instead of inserting links into the text view.
 
 ## 1.0.1 — 2026-04-19
 

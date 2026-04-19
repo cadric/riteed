@@ -1,5 +1,7 @@
 use std::path::{Path, PathBuf};
 
+use gtk4::{gio, prelude::*};
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct DocumentState {
     path: Option<PathBuf>,
@@ -28,37 +30,35 @@ impl DocumentState {
         self.path.clone()
     }
 
+    #[must_use]
+    pub fn uri(&self) -> Option<String> {
+        self.path
+            .as_ref()
+            .map(|path| gio::File::for_path(path).uri().to_string())
+    }
+
+    #[must_use]
+    pub fn file_name(&self) -> Option<String> {
+        self.path.as_ref().and_then(|path| {
+            path.file_name()
+                .and_then(std::ffi::OsStr::to_str)
+                .map(ToString::to_string)
+        })
+    }
+
+    #[must_use]
+    pub fn path_display(&self) -> Option<String> {
+        self.path.as_ref().map(|path| path.display().to_string())
+    }
+
     pub fn set_saved(&mut self, path: PathBuf, text: String) {
         self.path = Some(path);
         self.last_saved_text = text;
     }
 
-    pub fn replace_with_new(&mut self) {
-        *self = Self::new_empty();
-    }
-
     #[must_use]
     pub fn is_dirty(&self, current_text: &str) -> bool {
         self.last_saved_text != current_text
-    }
-
-    #[must_use]
-    pub fn display_name(&self) -> String {
-        match &self.path {
-            Some(path) => path
-                .file_name()
-                .and_then(std::ffi::OsStr::to_str)
-                .map_or_else(|| path.display().to_string(), ToString::to_string),
-            None => String::from("Untitled.txt"),
-        }
-    }
-
-    #[must_use]
-    pub fn subtitle(&self) -> String {
-        self.path.as_ref().map_or_else(
-            || String::from("Plain Text Document"),
-            |path| path.display().to_string(),
-        )
     }
 
     #[must_use]
@@ -77,15 +77,25 @@ mod tests {
     use std::path::Path;
 
     #[test]
-    fn empty_document_is_clean() {
+    fn empty_document_has_no_saved_identity() {
         let document = DocumentState::new_empty();
         assert!(!document.is_dirty(""));
-        assert_eq!(document.display_name(), "Untitled.txt");
+        assert_eq!(document.file_name(), None);
+        assert_eq!(document.path_display(), None);
+        assert_eq!(document.uri(), None);
     }
 
     #[test]
-    fn loaded_document_tracks_dirty_state() {
+    fn loaded_document_tracks_saved_identity() {
         let document = DocumentState::from_loaded("notes.txt".into(), String::from("hello"));
+        assert_eq!(document.file_name().as_deref(), Some("notes.txt"));
+        assert_eq!(document.path_display().as_deref(), Some("notes.txt"));
+        assert!(
+            document
+                .uri()
+                .as_deref()
+                .is_some_and(|uri| uri.ends_with("/notes.txt"))
+        );
         assert!(!document.is_dirty("hello"));
         assert!(document.is_dirty("changed"));
     }

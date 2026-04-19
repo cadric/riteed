@@ -12,3 +12,210 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+msgid "Choose a Save Location Before Saving This Document."
+msgstr ""
+
+msgid ""
+"Controls whether Riteed uses the system appearance, a light appearance, or a "
+"dark appearance."
+msgstr ""
+
+msgid "Controls whether long lines wrap inside the editor."
+msgstr ""
+
+msgid "Edit Plain Text Files"
+msgstr ""
+
+msgid ""
+"It provides a focused editing surface, standard file actions, and a small "
+"settings dialog."
+msgstr ""
+
+msgid "No Save Location Is Available"
+msgstr ""
+
+msgid "Only Local Files Are Supported"
+msgstr ""
+
+msgid "Recent Files"
+msgstr ""
+
+msgid "Riteed"
+msgstr ""
+
+msgid "Riteed Could Not Start"
+msgstr ""
+
+msgid "Riteed Only Supports Local Plain Text Files in This Version."
+msgstr ""
+
+msgid "Riteed is a small GNOME text editor for editing plain UTF-8 text files."
+msgstr ""
+
+msgid "Save Changes Before Continuing?"
+msgstr ""
+
+msgid "Selected Session File"
+msgstr ""
+
+msgid "Session Files"
+msgstr ""
+
+msgid "Some files could not be opened."
+msgstr ""
+
+msgid "Some files from the last session could not be reopened."
+msgstr ""
+
+msgid ""
+"Stores the URI of the selected saved tab. An empty string means no saved tab "
+"is selected."
+msgstr ""
+
+msgid "Stores the currently open saved local text files as URIs in tab order."
+msgstr ""
+
+msgid "Stores the last height used for the main window."
+msgstr ""
+
+msgid "Stores the last width used for the main window."
+msgstr ""
+
+msgid "Stores the most recently opened local text files as URIs, newest first."
+msgstr ""
+
+msgid "The File Is Not Valid UTF-8 Text."
+msgstr ""
+
+msgid "The Requested Action Was Cancelled."
+msgstr ""
+
+msgid "Theme Preference"
+msgstr ""
+
+msgid "This document has unsaved changes."
+msgstr ""
+
+msgid "Unable to Build the Window"
+msgstr ""
+
+msgid "Unable to Open Dropped Files"
+msgstr ""
+
+msgid "Unable to Open the File"
+msgstr ""
+
+msgid "Unable to Save the File"
+msgstr ""
+
+msgid "Window Height"
+msgstr ""
+
+msgid "Window Width"
+msgstr ""
+
+msgid "Word Wrap"
+msgstr ""
+
+msgid "text;editor;plain text;"
+msgstr ""
+
+msgctxt "alert response"
+msgid "Cancel"
+msgstr ""
+
+msgctxt "alert response"
+msgid "Close"
+msgstr ""
+
+msgctxt "alert response"
+msgid "Discard"
+msgstr ""
+
+msgctxt "alert response"
+msgid "Save"
+msgstr ""
+
+msgctxt "document subtitle"
+msgid "Plain Text Document"
+msgstr ""
+
+msgctxt "document title"
+msgid "Untitled"
+msgstr ""
+
+msgctxt "error title"
+msgid "Action Cancelled"
+msgstr ""
+
+msgctxt "error title"
+msgid "Unable to Open Help"
+msgstr ""
+
+msgctxt "file dialog action"
+msgid "Open"
+msgstr ""
+
+msgctxt "file dialog action"
+msgid "Save"
+msgstr ""
+
+msgctxt "file dialog title"
+msgid "Open Text Files"
+msgstr ""
+
+msgctxt "file dialog title"
+msgid "Save the Document"
+msgstr ""
+
+msgctxt "file filter"
+msgid "All Files"
+msgstr ""
+
+msgctxt "file filter"
+msgid "Plain Text Files"
+msgstr ""
+
+msgctxt "menu item"
+msgid "About"
+msgstr ""
+
+msgctxt "menu item"
+msgid "Help"
+msgstr ""
+
+msgctxt "menu item"
+msgid "Keyboard Shortcuts"
+msgstr ""
+
+msgctxt "menu item"
+msgid "New Tab"
+msgstr ""
+
+msgctxt "menu item"
+msgid "Open"
+msgstr ""
+
+msgctxt "menu item"
+msgid "Preferences"
+msgstr ""
+
+msgctxt "menu item"
+msgid "Recent Files"
+msgstr ""
+
+msgctxt "save file name"
+msgid "Untitled.txt"
+msgstr ""
+
+msgctxt "theme choice"
+msgid "Dark"
+msgstr ""
+
+msgctxt "theme choice"
+msgid "Light"
+msgstr ""
+
+msgctxt "theme choice"
+msgid "System Default"
+msgstr ""

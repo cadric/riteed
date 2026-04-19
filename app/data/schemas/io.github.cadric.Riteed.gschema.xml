@@ -4,22 +4,37 @@
     <key name="theme" type="s">
       <default>'system'</default>
       <summary>Theme Preference</summary>
-      <description>Controls Whether Riteed Uses the System Appearance, a Light Appearance, or a Dark Appearance.</description>
+      <description>Controls whether Riteed uses the system appearance, a light appearance, or a dark appearance.</description>
     </key>
     <key name="word-wrap" type="b">
       <default>false</default>
       <summary>Word Wrap</summary>
-      <description>Controls Whether Long Lines Wrap Inside the Editor.</description>
+      <description>Controls whether long lines wrap inside the editor.</description>
     </key>
     <key name="window-width" type="i">
       <default>840</default>
       <summary>Window Width</summary>
-      <description>Stores the Last Width Used for the Main Window.</description>
+      <description>Stores the last width used for the main window.</description>
     </key>
     <key name="window-height" type="i">
       <default>620</default>
       <summary>Window Height</summary>
-      <description>Stores the Last Height Used for the Main Window.</description>
+      <description>Stores the last height used for the main window.</description>
+    </key>
+    <key name="recent-files" type="as">
+      <default>[]</default>
+      <summary>Recent Files</summary>
+      <description>Stores the most recently opened local text files as URIs, newest first.</description>
+    </key>
+    <key name="session-files" type="as">
+      <default>[]</default>
+      <summary>Session Files</summary>
+      <description>Stores the currently open saved local text files as URIs in tab order.</description>
+    </key>
+    <key name="session-selected-file" type="s">
+      <default>''</default>
+      <summary>Selected Session File</summary>
+      <description>Stores the URI of the selected saved tab. An empty string means no saved tab is selected.</description>
     </key>
   </schema>
 </schemalist>
