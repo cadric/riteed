@@ -300,8 +300,8 @@ impl EditorTab {
     }
 
     #[must_use]
-    pub fn should_auto_reload(&self, is_selected: bool, _window_active: bool) -> bool {
-        !self.is_dirty() && !self.is_loading() && !is_selected
+    pub fn should_auto_reload(&self, is_selected: bool, window_active: bool) -> bool {
+        !self.is_dirty() && !self.is_loading() && (!is_selected || !window_active)
     }
 
     #[must_use]

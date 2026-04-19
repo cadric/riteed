@@ -4,7 +4,7 @@ use libadwaita as adw;
 use libadwaita::prelude::*;
 
 use crate::error::AppError;
-use crate::{APP_ID, APP_NAME, REPO_URL};
+use crate::{APP_NAME, REPO_URL};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum UnsavedResponse {
@@ -157,7 +157,7 @@ pub fn show_about(parent: &impl IsA<gtk4::Widget>) {
         None,
     );
     dialog.set_application_name(APP_NAME);
-    dialog.set_application_icon(APP_ID);
+    dialog.set_application_icon("io.github.cadric.Riteed-about");
     dialog.set_version(env!("CARGO_PKG_VERSION"));
     dialog.set_developer_name("cadric");
     dialog.set_website(REPO_URL);

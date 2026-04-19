@@ -67,7 +67,7 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 82,
+      "line": 83,
       "match": "state: RefCell<EditorTabState>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns its mutable document, file-monitor, and deferred external-change state.",

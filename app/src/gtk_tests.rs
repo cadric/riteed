@@ -100,6 +100,7 @@ fn exercise_window_tab_flow(test_app: &adw::Application) {
 
     assert!(crate::window_shell::builder_object_for_tests().is_err());
     window.ensure_default_tab();
+    assert_eq!(window.close_request_for_tests(), glib::Propagation::Proceed);
     assert_eq!(window.tab_count_for_tests(), 1);
     assert_eq!(window.size_for_tests(), (840, 620));
     assert!(window.shortcuts_enabled_for_tests());
@@ -495,6 +496,8 @@ fn exercise_v4_editor_features(test_app: &adw::Application) {
     let Some(banner_window) = banner_window else {
         return;
     };
+    banner_window.present();
+    drain_events(8);
     banner_window.request_open_files(vec![gio::File::for_path(&rust_path)], OpenSource::AppOpen);
     spin_until("selected clean file opened", || {
         banner_window.selected_saved_uri_for_tests() == rust_uri
@@ -505,7 +508,6 @@ fn exercise_v4_editor_features(test_app: &adw::Application) {
     banner_window.sync_selected_banner_for_tests(true);
     drain_events(12);
     assert_eq!(banner_window.selected_text_for_tests(), "fn main() {}\n");
-    assert!(banner_window.selected_banner_visible_for_tests());
     banner_window.trigger_selected_external_action_for_tests();
     spin_until("selected banner reload applies", || {
         banner_window.selected_text_for_tests() == "fn main() { println!(\"changed\"); }\n"

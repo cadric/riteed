@@ -5,5 +5,8 @@
     <file preprocess="xml-stripblanks">ui/preferences.ui</file>
     <file preprocess="xml-stripblanks">ui/shortcuts.ui</file>
     <file>io.github.cadric.Riteed.metainfo.xml</file>
+    <file alias="icons/scalable/apps/io.github.cadric.Riteed.svg">icons/hicolor/scalable/apps/io.github.cadric.Riteed.svg</file>
+    <file alias="icons/scalable/apps/io.github.cadric.Riteed-about.svg">icons/hicolor/scalable/apps/io.github.cadric.Riteed-about.svg</file>
+    <file alias="icons/symbolic/apps/io.github.cadric.Riteed-symbolic.svg">icons/hicolor/scalable/apps/io.github.cadric.Riteed.symbolic.svg</file>
   </gresource>
 </gresources>

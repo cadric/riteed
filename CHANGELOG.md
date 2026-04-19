@@ -33,6 +33,8 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Replaced external F1 help launching with an in-app help dialog and shortened recent-file menu labels so the primary menu stays more compact.
 - Corrected the embedded Riteed v4 external-file monitor flow so atomic saves from other editors mark documents stale correctly, selected tabs show reload banners instead of silently reloading, and manual reload actions apply immediately.
 - Restored the embedded Riteed minimap synchronization by removing the incorrect shared scroll-adjustment wiring that desynced the viewport preview.
+- Restored the embedded Riteed development icon setup so About and the window icon can resolve the app icon during local `cargo run` workflows, and fixed clean window close requests so an untouched window no longer needs a second click to close.
+- Switched the embedded Riteed About dialog to a dedicated full-color app icon alias so it no longer resolves to the symbolic icon variant.
 
 ## 1.0.1 — 2026-04-19
 

@@ -17,8 +17,7 @@ pub(crate) fn handle_window_close_request(workspace: &Rc<Workspace>) -> gtk4::gl
     let dirty_tabs =
         dirty_tabs_for_window_close(workspace.selected_tab(), workspace.ordered_tabs());
     if dirty_tabs.is_empty() {
-        finish_window_close(workspace);
-        return gtk4::glib::Propagation::Stop;
+        return gtk4::glib::Propagation::Proceed;
     }
 
     workspace.state.borrow_mut().close_flow =

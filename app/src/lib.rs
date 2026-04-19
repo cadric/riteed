@@ -39,6 +39,8 @@ static RUNTIME_INIT: OnceLock<()> = OnceLock::new();
 
 pub fn bootstrap_runtime() {
     RUNTIME_INIT.get_or_init(|| {
+        gtk::glib::set_prgname(Some(APP_ID));
+        gtk::glib::set_application_name(APP_NAME);
         if let Err(_error) = gtk::gio::resources_register_include!("riteed.gresource") {}
         if let Err(_error) = TextDomain::new(APP_ID).init() {}
     });

@@ -4,5 +4,21 @@ set -euo pipefail
 build_dir="$(mktemp -d)"
 trap 'rm -rf "${build_dir}"' EXIT
 
-glib-compile-schemas --strict --targetdir "${build_dir}" data/schemas
-GSETTINGS_SCHEMA_DIR="${build_dir}" cargo run -- "$@"
+schema_dir="${build_dir}/schemas"
+share_dir="${build_dir}/share"
+
+mkdir -p "${schema_dir}" \
+  "${share_dir}/applications" \
+  "${share_dir}/icons/hicolor/scalable/apps"
+
+glib-compile-schemas --strict --targetdir "${schema_dir}" data/schemas
+cp data/io.github.cadric.Riteed.desktop "${share_dir}/applications/"
+cp data/icons/hicolor/index.theme "${share_dir}/icons/hicolor/"
+cp data/icons/hicolor/scalable/apps/io.github.cadric.Riteed-about.svg "${share_dir}/icons/hicolor/scalable/apps/"
+cp data/icons/hicolor/scalable/apps/io.github.cadric.Riteed.svg "${share_dir}/icons/hicolor/scalable/apps/"
+cp data/icons/hicolor/scalable/apps/io.github.cadric.Riteed.symbolic.svg "${share_dir}/icons/hicolor/scalable/apps/"
+
+GSETTINGS_SCHEMA_DIR="${schema_dir}" \
+RITEED_DEV_ICON_DIR="${share_dir}/icons" \
+XDG_DATA_DIRS="${share_dir}${XDG_DATA_DIRS:+:${XDG_DATA_DIRS}}" \
+cargo run -- "$@"

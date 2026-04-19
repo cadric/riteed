@@ -5,6 +5,7 @@ Comment=Edit Text, Code, and Config Files
 Exec=riteed %U
 Icon=io.github.cadric.Riteed
 StartupNotify=true
+StartupWMClass=io.github.cadric.Riteed
 Terminal=false
 Categories=Utility;TextEditor;GNOME;GTK;
 MimeType=text/plain;

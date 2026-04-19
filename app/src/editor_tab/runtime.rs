@@ -62,14 +62,19 @@ impl EditorTab {
             return;
         };
         let snapshot = ReloadSnapshot::capture(&self.text_buffer);
-        {
+        let already_loading = {
             let mut state = self.state.borrow_mut();
             if state.progress.loading || state.progress.external_reload_in_progress {
-                callback(Ok(ReloadResult::Deferred));
-                return;
+                true
+            } else {
+                state.progress.loading = true;
+                state.progress.external_reload_in_progress = true;
+                false
             }
-            state.progress.loading = true;
-            state.progress.external_reload_in_progress = true;
+        };
+        if already_loading {
+            callback(Ok(ReloadResult::Deferred));
+            return;
         }
         if let Some(page) = self.page() {
             page.set_loading(true);

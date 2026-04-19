@@ -5,6 +5,7 @@ use gtk4::{gio, glib, prelude::*};
 use libadwaita as adw;
 use libadwaita::prelude::*;
 
+use crate::APP_ID;
 use crate::dialogs;
 use crate::error::AppError;
 use crate::settings::{AppSettings, ThemePreference};
@@ -50,6 +51,7 @@ impl Window {
     fn build(app: &adw::Application, settings: AppSettings) -> Result<Rc<Self>, AppError> {
         let shell = WindowShell::new(app)?;
         sourceview5::init();
+        configure_runtime_icon_support(&shell.window);
         let save_action = gio::SimpleAction::new("save", None);
         let save_as_action = gio::SimpleAction::new("save-as", None);
         let close_action = gio::SimpleAction::new("close", None);
@@ -463,4 +465,25 @@ impl Window {
         self.settings
             .set_window_size(self.shell.window.width(), self.shell.window.height());
     }
+}
+
+fn configure_runtime_icon_support(window: &adw::ApplicationWindow) {
+    if let Some(display) = gtk4::gdk::Display::default() {
+        let icon_theme = gtk4::IconTheme::for_display(&display);
+        if let Ok(path) = std::env::var("RITEED_DEV_ICON_DIR") {
+            let icon_dir = std::path::PathBuf::from(path);
+            if icon_dir.is_dir() {
+                let mut search_paths = icon_theme.search_path();
+                search_paths.retain(|existing| existing != &icon_dir);
+                search_paths.insert(0, icon_dir);
+                let refs = search_paths
+                    .iter()
+                    .map(std::path::PathBuf::as_path)
+                    .collect::<Vec<_>>();
+                icon_theme.set_search_path(&refs);
+            }
+        }
+    }
+    gtk4::Window::set_default_icon_name(APP_ID);
+    window.set_icon_name(Some(APP_ID));
 }
