@@ -1,0 +1,51 @@
+name: Validate
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  policy-pack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Verify vendored app files are in sync
+        run: scripts/sync-app-vendor --check
+      - name: Run root validator tests
+        run: python3 -m unittest tools.tests.test_policy_check -v
+
+  app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - uses: dtolnay/rust-toolchain@1.95.0
+        with:
+          components: rustfmt, clippy
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            appstream \
+            desktop-file-utils \
+            flatpak-builder \
+            gettext \
+            libadwaita-1-dev \
+            libglib2.0-bin \
+            libgtk-4-dev \
+            llvm \
+            pkg-config \
+            xvfb
+      - name: Install cargo-llvm-cov
+        run: cargo install cargo-llvm-cov --locked
+      - name: Validate app subtree
+        env:
+          GDK_BACKEND: x11
+        run: |
+          xvfb-run -a python3 -m tools.policy_check --root app --strict
+          xvfb-run -a python3 -m tools.coverage_check --root app

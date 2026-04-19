@@ -1,0 +1,149 @@
+{
+  "$id": "policy/gettext_i18n.v2.json",
+  "title": "gettext and i18n Policy (GNU gettext >= 0.26 / gettext-rs 0.7.7)",
+  "package_id": "gnome_rust_app_policy_pack.v1",
+  "machine_readable_for": [
+    "llm_agent",
+    "codex",
+    "claude"
+  ],
+  "purpose": "Strict localization and source-string policy for native GNOME Rust applications using gettext.",
+  "applies_to": [
+    "src/**",
+    "data/**",
+    "po/**",
+    "build-aux/**",
+    "**/*.rs",
+    "**/*.ui",
+    "**/*.blp",
+    "**/*.desktop.in",
+    "**/*.metainfo.xml.in",
+    "**/*.gschema.xml",
+    "**/*.po",
+    "**/*.pot",
+    "**/*.desktop.in.in",
+    "**/*.metainfo.xml.in.in",
+    "**/*.desktop",
+    "**/*.metainfo.xml"
+  ],
+  "overlaps_with": [
+    "policy/rust.v4.json",
+    "policy/hig.v2.json",
+    "policy/gsettings.v2.json",
+    "policy/flatpak_metadata.v1.json"
+  ],
+  "conflict_resolution": "union_strictest",
+  "severity": "error",
+  "targets": {
+    "gnu_gettext": {
+      "minimum_supported_version": "0.26"
+    },
+    "rust_binding": {
+      "preferred_crate": "gettext-rs",
+      "target_version": "0.7.7",
+      "forbidden_crates": [
+        "gettext"
+      ]
+    }
+  },
+  "domain_and_bootstrap": {
+    "translation_domain_required": true,
+    "translation_domain_must_equal_application_id": true,
+    "locale_initialization_required_before_ui_construction": true,
+    "codeset_utf8_required": true,
+    "gettext_bootstrap_required": true,
+    "bootstrap_api_may_use_textdomain_builder_or_low_level_gettext_calls": true,
+    "codeset_utf8_required_when_using_low_level_bootstrap_calls": true
+  },
+  "string_authoring": {
+    "all_user_visible_strings_must_be_localizable": true,
+    "debug_only_and_developer_only_strings_may_remain_untranslated": true,
+    "sentence_concatenation": "forbidden",
+    "plural_sensitive_strings_must_use_ngettext": true,
+    "ambiguous_short_strings_must_use_context_via_pgettext_or_npgettext": true,
+    "format_strings_must_keep_placeholders_stable_for_translators": true,
+    "source_strings_must_follow_hig_writing_rules": true
+  },
+  "translator_support": {
+    "translator_comments_required_for_ambiguous_or_context_dependent_strings": true,
+    "translator_comment_prefix": "Translators",
+    "desktop_metainfo_and_gsettings_strings_must_be_extractable": true
+  },
+  "extraction_and_build": {
+    "extraction_sources_required": [
+      "Rust",
+      "Desktop",
+      "GSettings"
+    ],
+    "xgettext_or_equivalent_required": true,
+    "msgfmt_validation_required": true,
+    "pot_file_generation_required": true,
+    "po_catalogs_required_for_supported_languages": true
+  },
+  "linking_and_distribution": {
+    "gettext_system_feature_required_on_linux_and_flatpak_targets": true,
+    "vendored_or_statically_linked_gettext_without_review": "forbidden",
+    "mo_files_must_be_installed_in_standard_locale_layout": true
+  },
+  "enforcement": {
+    "short_string_max_length": 20,
+    "hard_fail_patterns": [
+      {
+        "message": "Localized sentences must not be concatenated in Rust source.",
+        "pattern": "(gettext|ngettext|pgettext|npgettext)\\s*\\([^\\n]+\\+|\\+\\s*(gettext|ngettext|pgettext|npgettext)\\s*\\(",
+        "paths": [
+          "src/**/*.rs",
+          "crates/**/*.rs"
+        ]
+      }
+    ]
+  },
+  "verifiers": {
+    "grep_checks": [
+      "\\bTextDomain::new\\s*\\(",
+      "\\bgettext\\s*\\(",
+      "\\bngettext\\s*\\(",
+      "\\bpgettext\\s*\\(",
+      "\\bnpgettext\\s*\\("
+    ],
+    "grep_warnings": [
+      "\"[A-Za-z][^\"]+\"",
+      "Translators:"
+    ],
+    "command_checks": [
+      "msgfmt --check-format --check-header",
+      "xgettext --language=Rust",
+      "xgettext --language=Desktop",
+      "xgettext --language=GSettings"
+    ]
+  },
+  "prohibited": [
+    "gettext_crate_instead_of_gettext_rs",
+    "dynamic_sentence_building_for_localized_ui",
+    "missing_translator_comments_for_ambiguous_strings",
+    "untranslated_desktop_metainfo_or_schema_strings",
+    "static_gettext_linking_without_review_on_linux_targets"
+  ],
+  "official_sources": [
+    {
+      "name": "GNU gettext manual - Rust",
+      "url": "https://www.gnu.org/software/gettext/manual/html_node/Rust.html",
+      "kind": "manual"
+    },
+    {
+      "name": "gettext-rs 0.7.7",
+      "url": "https://docs.rs/crate/gettext-rs/0.7.7/source/README.md",
+      "kind": "crate_docs"
+    },
+    {
+      "name": "GNOME localization guidance",
+      "url": "https://developer.gnome.org/documentation/guidelines/localization.html",
+      "kind": "developer_guidance"
+    },
+    {
+      "name": "GNOME HIG",
+      "url": "https://developer.gnome.org/hig/",
+      "kind": "design_spec"
+    }
+  ]
+}

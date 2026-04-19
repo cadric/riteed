@@ -1,0 +1,35 @@
+# Cargo build artifacts
+/target/
+/debug/
+
+# Rustfmt backups
+**/*.rs.bk
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+
+# Windows debug symbols
+*.pdb
+
+# Mutation testing output
+**/mutants.out*/
+
+# Flatpak local build/cache artifacts
+/.flatpak-builder/
+/builddir/
+/_build/
+*.flatpak
+
+# Local agent / editor state
+/.claude/
+/.codex/
+/.cursor/
+/.idea/
+/.vscode/
+/.agent/
+
+# Coverage and temporary files
+/coverage/
+/coverage.out
+/tmp/
+/.tmp/
