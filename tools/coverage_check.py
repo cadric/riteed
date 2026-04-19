@@ -24,10 +24,10 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-from tools.validation_tooling import load_json, repo_root, require_tool, run_checked
+from tools.validation_tooling import contract_root, load_json, repo_root, require_tool, run_checked
 
 def validation_policy(root: Path) -> dict[str, Any]:
-    return load_json(root / "policy" / "validation-tooling.policy.json")
+    return load_json(contract_root(root) / "policy" / "validation-tooling.policy.json")
 
 def extract_line_percent(payload: dict[str, Any]) -> float:
     for candidate in (

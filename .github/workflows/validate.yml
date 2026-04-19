@@ -12,10 +12,8 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-      - name: Verify vendored app files are in sync
-        run: scripts/sync-app-vendor --check
       - name: Run root validator tests
-        run: python3 -m unittest tools.tests.test_policy_check -v
+        run: python3 -m unittest tools.tests.test_policy_check tools.tests.test_coverage_check -v
 
   app:
     runs-on: ubuntu-latest

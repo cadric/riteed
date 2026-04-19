@@ -15,12 +15,11 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 ## Unreleased
 
 ### Added
-- Embedded `app/` as the canonical reference target repository for Riteed, including the GTK4/libadwaita plain-text editor, app-local vendored policy/tooling copy, Flatpak metadata, gettext catalogs, GSettings schema, and review artifacts.
-- Added vendor-sync and CI support for the embedded app, including the vendored Cargo dependency tree needed for offline Flatpak-oriented builds.
+- Embedded `app/` as the canonical Riteed application subtree, including the GTK4/libadwaita plain-text editor, Flatpak metadata, gettext catalogs, GSettings schema, review artifacts, and vendored Cargo dependency tree for offline Flatpak-oriented builds.
 - Extended the embedded Riteed app to a tabbed v2 editor with multi-document tabs, recent files, session restore, unsaved-close coordination, and drag-and-drop file opening.
 
 ### Changed
-- Documented the split between the root policy-pack role and the embedded `app/` target repository in the repo contract and documentation.
+- Simplified the repository layout so `AGENTS.md`, `policy/`, `tools/`, and `scripts/` live only at the root while `app/` validates directly against the root contract.
 - Refactored the embedded Riteed window controller into smaller workspace, tab, close-flow, session, and I/O modules so the GNOME app remains policy-compliant and maintainable as features grow.
 
 ### Fixed

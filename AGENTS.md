@@ -1,6 +1,6 @@
 # AGENTS — Root Contract (Strict GNOME Rust Application)
 
-This repository defines policy and validation tooling for native GNOME desktop applications written in Rust. The validators are intended to run against a target application repository that vendors this pack; this repository is the policy pack itself, not the target app layout.
+This repository contains the authoritative policy and validation tooling for native GNOME desktop applications written in Rust, plus the Riteed application under `app/`. The root remains the single source of truth for `AGENTS.md`, `policy/`, `tools/`, and `scripts/`; the in-tree app is validated by pointing the root tooling at `app/`.
 
 ## Golden Rules
 - `native_gnome_first`
@@ -20,8 +20,8 @@ This repository defines policy and validation tooling for native GNOME desktop a
 2. Read the current implementation and summarize the present behavior.
 3. Plan the smallest safe native-GNOME change.
 4. Implement directly with focused edits.
-5. In a target application repository that vendors this pack, run `python3 -m tools.policy_check --strict`.
-6. In a target application repository that vendors this pack, run `python3 -m tools.coverage_check`.
+5. In this repository, validate the in-tree app with `python3 -m tools.policy_check --root app --strict`.
+6. In this repository, validate the in-tree app with `python3 -m tools.coverage_check --root app`.
 7. Update resources, metadata, schemas, translations, and docs when behavior or user-visible strings change.
 
 ## Architecture Summary
@@ -48,23 +48,23 @@ Load and enforce these whenever their scopes apply:
 - `policy/validation-tooling.policy.json`
 
 ## Validation
-Primary gate:
-1. `python3 -m tools.policy_check --strict`
+Primary gate for the in-tree app:
+1. `python3 -m tools.policy_check --root app --strict`
 
-Coverage gate:
-2. `python3 -m tools.coverage_check`
+Coverage gate for the in-tree app:
+2. `python3 -m tools.coverage_check --root app`
 
 Direct fallback commands:
-- `cargo fmt --all --check`
-- `cargo check --workspace --all-targets --all-features`
-- `cargo clippy --workspace --all-targets --all-features -- -D warnings`
-- `cargo test --workspace --all-targets --all-features`
-- `cargo llvm-cov --workspace --all-features --json --summary-only`
-- `glib-compile-schemas --strict --dry-run data/schemas`
-- `msgfmt --check-format --check-header -o /dev/null po/<catalog>.po`
-- `desktop-file-validate data/<application-id>.desktop`
-- `appstreamcli validate --no-net --pedantic data/<application-id>.metainfo.xml`
-- `flatpak-builder --show-manifest build-aux/<application-id>.yml`
+- `cd app && cargo fmt --all --check`
+- `cd app && cargo check --workspace --all-targets --all-features`
+- `cd app && cargo clippy --workspace --all-targets --all-features -- -D warnings`
+- `cd app && cargo test --workspace --all-targets --all-features`
+- `cd app && cargo llvm-cov --workspace --all-features --json --summary-only`
+- `glib-compile-schemas --strict --dry-run app/data/schemas`
+- `msgfmt --check-format --check-header -o /dev/null app/po/<catalog>.po`
+- `desktop-file-validate app/data/<application-id>.desktop`
+- `appstreamcli validate --no-net --pedantic app/data/<application-id>.metainfo.xml`
+- `flatpak-builder --show-manifest app/build-aux/<application-id>.yml`
 
 ## Hard Limits
 - No source or enforced metadata file may exceed `600` total lines.

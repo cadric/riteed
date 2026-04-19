@@ -1,21 +1,23 @@
-# GNOME Rust App Policy Kit
+# Riteed
 
-This repository contains a strict, machine-readable policy and validation package for building native GNOME applications in Rust.
+Riteed is a native GNOME plain-text editor written in Rust. The application lives under `app/`.
 
-It is intended for use by coding agents and by humans who want a predictable baseline for generation, review, and CI enforcement.
+This repository also keeps the authoritative policy and validation tooling at the root so the app can be validated without maintaining duplicate copies of `AGENTS.md`, `policy/`, `tools/`, or `scripts/`.
 
-## What is in this repository
+## Layout
 
-- `AGENTS.md` — root contract for agent behavior
-- `policy/` — machine-readable policy files
+- `app/` — the Riteed application source, resources, metadata, tests, and vendored Cargo dependencies
+- `AGENTS.md` — repository-wide contract for app and policy work
+- `policy/` — machine-readable policy files used to validate the app
 - `policy/README.md` — scope mapping and review-artifact contract
 - `tools/` — hard-fail validation tooling
+- `scripts/` — thin wrappers around the root tooling
 - `VERSIONS.md` — versioning rules for this repository
 - `CHANGELOG.md` — notable repository changes
 
-## Current intent
+## Application stack
 
-The current policy stack is aimed at a strict GNOME application workflow built around:
+Riteed is intentionally narrow and GNOME-native:
 
 - Rust
 - GTK 4 bindings for Rust
@@ -25,18 +27,27 @@ The current policy stack is aimed at a strict GNOME application workflow built a
 - GSettings-backed preferences
 - Flatpak-first packaging and sandboxing
 
-## Validation
+## Validate Riteed
 
-Typical validation entrypoints for a target application repository that vendors this pack:
+Run validation from the repository root and point the root tooling at `app/`:
 
 ```bash
-python3 -m tools.policy_check --root /path/to/app-repo --strict
-python3 -m tools.coverage_check --root /path/to/app-repo
+python3 -m tools.policy_check --root app --strict
+python3 -m tools.coverage_check --root app
+```
+
+Direct app checks can still be run from `app/`:
+
+```bash
+cd app
+cargo fmt --all --check
+cargo check --workspace --all-targets --all-features
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+cargo test --workspace --all-targets --all-features
 ```
 
 ## Notes
 
-- This repository is a policy/tooling kit, not the application itself. The validators target an application repository that contains the expected Cargo, src/, data/, po/, and build-aux/ layout.
-- The policy files are intended to be consumed together, with the bundle manifest as the primary entrypoint.
-- Review-required evidence lives under `build-aux/validation/`; `.agent/CONTINUITY.md` is continuity only and never validator evidence.
-- You will likely want to tailor this README further once the target application and repository conventions are settled.
+- The root policy files are the only authoritative contract copy in this repository.
+- Review-required evidence for the app lives under `app/build-aux/validation/`; `.agent/CONTINUITY.md` is continuity only and never validator evidence.
+- `app/scripts/dev-run` is the app-local helper that remains under `app/`.

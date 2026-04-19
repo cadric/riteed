@@ -11,6 +11,7 @@ from unittest.mock import patch
 
 from tools.checks import foundation, hig, libadwaita, runtime
 from tools.scanners.sites import ReviewEntry, ScanHit, validate_review_links
+from tools.validation_tooling import contract_root, repo_root
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -84,6 +85,42 @@ class PolicyCheckTests(unittest.TestCase):
             foundation.update_artifact_index(root)
             errors = []
             foundation.check_policy_stack(root, errors)
+            self.assertEqual(errors, [])
+
+    def test_repo_root_accepts_embedded_app_subtree(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            shutil.copytree(REPO_ROOT / "policy", root / "policy")
+            shutil.copytree(REPO_ROOT / "tools", root / "tools")
+            _write(root / "AGENTS.md", "# root\n")
+            app = root / "app"
+            _write(app / "Cargo.toml", "[package]\nname = \"demo\"\nversion = \"0.1.0\"\nedition = \"2024\"\n")
+            _write(app / "Cargo.lock", "")
+            _write(app / "rust-toolchain.toml", "[toolchain]\nchannel = \"1.95.0\"\n")
+            _write(app / "src" / "main.rs", "fn main() {}\n")
+            _write(app / "data" / "demo.desktop", "[Desktop Entry]\nName=Demo\n")
+            _write(app / "po" / "demo.po", "")
+            _write(app / "build-aux" / "demo.yml", "id: io.example.Demo\nruntime: org.gnome.Platform\nruntime-version: '50'\nsdk: org.gnome.Sdk\ncommand: demo\n")
+            detected = repo_root(str(app))
+            self.assertEqual(detected, app.resolve())
+            self.assertEqual(contract_root(detected), root.resolve())
+
+    def test_check_repo_layout_allows_embedded_app_contract_from_ancestor(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            shutil.copytree(REPO_ROOT / "policy", root / "policy")
+            shutil.copytree(REPO_ROOT / "tools", root / "tools")
+            _write(root / "AGENTS.md", "# root\n")
+            app = root / "app"
+            _write(app / "Cargo.toml", "[package]\nname = \"demo\"\nversion = \"0.1.0\"\nedition = \"2024\"\n")
+            _write(app / "Cargo.lock", "")
+            _write(app / "rust-toolchain.toml", "[toolchain]\nchannel = \"1.95.0\"\ncomponents = [\"rustfmt\", \"clippy\"]\n")
+            _write(app / "src" / "main.rs", "fn main() {}\n")
+            _write(app / "data" / "demo.desktop", "[Desktop Entry]\nName=Demo\n")
+            _write(app / "po" / "demo.po", "")
+            _write(app / "build-aux" / "demo.yml", "id: io.example.Demo\nruntime: org.gnome.Platform\nruntime-version: '50'\nsdk: org.gnome.Sdk\ncommand: demo\n")
+            errors: list[str] = []
+            foundation.check_repo_layout(app, errors)
             self.assertEqual(errors, [])
 
     def test_libadwaita_requires_surface_review(self) -> None:

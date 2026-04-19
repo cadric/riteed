@@ -116,7 +116,9 @@
       "src/main.rs",
       "data/",
       "po/",
-      "build-aux/",
+      "build-aux/"
+    ],
+    "contract_must_exist": [
       "AGENTS.md",
       "policy/",
       "tools/"
@@ -132,8 +134,9 @@
       "gettext_catalogs": "po/*.po",
       "gresource_manifest": "data/resources.gresource.xml"
     },
-    "repository_kind": "target_application_repository",
-    "validated_from": "repository_root_passed_to_policy_check"
+    "repository_kind": "target_application_repository_or_embedded_app_subtree",
+    "validated_from": "repository_root_passed_to_policy_check",
+    "embedded_contract_resolution": "embedded app subtrees may inherit AGENTS.md, policy/, and tools/ from the nearest ancestor contract root"
   },
   "cross_file_invariants": {
     "application_id": {

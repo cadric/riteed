@@ -43,7 +43,7 @@ Scanners must emit at most one hit per `(path, line, kind)`. If multiple reviewa
 
 ## Maintainer Command
 
-Use `python3 -m tools.policy_check --update-artifact-index` only in this policy-pack repository. It is maintainer-only and must not be used in vendored target application repositories.
+Use `python3 -m tools.policy_check --update-artifact-index` only in the root policy-pack repository. It is maintainer-only and must not be used in embedded app subtrees such as `app/` or in vendored target application repositories.
 
 ## Field Semantics
 

@@ -9,6 +9,7 @@ from typing import Any
 from tools.scanners.ui_xml import translatable_property_errors
 from tools.validation_tooling import (
     cargo_packages,
+    contract_root,
     count_lines,
     dump_json,
     file_hash,
@@ -28,36 +29,40 @@ def add(errors: list[str], message: str) -> None:
     errors.append(message)
 
 
+def _policy_root(root: Path) -> Path:
+    return contract_root(root)
+
+
 def policy_bundle(root: Path) -> dict[str, Any]:
-    return load_json(root / "policy" / "gnome-rust-app.bundle.json")
+    return load_json(_policy_root(root) / "policy" / "gnome-rust-app.bundle.json")
 
 
 def validation_policy(root: Path) -> dict[str, Any]:
-    return load_json(root / "policy" / "validation-tooling.policy.json")
+    return load_json(_policy_root(root) / "policy" / "validation-tooling.policy.json")
 
 
 def rust_policy(root: Path) -> dict[str, Any]:
-    return load_json(root / "policy" / "rust.policy.json")
+    return load_json(_policy_root(root) / "policy" / "rust.policy.json")
 
 
 def flatpak_policy(root: Path) -> dict[str, Any]:
-    return load_json(root / "policy" / "flatpak-metadata.policy.json")
+    return load_json(_policy_root(root) / "policy" / "flatpak-metadata.policy.json")
 
 
 def hig_policy(root: Path) -> dict[str, Any]:
-    return load_json(root / "policy" / "hig.policy.json")
+    return load_json(_policy_root(root) / "policy" / "hig.policy.json")
 
 
 def libadwaita_policy(root: Path) -> dict[str, Any]:
-    return load_json(root / "policy" / "libadwaita.policy.json")
+    return load_json(_policy_root(root) / "policy" / "libadwaita.policy.json")
 
 
 def gettext_policy(root: Path) -> dict[str, Any]:
-    return load_json(root / "policy" / "gettext-i18n.policy.json")
+    return load_json(_policy_root(root) / "policy" / "gettext-i18n.policy.json")
 
 
 def gsettings_policy(root: Path) -> dict[str, Any]:
-    return load_json(root / "policy" / "gsettings.policy.json")
+    return load_json(_policy_root(root) / "policy" / "gsettings.policy.json")
 
 
 def _safe_load_toml(path: Path, errors: list[str], label: str) -> dict[str, Any] | None:
@@ -77,38 +82,41 @@ def _search_text(paths: list[Path], pattern: str) -> bool:
 
 
 def _policy_index(root: Path, bundle: dict[str, Any]) -> list[dict[str, Any]]:
+    policy_root = _policy_root(root)
     rows: list[dict[str, Any]] = []
     for item in bundle.get("bundle_contains", []):
         rel = str(item.get("file", "")).strip()
-        path = root / "policy" / rel
+        path = policy_root / "policy" / rel
         digest, size = file_hash(path)
         rows.append({"file": rel, "sha256": digest, "bytes": size})
     return rows
 
 
 def update_artifact_index(root: Path) -> None:
-    bundle_path = root / "policy" / "gnome-rust-app.bundle.json"
+    policy_root = _policy_root(root)
+    bundle_path = policy_root / "policy" / "gnome-rust-app.bundle.json"
     bundle = policy_bundle(root)
     bundle["artifact_index"] = _policy_index(root, bundle)
     bundle_path.write_text(dump_json(bundle), encoding="utf-8")
 
 
 def check_policy_stack(root: Path, errors: list[str]) -> None:
+    policy_root = _policy_root(root)
     required = validation_policy(root).get("required_policy_files", [])
     for rel in required:
-        if not (root / rel).exists():
+        if not (policy_root / rel).exists():
             add(errors, f"Missing required policy file: {rel}")
     bundle = policy_bundle(root)
     bundle_ids: list[str] = []
     for item in bundle.get("bundle_contains", []):
-        path = root / "policy" / str(item.get("file", "")).strip()
+        path = policy_root / "policy" / str(item.get("file", "")).strip()
         if not path.exists():
-            add(errors, f"Bundle references missing policy file: {path.relative_to(root)}")
+            add(errors, f"Bundle references missing policy file: {path.relative_to(policy_root)}")
             continue
         actual = load_json(path)
         expected_id = item.get("$id")
         if expected_id and actual.get("$id") != expected_id:
-            add(errors, f"{path.relative_to(root)} has $id {actual.get('$id')!r}, expected {expected_id!r}")
+            add(errors, f"{path.relative_to(policy_root)} has $id {actual.get('$id')!r}, expected {expected_id!r}")
         if expected_id:
             bundle_ids.append(str(expected_id))
     overlap_ids = [str(item) for item in bundle.get("overlaps_with", [])]
@@ -125,10 +133,14 @@ def check_policy_stack(root: Path, errors: list[str]) -> None:
 
 
 def check_repo_layout(root: Path, errors: list[str]) -> None:
-    required = policy_bundle(root).get("required_repository_layout", {}).get("must_exist", [])
-    for rel in required:
+    layout = policy_bundle(root).get("required_repository_layout", {})
+    for rel in layout.get("must_exist", []):
         if not (root / rel).exists():
             add(errors, f"Missing required path from bundle: {rel}")
+    policy_root = _policy_root(root)
+    for rel in layout.get("contract_must_exist", []):
+        if not (policy_root / rel).exists():
+            add(errors, f"Missing required contract path from bundle: {rel}")
 
 
 def check_toolchain(root: Path, errors: list[str]) -> None:

@@ -31,12 +31,34 @@ def fail(message: str) -> NoReturn:
     raise SystemExit(1)
 
 
+def _has_app_layout(path: Path) -> bool:
+    return (
+        (path / "Cargo.toml").is_file()
+        and (path / "src").is_dir()
+        and (path / "data").is_dir()
+        and (path / "po").is_dir()
+        and (path / "build-aux").is_dir()
+    )
+
+
+def _has_contract_layout(path: Path) -> bool:
+    return (path / "policy").is_dir()
+
+
 def _is_target_repo(path: Path) -> bool:
-    return (path / "Cargo.toml").exists() and (path / "policy").is_dir()
+    return _has_app_layout(path) and (path / "policy").is_dir()
 
 
 def _is_policy_pack_repo(path: Path) -> bool:
     return (path / "AGENTS.md").exists() and (path / "policy").is_dir() and (path / "tools").is_dir() and not (path / "Cargo.toml").exists()
+
+
+def contract_root(root: Path) -> Path:
+    start = root.resolve()
+    for cur in [start, *start.parents]:
+        if _has_contract_layout(cur):
+            return cur
+    fail(f"[validation] unable to locate policy/tooling contract root for {start}")
 
 
 def repo_root(explicit: str | None = None, *, allow_policy_pack: bool = False) -> Path:
@@ -50,8 +72,13 @@ def repo_root(explicit: str | None = None, *, allow_policy_pack: bool = False) -
             if cur in seen:
                 continue
             seen.add(cur)
-            if _is_target_repo(cur):
-                return cur
+            if _has_app_layout(cur):
+                try:
+                    contract_root(cur)
+                except SystemExit:
+                    pass
+                else:
+                    return cur
             if allow_policy_pack and _is_policy_pack_repo(cur):
                 return cur
     if explicit:
