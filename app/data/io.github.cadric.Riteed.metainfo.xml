@@ -2,7 +2,7 @@
 <component type="desktop-application">
   <id>io.github.cadric.Riteed</id>
   <name>Riteed</name>
-  <summary>Edit Plain Text Files</summary>
+  <summary>Edit Text, Code, and Config Files</summary>
   <metadata_license>MIT</metadata_license>
   <project_license>MIT</project_license>
   <launchable type="desktop-id">io.github.cadric.Riteed.desktop</launchable>
@@ -10,13 +10,13 @@
   <url type="homepage">https://github.com/cadric/riteed</url>
   <url type="bugtracker">https://github.com/cadric/riteed/issues</url>
   <description>
-    <p>Riteed is a small GNOME text editor for editing plain UTF-8 text files.</p>
-    <p>It provides tabbed plain-text editing with search, replace, line numbers, and lightweight status feedback.</p>
+    <p>Riteed is a small GNOME text editor for editing UTF-8 text, code, config, and markdown files.</p>
+    <p>It provides tabs, search and replace, syntax highlighting, optional line numbers and minimap, and conservative reload prompts when files change on disk.</p>
   </description>
   <releases>
     <release version="0.1.0" date="2026-04-19">
       <description>
-        <p>Added in-document search and replace, optional line numbers, and a status bar for cursor position and modified state.</p>
+        <p>Added syntax highlighting, an optional minimap, and safer handling for files that change on disk while they are open.</p>
       </description>
     </release>
   </releases>

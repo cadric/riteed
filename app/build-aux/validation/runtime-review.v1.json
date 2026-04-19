@@ -59,7 +59,7 @@
     },
     {
       "path": "src/editor_search.rs",
-      "line": 38,
+      "line": 37,
       "match": "state: RefCell<SearchState>,",
       "kind": "runtime-shared-state",
       "ownership": "The search controller owns one mutable binding to the active tab and active search context.",
@@ -67,15 +67,15 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 32,
+      "line": 82,
       "match": "state: RefCell<EditorTabState>,",
       "kind": "runtime-shared-state",
-      "ownership": "Each editor tab owns its mutable document and loading state.",
-      "justification": "A tab must update saved identity, loading flags, and dirty suppression while the SourceView buffer drives modified state and async open/save callbacks."
+      "ownership": "Each editor tab owns its mutable document, file-monitor, and deferred external-change state.",
+      "justification": "A tab must coordinate saved identity, syntax language, monitor bindings, stale-save protection, banner visibility, and reload suppression while the SourceView buffer drives modified state."
     },
     {
       "path": "src/workspace.rs",
-      "line": 46,
+      "line": 48,
       "match": "pub(crate) state: RefCell<WorkspaceState>,",
       "kind": "runtime-shared-state",
       "ownership": "The workspace owns tab collection, recent/session caches, restore gating, and active close flow.",

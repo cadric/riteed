@@ -9,6 +9,7 @@ use crate::APP_ID;
 const KEY_THEME: &str = "theme";
 const KEY_WORD_WRAP: &str = "word-wrap";
 const KEY_SHOW_LINE_NUMBERS: &str = "show-line-numbers";
+const KEY_SHOW_MINIMAP: &str = "show-minimap";
 const KEY_WINDOW_WIDTH: &str = "window-width";
 const KEY_WINDOW_HEIGHT: &str = "window-height";
 const KEY_RECENT_FILES: &str = "recent-files";
@@ -76,6 +77,7 @@ struct MemorySettings {
     theme: ThemePreference,
     word_wrap: bool,
     show_line_numbers: bool,
+    show_minimap: bool,
     window_width: i32,
     window_height: i32,
     recent_files: Vec<String>,
@@ -104,6 +106,7 @@ impl AppSettings {
                 theme: ThemePreference::System,
                 word_wrap: false,
                 show_line_numbers: false,
+                show_minimap: false,
                 window_width: 840,
                 window_height: 620,
                 recent_files: Vec::new(),
@@ -177,6 +180,25 @@ impl AppSettings {
             }
             SettingsBackend::Memory(memory) => {
                 with_memory_mut(memory, |state| state.show_line_numbers = enabled);
+            }
+        }
+    }
+
+    #[must_use]
+    pub fn show_minimap(&self) -> bool {
+        match &self.backend {
+            SettingsBackend::GSettings(settings) => settings.boolean(KEY_SHOW_MINIMAP),
+            SettingsBackend::Memory(memory) => with_memory(memory, |state| state.show_minimap),
+        }
+    }
+
+    pub fn set_show_minimap(&self, enabled: bool) {
+        match &self.backend {
+            SettingsBackend::GSettings(settings) => {
+                let _changed = settings.set_boolean(KEY_SHOW_MINIMAP, enabled);
+            }
+            SettingsBackend::Memory(memory) => {
+                with_memory_mut(memory, |state| state.show_minimap = enabled);
             }
         }
     }

@@ -16,6 +16,11 @@
       <summary>Show Line Numbers</summary>
       <description>Controls whether Riteed shows line numbers in the editor gutter.</description>
     </key>
+    <key name="show-minimap" type="b">
+      <default>false</default>
+      <summary>Show Minimap</summary>
+      <description>Controls whether Riteed shows a document overview minimap beside the editor.</description>
+    </key>
     <key name="window-width" type="i">
       <default>840</default>
       <summary>Window Width</summary>

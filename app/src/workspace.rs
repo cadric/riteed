@@ -8,9 +8,11 @@ use libadwaita as adw;
 use crate::close_flow::CloseCoordinator;
 use crate::editor_search::EditorSearch;
 use crate::editor_status::EditorStatusBar;
-use crate::editor_tab::{EditorTab, SaveOutcome};
-use crate::error::AppError;
+use crate::editor_tab::{EditorTab, SaveResult};
 use crate::settings::AppSettings;
+
+#[cfg(test)]
+mod testing;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum OpenSource {
@@ -206,123 +208,6 @@ impl Workspace {
         self.state.borrow().allow_window_close
     }
 
-    #[cfg(test)]
-    pub(crate) fn tab_count(&self) -> i32 {
-        self.tab_view.n_pages()
-    }
-
-    #[cfg(test)]
-    pub(crate) fn selected_title(&self) -> String {
-        self.selected_tab()
-            .map_or_else(|| pgettext("document title", "Untitled"), |tab| tab.title())
-    }
-
-    #[cfg(test)]
-    pub(crate) fn selected_text(&self) -> String {
-        self.selected_tab()
-            .map_or_else(String::new, |tab| tab.buffer_text())
-    }
-
-    #[cfg(test)]
-    pub(crate) fn set_selected_text(&self, text: &str) {
-        if let Some(tab) = self.selected_tab() {
-            tab.set_text_for_tests(text);
-            self.refresh_selected_state();
-        }
-    }
-
-    #[cfg(test)]
-    pub(crate) fn recent_files(&self) -> Vec<String> {
-        self.state.borrow().recent_files.clone()
-    }
-
-    #[cfg(test)]
-    pub(crate) fn session_files(&self) -> Vec<String> {
-        self.state.borrow().stored_session_files.clone()
-    }
-
-    #[cfg(test)]
-    pub(crate) fn selected_saved_uri(&self) -> String {
-        self.selected_tab()
-            .and_then(|tab| tab.uri())
-            .unwrap_or_default()
-    }
-
-    #[cfg(test)]
-    pub(crate) fn reorder_selected_to_first(&self) -> bool {
-        self.tab_view
-            .selected_page()
-            .as_ref()
-            .is_some_and(|page| self.tab_view.reorder_first(page))
-    }
-
-    #[cfg(test)]
-    pub(crate) fn shortcuts_enabled(&self) -> bool {
-        self.tab_view.shortcuts() == adw::TabViewShortcuts::ALL_SHORTCUTS
-    }
-
-    #[cfg(test)]
-    pub(crate) fn search_visible(&self) -> bool {
-        self.search.is_search_mode_for_tests()
-    }
-
-    #[cfg(test)]
-    pub(crate) fn replace_visible(&self) -> bool {
-        self.search.is_replace_visible_for_tests()
-    }
-
-    #[cfg(test)]
-    pub(crate) fn search_query(&self) -> String {
-        self.search.query_text_for_tests()
-    }
-
-    #[cfg(test)]
-    pub(crate) fn search_result(&self) -> String {
-        self.search.result_text_for_tests()
-    }
-
-    #[cfg(test)]
-    pub(crate) fn status_labels(&self) -> (String, String, String) {
-        self.status_bar.labels_for_tests()
-    }
-
-    #[cfg(test)]
-    pub(crate) fn selected_line_numbers_visible(&self) -> bool {
-        self.selected_tab()
-            .is_some_and(|tab| tab.shows_line_numbers_for_tests())
-    }
-
-    #[cfg(test)]
-    pub(crate) fn select_offsets_in_selected(&self, start: i32, end: i32) {
-        if let Some(tab) = self.selected_tab() {
-            tab.select_offsets_for_tests(start, end);
-            self.refresh_selected_state();
-        }
-    }
-
-    #[cfg(test)]
-    pub(crate) fn undo_selected(&self) {
-        if let Some(tab) = self.selected_tab() {
-            tab.undo_for_tests();
-            self.refresh_selected_state();
-        }
-    }
-
-    #[cfg(test)]
-    pub(crate) fn replace_current_for_tests(self: &Rc<Self>) {
-        self.search.replace_current();
-    }
-
-    #[cfg(test)]
-    pub(crate) fn replace_all_for_tests(self: &Rc<Self>) {
-        self.search.replace_all();
-    }
-
-    #[cfg(test)]
-    pub(crate) fn set_replace_text_for_tests(&self, text: &str) {
-        self.search.set_replace_text_for_tests(text);
-    }
-
     pub fn apply_word_wrap_to_tabs(&self) {
         for tab in &self.state.borrow().tabs {
             tab.apply_word_wrap();
@@ -332,6 +217,12 @@ impl Workspace {
     pub fn apply_line_numbers_to_tabs(&self) {
         for tab in &self.state.borrow().tabs {
             tab.apply_line_numbers();
+        }
+    }
+
+    pub fn apply_minimap_to_tabs(&self) {
+        for tab in &self.state.borrow().tabs {
+            tab.apply_minimap_visibility();
         }
     }
 
@@ -364,6 +255,13 @@ impl Workspace {
         self.tab_view.connect_page_reordered(move |_, _, _| {
             if let Some(workspace) = weak.upgrade() {
                 workspace.persist_session_state_if_needed();
+            }
+        });
+
+        let weak = Rc::downgrade(self);
+        self.shell.connect_is_active_notify(move |_| {
+            if let Some(workspace) = weak.upgrade() {
+                crate::workspace_monitor::on_selected_tab_changed(&workspace);
             }
         });
 
@@ -401,12 +299,14 @@ impl Workspace {
                 workspace.request_open_files(files, OpenSource::Drop);
             }
         }));
+        crate::workspace_monitor::install_tab_hooks(self, &tab);
         let page = tab.attach(&self.tab_view);
         self.state.borrow_mut().tabs.push(tab.clone());
         if select {
             self.tab_view.set_selected_page(&page);
         }
         tab.apply_line_numbers();
+        tab.apply_minimap_visibility();
         tab
     }
 
@@ -414,7 +314,7 @@ impl Workspace {
         self: &Rc<Self>,
         tab: &Rc<EditorTab>,
         force_save_as: bool,
-        callback: Rc<dyn Fn(Result<SaveOutcome, AppError>)>,
+        callback: Rc<dyn Fn(SaveResult)>,
     ) {
         let weak = Rc::downgrade(self);
         tab.request_save(
@@ -422,13 +322,17 @@ impl Workspace {
             force_save_as,
             Rc::new(move |result| {
                 if let Some(workspace) = weak.upgrade() {
-                    if let Ok(outcome) = &result {
-                        workspace.remember_recent_uri(&outcome.new_uri);
-                        workspace.persist_session_state_if_needed();
-                        workspace.refresh_selected_state();
-                        workspace.show_toast(&gettextrs::gettext("The Document Was Saved."));
-                    } else if let Err(error) = &result {
-                        crate::dialogs::present_error(&workspace.shell, error);
+                    match &result {
+                        SaveResult::Saved(outcome) => {
+                            workspace.remember_recent_uri(&outcome.new_uri);
+                            workspace.persist_session_state_if_needed();
+                            workspace.refresh_selected_state();
+                            workspace.show_toast(&gettextrs::gettext("The Document Was Saved."));
+                        }
+                        SaveResult::CancelledByUser => {}
+                        SaveResult::Failed(error) => {
+                            crate::dialogs::present_error(&workspace.shell, error);
+                        }
                     }
                     callback(result);
                 }
@@ -500,8 +404,9 @@ impl Workspace {
 
     pub(crate) fn handle_selected_tab_changed(self: &Rc<Self>) {
         let selected = self.selected_tab();
-        self.search.bind_tab(selected);
+        self.search.bind_tab(selected.clone());
         self.refresh_selected_state();
+        crate::workspace_monitor::on_selected_tab_changed(self);
     }
 
     pub(crate) fn refresh_selected_state(&self) {

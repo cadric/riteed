@@ -76,6 +76,7 @@ impl Window {
         shell
             .line_numbers_row
             .set_active(settings.show_line_numbers());
+        shell.minimap_row.set_active(settings.show_minimap());
         settings.apply_theme();
 
         let (width, height) = settings.window_size();
@@ -227,6 +228,11 @@ impl Window {
     }
 
     #[cfg(test)]
+    pub(crate) fn text_for_uri_for_tests(&self, uri: &str) -> Option<String> {
+        self.workspace.text_for_uri(uri)
+    }
+
+    #[cfg(test)]
     pub(crate) fn reorder_selected_to_first_for_tests(&self) -> bool {
         self.workspace.reorder_selected_to_first()
     }
@@ -296,6 +302,47 @@ impl Window {
         self.settings.set_show_line_numbers(enabled);
         self.shell.line_numbers_row.set_active(enabled);
         self.refresh_line_numbers();
+    }
+
+    #[cfg(test)]
+    pub(crate) fn set_minimap_for_tests(&self, enabled: bool) {
+        self.settings.set_show_minimap(enabled);
+        self.shell.minimap_row.set_active(enabled);
+        self.refresh_minimap();
+    }
+
+    #[cfg(test)]
+    pub(crate) fn selected_minimap_visible_for_tests(&self) -> bool {
+        self.workspace.selected_minimap_visible()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn selected_language_id_for_tests(&self) -> Option<String> {
+        self.workspace.selected_language_id()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn selected_banner_visible_for_tests(&self) -> bool {
+        self.workspace.selected_banner_visible()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn sync_selected_banner_for_tests(&self, window_active: bool) {
+        self.workspace.sync_selected_banner_for_tests(window_active);
+    }
+
+    #[cfg(test)]
+    pub(crate) fn trigger_selected_external_action_for_tests(&self) {
+        self.workspace.trigger_selected_external_action_for_tests();
+    }
+
+    #[cfg(test)]
+    pub(crate) fn inject_external_event_for_tests(
+        self: &Rc<Self>,
+        uri: &str,
+        event: crate::editor_monitor::ExternalFileEvent,
+    ) {
+        self.workspace.inject_external_event_for_tests(uri, event);
     }
 
     fn install_callbacks(self: &Rc<Self>) {
@@ -381,6 +428,15 @@ impl Window {
                     window.refresh_line_numbers();
                 }
             });
+
+        let settings = self.settings.clone();
+        let weak = Rc::downgrade(self);
+        self.shell.minimap_row.connect_active_notify(move |row| {
+            settings.set_show_minimap(row.is_active());
+            if let Some(window) = weak.upgrade() {
+                window.refresh_minimap();
+            }
+        });
     }
 
     fn on_close_request(self: &Rc<Self>) -> glib::Propagation {
@@ -397,6 +453,10 @@ impl Window {
 
     fn refresh_line_numbers(&self) {
         self.workspace.apply_line_numbers_to_tabs();
+    }
+
+    fn refresh_minimap(&self) {
+        self.workspace.apply_minimap_to_tabs();
     }
 
     fn persist_window_size(&self) {

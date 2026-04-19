@@ -3,7 +3,7 @@
   "sites": [
     {
       "path": "src/settings.rs",
-      "line": 129,
+      "line": 132,
       "match": "let _changed = settings.set_string(KEY_THEME, preference.stored());",
       "kind": "gsettings-write",
       "key": "theme",
@@ -11,7 +11,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 157,
+      "line": 160,
       "match": "let _changed = settings.set_boolean(KEY_WORD_WRAP, enabled);",
       "kind": "gsettings-write",
       "key": "word-wrap",
@@ -19,7 +19,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 176,
+      "line": 179,
       "match": "let _changed = settings.set_boolean(KEY_SHOW_LINE_NUMBERS, enabled);",
       "kind": "gsettings-write",
       "key": "show-line-numbers",
@@ -27,7 +27,15 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 212,
+      "line": 198,
+      "match": "let _changed = settings.set_boolean(KEY_SHOW_MINIMAP, enabled);",
+      "kind": "gsettings-write",
+      "key": "show-minimap",
+      "trigger": "Explicit minimap toggle in the preferences dialog."
+    },
+    {
+      "path": "src/settings.rs",
+      "line": 234,
       "match": "let _changed_width = settings.set_int(KEY_WINDOW_WIDTH, width);",
       "kind": "gsettings-write",
       "key": "window-width",
@@ -35,7 +43,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 213,
+      "line": 235,
       "match": "let _changed_height = settings.set_int(KEY_WINDOW_HEIGHT, height);",
       "kind": "gsettings-write",
       "key": "window-height",
@@ -43,7 +51,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 242,
+      "line": 264,
       "match": "let _changed = settings.set_strv(KEY_RECENT_FILES, values);",
       "kind": "gsettings-write",
       "key": "recent-files",
@@ -51,19 +59,19 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 268,
+      "line": 290,
       "match": "let _changed = settings.set_strv(KEY_SESSION_FILES, values);",
       "kind": "gsettings-write",
       "key": "session-files",
-      "trigger": "Opening, closing, reordering, or restoring saved tabs updates the persisted session snapshot outside restore mode."
+      "trigger": "Opening, closing, reordering, restoring, or externally renaming saved tabs triggers the existing session snapshot write site outside restore mode."
     },
     {
       "path": "src/settings.rs",
-      "line": 291,
+      "line": 313,
       "match": "let _changed = settings.set_string(KEY_SESSION_SELECTED_FILE, uri);",
       "kind": "gsettings-write",
       "key": "session-selected-file",
-      "trigger": "Selecting a saved tab updates the persisted selected-session URI outside restore mode."
+      "trigger": "Selecting a saved tab or externally renaming the selected saved tab triggers the existing selected-session write site outside restore mode."
     }
   ]
 }

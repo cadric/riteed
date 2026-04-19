@@ -3,8 +3,7 @@ use std::rc::Rc;
 use gtk4::prelude::*;
 
 use crate::dialogs::{self, UnsavedResponse};
-use crate::editor_tab::SaveOutcome;
-use crate::error::AppError;
+use crate::editor_tab::SaveResult;
 use crate::workspace::Workspace;
 
 pub(crate) fn handle_window_close_request(workspace: &Rc<Workspace>) -> gtk4::glib::Propagation {
@@ -63,6 +62,11 @@ pub(crate) fn on_page_detached(workspace: &Rc<Workspace>, page: &libadwaita::Tab
             });
             return;
         };
+        for tab in &state.tabs {
+            if tab.page().as_ref().is_some_and(|item| item == page) {
+                tab.clear_monitor();
+            }
+        }
         state
             .tabs
             .retain(|tab| tab.page().as_ref().is_none_or(|item| item != page));
@@ -131,20 +135,22 @@ fn handle_close_response(workspace: &Rc<Workspace>, response: UnsavedResponse) {
     }
 }
 
-fn handle_close_save_result(workspace: &Rc<Workspace>, result: &Result<SaveOutcome, AppError>) {
-    if result.is_ok() {
-        if let Some(coordinator) = workspace.state.borrow().close_flow.clone() {
-            advance_close_flow(workspace, &coordinator);
+fn handle_close_save_result(workspace: &Rc<Workspace>, result: &SaveResult) {
+    match result {
+        SaveResult::Saved(_) => {
+            if let Some(coordinator) = workspace.state.borrow().close_flow.clone() {
+                advance_close_flow(workspace, &coordinator);
+            }
         }
-        return;
+        SaveResult::CancelledByUser | SaveResult::Failed(_) => {
+            if let Some(coordinator) = workspace.state.borrow().close_flow.clone()
+                && let Some(page) = coordinator.pending_page()
+            {
+                workspace.tab_view.close_page_finish(&page, false);
+            }
+            workspace.state.borrow_mut().close_flow = None;
+        }
     }
-
-    if let Some(coordinator) = workspace.state.borrow().close_flow.clone()
-        && let Some(page) = coordinator.pending_page()
-    {
-        workspace.tab_view.close_page_finish(&page, false);
-    }
-    workspace.state.borrow_mut().close_flow = None;
 }
 
 fn advance_close_flow(

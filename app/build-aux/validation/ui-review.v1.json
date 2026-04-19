@@ -6,7 +6,7 @@
       "line": 5,
       "match": "<object class=\"AdwPreferencesDialog\" id=\"preferences_dialog\">",
       "smallest_width": 320,
-      "adaptive_pattern": "Single-page libadwaita preferences dialog with standard rows for theme, word wrap, and line numbers.",
+      "adaptive_pattern": "Single-page libadwaita preferences dialog with standard rows for theme, word wrap, line numbers, and the optional minimap.",
       "collapse_behavior": "Rows stay vertically stacked and remain usable without horizontal scrolling.",
       "copy_reviewed": true,
       "a11y_reviewed": true
@@ -26,8 +26,8 @@
       "line": 5,
       "match": "<object class=\"AdwApplicationWindow\" id=\"window\">",
       "smallest_width": 360,
-      "adaptive_pattern": "Single-window editor shell with a header bar, a runtime-inserted search bar above the tabs, a tabbed workspace, and a bottom status bar.",
-      "collapse_behavior": "Header actions stay reachable while the search rows stack compactly above the tabs and the bottom status bar keeps file state on the left with cursor position on the right.",
+      "adaptive_pattern": "Single-window editor shell with a header bar, a runtime-inserted search bar above the tabs, per-tab banners for ongoing file state, optional minimaps inside tab content, a tabbed workspace, and a bottom status bar.",
+      "collapse_behavior": "Header actions stay reachable while the search rows stack above the tabs, per-tab banners stay above editor content, and the minimap remains a narrow fixed strip when enabled without taking over the layout.",
       "copy_reviewed": true,
       "a11y_reviewed": true
     },
@@ -36,7 +36,7 @@
       "line": 28,
       "match": "<object class=\"AdwWindowTitle\" id=\"window_title\">",
       "smallest_width": 320,
-      "adaptive_pattern": "Centered window title reflects the selected tab title and subtitle while search and status chrome are added outside the title area.",
+      "adaptive_pattern": "Centered window title reflects the selected tab title and subtitle while search, banners, and status chrome are added outside the title area.",
       "collapse_behavior": "The title truncates naturally before it displaces primary header-bar actions.",
       "copy_reviewed": true,
       "a11y_reviewed": true

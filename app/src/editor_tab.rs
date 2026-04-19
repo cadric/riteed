@@ -1,5 +1,4 @@
 use std::cell::{OnceCell, RefCell};
-use std::path::Path;
 use std::rc::Rc;
 
 use gettextrs::pgettext;
@@ -8,9 +7,15 @@ use libadwaita as adw;
 use sourceview5::prelude::*;
 
 use crate::document::DocumentState;
-use crate::editor_io::{self, LoadedDocument, SavedDocument};
+use crate::editor_monitor::{MonitorBinding, PendingExternalState};
+use crate::editor_view::EditorView;
 use crate::error::AppError;
 use crate::settings::AppSettings;
+
+mod runtime;
+
+#[cfg(test)]
+use crate::editor_monitor::ExternalFileEvent;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SaveOutcome {
@@ -18,14 +23,60 @@ pub struct SaveOutcome {
     pub new_uri: String,
 }
 
+#[derive(Clone, Debug)]
+pub enum SaveResult {
+    Saved(SaveOutcome),
+    CancelledByUser,
+    Failed(AppError),
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ReloadCause {
+    Automatic,
+    UserRequested,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ReloadResult {
+    Applied,
+    Deferred,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum BannerActionKind {
+    Reload,
+    Save,
+}
+
 struct EditorTabState {
     document: DocumentState,
+    content_type: Option<String>,
+    language_id: Option<String>,
+    monitor: Option<MonitorBinding>,
+    pending_external: PendingExternalState,
+    progress: ProgressState,
+    ui: UiState,
+    language_request_generation: u64,
+}
+
+#[derive(Default)]
+struct ProgressState {
     loading: bool,
+    external_reload_in_progress: bool,
+}
+
+#[derive(Default)]
+struct UiState {
     suppress_changes: bool,
+    external_prompt_active: bool,
+    banner_syncing: bool,
 }
 
 pub struct EditorTab {
-    root: gtk4::ScrolledWindow,
+    root: gtk4::Box,
+    banner: adw::Banner,
+    minimap_holder: gtk4::Box,
+    scrolled: gtk4::ScrolledWindow,
     text_view: sourceview5::View,
     text_buffer: sourceview5::Buffer,
     settings: AppSettings,
@@ -33,43 +84,37 @@ pub struct EditorTab {
     page: OnceCell<adw::TabPage>,
     on_file_drop: OnceCell<Rc<dyn Fn(Vec<gio::File>)>>,
     on_visual_change: OnceCell<Rc<dyn Fn()>>,
+    on_external_state_change: OnceCell<Rc<dyn Fn()>>,
+    on_external_action: OnceCell<Rc<dyn Fn()>>,
 }
 
 impl EditorTab {
     #[must_use]
     pub fn new(settings: &AppSettings) -> Rc<Self> {
-        let text_buffer = sourceview5::Buffer::builder().enable_undo(true).build();
-        let text_view = sourceview5::View::with_buffer(&text_buffer);
-        text_view.set_accepts_tab(true);
-        text_view.set_bottom_margin(12);
-        text_view.set_left_margin(12);
-        text_view.set_monospace(true);
-        text_view.set_right_margin(12);
-        text_view.set_show_line_numbers(settings.show_line_numbers());
-        text_view.set_top_margin(12);
-        settings.apply_word_wrap(&text_view);
-
-        let root = gtk4::ScrolledWindow::builder()
-            .hscrollbar_policy(gtk4::PolicyType::Automatic)
-            .vscrollbar_policy(gtk4::PolicyType::Automatic)
-            .child(&text_view)
-            .build();
-        root.set_hexpand(true);
-        root.set_vexpand(true);
-
+        let view = EditorView::new(settings);
         let tab = Rc::new(Self {
-            root,
-            text_view,
-            text_buffer,
+            root: view.root,
+            banner: view.banner,
+            minimap_holder: view.minimap_holder,
+            scrolled: view.scrolled,
+            text_view: view.text_view,
+            text_buffer: view.text_buffer,
             settings: settings.clone(),
             state: RefCell::new(EditorTabState {
                 document: DocumentState::new_empty(),
-                loading: false,
-                suppress_changes: false,
+                content_type: None,
+                language_id: None,
+                monitor: None,
+                pending_external: PendingExternalState::Idle,
+                progress: ProgressState::default(),
+                ui: UiState::default(),
+                language_request_generation: 0,
             }),
             page: OnceCell::new(),
             on_file_drop: OnceCell::new(),
             on_visual_change: OnceCell::new(),
+            on_external_state_change: OnceCell::new(),
+            on_external_action: OnceCell::new(),
         });
         tab.install_callbacks();
         tab.sync_presentation();
@@ -92,6 +137,14 @@ impl EditorTab {
         let _set_callback = self.on_file_drop.set(callback);
     }
 
+    pub fn set_external_state_handler(&self, callback: Rc<dyn Fn()>) {
+        let _set_callback = self.on_external_state_change.set(callback);
+    }
+
+    pub fn set_external_action_handler(&self, callback: Rc<dyn Fn()>) {
+        let _set_callback = self.on_external_action.set(callback);
+    }
+
     #[must_use]
     pub fn page(&self) -> Option<adw::TabPage> {
         self.page.get().cloned()
@@ -105,6 +158,11 @@ impl EditorTab {
     #[must_use]
     pub fn is_dirty(&self) -> bool {
         self.text_buffer.is_modified()
+    }
+
+    #[must_use]
+    pub fn is_loading(&self) -> bool {
+        self.state.borrow().progress.loading
     }
 
     #[must_use]
@@ -159,6 +217,17 @@ impl EditorTab {
             .set_show_line_numbers(self.settings.show_line_numbers());
     }
 
+    pub fn apply_minimap_visibility(&self) {
+        let show_minimap = self.settings.show_minimap();
+        self.minimap_holder.set_visible(show_minimap);
+        let policy = if show_minimap {
+            gtk4::PolicyType::External
+        } else {
+            gtk4::PolicyType::Automatic
+        };
+        self.scrolled.set_vscrollbar_policy(policy);
+    }
+
     #[must_use]
     pub fn text_buffer(&self) -> sourceview5::Buffer {
         self.text_buffer.clone()
@@ -189,58 +258,118 @@ impl EditorTab {
         )
     }
 
-    pub fn load_file(
-        self: &Rc<Self>,
-        file: &gio::File,
-        callback: Rc<dyn Fn(Result<String, AppError>)>,
-    ) {
-        self.set_loading(true);
-        let weak = Rc::downgrade(self);
-        editor_io::load_utf8_file(
-            file,
-            Rc::new(move |result| {
-                if let Some(tab) = weak.upgrade() {
-                    match result {
-                        Ok(LoadedDocument { path, text, uri }) => {
-                            {
-                                let mut state = tab.state.borrow_mut();
-                                state.document = DocumentState::from_loaded(path);
-                                state.suppress_changes = true;
-                            }
-                            let undo_enabled = tab.text_buffer.enables_undo();
-                            tab.text_buffer.set_enable_undo(false);
-                            tab.text_buffer.set_text(&text);
-                            tab.text_buffer.set_enable_undo(undo_enabled);
-                            tab.text_buffer.set_modified(false);
-                            tab.state.borrow_mut().suppress_changes = false;
-                            tab.set_loading(false);
-                            tab.sync_presentation();
-                            tab.grab_focus();
-                            callback(Ok(uri));
-                        }
-                        Err(error) => {
-                            tab.set_loading(false);
-                            tab.sync_presentation();
-                            callback(Err(error));
-                        }
-                    }
-                }
-            }),
-        );
+    #[must_use]
+    pub fn language_id(&self) -> Option<String> {
+        self.state.borrow().language_id.clone()
     }
 
-    pub fn request_save(
-        self: &Rc<Self>,
-        parent: &adw::ApplicationWindow,
-        force_save_as: bool,
-        callback: Rc<dyn Fn(Result<SaveOutcome, AppError>)>,
-    ) {
-        let current_path = self.state.borrow().document.path();
-        if !force_save_as && let Some(path) = current_path {
-            self.save_to_path(&path, callback);
-            return;
+    #[must_use]
+    pub fn pending_external_state(&self) -> PendingExternalState {
+        self.state.borrow().pending_external.clone()
+    }
+
+    #[must_use]
+    pub fn should_present_dirty_reload_prompt(&self) -> bool {
+        let state = self.state.borrow();
+        self.is_dirty()
+            && matches!(
+                state.pending_external,
+                PendingExternalState::ContentPossiblyChanged {
+                    acknowledged: false
+                }
+            )
+            && !state.ui.external_prompt_active
+    }
+
+    #[must_use]
+    pub fn banner_action_kind(&self) -> Option<BannerActionKind> {
+        match self.state.borrow().pending_external {
+            PendingExternalState::ContentPossiblyChanged {
+                acknowledged: false,
+            } if !self.is_dirty() => Some(BannerActionKind::Reload),
+            PendingExternalState::Missing {
+                acknowledged: false,
+            } => Some(BannerActionKind::Save),
+            _ => None,
         }
-        self.show_save_dialog(parent, callback);
+    }
+
+    #[must_use]
+    pub fn should_show_stale_save_conflict(&self) -> bool {
+        self.state.borrow().pending_external.is_content_changed()
+    }
+
+    #[must_use]
+    pub fn should_auto_reload(&self, is_selected: bool, _window_active: bool) -> bool {
+        !self.is_dirty() && !self.is_loading() && !is_selected
+    }
+
+    #[must_use]
+    pub fn monitor_target_matches_current(&self) -> bool {
+        let current = self.uri();
+        let target = self
+            .state
+            .borrow()
+            .monitor
+            .as_ref()
+            .map(|binding| binding.target_uri().to_string());
+        current == target
+    }
+
+    pub fn mark_external_prompt_active(&self, active: bool) {
+        self.state.borrow_mut().ui.external_prompt_active = active;
+    }
+
+    pub fn acknowledge_pending_external(&self) {
+        {
+            let mut state = self.state.borrow_mut();
+            state.pending_external.acknowledge();
+            state.ui.external_prompt_active = false;
+        }
+        self.sync_external_banner(true, true);
+        self.notify_external_state_change();
+    }
+
+    pub fn resolve_pending_external(&self) {
+        {
+            let mut state = self.state.borrow_mut();
+            state.pending_external = PendingExternalState::Idle;
+            state.ui.external_prompt_active = false;
+            state.progress.external_reload_in_progress = false;
+        }
+        self.set_attention(false);
+        self.set_banner_revealed(false);
+        self.notify_external_state_change();
+    }
+
+    pub fn sync_external_banner(&self, is_selected: bool, window_active: bool) {
+        let (title, action) = match self.state.borrow().pending_external.clone() {
+            PendingExternalState::ContentPossiblyChanged {
+                acknowledged: false,
+            } if !self.is_dirty() && is_selected && window_active => (
+                Some(pgettext("external banner", "This File Changed on Disk.")),
+                Some(pgettext("external action", "Reload")),
+            ),
+            PendingExternalState::Missing {
+                acknowledged: false,
+            } if is_selected => (
+                Some(pgettext("external banner", "This File Is Missing on Disk.")),
+                Some(pgettext("external action", "Save")),
+            ),
+            PendingExternalState::Idle
+            | PendingExternalState::Moved { .. }
+            | PendingExternalState::ContentPossiblyChanged { .. }
+            | PendingExternalState::Missing { .. } => (None, None),
+        };
+
+        if let Some(title) = title {
+            self.banner.set_title(&title);
+            self.banner.set_button_label(action.as_deref());
+            self.set_banner_revealed(true);
+        } else {
+            self.banner.set_button_label(None);
+            self.set_banner_revealed(false);
+        }
     }
 
     #[cfg(test)]
@@ -266,24 +395,49 @@ impl EditorTab {
         self.text_view.shows_line_numbers()
     }
 
+    #[cfg(test)]
+    pub(crate) fn minimap_visible_for_tests(&self) -> bool {
+        self.minimap_holder.property::<bool>("visible")
+    }
+
+    #[cfg(test)]
+    pub(crate) fn banner_visible_for_tests(&self) -> bool {
+        self.banner.is_revealed()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn sync_banner_for_tests(&self, is_selected: bool, window_active: bool) {
+        self.sync_external_banner(is_selected, window_active);
+    }
+
+    #[cfg(test)]
+    pub(crate) fn trigger_external_action_for_tests(&self) {
+        if let Some(callback) = self.on_external_action.get() {
+            callback();
+        }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn inject_external_event_for_tests(self: &Rc<Self>, event: ExternalFileEvent) {
+        self.handle_external_event(event);
+    }
+
     fn install_callbacks(self: &Rc<Self>) {
         let weak = Rc::downgrade(self);
         self.text_buffer.connect_changed(move |_| {
-            if let Some(tab) = weak.upgrade() {
-                let should_update = !tab.state.borrow().suppress_changes;
-                if should_update {
-                    tab.sync_presentation();
-                }
+            if let Some(tab) = weak.upgrade()
+                && !tab.state.borrow().ui.suppress_changes
+            {
+                tab.sync_presentation();
             }
         });
 
         let weak = Rc::downgrade(self);
         self.text_buffer.connect_modified_changed(move |_| {
-            if let Some(tab) = weak.upgrade() {
-                let should_update = !tab.state.borrow().suppress_changes;
-                if should_update {
-                    tab.sync_presentation();
-                }
+            if let Some(tab) = weak.upgrade()
+                && !tab.state.borrow().ui.suppress_changes
+            {
+                tab.sync_presentation();
             }
         });
 
@@ -297,91 +451,34 @@ impl EditorTab {
         });
 
         let weak = Rc::downgrade(self);
-        install_file_drop_target(&self.root, &weak);
-        install_file_drop_target(&self.text_view, &weak);
-    }
-
-    fn show_save_dialog(
-        self: &Rc<Self>,
-        parent: &adw::ApplicationWindow,
-        callback: Rc<dyn Fn(Result<SaveOutcome, AppError>)>,
-    ) {
-        let dialog = gtk4::FileDialog::builder()
-            .title(pgettext("file dialog title", "Save the Document"))
-            .accept_label(pgettext("file dialog action", "Save"))
-            .modal(true)
-            .build();
-        dialog.set_initial_name(Some(&self.save_name_suggestion()));
-        if let Some(path) = self.state.borrow().document.path() {
-            dialog.set_initial_file(Some(&gio::File::for_path(path)));
-        }
-        apply_text_filters(&dialog);
-
-        let weak = Rc::downgrade(self);
-        dialog.save(Some(parent), None::<&gio::Cancellable>, move |result| {
-            if let Some(tab) = weak.upgrade() {
-                match result {
-                    Ok(file) => match editor_io::local_path(&file) {
-                        Ok(path) => {
-                            let normalized = DocumentState::normalized_save_path(&path);
-                            tab.save_to_path(&normalized, callback.clone());
-                        }
-                        Err(error) => callback(Err(error)),
-                    },
-                    Err(error) => {
-                        if error.matches(gtk4::DialogError::Dismissed) {
-                            callback(Err(AppError::Cancelled));
-                        } else {
-                            callback(Err(AppError::from(error)));
-                        }
-                    }
-                }
+        self.banner.connect_button_clicked(move |_| {
+            if let Some(tab) = weak.upgrade()
+                && let Some(callback) = tab.on_external_action.get()
+            {
+                callback();
             }
         });
-    }
 
-    fn save_to_path(
-        self: &Rc<Self>,
-        path: &Path,
-        callback: Rc<dyn Fn(Result<SaveOutcome, AppError>)>,
-    ) {
-        let old_uri = self.uri();
-        let text = self.buffer_text();
-        self.set_loading(true);
         let weak = Rc::downgrade(self);
-        editor_io::save_utf8_file(
-            path,
-            &text,
-            Rc::new(move |result| {
-                if let Some(tab) = weak.upgrade() {
-                    match result {
-                        Ok(SavedDocument { path, uri }) => {
-                            tab.state.borrow_mut().document.set_saved(path);
-                            tab.text_buffer.set_modified(false);
-                            tab.set_loading(false);
-                            tab.sync_presentation();
-                            tab.grab_focus();
-                            callback(Ok(SaveOutcome {
-                                old_uri: old_uri.clone(),
-                                new_uri: uri,
-                            }));
-                        }
-                        Err(error) => {
-                            tab.set_loading(false);
-                            tab.sync_presentation();
-                            callback(Err(error));
-                        }
-                    }
-                }
-            }),
-        );
-    }
+        self.banner.connect_revealed_notify(move |banner| {
+            if banner.is_revealed() {
+                return;
+            }
+            let Some(tab) = weak.upgrade() else {
+                return;
+            };
+            let should_ack = {
+                let state = tab.state.borrow();
+                !state.ui.banner_syncing && !state.pending_external.is_idle()
+            };
+            if should_ack {
+                tab.acknowledge_pending_external();
+            }
+        });
 
-    fn set_loading(&self, loading: bool) {
-        self.state.borrow_mut().loading = loading;
-        if let Some(page) = self.page() {
-            page.set_loading(loading);
-        }
+        let weak = Rc::downgrade(self);
+        install_file_drop_target(&self.root, &weak);
+        install_file_drop_target(&self.text_view, &weak);
     }
 
     fn sync_presentation(&self) {

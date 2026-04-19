@@ -5,7 +5,7 @@
   <object class="AdwPreferencesDialog" id="preferences_dialog">
     <property name="title" translatable="yes">Preferences</property>
     <property name="content-width">420</property>
-    <property name="content-height">320</property>
+    <property name="content-height">380</property>
     <child>
       <object class="AdwPreferencesPage">
         <property name="title" translatable="yes">Editor</property>
@@ -28,6 +28,12 @@
               <object class="AdwSwitchRow" id="line_numbers_row">
                 <property name="title" translatable="yes">Line Numbers</property>
                 <property name="subtitle" translatable="yes">Show Line Numbers in the Editor Gutter</property>
+              </object>
+            </child>
+            <child>
+              <object class="AdwSwitchRow" id="minimap_row">
+                <property name="title" translatable="yes">Show Minimap</property>
+                <property name="subtitle" translatable="yes">Show a Narrow Document Overview Beside the Editor</property>
               </object>
             </child>
           </object>

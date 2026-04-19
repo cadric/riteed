@@ -13,7 +13,6 @@ use crate::editor_tab::EditorTab;
 
 struct SearchBinding {
     context: sourceview5::SearchContext,
-    occurrences_handler: glib::SignalHandlerId,
 }
 
 struct SearchState {
@@ -395,7 +394,7 @@ impl EditorSearch {
         let context = sourceview5::SearchContext::new(&tab.text_buffer(), Some(&self.settings));
         context.set_highlight(true);
         let weak = Rc::downgrade(self);
-        let occurrences_handler = context.connect_occurrences_count_notify(move |_| {
+        context.connect_occurrences_count_notify(move |_| {
             if let Some(search) = weak.upgrade() {
                 search.update_result_state();
             }
@@ -403,7 +402,6 @@ impl EditorSearch {
 
         self.state.borrow_mut().active_binding = Some(SearchBinding {
             context: context.clone(),
-            occurrences_handler,
         });
         if let Some((match_start, match_end, _wrapped)) =
             context.forward(&tab.text_buffer().start_iter())
@@ -425,7 +423,6 @@ impl EditorSearch {
         let binding = self.state.borrow_mut().active_binding.take();
         if let Some(binding) = binding {
             binding.context.set_highlight(false);
-            binding.context.disconnect(binding.occurrences_handler);
         }
     }
 

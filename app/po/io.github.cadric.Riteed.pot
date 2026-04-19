@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: io.github.cadric.Riteed 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/cadric/riteed/issues\n"
-"POT-Creation-Date: 2026-04-19 16:10+0000\n"
+"POT-Creation-Date: 2026-04-19 17:55+0000\n"
 "PO-Revision-Date: 2026-04-19 00:00+0000\n"
 "Last-Translator: cadric\n"
 "Language-Team: Danish\n"
@@ -17,13 +17,16 @@ msgid_plural "%d matches"
 msgstr[0] ""
 msgstr[1] ""
 
-msgid "Added in-document search and replace, optional line numbers, and a status bar for cursor position and modified state."
+msgid "Added syntax highlighting, an optional minimap, and safer handling for files that change on disk while they are open."
 msgstr ""
 
 msgid "Choose a Save Location Before Saving This Document."
 msgstr ""
 
 msgid "Controls whether Riteed shows line numbers in the editor gutter."
+msgstr ""
+
+msgid "Controls whether Riteed shows a document overview minimap beside the editor."
 msgstr ""
 
 msgid "Controls whether Riteed uses the system appearance, a light appearance, or a dark appearance."
@@ -38,13 +41,13 @@ msgstr ""
 msgid "Cursor Position"
 msgstr ""
 
-msgid "Edit Plain Text Files"
+msgid "Edit Text, Code, and Config Files"
 msgstr ""
 
-msgid "Enable line numbers in Preferences when you want more structure while reading longer text files."
+msgid "Enable line numbers and the minimap in Preferences when you want more structure while reading longer code or markdown files."
 msgstr ""
 
-msgid "It provides tabbed plain-text editing with search, replace, line numbers, and lightweight status feedback."
+msgid "It provides tabs, search and replace, syntax highlighting, optional line numbers and minimap, and conservative reload prompts when files change on disk."
 msgstr ""
 
 msgid "Modification State"
@@ -63,6 +66,9 @@ msgid "Only Local Files Are Supported"
 msgstr ""
 
 msgid "Open Keyboard Shortcuts from the main menu to review the available file, tab, search, and app commands."
+msgstr ""
+
+msgid "Overwrite the Changed File?"
 msgstr ""
 
 msgid "Press Ctrl+F to search in the selected document, Ctrl+H to show replace, and F3 or Shift+F3 to move between matches."
@@ -85,13 +91,16 @@ msgstr ""
 msgid "Riteed Only Supports Local Plain Text Files in This Version."
 msgstr ""
 
-msgid "Riteed is a lightweight GNOME editor for plain UTF-8 text files, with tabs, search, and session restore."
+msgid "Reload the Changed File?"
 msgstr ""
 
-msgid "Riteed is a small GNOME text editor for editing plain UTF-8 text files."
+msgid "Riteed is a lightweight GNOME editor for UTF-8 text, code, config, and markdown files, with tabs, search, syntax highlighting, and session restore."
 msgstr ""
 
-msgid "Riteed tracks unsaved changes per tab and restores saved files from your previous session when it starts again."
+msgid "Riteed is a small GNOME text editor for editing UTF-8 text, code, config, and markdown files."
+msgstr ""
+
+msgid "Riteed tracks unsaved changes per tab, restores saved files from your previous session, and warns before external file changes replace your work."
 msgstr ""
 
 msgid "Save Changes Before Continuing?"
@@ -104,6 +113,12 @@ msgid "Session Files"
 msgstr ""
 
 msgid "Show Line Numbers"
+msgstr ""
+
+msgid "Show Minimap"
+msgstr ""
+
+msgid "Show a Narrow Document Overview Beside the Editor"
 msgstr ""
 
 msgid "Some files could not be opened."
@@ -130,6 +145,9 @@ msgstr ""
 msgid "The File Is Not Valid UTF-8 Text."
 msgstr ""
 
+msgid "The File Was Reloaded."
+msgstr ""
+
 msgid "The Requested Action Was Cancelled."
 msgstr ""
 
@@ -137,6 +155,12 @@ msgid "Theme Preference"
 msgstr ""
 
 msgid "This document has unsaved changes."
+msgstr ""
+
+msgid "This file changed on disk while you also have unsaved changes."
+msgstr ""
+
+msgid "This file changed on disk. Saving now will replace the external version."
 msgstr ""
 
 msgid "Unable to Build the Window"
@@ -163,7 +187,7 @@ msgstr ""
 msgid "Word Wrap"
 msgstr ""
 
-msgid "text;editor;plain text;"
+msgid "text;editor;code;markdown;config;"
 msgstr ""
 
 msgctxt "alert response"
@@ -179,7 +203,19 @@ msgid "Discard"
 msgstr ""
 
 msgctxt "alert response"
+msgid "Keep Current"
+msgstr ""
+
+msgctxt "alert response"
+msgid "Reload"
+msgstr ""
+
+msgctxt "alert response"
 msgid "Save"
+msgstr ""
+
+msgctxt "alert response"
+msgid "Save Anyway"
 msgstr ""
 
 msgctxt "document subtitle"
@@ -196,6 +232,22 @@ msgstr ""
 
 msgctxt "error title"
 msgid "Unable to Open Help"
+msgstr ""
+
+msgctxt "external action"
+msgid "Reload"
+msgstr ""
+
+msgctxt "external action"
+msgid "Save"
+msgstr ""
+
+msgctxt "external banner"
+msgid "This File Changed on Disk."
+msgstr ""
+
+msgctxt "external banner"
+msgid "This File Is Missing on Disk."
 msgstr ""
 
 msgctxt "file dialog action"

@@ -3,21 +3,21 @@
   "strings": [
     {
       "path": "src/editor_search.rs",
-      "line": 487,
+      "line": 484,
       "match": "gettext(\"No matches\")",
       "kind": "i18n-short-string",
       "resolution": "This short result label appears directly beside the find-next/find-previous controls in the search bar, so the empty-match state remains explicit without extra translator comments."
     },
     {
       "path": "src/editor_search.rs",
-      "line": 568,
+      "line": 565,
       "match": "ngettext(\"%d match\", \"%d matches\", count).replace(\"%d\", &count.to_string())",
       "kind": "i18n-short-string",
       "resolution": "This plural-sensitive count label is shown inline in the search bar immediately next to the current query controls, so the standalone noun stays unambiguous in context."
     },
     {
       "path": "src/editor_search.rs",
-      "line": 573,
+      "line": 570,
       "match": "ngettext(\"Replaced %d match\", \"Replaced %d matches\", count).replace(\"%d\", &count.to_string())",
       "kind": "i18n-short-string",
       "resolution": "This plural-sensitive replacement summary is shown in the same inline search result position after Replace All completes, making the action outcome explicit without extra chrome."

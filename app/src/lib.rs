@@ -6,9 +6,12 @@ pub mod close_flow;
 pub mod dialogs;
 pub mod document;
 pub mod editor_io;
+mod editor_language;
+mod editor_monitor;
 pub mod editor_search;
 pub mod editor_status;
 pub mod editor_tab;
+mod editor_view;
 pub mod error;
 pub mod session;
 pub mod settings;
@@ -17,6 +20,7 @@ pub mod window_shell;
 pub mod workspace;
 mod workspace_close;
 mod workspace_menu;
+mod workspace_monitor;
 mod workspace_open;
 
 #[cfg(test)]

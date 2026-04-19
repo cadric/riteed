@@ -13,6 +13,18 @@ pub enum UnsavedResponse {
     Save,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ExternalReloadResponse {
+    KeepCurrent,
+    Reload,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum StaleSaveResponse {
+    Cancel,
+    SaveAnyway,
+}
+
 pub fn present_error(parent: &impl IsA<gtk4::Widget>, error: &AppError) {
     if matches!(error, AppError::Cancelled) {
         return;
@@ -67,6 +79,78 @@ pub fn confirm_unsaved_changes(
     });
 }
 
+pub fn confirm_external_reload(
+    parent: &impl IsA<gtk4::Widget>,
+    document_name: &str,
+    on_response: impl Fn(ExternalReloadResponse) + 'static,
+) {
+    #[cfg(test)]
+    if let Some(response) = take_external_reload_response_for_tests() {
+        on_response(response);
+        return;
+    }
+
+    let dialog = adw::AlertDialog::builder()
+        .heading(gettext("Reload the Changed File?"))
+        .body(format!(
+            "{}\n\n{}",
+            gettext("This file changed on disk while you also have unsaved changes."),
+            document_name
+        ))
+        .build();
+    dialog.add_responses(&[
+        ("keep-current", &pgettext("alert response", "Keep Current")),
+        ("reload", &pgettext("alert response", "Reload")),
+    ]);
+    dialog.set_response_appearance("reload", adw::ResponseAppearance::Destructive);
+    dialog.set_default_response(Some("keep-current"));
+    dialog.set_close_response("keep-current");
+    dialog.choose(Some(parent), None::<&gio::Cancellable>, move |response| {
+        let outcome = if response == "reload" {
+            ExternalReloadResponse::Reload
+        } else {
+            ExternalReloadResponse::KeepCurrent
+        };
+        on_response(outcome);
+    });
+}
+
+pub fn confirm_stale_save(
+    parent: &impl IsA<gtk4::Widget>,
+    document_name: &str,
+    on_response: impl Fn(StaleSaveResponse) + 'static,
+) {
+    #[cfg(test)]
+    if let Some(response) = take_stale_save_response_for_tests() {
+        on_response(response);
+        return;
+    }
+
+    let dialog = adw::AlertDialog::builder()
+        .heading(gettext("Overwrite the Changed File?"))
+        .body(format!(
+            "{}\n\n{}",
+            gettext("This file changed on disk. Saving now will replace the external version."),
+            document_name
+        ))
+        .build();
+    dialog.add_responses(&[
+        ("cancel", &pgettext("alert response", "Cancel")),
+        ("save-anyway", &pgettext("alert response", "Save Anyway")),
+    ]);
+    dialog.set_response_appearance("save-anyway", adw::ResponseAppearance::Destructive);
+    dialog.set_default_response(Some("cancel"));
+    dialog.set_close_response("cancel");
+    dialog.choose(Some(parent), None::<&gio::Cancellable>, move |response| {
+        let outcome = if response == "save-anyway" {
+            StaleSaveResponse::SaveAnyway
+        } else {
+            StaleSaveResponse::Cancel
+        };
+        on_response(outcome);
+    });
+}
+
 pub fn show_about(parent: &impl IsA<gtk4::Widget>) {
     let dialog = adw::AboutDialog::from_appdata(
         "/io/github/cadric/Riteed/io.github.cadric.Riteed.metainfo.xml",
@@ -96,7 +180,7 @@ pub fn show_help(parent: &impl IsA<gtk4::Widget>) {
     let getting_started = adw::PreferencesGroup::builder()
         .title(pgettext("help section", "Getting Started"))
         .description(gettext(
-            "Riteed is a lightweight GNOME editor for plain UTF-8 text files, with tabs, search, and session restore.",
+            "Riteed is a lightweight GNOME editor for UTF-8 text, code, config, and markdown files, with tabs, search, syntax highlighting, and session restore.",
         ))
         .build();
     getting_started.add(&help_row(
@@ -108,7 +192,7 @@ pub fn show_help(parent: &impl IsA<gtk4::Widget>) {
     getting_started.add(&help_row(
         &pgettext("help row", "Saving Work"),
         &gettext(
-            "Riteed tracks unsaved changes per tab and restores saved files from your previous session when it starts again.",
+            "Riteed tracks unsaved changes per tab, restores saved files from your previous session, and warns before external file changes replace your work.",
         ),
     ));
 
@@ -124,7 +208,7 @@ pub fn show_help(parent: &impl IsA<gtk4::Widget>) {
     editing.add(&help_row(
         &pgettext("help row", "Editor Tools"),
         &gettext(
-            "Enable line numbers in Preferences when you want more structure while reading longer text files.",
+            "Enable line numbers and the minimap in Preferences when you want more structure while reading longer code or markdown files.",
         ),
     ));
     editing.add(&help_row(
@@ -168,8 +252,74 @@ fn take_unsaved_response_for_tests() -> Option<UnsavedResponse> {
 }
 
 #[cfg(test)]
+fn external_reload_response_queue()
+-> &'static std::sync::Mutex<std::collections::VecDeque<ExternalReloadResponse>> {
+    use std::collections::VecDeque;
+    use std::sync::{Mutex, OnceLock};
+
+    static RESPONSES: OnceLock<Mutex<VecDeque<ExternalReloadResponse>>> = OnceLock::new();
+    RESPONSES.get_or_init(|| Mutex::new(VecDeque::new()))
+}
+
+#[cfg(test)]
+fn take_external_reload_response_for_tests() -> Option<ExternalReloadResponse> {
+    match external_reload_response_queue().lock() {
+        Ok(mut guard) => guard.pop_front(),
+        Err(poisoned) => poisoned.into_inner().pop_front(),
+    }
+}
+
+#[cfg(test)]
+fn stale_save_response_queue()
+-> &'static std::sync::Mutex<std::collections::VecDeque<StaleSaveResponse>> {
+    use std::collections::VecDeque;
+    use std::sync::{Mutex, OnceLock};
+
+    static RESPONSES: OnceLock<Mutex<VecDeque<StaleSaveResponse>>> = OnceLock::new();
+    RESPONSES.get_or_init(|| Mutex::new(VecDeque::new()))
+}
+
+#[cfg(test)]
+fn take_stale_save_response_for_tests() -> Option<StaleSaveResponse> {
+    match stale_save_response_queue().lock() {
+        Ok(mut guard) => guard.pop_front(),
+        Err(poisoned) => poisoned.into_inner().pop_front(),
+    }
+}
+
+#[cfg(test)]
 pub(crate) fn queue_unsaved_responses_for_tests(responses: &[UnsavedResponse]) {
     match unsaved_response_queue().lock() {
+        Ok(mut guard) => {
+            guard.clear();
+            guard.extend(responses.iter().copied());
+        }
+        Err(poisoned) => {
+            let mut guard = poisoned.into_inner();
+            guard.clear();
+            guard.extend(responses.iter().copied());
+        }
+    }
+}
+
+#[cfg(test)]
+pub(crate) fn queue_external_reload_responses_for_tests(responses: &[ExternalReloadResponse]) {
+    match external_reload_response_queue().lock() {
+        Ok(mut guard) => {
+            guard.clear();
+            guard.extend(responses.iter().copied());
+        }
+        Err(poisoned) => {
+            let mut guard = poisoned.into_inner();
+            guard.clear();
+            guard.extend(responses.iter().copied());
+        }
+    }
+}
+
+#[cfg(test)]
+pub(crate) fn queue_stale_save_responses_for_tests(responses: &[StaleSaveResponse]) {
+    match stale_save_response_queue().lock() {
         Ok(mut guard) => {
             guard.clear();
             guard.extend(responses.iter().copied());
