@@ -1,5 +1,6 @@
 # Cargo build artifacts
 /target/
+/app/target/
 /debug/
 
 # Rustfmt backups
@@ -16,9 +17,13 @@
 
 # Flatpak local build/cache artifacts
 /.flatpak-builder/
+/app/.flatpak-builder/
 /builddir/
+/app/builddir/
 /_build/
+/app/_build/
 *.flatpak
+/app/data/schemas/gschemas.compiled
 
 # Local agent / editor state
 /.claude/
@@ -30,6 +35,7 @@
 
 # Coverage and temporary files
 /coverage/
+/app/coverage/
 /coverage.out
 /tmp/
 /.tmp/
