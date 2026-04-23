@@ -460,24 +460,20 @@ impl EditorSearch {
     }
 
     fn update_result_state(&self) {
-        if let Some(message) = self.state.borrow().manual_message.clone() {
-            self.result_label.set_label(&message);
-            let has_matches = self
-                .state
-                .borrow()
+        let (manual_message, occurrences) = {
+            let state = self.state.borrow();
+            let occurrences = state
                 .active_binding
                 .as_ref()
-                .is_some_and(|binding| binding.context.occurrences_count() > 0);
-            self.set_action_sensitivity(has_matches);
+                .map_or(-1, |binding| binding.context.occurrences_count());
+            (state.manual_message.clone(), occurrences)
+        };
+
+        if let Some(message) = manual_message {
+            self.result_label.set_label(&message);
+            self.set_action_sensitivity(occurrences > 0);
             return;
         }
-
-        let occurrences = self
-            .state
-            .borrow()
-            .active_binding
-            .as_ref()
-            .map_or(-1, |binding| binding.context.occurrences_count());
 
         let query = self.query();
         let has_query = !query.is_empty();

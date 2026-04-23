@@ -439,8 +439,7 @@ impl AppSettings {
     pub fn set_recent_files(&self, files: &[String]) {
         match &self.backend {
             SettingsBackend::GSettings(settings) => {
-                let values = files.iter().map(String::as_str).collect::<Vec<_>>();
-                let _changed = settings.set_strv(KEY_RECENT_FILES, values);
+                let _changed = settings.set_strv(KEY_RECENT_FILES, files);
             }
             SettingsBackend::Memory(memory) => {
                 with_memory_mut(memory, |state| {
@@ -468,8 +467,7 @@ impl AppSettings {
     pub fn set_session_files(&self, files: &[String]) {
         match &self.backend {
             SettingsBackend::GSettings(settings) => {
-                let values = files.iter().map(String::as_str).collect::<Vec<_>>();
-                let _changed = settings.set_strv(KEY_SESSION_FILES, values);
+                let _changed = settings.set_strv(KEY_SESSION_FILES, files);
             }
             SettingsBackend::Memory(memory) => {
                 with_memory_mut(memory, |state| {

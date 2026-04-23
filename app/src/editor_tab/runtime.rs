@@ -12,10 +12,14 @@ use crate::editor_view::ReloadSnapshot;
 
 impl EditorTab {
     pub fn cancel_io(&self) {
-        if let Some(cancellable) = self.state.borrow_mut().io.cancellable.take() {
+        let cancellable = {
+            let mut state = self.state.borrow_mut();
+            state.io.candidate_encodings = None;
+            state.io.cancellable.take()
+        };
+        if let Some(cancellable) = cancellable {
             cancellable.cancel();
         }
-        self.state.borrow_mut().io.candidate_encodings = None;
     }
 
     #[must_use]
@@ -150,17 +154,16 @@ impl EditorTab {
         identity: &str,
         detection: &LanguageDetection,
     ) {
-        let current_uri = self.state.borrow().document.uri();
         let should_apply = {
             let mut state = self.state.borrow_mut();
-            if state.language_request_generation != generation
-                || current_uri.as_deref() != Some(identity)
-            {
-                false
-            } else {
+            let matches_request = state.language_request_generation == generation
+                && state.document.uri().as_deref() == Some(identity);
+            if matches_request {
                 state.content_type.clone_from(&detection.content_type);
                 state.language_id.clone_from(&detection.language_id);
                 true
+            } else {
+                false
             }
         };
         if should_apply {
@@ -292,8 +295,12 @@ impl EditorTab {
     }
 
     fn set_pending_external(&self, pending: PendingExternalState) {
-        self.state.borrow_mut().pending_external = pending;
-        self.set_attention(!self.state.borrow().pending_external.is_idle());
+        let is_idle = {
+            let mut state = self.state.borrow_mut();
+            state.pending_external = pending;
+            state.pending_external.is_idle()
+        };
+        self.set_attention(!is_idle);
         self.notify_external_state_change();
     }
 

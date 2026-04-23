@@ -83,23 +83,23 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 443,
-      "match": "let _changed = settings.set_strv(KEY_RECENT_FILES, values);",
+      "line": 442,
+      "match": "let _changed = settings.set_strv(KEY_RECENT_FILES, files);",
       "kind": "gsettings-write",
       "key": "recent-files",
       "trigger": "Successful explicit open, recent reopen, drag-and-drop open, or local save updates the recent file list."
     },
     {
       "path": "src/settings.rs",
-      "line": 472,
-      "match": "let _changed = settings.set_strv(KEY_SESSION_FILES, values);",
+      "line": 470,
+      "match": "let _changed = settings.set_strv(KEY_SESSION_FILES, files);",
       "kind": "gsettings-write",
       "key": "session-files",
       "trigger": "Opening, closing, reordering, restoring, or externally renaming saved tabs triggers the existing session snapshot write site outside restore mode."
     },
     {
       "path": "src/settings.rs",
-      "line": 498,
+      "line": 496,
       "match": "let _changed = settings.set_string(KEY_SESSION_SELECTED_FILE, uri);",
       "kind": "gsettings-write",
       "key": "session-selected-file",

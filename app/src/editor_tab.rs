@@ -326,23 +326,27 @@ impl EditorTab {
     }
 
     pub fn sync_external_banner(&self, is_selected: bool, window_active: bool) {
-        let (title, action) = match self.state.borrow().pending_external.clone() {
-            PendingExternalState::ContentPossiblyChanged {
-                acknowledged: false,
-            } if !self.is_dirty() && is_selected && window_active => (
-                Some(pgettext("external banner", "This File Changed on Disk.")),
-                Some(pgettext("external action", "Reload")),
-            ),
-            PendingExternalState::Missing {
-                acknowledged: false,
-            } if is_selected => (
-                Some(pgettext("external banner", "This File Is Missing on Disk.")),
-                Some(pgettext("external action", "Save")),
-            ),
-            PendingExternalState::Idle
-            | PendingExternalState::Moved { .. }
-            | PendingExternalState::ContentPossiblyChanged { .. }
-            | PendingExternalState::Missing { .. } => (None, None),
+        let should_offer_reload = is_selected && window_active && !self.is_dirty();
+        let (title, action) = {
+            let state = self.state.borrow();
+            match &state.pending_external {
+                PendingExternalState::ContentPossiblyChanged {
+                    acknowledged: false,
+                } if should_offer_reload => (
+                    Some(pgettext("external banner", "This File Changed on Disk.")),
+                    Some(pgettext("external action", "Reload")),
+                ),
+                PendingExternalState::Missing {
+                    acknowledged: false,
+                } if is_selected => (
+                    Some(pgettext("external banner", "This File Is Missing on Disk.")),
+                    Some(pgettext("external action", "Save")),
+                ),
+                PendingExternalState::Idle
+                | PendingExternalState::Moved { .. }
+                | PendingExternalState::ContentPossiblyChanged { .. }
+                | PendingExternalState::Missing { .. } => (None, None),
+            }
         };
 
         if let Some(title) = title {
