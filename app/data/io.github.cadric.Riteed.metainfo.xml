@@ -10,8 +10,8 @@
   <url type="homepage">https://github.com/cadric/riteed</url>
   <url type="bugtracker">https://github.com/cadric/riteed/issues</url>
   <description>
-    <p>Riteed is a small GNOME text editor for editing UTF-8 text, code, config, and markdown files.</p>
-    <p>It provides tabs, search and replace, syntax highlighting, optional line numbers and minimap, and conservative reload prompts when files change on disk.</p>
+    <p>Riteed is a small GNOME text editor for editing local text, code, config, and markdown files with encoding-aware open and save behavior.</p>
+    <p>It provides tabs, search and replace, syntax highlighting, optional line numbers and minimap, format controls for text encoding and line endings, and conservative reload prompts when files change on disk.</p>
   </description>
   <releases>
     <release version="0.1.0" date="2026-04-19">

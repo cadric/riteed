@@ -9,7 +9,8 @@ pub enum AppError {
     Internal(String),
     MissingSavePath,
     NonLocalFile,
-    InvalidUtf8(PathBuf),
+    DecodeFailed(PathBuf),
+    FileTooBig(PathBuf),
     ReadFailed(PathBuf, String),
     WriteFailed(PathBuf, String),
     HelpLaunchFailed(String),
@@ -23,7 +24,9 @@ impl AppError {
             Self::Internal(_) => gettext("Unable to Build the Window"),
             Self::MissingSavePath => gettext("No Save Location Is Available"),
             Self::NonLocalFile => gettext("Only Local Files Are Supported"),
-            Self::InvalidUtf8(_) | Self::ReadFailed(_, _) => gettext("Unable to Open the File"),
+            Self::DecodeFailed(_) | Self::ReadFailed(_, _) | Self::FileTooBig(_) => {
+                gettext("Unable to Open the File")
+            }
             Self::WriteFailed(_, _) => gettext("Unable to Save the File"),
             Self::HelpLaunchFailed(_) => pgettext("error title", "Unable to Open Help"),
         }
@@ -38,8 +41,16 @@ impl AppError {
             Self::NonLocalFile => {
                 gettext("Riteed Only Supports Local Plain Text Files in This Version.")
             }
-            Self::InvalidUtf8(path) => {
-                gettext("The File Is Not Valid UTF-8 Text.") + "\n\n" + &path.display().to_string()
+            Self::DecodeFailed(path) => {
+                gettext(
+                    "Automatic text decoding was not reliable for this file. Choose a text encoding manually and try again.",
+                ) + "\n\n"
+                    + &path.display().to_string()
+            }
+            Self::FileTooBig(path) => {
+                gettext("The file is too large to open safely.")
+                    + "\n\n"
+                    + &path.display().to_string()
             }
             Self::ReadFailed(path, message) | Self::WriteFailed(path, message) => {
                 path.display().to_string() + "\n\n" + message
@@ -65,7 +76,8 @@ mod tests {
             AppError::Internal(String::from("internal")),
             AppError::MissingSavePath,
             AppError::NonLocalFile,
-            AppError::InvalidUtf8("notes.txt".into()),
+            AppError::DecodeFailed("notes.txt".into()),
+            AppError::FileTooBig("notes.txt".into()),
             AppError::ReadFailed("notes.txt".into(), String::from("read")),
             AppError::WriteFailed("notes.txt".into(), String::from("write")),
             AppError::HelpLaunchFailed(String::from("help")),

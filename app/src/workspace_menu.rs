@@ -19,6 +19,18 @@ pub(crate) fn build_primary_menu(recent_files: &[String]) -> gio::Menu {
         menu.append_submenu(Some(&pgettext("menu item", "Recent Files")), &submenu);
     }
 
+    let zoom_menu = gio::Menu::new();
+    zoom_menu.append(Some(&pgettext("menu item", "Zoom In")), Some("win.zoom-in"));
+    zoom_menu.append(
+        Some(&pgettext("menu item", "Zoom Out")),
+        Some("win.zoom-out"),
+    );
+    zoom_menu.append(
+        Some(&pgettext("menu item", "Actual Size")),
+        Some("win.zoom-reset"),
+    );
+    menu.append_submenu(Some(&pgettext("menu item", "Zoom")), &zoom_menu);
+
     menu.append(
         Some(&pgettext("menu item", "Keyboard Shortcuts")),
         Some("win.show-help-overlay"),
@@ -58,11 +70,25 @@ fn recent_label(uri: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::recent_label;
+    use gtk4::prelude::MenuModelExt;
+
+    use super::{build_primary_menu, recent_label};
 
     #[test]
     fn recent_label_prefers_name_and_parent() {
         let label = recent_label("file:///tmp/example.txt");
         assert!(label.contains("example.txt"));
+    }
+
+    #[test]
+    fn recent_label_falls_back_to_uri_for_non_local_files() {
+        let uri = "https://example.com/example.txt";
+        assert_eq!(recent_label(uri), uri);
+    }
+
+    #[test]
+    fn primary_menu_includes_recent_and_zoom_sections() {
+        let menu = build_primary_menu(&[String::from("file:///tmp/example.txt")]);
+        assert!(menu.n_items() >= 9);
     }
 }

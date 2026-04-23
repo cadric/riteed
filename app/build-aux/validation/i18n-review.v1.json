@@ -24,31 +24,52 @@
     },
     {
       "path": "src/editor_status.rs",
-      "line": 52,
+      "line": 175,
+      "match": ".tooltip_text(gettext(\"Document Format\"))",
+      "kind": "i18n-short-string",
+      "resolution": "This short tooltip labels the read-only document format field in the bottom status bar, where it sits directly beside zoom and cursor status."
+    },
+    {
+      "path": "src/editor_status.rs",
+      "line": 83,
+      "match": ".update_property(&[Property::Label(&gettext(\"Document Format\"))]);",
+      "kind": "i18n-short-string",
+      "resolution": "This short string is used only as the accessible label for the read-only format field in the status bar."
+    },
+    {
+      "path": "src/editor_status.rs",
+      "line": 84,
       "match": "name_label.update_property(&[Property::Label(&gettext(\"Current Document\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is used only as the accessible label for the leftmost status field that shows the current document name."
     },
     {
       "path": "src/editor_status.rs",
-      "line": 53,
+      "line": 85,
       "match": "modified_label.update_property(&[Property::Label(&gettext(\"Modification State\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is used only as the accessible label for the status field that reports whether the selected document is modified."
     },
     {
       "path": "src/editor_status.rs",
-      "line": 54,
+      "line": 86,
       "match": "position_label.update_property(&[Property::Label(&gettext(\"Cursor Position\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is used only as the accessible label for the right-aligned line and column readout in the status bar."
     },
     {
       "path": "src/editor_status.rs",
-      "line": 100,
+      "line": 245,
       "match": "gettext(\"Modified\")",
       "kind": "i18n-short-string",
       "resolution": "This short visible status tag appears immediately after the current document name in the bottom status bar, so its state meaning is explicit from placement."
+    },
+    {
+      "path": "src/window_preferences.rs",
+      "line": 406,
+      "match": "font_dialog.set_title(&gettext(\"Choose Editor Font\"));",
+      "kind": "i18n-short-string",
+      "resolution": "This short dialog title appears at the top of the font chooser and the accompanying copy explains that the selection affects only the editor font."
     }
   ]
 }

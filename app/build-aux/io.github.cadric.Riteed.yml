@@ -2,6 +2,10 @@ id: io.github.cadric.Riteed
 runtime: org.gnome.Platform
 runtime-version: "50"
 sdk: org.gnome.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.rust-stable
+build-options:
+  append-path: /usr/lib/sdk/rust-stable/bin
 command: riteed
 finish-args:
   - --socket=wayland
@@ -19,6 +23,7 @@ modules:
       - install -Dm644 data/icons/hicolor/scalable/apps/io.github.cadric.Riteed.svg /app/share/icons/hicolor/scalable/apps/io.github.cadric.Riteed.svg
       - install -Dm644 data/icons/hicolor/scalable/apps/io.github.cadric.Riteed.symbolic.svg /app/share/icons/hicolor/scalable/apps/io.github.cadric.Riteed.symbolic.svg
       - install -Dm644 data/schemas/io.github.cadric.Riteed.gschema.xml /app/share/glib-2.0/schemas/io.github.cadric.Riteed.gschema.xml
+      - glib-compile-schemas /app/share/glib-2.0/schemas
       - install -Dm644 po/da.gmo /app/share/locale/da/LC_MESSAGES/io.github.cadric.Riteed.mo
     sources:
       - type: dir

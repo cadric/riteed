@@ -1,146 +1,83 @@
-use std::path::Path;
 use std::rc::Rc;
 
-use gtk4::{gio, prelude::*};
-use libadwaita as adw;
+use gtk4::{gio, glib::SList, prelude::*};
+use sourceview5::prelude::*;
 
 use crate::document::DocumentState;
-use crate::editor_io::{self, LoadedDocument, SavedDocument};
+use crate::editor_io::{LoadedDocument, SavedDocument};
 use crate::editor_language::{self, LanguageDetection};
-use crate::editor_monitor::{self, ExternalFileEvent, MonitorBinding, PendingExternalState};
-use crate::editor_tab::{EditorTab, ReloadCause, ReloadResult, SaveOutcome, SaveResult};
+use crate::editor_monitor::PendingExternalState;
+use crate::editor_tab::{EditorTab, ReloadCause};
 use crate::editor_view::ReloadSnapshot;
-use crate::error::AppError;
-use gettextrs::pgettext;
 
 impl EditorTab {
-    pub fn load_file(
-        self: &Rc<Self>,
-        file: &gio::File,
-        callback: Rc<dyn Fn(Result<String, AppError>)>,
-    ) {
-        self.set_loading(true);
-        let weak = Rc::downgrade(self);
-        editor_io::load_utf8_file(
-            file,
-            Rc::new(move |result| {
-                if let Some(tab) = weak.upgrade() {
-                    match result {
-                        Ok(LoadedDocument { path, text, uri }) => {
-                            tab.apply_loaded_text(path.clone(), &text);
-                            let monitored_file = gio::File::for_path(&path);
-                            tab.swap_monitor(&monitored_file);
-                            tab.refresh_language_for_file(&gio::File::for_path(path));
-                            tab.set_loading(false);
-                            tab.sync_presentation();
-                            tab.grab_focus();
-                            callback(Ok(uri));
-                        }
-                        Err(error) => {
-                            tab.set_loading(false);
-                            tab.sync_presentation();
-                            callback(Err(error));
-                        }
-                    }
-                }
-            }),
-        );
+    pub fn cancel_io(&self) {
+        if let Some(cancellable) = self.state.borrow_mut().io.cancellable.take() {
+            cancellable.cancel();
+        }
+        self.state.borrow_mut().io.candidate_encodings = None;
     }
 
-    pub fn reload_from_disk(
-        self: &Rc<Self>,
-        cause: ReloadCause,
-        should_apply: Rc<dyn Fn() -> bool>,
-        callback: Rc<dyn Fn(Result<ReloadResult, AppError>)>,
+    #[must_use]
+    pub fn current_format(&self) -> crate::editor_format::SavedTextFormat {
+        self.state.borrow().document.format().clone()
+    }
+
+    #[must_use]
+    pub fn current_format_summary(&self) -> String {
+        self.current_format().summary()
+    }
+
+    #[must_use]
+    pub fn current_line_ending_mode(&self) -> crate::editor_format::LineEndingMode {
+        self.state.borrow().document.format().line_ending_mode()
+    }
+
+    #[must_use]
+    pub fn can_reopen_with_encoding(&self) -> bool {
+        self.saved_file().is_some()
+            && !self.pending_external_state().is_missing()
+            && !self.is_loading()
+            && !self.state.borrow().ui.external_prompt_active
+    }
+
+    pub fn set_current_line_ending_mode(
+        &self,
+        line_ending_mode: crate::editor_format::LineEndingMode,
     ) {
-        let Some(saved_file) = self.saved_file() else {
-            callback(Err(AppError::MissingSavePath));
-            return;
-        };
-        let Some(expected_uri) = self.uri() else {
-            callback(Err(AppError::MissingSavePath));
-            return;
-        };
-        let snapshot = ReloadSnapshot::capture(&self.text_buffer);
-        let already_loading = {
+        let changed = {
             let mut state = self.state.borrow_mut();
-            if state.progress.loading || state.progress.external_reload_in_progress {
-                true
-            } else {
-                state.progress.loading = true;
-                state.progress.external_reload_in_progress = true;
+            if state.document.format().line_ending_mode() == line_ending_mode {
                 false
+            } else {
+                state.document.set_line_ending_mode(line_ending_mode);
+                true
             }
         };
-        if already_loading {
-            callback(Ok(ReloadResult::Deferred));
-            return;
+        if changed {
+            self.sync_presentation();
         }
-        if let Some(page) = self.page() {
-            page.set_loading(true);
-        }
-
-        let weak = Rc::downgrade(self);
-        editor_io::load_utf8_file(
-            &saved_file,
-            Rc::new(move |result| {
-                if let Some(tab) = weak.upgrade() {
-                    match result {
-                        Ok(LoadedDocument { path, text, .. }) => {
-                            if !tab.can_apply_reload(cause, &expected_uri, &should_apply) {
-                                tab.finish_reload(false);
-                                callback(Ok(ReloadResult::Deferred));
-                                return;
-                            }
-                            tab.apply_reloaded_text(path.clone(), &text, &snapshot);
-                            tab.refresh_language_for_file(&gio::File::for_path(path));
-                            tab.finish_reload(true);
-                            callback(Ok(ReloadResult::Applied));
-                        }
-                        Err(error) => {
-                            tab.finish_reload(false);
-                            callback(Err(error));
-                        }
-                    }
-                }
-            }),
-        );
     }
 
-    pub fn request_save(
-        self: &Rc<Self>,
-        parent: &adw::ApplicationWindow,
-        force_save_as: bool,
-        callback: Rc<dyn Fn(SaveResult)>,
-    ) {
-        let current_path = self.state.borrow().document.path();
-        if !force_save_as && let Some(path) = current_path {
-            if self.should_show_stale_save_conflict() {
-                let weak = Rc::downgrade(self);
-                crate::dialogs::confirm_stale_save(parent, &self.title(), move |choice| {
-                    if let Some(tab) = weak.upgrade() {
-                        match choice {
-                            crate::dialogs::StaleSaveResponse::SaveAnyway => {
-                                tab.save_to_path(&path, callback.clone());
-                            }
-                            crate::dialogs::StaleSaveResponse::Cancel => {
-                                callback(SaveResult::CancelledByUser);
-                            }
-                        }
-                    }
-                });
-                return;
+    pub fn set_current_encoding(&self, encoding: crate::editor_format::EncodingInfo) {
+        let changed = {
+            let mut state = self.state.borrow_mut();
+            if state.document.format().encoding() == &encoding {
+                false
+            } else {
+                state.document.set_encoding(encoding);
+                true
             }
-            self.save_to_path(&path, callback);
-            return;
+        };
+        if changed {
+            self.sync_presentation();
         }
-        self.show_save_dialog(parent, callback);
     }
 
-    pub fn handle_external_event(self: &Rc<Self>, event: ExternalFileEvent) {
+    pub fn handle_external_event(self: &Rc<Self>, event: crate::editor_monitor::ExternalFileEvent) {
         match event {
-            ExternalFileEvent::Moved { new_file } => {
-                if let Ok(path) = editor_io::local_path(&new_file) {
+            crate::editor_monitor::ExternalFileEvent::Moved { new_file } => {
+                if let Ok(path) = crate::editor_io::local_path(&new_file) {
                     {
                         let mut state = self.state.borrow_mut();
                         state.document.set_saved(path);
@@ -152,15 +89,17 @@ impl EditorTab {
                     self.sync_presentation();
                     self.notify_external_state_change();
                 } else {
-                    self.set_pending_external(editor_monitor::next_pending_state(
+                    self.set_pending_external(crate::editor_monitor::next_pending_state(
                         &self.pending_external_state(),
-                        ExternalFileEvent::ContentPossiblyChanged,
+                        crate::editor_monitor::ExternalFileEvent::ContentPossiblyChanged,
                     ));
                 }
             }
             other => {
-                let next =
-                    editor_monitor::next_pending_state(&self.pending_external_state(), other);
+                let next = crate::editor_monitor::next_pending_state(
+                    &self.pending_external_state(),
+                    other,
+                );
                 self.set_pending_external(next);
             }
         }
@@ -169,7 +108,7 @@ impl EditorTab {
     pub fn swap_monitor(self: &Rc<Self>, file: &gio::File) {
         self.clear_monitor();
         let weak = Rc::downgrade(self);
-        if let Ok(binding) = MonitorBinding::new(
+        if let Ok(binding) = crate::editor_monitor::MonitorBinding::new(
             file,
             Rc::new(move |event| {
                 if let Some(tab) = weak.upgrade() {
@@ -187,84 +126,7 @@ impl EditorTab {
         }
     }
 
-    fn show_save_dialog(
-        self: &Rc<Self>,
-        parent: &adw::ApplicationWindow,
-        callback: Rc<dyn Fn(SaveResult)>,
-    ) {
-        let dialog = gtk4::FileDialog::builder()
-            .title(pgettext("file dialog title", "Save the Document"))
-            .accept_label(pgettext("file dialog action", "Save"))
-            .modal(true)
-            .build();
-        dialog.set_initial_name(Some(&self.save_name_suggestion()));
-        if let Some(path) = self.state.borrow().document.path() {
-            dialog.set_initial_file(Some(&gio::File::for_path(path)));
-        }
-        super::apply_text_filters(&dialog);
-
-        let weak = Rc::downgrade(self);
-        dialog.save(Some(parent), None::<&gio::Cancellable>, move |result| {
-            if let Some(tab) = weak.upgrade() {
-                match result {
-                    Ok(file) => match editor_io::local_path(&file) {
-                        Ok(path) => {
-                            let normalized = DocumentState::normalized_save_path(&path);
-                            tab.save_to_path(&normalized, callback.clone());
-                        }
-                        Err(error) => callback(SaveResult::Failed(error)),
-                    },
-                    Err(error) if error.matches(gtk4::DialogError::Dismissed) => {
-                        callback(SaveResult::CancelledByUser);
-                    }
-                    Err(error) => callback(SaveResult::Failed(AppError::from(error))),
-                }
-            }
-        });
-    }
-
-    fn save_to_path(self: &Rc<Self>, path: &Path, callback: Rc<dyn Fn(SaveResult)>) {
-        let old_uri = self.uri();
-        let previous_file = self.saved_file();
-        self.clear_monitor();
-        self.set_loading(true);
-        let text = self.buffer_text();
-        let weak = Rc::downgrade(self);
-        editor_io::save_utf8_file(
-            path,
-            &text,
-            Rc::new(move |result| {
-                if let Some(tab) = weak.upgrade() {
-                    match result {
-                        Ok(SavedDocument { path, uri }) => {
-                            tab.state.borrow_mut().document.set_saved(path.clone());
-                            tab.text_buffer.set_modified(false);
-                            tab.resolve_pending_external();
-                            tab.swap_monitor(&gio::File::for_path(&path));
-                            tab.refresh_language_for_file(&gio::File::for_path(path));
-                            tab.set_loading(false);
-                            tab.sync_presentation();
-                            tab.grab_focus();
-                            callback(SaveResult::Saved(SaveOutcome {
-                                old_uri: old_uri.clone(),
-                                new_uri: uri,
-                            }));
-                        }
-                        Err(error) => {
-                            if let Some(previous_file) = previous_file.clone() {
-                                tab.swap_monitor(&previous_file);
-                            }
-                            tab.set_loading(false);
-                            tab.sync_presentation();
-                            callback(SaveResult::Failed(error));
-                        }
-                    }
-                }
-            }),
-        );
-    }
-
-    fn refresh_language_for_file(self: &Rc<Self>, file: &gio::File) {
+    pub(super) fn refresh_language_for_file(self: &Rc<Self>, file: &gio::File) {
         let identity = file.uri().to_string();
         let generation = {
             let mut state = self.state.borrow_mut();
@@ -307,44 +169,52 @@ impl EditorTab {
         }
     }
 
-    fn saved_file(&self) -> Option<gio::File> {
+    pub(super) fn saved_file(&self) -> Option<gio::File> {
         self.state.borrow().document.path().map(gio::File::for_path)
     }
 
-    fn apply_loaded_text(&self, path: std::path::PathBuf, text: &str) {
+    pub(super) fn source_file(&self) -> Option<sourceview5::File> {
+        self.state.borrow().source_file.clone()
+    }
+
+    pub(super) fn apply_loaded_document(
+        &self,
+        document: LoadedDocument,
+        snapshot: Option<&ReloadSnapshot>,
+    ) {
         {
             let mut state = self.state.borrow_mut();
-            state.document = DocumentState::from_loaded(path);
+            state.document = DocumentState::from_loaded(document.path, document.format.clone());
+            state.saved_format = document.format.clone();
+            state.source_file = Some(document.source_file);
             state.pending_external = PendingExternalState::Idle;
             state.ui.external_prompt_active = false;
             state.content_type = None;
             state.language_id = None;
             state.ui.suppress_changes = true;
         }
-        self.replace_buffer_text(text);
-        self.text_buffer.set_modified(false);
-        self.state.borrow_mut().ui.suppress_changes = false;
-        self.set_attention(false);
-        self.set_banner_revealed(false);
-    }
-
-    fn apply_reloaded_text(&self, path: std::path::PathBuf, text: &str, snapshot: &ReloadSnapshot) {
-        {
-            let mut state = self.state.borrow_mut();
-            state.document = DocumentState::from_loaded(path);
-            state.pending_external = PendingExternalState::Idle;
-            state.ui.external_prompt_active = false;
-            state.ui.suppress_changes = true;
+        self.replace_buffer_text(&document.text, document.format.implicit_trailing_newline());
+        if let Some(snapshot) = snapshot {
+            snapshot.apply(&self.text_buffer);
         }
-        self.replace_buffer_text(text);
-        snapshot.apply(&self.text_buffer);
         self.text_buffer.set_modified(false);
         self.state.borrow_mut().ui.suppress_changes = false;
         self.set_attention(false);
         self.set_banner_revealed(false);
     }
 
-    fn can_apply_reload(
+    pub(super) fn apply_saved_document(&self, saved: SavedDocument) {
+        let mut state = self.state.borrow_mut();
+        state.document.set_saved(saved.path);
+        state.document.set_format(saved.format.clone());
+        state.saved_format = saved.format.clone();
+        state.source_file = Some(saved.source_file);
+        self.text_buffer
+            .set_implicit_trailing_newline(saved.format.implicit_trailing_newline());
+        self.text_buffer.set_modified(false);
+    }
+
+    pub(super) fn can_apply_reload(
         &self,
         cause: ReloadCause,
         expected_uri: &str,
@@ -358,7 +228,7 @@ impl EditorTab {
             }
     }
 
-    fn finish_reload(&self, applied: bool) {
+    pub(super) fn finish_reload(&self, applied: bool) {
         {
             let mut state = self.state.borrow_mut();
             state.progress.loading = false;
@@ -376,11 +246,49 @@ impl EditorTab {
         self.notify_external_state_change();
     }
 
-    fn replace_buffer_text(&self, text: &str) {
+    fn replace_buffer_text(&self, text: &str, implicit_trailing_newline: bool) {
         let undo_enabled = self.text_buffer.enables_undo();
         self.text_buffer.set_enable_undo(false);
+        self.text_buffer
+            .set_implicit_trailing_newline(implicit_trailing_newline);
         self.text_buffer.set_text(text);
         self.text_buffer.set_enable_undo(undo_enabled);
+    }
+
+    pub(super) fn start_io_request(
+        &self,
+        candidate_encodings: Option<SList<sourceview5::Encoding>>,
+    ) -> (u64, gio::Cancellable) {
+        let new_cancellable = gio::Cancellable::new();
+        let generation = {
+            let mut state = self.state.borrow_mut();
+            if let Some(cancellable) = state.io.cancellable.take() {
+                cancellable.cancel();
+            }
+            state.io.generation += 1;
+            state.io.cancellable = Some(new_cancellable.clone());
+            state.io.candidate_encodings = candidate_encodings;
+            state.io.generation
+        };
+        (generation, new_cancellable)
+    }
+
+    pub(super) fn finish_io_request(&self, generation: u64) -> bool {
+        let mut state = self.state.borrow_mut();
+        if state.io.generation != generation {
+            return false;
+        }
+        state.io.cancellable = None;
+        state.io.candidate_encodings = None;
+        true
+    }
+
+    pub(super) fn with_io_candidate_encodings<T>(
+        &self,
+        apply: impl FnOnce(Option<&SList<sourceview5::Encoding>>) -> T,
+    ) -> T {
+        let state = self.state.borrow();
+        apply(state.io.candidate_encodings.as_ref())
     }
 
     fn set_pending_external(&self, pending: PendingExternalState) {

@@ -63,6 +63,7 @@ pub(crate) fn on_page_detached(workspace: &Rc<Workspace>, page: &libadwaita::Tab
         };
         for tab in &state.tabs {
             if tab.page().as_ref().is_some_and(|item| item == page) {
+                tab.clear_zoom_style();
                 tab.clear_monitor();
             }
         }

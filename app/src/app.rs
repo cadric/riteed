@@ -88,6 +88,12 @@ fn install_accels(app: &adw::Application) {
     app.set_accels_for_action("win.replace", &["<Ctrl>h"]);
     app.set_accels_for_action("win.find-next", &["F3"]);
     app.set_accels_for_action("win.find-prev", &["<Shift>F3"]);
+    app.set_accels_for_action(
+        "win.zoom-in",
+        &["<Ctrl>plus", "<Ctrl>equal", "<Ctrl>KP_Add"],
+    );
+    app.set_accels_for_action("win.zoom-out", &["<Ctrl>minus", "<Ctrl>KP_Subtract"]);
+    app.set_accels_for_action("win.zoom-reset", &["<Ctrl>0"]);
     app.set_accels_for_action("app.preferences", &["<Ctrl>comma"]);
     app.set_accels_for_action("win.show-help-overlay", &["<Ctrl>question"]);
     app.set_accels_for_action("app.help", &["F1"]);

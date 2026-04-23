@@ -76,6 +76,26 @@ impl Workspace {
         self.status_bar.labels_for_tests()
     }
 
+    pub(crate) fn status_format_summary(&self) -> String {
+        self.status_bar.format_summary_for_tests()
+    }
+
+    pub(crate) fn status_zoom_percent(&self) -> String {
+        self.status_bar.zoom_percent_for_tests()
+    }
+
+    pub(crate) fn activate_status_zoom_in(&self) {
+        self.status_bar.activate_zoom_in_for_tests();
+    }
+
+    pub(crate) fn activate_status_zoom_out(&self) {
+        self.status_bar.activate_zoom_out_for_tests();
+    }
+
+    pub(crate) fn activate_status_zoom_reset(&self) {
+        self.status_bar.activate_zoom_reset_for_tests();
+    }
+
     pub(crate) fn selected_line_numbers_visible(&self) -> bool {
         self.selected_tab()
             .is_some_and(|tab| tab.shows_line_numbers_for_tests())
@@ -84,6 +104,25 @@ impl Workspace {
     pub(crate) fn selected_minimap_visible(&self) -> bool {
         self.selected_tab()
             .is_some_and(|tab| tab.minimap_visible_for_tests())
+    }
+
+    pub(crate) fn selected_indentation_for_tests(&self) -> Option<(bool, u32, i32)> {
+        self.selected_tab().map(|tab| tab.indentation_for_tests())
+    }
+
+    pub(crate) fn selected_minimap_font_for_tests(&self) -> Option<gtk4::pango::FontDescription> {
+        self.selected_tab()
+            .and_then(|tab| tab.minimap_font_desc_for_tests())
+    }
+
+    pub(crate) fn selected_zoom_class_for_tests(&self) -> bool {
+        self.selected_tab()
+            .is_some_and(|tab| tab.view_has_zoom_class_for_tests())
+    }
+
+    pub(crate) fn selected_scroll_past_end_padding_for_tests(&self) -> Option<(i32, i32)> {
+        self.selected_tab()
+            .map(|tab| tab.scroll_past_end_padding_for_tests())
     }
 
     pub(crate) fn selected_language_id(&self) -> Option<String> {

@@ -5,6 +5,7 @@ pub mod app;
 pub mod close_flow;
 pub mod dialogs;
 pub mod document;
+pub mod editor_format;
 pub mod editor_io;
 mod editor_language;
 mod editor_monitor;
@@ -12,10 +13,12 @@ pub mod editor_search;
 pub mod editor_status;
 pub mod editor_tab;
 mod editor_view;
+mod editor_zoom;
 pub mod error;
 pub mod session;
 pub mod settings;
 pub mod window;
+mod window_preferences;
 pub mod window_shell;
 pub mod workspace;
 mod workspace_close;
@@ -25,6 +28,12 @@ mod workspace_open;
 
 #[cfg(test)]
 mod gtk_tests;
+#[cfg(test)]
+mod gtk_tests_v4;
+#[cfg(test)]
+mod gtk_tests_v5;
+#[cfg(test)]
+mod gtk_tests_v5b;
 
 use std::sync::OnceLock;
 

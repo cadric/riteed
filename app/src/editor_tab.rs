@@ -2,20 +2,21 @@ use std::cell::{OnceCell, RefCell};
 use std::rc::Rc;
 
 use gettextrs::pgettext;
-use gtk4::{gdk, gio, prelude::*};
+use gtk4::{gdk, gio, glib::SList, prelude::*};
 use libadwaita as adw;
 use sourceview5::prelude::*;
 
 use crate::document::DocumentState;
+use crate::editor_format::SavedTextFormat;
 use crate::editor_monitor::{MonitorBinding, PendingExternalState};
 use crate::editor_view::EditorView;
 use crate::error::AppError;
 use crate::settings::AppSettings;
 
+mod open;
 mod runtime;
-
-#[cfg(test)]
-use crate::editor_monitor::ExternalFileEvent;
+mod save;
+mod view;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SaveOutcome {
@@ -50,13 +51,23 @@ pub enum BannerActionKind {
 
 struct EditorTabState {
     document: DocumentState,
+    saved_format: SavedTextFormat,
+    source_file: Option<sourceview5::File>,
     content_type: Option<String>,
     language_id: Option<String>,
     monitor: Option<MonitorBinding>,
     pending_external: PendingExternalState,
     progress: ProgressState,
     ui: UiState,
+    io: IoState,
     language_request_generation: u64,
+}
+
+#[derive(Default)]
+struct IoState {
+    generation: u64,
+    cancellable: Option<gio::Cancellable>,
+    candidate_encodings: Option<SList<sourceview5::Encoding>>,
 }
 
 #[derive(Default)]
@@ -75,6 +86,7 @@ struct UiState {
 pub struct EditorTab {
     root: gtk4::Box,
     banner: adw::Banner,
+    minimap: sourceview5::Map,
     minimap_holder: gtk4::Box,
     scrolled: gtk4::ScrolledWindow,
     text_view: sourceview5::View,
@@ -95,6 +107,7 @@ impl EditorTab {
         let tab = Rc::new(Self {
             root: view.root,
             banner: view.banner,
+            minimap: view.minimap,
             minimap_holder: view.minimap_holder,
             scrolled: view.scrolled,
             text_view: view.text_view,
@@ -102,12 +115,15 @@ impl EditorTab {
             settings: settings.clone(),
             state: RefCell::new(EditorTabState {
                 document: DocumentState::new_empty(),
+                saved_format: SavedTextFormat::new_document_defaults(),
+                source_file: None,
                 content_type: None,
                 language_id: None,
                 monitor: None,
                 pending_external: PendingExternalState::Idle,
                 progress: ProgressState::default(),
                 ui: UiState::default(),
+                io: IoState::default(),
                 language_request_generation: 0,
             }),
             page: OnceCell::new(),
@@ -157,7 +173,8 @@ impl EditorTab {
 
     #[must_use]
     pub fn is_dirty(&self) -> bool {
-        self.text_buffer.is_modified()
+        let state = self.state.borrow();
+        self.text_buffer.is_modified() || state.document.format() != &state.saved_format
     }
 
     #[must_use]
@@ -167,7 +184,7 @@ impl EditorTab {
 
     #[must_use]
     pub fn is_clean_untitled(&self) -> bool {
-        self.state.borrow().document.path().is_none() && !self.text_buffer.is_modified()
+        self.state.borrow().document.path().is_none() && !self.is_dirty()
     }
 
     #[must_use]
@@ -202,40 +219,6 @@ impl EditorTab {
         let start = self.text_buffer.start_iter();
         let end = self.text_buffer.end_iter();
         self.text_buffer.text(&start, &end, true).to_string()
-    }
-
-    pub fn grab_focus(&self) {
-        self.text_view.grab_focus();
-    }
-
-    pub fn apply_word_wrap(&self) {
-        self.settings.apply_word_wrap(&self.text_view);
-    }
-
-    pub fn apply_line_numbers(&self) {
-        self.text_view
-            .set_show_line_numbers(self.settings.show_line_numbers());
-    }
-
-    pub fn apply_minimap_visibility(&self) {
-        let show_minimap = self.settings.show_minimap();
-        self.minimap_holder.set_visible(show_minimap);
-        let policy = if show_minimap {
-            gtk4::PolicyType::External
-        } else {
-            gtk4::PolicyType::Automatic
-        };
-        self.scrolled.set_vscrollbar_policy(policy);
-    }
-
-    #[must_use]
-    pub fn text_buffer(&self) -> sourceview5::Buffer {
-        self.text_buffer.clone()
-    }
-
-    #[must_use]
-    pub fn text_view(&self) -> sourceview5::View {
-        self.text_view.clone()
     }
 
     #[must_use]
@@ -373,34 +356,6 @@ impl EditorTab {
     }
 
     #[cfg(test)]
-    pub(crate) fn set_text_for_tests(&self, text: &str) {
-        self.text_buffer.set_text(text);
-        self.sync_presentation();
-    }
-
-    #[cfg(test)]
-    pub(crate) fn select_offsets_for_tests(&self, start: i32, end: i32) {
-        let start_iter = self.text_buffer.iter_at_offset(start);
-        let end_iter = self.text_buffer.iter_at_offset(end);
-        self.text_buffer.select_range(&start_iter, &end_iter);
-    }
-
-    #[cfg(test)]
-    pub(crate) fn undo_for_tests(&self) {
-        self.text_buffer.undo();
-    }
-
-    #[cfg(test)]
-    pub(crate) fn shows_line_numbers_for_tests(&self) -> bool {
-        self.text_view.shows_line_numbers()
-    }
-
-    #[cfg(test)]
-    pub(crate) fn minimap_visible_for_tests(&self) -> bool {
-        self.minimap_holder.property::<bool>("visible")
-    }
-
-    #[cfg(test)]
     pub(crate) fn banner_visible_for_tests(&self) -> bool {
         self.banner.is_revealed()
     }
@@ -415,11 +370,6 @@ impl EditorTab {
         if let Some(callback) = self.on_external_action.get() {
             callback();
         }
-    }
-
-    #[cfg(test)]
-    pub(crate) fn inject_external_event_for_tests(self: &Rc<Self>, event: ExternalFileEvent) {
-        self.handle_external_event(event);
     }
 
     fn install_callbacks(self: &Rc<Self>) {

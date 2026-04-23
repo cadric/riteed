@@ -3,7 +3,7 @@
   "sites": [
     {
       "path": "src/settings.rs",
-      "line": 132,
+      "line": 163,
       "match": "let _changed = settings.set_string(KEY_THEME, preference.stored());",
       "kind": "gsettings-write",
       "key": "theme",
@@ -11,7 +11,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 160,
+      "line": 194,
       "match": "let _changed = settings.set_boolean(KEY_WORD_WRAP, enabled);",
       "kind": "gsettings-write",
       "key": "word-wrap",
@@ -19,7 +19,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 179,
+      "line": 218,
       "match": "let _changed = settings.set_boolean(KEY_SHOW_LINE_NUMBERS, enabled);",
       "kind": "gsettings-write",
       "key": "show-line-numbers",
@@ -27,7 +27,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 198,
+      "line": 242,
       "match": "let _changed = settings.set_boolean(KEY_SHOW_MINIMAP, enabled);",
       "kind": "gsettings-write",
       "key": "show-minimap",
@@ -35,7 +35,39 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 234,
+      "line": 277,
+      "match": "let _changed = settings.set_boolean(KEY_INSERT_SPACES_INSTEAD_OF_TABS, enabled);",
+      "kind": "gsettings-write",
+      "key": "insert-spaces-instead-of-tabs",
+      "trigger": "Explicit indentation-mode toggle in the preferences dialog."
+    },
+    {
+      "path": "src/settings.rs",
+      "line": 304,
+      "match": "let _changed = settings.set_int(KEY_TAB_WIDTH, width);",
+      "kind": "gsettings-write",
+      "key": "tab-width",
+      "trigger": "Committed tab-width change from the staged SpinRow in the preferences dialog."
+    },
+    {
+      "path": "src/settings.rs",
+      "line": 331,
+      "match": "let _changed = settings.set_int(KEY_INDENT_WIDTH, width);",
+      "kind": "gsettings-write",
+      "key": "indent-width",
+      "trigger": "Committed indent-width change from the staged SpinRow in the preferences dialog."
+    },
+    {
+      "path": "src/settings.rs",
+      "line": 355,
+      "match": "let _changed = settings.set_string(KEY_EDITOR_FONT, font);",
+      "kind": "gsettings-write",
+      "key": "editor-font",
+      "trigger": "Explicit accepted font selection from the editor-font chooser."
+    },
+    {
+      "path": "src/settings.rs",
+      "line": 394,
       "match": "let _changed_width = settings.set_int(KEY_WINDOW_WIDTH, width);",
       "kind": "gsettings-write",
       "key": "window-width",
@@ -43,7 +75,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 235,
+      "line": 395,
       "match": "let _changed_height = settings.set_int(KEY_WINDOW_HEIGHT, height);",
       "kind": "gsettings-write",
       "key": "window-height",
@@ -51,7 +83,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 264,
+      "line": 426,
       "match": "let _changed = settings.set_strv(KEY_RECENT_FILES, values);",
       "kind": "gsettings-write",
       "key": "recent-files",
@@ -59,7 +91,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 290,
+      "line": 455,
       "match": "let _changed = settings.set_strv(KEY_SESSION_FILES, values);",
       "kind": "gsettings-write",
       "key": "session-files",
@@ -67,11 +99,27 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 313,
+      "line": 481,
       "match": "let _changed = settings.set_string(KEY_SESSION_SELECTED_FILE, uri);",
       "kind": "gsettings-write",
       "key": "session-selected-file",
       "trigger": "Selecting a saved tab or externally renaming the selected saved tab triggers the existing selected-session write site outside restore mode."
+    },
+    {
+      "path": "src/window_preferences.rs",
+      "line": 102,
+      "match": "row.set_value(f64::from(value));",
+      "kind": "gsettings-write",
+      "key": "tab-width-or-indent-width",
+      "trigger": "Startup-safe SpinRow synchronization only. The shared row helper updates the visible value while the syncing guard prevents this widget write from touching GSettings."
+    },
+    {
+      "path": "src/window_preferences.rs",
+      "line": 296,
+      "match": "row.set_value(f64::from(applied));",
+      "kind": "gsettings-write",
+      "key": "tab-width-or-indent-width",
+      "trigger": "Post-commit SpinRow normalization writes the applied sanitized value back into the widget only. The syncing guard prevents this local update from becoming a per-keystroke GSettings write."
     }
   ]
 }

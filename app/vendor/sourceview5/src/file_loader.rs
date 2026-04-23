@@ -1,14 +1,29 @@
 use std::{cell::RefCell, pin::Pin, ptr};
 
-use glib::translate::{IntoGlib, ToGlibPtr, from_glib_full};
+use glib::{
+    SList,
+    thread_guard::ThreadGuard,
+    translate::{IntoGlib, ToGlibPtr, from_glib_full},
+};
 
-use crate::{FileLoader, prelude::*};
+use crate::{Encoding, FileLoader, ffi, prelude::*};
 
 impl FileLoader {
+    #[doc(alias = "gtk_source_file_loader_set_candidate_encodings")]
+    pub fn set_candidate_encodings(&self, encodings: Option<&SList<Encoding>>) {
+        unsafe {
+            ffi::gtk_source_file_loader_set_candidate_encodings(
+                self.to_glib_none().0,
+                encodings
+                    .map_or(ptr::null_mut(), |encodings| encodings.to_glib_none().0),
+            );
+        }
+    }
+
     #[doc(alias = "gtk_source_file_loader_load_async")]
     pub fn load_async_with_callback<
-        P: FnMut(i64, i64) + Send + 'static,
-        Q: FnOnce(Result<(), glib::Error>) + Send + 'static,
+        P: FnMut(i64, i64) + 'static,
+        Q: FnOnce(Result<(), glib::Error>) + 'static,
     >(
         &self,
         io_priority: glib::Priority,
@@ -25,7 +40,7 @@ impl FileLoader {
     }
 
     #[doc(alias = "gtk_source_file_loader_load_async")]
-    pub fn load_async<Q: FnOnce(Result<(), glib::Error>) + Send + 'static>(
+    pub fn load_async<Q: FnOnce(Result<(), glib::Error>) + 'static>(
         &self,
         io_priority: glib::Priority,
         cancellable: Option<&impl IsA<gio::Cancellable>>,
@@ -34,24 +49,32 @@ impl FileLoader {
         self.load_async_impl(io_priority, cancellable, None, callback)
     }
 
-    fn load_async_impl<Q: FnOnce(Result<(), glib::Error>) + Send + 'static>(
+    fn load_async_impl<Q: FnOnce(Result<(), glib::Error>) + 'static>(
         &self,
         io_priority: glib::Priority,
         cancellable: Option<&impl IsA<gio::Cancellable>>,
-        progress_callback: Option<Box<dyn FnMut(i64, i64) + Send>>,
+        progress_callback: Option<Box<dyn FnMut(i64, i64)>>,
         callback: Q,
     ) {
+        let main_context = glib::MainContext::ref_thread_default();
+        let is_main_context_owner = main_context.is_owner();
+        let has_acquired_main_context = (!is_main_context_owner)
+            .then(|| main_context.acquire().ok())
+            .flatten();
+        assert!(
+            is_main_context_owner || has_acquired_main_context.is_some(),
+            "Async operations only allowed if the thread is owning the MainContext"
+        );
+
         let progress_trampoline = if progress_callback.is_some() {
             Some(load_async_progress_trampoline::<Q> as _)
         } else {
             None
         };
 
-        let user_data: Box<(Q, RefCell<Option<Box<dyn FnMut(i64, i64) + Send>>>)> =
-            Box::new((callback, RefCell::new(progress_callback)));
-        unsafe extern "C" fn load_async_trampoline<
-            Q: FnOnce(Result<(), glib::Error>) + Send + 'static,
-        >(
+        let user_data: Box<(ThreadGuard<Q>, RefCell<Option<Box<dyn FnMut(i64, i64)>>>)> =
+            Box::new((ThreadGuard::new(callback), RefCell::new(progress_callback)));
+        unsafe extern "C" fn load_async_trampoline<Q: FnOnce(Result<(), glib::Error>) + 'static>(
             _source_object: *mut glib::gobject_ffi::GObject,
             res: *mut gio::ffi::GAsyncResult,
             user_data: glib::ffi::gpointer,
@@ -64,20 +87,19 @@ impl FileLoader {
                 } else {
                     Err(from_glib_full(error))
                 };
-                let callback: Box<(Q, RefCell<Option<Box<dyn FnMut(i64, i64) + Send>>>)> =
+                let callback: Box<(ThreadGuard<Q>, RefCell<Option<Box<dyn FnMut(i64, i64)>>>)> =
                     Box::from_raw(user_data as *mut _);
-                callback.0(result);
+                let callback: Q = callback.0.into_inner();
+                callback(result);
             }
         }
-        unsafe extern "C" fn load_async_progress_trampoline<
-            Q: FnOnce(Result<(), glib::Error>) + Send + 'static,
-        >(
+        unsafe extern "C" fn load_async_progress_trampoline<Q: FnOnce(Result<(), glib::Error>) + 'static>(
             current_num_bytes: i64,
             total_num_bytes: i64,
             user_data: glib::ffi::gpointer,
         ) {
             unsafe {
-                let callback: &(Q, RefCell<Option<Box<dyn FnMut(i64, i64) + Send>>>) =
+                let callback: &(ThreadGuard<Q>, RefCell<Option<Box<dyn FnMut(i64, i64)>>>) =
                     &*(user_data as *const _);
                 (callback.1.borrow_mut().as_mut().expect("no closure"))(
                     current_num_bytes,

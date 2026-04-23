@@ -21,6 +21,28 @@
       <summary>Show Minimap</summary>
       <description>Controls whether Riteed shows a document overview minimap beside the editor.</description>
     </key>
+    <key name="insert-spaces-instead-of-tabs" type="b">
+      <default>true</default>
+      <summary>Insert Spaces Instead of Tabs</summary>
+      <description>Controls whether pressing Tab inserts spaces instead of a literal tab character.</description>
+    </key>
+    <key name="tab-width" type="i">
+      <range min="1" max="16"/>
+      <default>4</default>
+      <summary>Tab Width</summary>
+      <description>Controls how many columns a tab character occupies in the editor.</description>
+    </key>
+    <key name="indent-width" type="i">
+      <range min="1" max="16"/>
+      <default>4</default>
+      <summary>Indent Width</summary>
+      <description>Controls how many columns automatic indentation and indent actions use in the editor.</description>
+    </key>
+    <key name="editor-font" type="s">
+      <default>''</default>
+      <summary>Editor Font</summary>
+      <description>Stores the preferred monospace font description for editor text and the minimap. An empty value uses the default monospace font.</description>
+    </key>
     <key name="window-width" type="i">
       <default>840</default>
       <summary>Window Width</summary>

@@ -1,4 +1,4 @@
-use std::cell::RefCell;
+use std::cell::{OnceCell, RefCell};
 use std::rc::Rc;
 
 use gettextrs::pgettext;
@@ -6,6 +6,7 @@ use gtk4::{gdk, gio, glib, prelude::*};
 use libadwaita as adw;
 
 use crate::close_flow::CloseCoordinator;
+use crate::editor_format::{EncodingInfo, LineEndingMode};
 use crate::editor_search::EditorSearch;
 use crate::editor_status::EditorStatusBar;
 use crate::editor_tab::{EditorTab, SaveResult};
@@ -13,6 +14,8 @@ use crate::settings::AppSettings;
 
 #[cfg(test)]
 mod testing;
+
+type FormatPreferencesHandler = Rc<dyn Fn(Option<Rc<EditorTab>>)>;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum OpenSource {
@@ -45,6 +48,7 @@ pub struct Workspace {
     pub(crate) tab_view: adw::TabView,
     pub(crate) search: Rc<EditorSearch>,
     pub(crate) status_bar: EditorStatusBar,
+    format_preferences_handler: OnceCell<FormatPreferencesHandler>,
     pub(crate) state: RefCell<WorkspaceState>,
 }
 
@@ -96,6 +100,7 @@ impl Workspace {
             tab_view,
             search,
             status_bar,
+            format_preferences_handler: OnceCell::new(),
             state: RefCell::new(WorkspaceState {
                 tabs: Vec::new(),
                 recent_files: parts.settings.recent_files(),
@@ -226,6 +231,12 @@ impl Workspace {
         }
     }
 
+    pub fn apply_indentation_to_tabs(&self) {
+        for tab in &self.state.borrow().tabs {
+            tab.apply_indentation();
+        }
+    }
+
     fn install_callbacks(self: &Rc<Self>, workspace_box: &gtk4::Box) {
         let weak = Rc::downgrade(self);
         self.tab_view.connect_selected_page_notify(move |_| {
@@ -307,6 +318,7 @@ impl Workspace {
         }
         tab.apply_line_numbers();
         tab.apply_minimap_visibility();
+        tab.apply_indentation();
         tab
     }
 
@@ -402,6 +414,64 @@ impl Workspace {
         self.menu_button.set_popover(Some(&popover));
     }
 
+    pub(crate) fn set_format_preferences_handler(&self, callback: FormatPreferencesHandler) {
+        let _set_callback = self.format_preferences_handler.set(callback);
+    }
+
+    pub(crate) fn set_selected_line_ending_mode(&self, line_ending_mode: LineEndingMode) {
+        if let Some(tab) = self.selected_tab() {
+            tab.set_current_line_ending_mode(line_ending_mode);
+            self.refresh_selected_state();
+        }
+    }
+
+    pub(crate) fn request_selected_encoding_action(self: &Rc<Self>) {
+        let Some(tab) = self.selected_tab() else {
+            return;
+        };
+
+        if tab.uri().is_some() {
+            let weak = Rc::downgrade(self);
+            tab.request_reopen_with_encoding(
+                &self.shell,
+                Rc::new(move |result| {
+                    if let Some(workspace) = weak.upgrade() {
+                        match result {
+                            Ok(()) => {
+                                workspace.refresh_selected_state();
+                                workspace.show_toast(&gettextrs::gettext("The File Was Reloaded."));
+                            }
+                            Err(crate::error::AppError::Cancelled) => {}
+                            Err(error) => crate::dialogs::present_error(&workspace.shell, &error),
+                        }
+                    }
+                }),
+            );
+            return;
+        }
+
+        let candidates = sourceview5::Encoding::default_candidates();
+        let current = tab.current_format().encoding().to_source_encoding();
+        let weak = Rc::downgrade(self);
+        crate::dialogs::choose_encoding(
+            &self.shell,
+            &gettextrs::gettext("Choose a Text Encoding"),
+            &gettextrs::gettext("Choose the encoding to use for the next save."),
+            &candidates,
+            current.as_ref(),
+            &pgettext("dialog button", "Apply"),
+            move |selection| {
+                if let Some(workspace) = weak.upgrade()
+                    && let Some(tab) = workspace.selected_tab()
+                    && let Some(encoding) = selection
+                {
+                    tab.set_current_encoding(EncodingInfo::from_encoding(&encoding));
+                    workspace.refresh_selected_state();
+                }
+            },
+        );
+    }
+
     pub(crate) fn handle_selected_tab_changed(self: &Rc<Self>) {
         let selected = self.selected_tab();
         self.search.bind_tab(selected.clone());
@@ -412,6 +482,9 @@ impl Workspace {
     pub(crate) fn refresh_selected_state(&self) {
         let selected = self.selected_tab();
         self.status_bar.update(selected.as_deref());
+        if let Some(callback) = self.format_preferences_handler.get() {
+            callback(selected.clone());
+        }
 
         if let Some(tab) = selected {
             self.title_widget.set_title(&tab.title());

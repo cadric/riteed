@@ -6,8 +6,8 @@
       "line": 5,
       "match": "<object class=\"AdwPreferencesDialog\" id=\"preferences_dialog\">",
       "smallest_width": 320,
-      "adaptive_pattern": "Single-page libadwaita preferences dialog with standard rows for theme, word wrap, line numbers, and the optional minimap.",
-      "collapse_behavior": "Rows stay vertically stacked and remain usable without horizontal scrolling.",
+      "adaptive_pattern": "Single-page libadwaita preferences dialog with standard rows for theme, word wrap, line numbers, optional minimap, monospace editor font, and staged indentation controls.",
+      "collapse_behavior": "Rows stay vertically stacked, SpinRows keep their numeric editor inline without horizontal scrolling, and the dialog remains usable at narrow widths without secondary pages.",
       "copy_reviewed": true,
       "a11y_reviewed": true
     },
@@ -16,7 +16,7 @@
       "line": 4,
       "match": "<object class=\"GtkShortcutsWindow\" id=\"shortcuts_window\">",
       "smallest_width": 360,
-      "adaptive_pattern": "Standard shortcuts window grouped into file, tab, search, and app actions.",
+      "adaptive_pattern": "Standard shortcuts window grouped into file, tab, search, view, and app actions.",
       "collapse_behavior": "Shortcut groups continue stacking in reading order as width tightens.",
       "copy_reviewed": true,
       "a11y_reviewed": true
@@ -26,8 +26,8 @@
       "line": 5,
       "match": "<object class=\"AdwApplicationWindow\" id=\"window\">",
       "smallest_width": 360,
-      "adaptive_pattern": "Single-window editor shell with a header bar, a runtime-inserted search bar above the tabs, per-tab banners for ongoing file state, optional minimaps inside tab content, a tabbed workspace, and a bottom status bar.",
-      "collapse_behavior": "Header actions stay reachable while the search rows stack above the tabs, per-tab banners stay above editor content, and the minimap remains a narrow fixed strip when enabled without taking over the layout.",
+      "adaptive_pattern": "Single-window editor shell with a header bar, a runtime-inserted search bar above the tabs, per-tab banners for ongoing file state, optional minimaps inside tab content, a tabbed workspace, and a bottom status bar whose format menu also exposes zoom actions.",
+      "collapse_behavior": "Header actions stay reachable while the search rows stack above the tabs, per-tab banners stay above editor content, the minimap remains a narrow fixed strip when enabled without taking over the layout, and the single status-bar format surface keeps format and zoom actions reachable at narrow widths.",
       "copy_reviewed": true,
       "a11y_reviewed": true
     },

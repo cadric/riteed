@@ -2,6 +2,9 @@ use gtk4::prelude::*;
 use libadwaita as adw;
 use sourceview5::prelude::*;
 
+use crate::editor_zoom::{
+    EDITOR_VIEW_CSS_CLASS, resolve_minimap_font_description, resolve_scroll_past_end_padding,
+};
 use crate::settings::AppSettings;
 
 pub struct EditorView {
@@ -9,6 +12,7 @@ pub struct EditorView {
     pub banner: adw::Banner,
     pub text_buffer: sourceview5::Buffer,
     pub text_view: sourceview5::View,
+    pub minimap: sourceview5::Map,
     pub minimap_holder: gtk4::Box,
     pub scrolled: gtk4::ScrolledWindow,
 }
@@ -18,8 +22,9 @@ impl EditorView {
     pub fn new(settings: &AppSettings) -> Self {
         let text_buffer = sourceview5::Buffer::builder().enable_undo(true).build();
         let text_view = sourceview5::View::with_buffer(&text_buffer);
+        let scroll_past_end_padding = resolve_scroll_past_end_padding(&settings.editor_font());
         text_view.set_accepts_tab(true);
-        text_view.set_bottom_margin(12);
+        text_view.set_bottom_margin(scroll_past_end_padding);
         text_view.set_hexpand(true);
         text_view.set_left_margin(12);
         text_view.set_monospace(true);
@@ -27,7 +32,9 @@ impl EditorView {
         text_view.set_show_line_numbers(settings.show_line_numbers());
         text_view.set_top_margin(12);
         text_view.set_vexpand(true);
+        text_view.add_css_class(EDITOR_VIEW_CSS_CLASS);
         settings.apply_word_wrap(&text_view);
+        settings.apply_indentation(&text_view);
 
         let scrolled = gtk4::ScrolledWindow::builder()
             .hscrollbar_policy(gtk4::PolicyType::Automatic)
@@ -41,13 +48,18 @@ impl EditorView {
         scrolled.set_propagate_natural_width(false);
         scrolled.set_vexpand(true);
 
-        let minimap = sourceview5::Map::builder().view(&text_view).build();
+        let minimap_font = resolve_minimap_font_description(&settings.editor_font());
+        let minimap = sourceview5::Map::builder()
+            .view(&text_view)
+            .font_desc(&minimap_font)
+            .build();
         minimap.set_can_focus(false);
         minimap.set_cursor_visible(false);
         minimap.set_editable(false);
         minimap.set_focusable(false);
         minimap.set_hexpand(false);
         minimap.set_monospace(true);
+        minimap.set_bottom_margin(scroll_past_end_padding);
         minimap.set_vexpand(true);
 
         let minimap_holder = gtk4::Box::builder()
@@ -85,6 +97,7 @@ impl EditorView {
             banner,
             text_buffer,
             text_view,
+            minimap,
             minimap_holder,
             scrolled,
         }

@@ -9,14 +9,14 @@ use gtk4::{gio, glib};
 use libadwaita as adw;
 
 use crate::app::{AppState, RiteedApp, ensure_window_for_tests, install_for_tests};
-use crate::dialogs::{self, ExternalReloadResponse, StaleSaveResponse, UnsavedResponse};
-use crate::editor_monitor::ExternalFileEvent;
+use crate::dialogs::{self, UnsavedResponse};
+use crate::editor_format::LineEndingMode;
 use crate::error::AppError;
 use crate::settings::{AppSettings, ThemePreference};
 use crate::window::Window;
 use crate::workspace::OpenSource;
 
-fn spin_until(label: &str, done: impl Fn() -> bool) {
+pub(crate) fn spin_until(label: &str, done: impl Fn() -> bool) {
     for _ in 0..240 {
         while glib::MainContext::default().iteration(false) {}
         if done() {
@@ -28,13 +28,13 @@ fn spin_until(label: &str, done: impl Fn() -> bool) {
     assert!(done(), "{label}");
 }
 
-fn drain_events(rounds: usize) {
+pub(crate) fn drain_events(rounds: usize) {
     for _ in 0..rounds {
         while glib::MainContext::default().iteration(false) {}
     }
 }
 
-fn build_window(app: &adw::Application) -> Option<std::rc::Rc<Window>> {
+pub(crate) fn build_window(app: &adw::Application) -> Option<std::rc::Rc<Window>> {
     Window::new_for_tests(app).ok()
 }
 
@@ -45,7 +45,7 @@ fn build_window_with_settings(
     Window::new_with_settings_for_tests(app, settings).ok()
 }
 
-fn write_temp_file(name: &str, contents: &[u8]) -> std::path::PathBuf {
+pub(crate) fn write_temp_file(name: &str, contents: &[u8]) -> std::path::PathBuf {
     let path = std::env::temp_dir().join(name);
     let _removed = fs::remove_file(&path);
     let write_result = fs::write(&path, contents);
@@ -53,7 +53,7 @@ fn write_temp_file(name: &str, contents: &[u8]) -> std::path::PathBuf {
     path
 }
 
-fn atomic_replace_file(path: &std::path::Path, contents: &[u8]) {
+pub(crate) fn atomic_replace_file(path: &std::path::Path, contents: &[u8]) {
     let replacement = path.with_extension("tmp-replace");
     let _removed = fs::remove_file(&replacement);
     assert!(fs::write(&replacement, contents).is_ok());
@@ -418,6 +418,37 @@ fn exercise_search_and_status(test_app: &adw::Application) {
             String::from("Ln 1, Col 1")
         )
     );
+    assert_eq!(
+        search_window.status_format_summary_for_tests(),
+        "UTF-8 · LF"
+    );
+
+    search_window.choose_selected_line_ending_from_preferences_for_tests(LineEndingMode::CrLf);
+    assert_eq!(
+        search_window.status_format_summary_for_tests(),
+        "UTF-8 · CRLF"
+    );
+    assert_eq!(
+        search_window.status_labels_for_tests(),
+        (
+            String::from("Untitled"),
+            String::from("Modified"),
+            String::from("Ln 1, Col 1")
+        )
+    );
+    search_window.choose_selected_line_ending_from_preferences_for_tests(LineEndingMode::Lf);
+    assert_eq!(
+        search_window.status_format_summary_for_tests(),
+        "UTF-8 · LF"
+    );
+    assert_eq!(
+        search_window.status_labels_for_tests(),
+        (
+            String::from("Untitled"),
+            String::new(),
+            String::from("Ln 1, Col 1")
+        )
+    );
 
     search_window.set_selected_text_for_tests("alpha beta alpha");
     search_window.select_offsets_for_tests(0, 5);
@@ -475,106 +506,6 @@ fn exercise_search_and_status(test_app: &adw::Application) {
     assert!(line_window.selected_line_numbers_visible_for_tests());
 }
 
-fn exercise_v4_editor_features(test_app: &adw::Application) {
-    let rust_window = build_window(test_app);
-    assert!(rust_window.is_some());
-    let Some(rust_window) = rust_window else {
-        return;
-    };
-    rust_window.ensure_default_tab();
-    rust_window.set_minimap_for_tests(true);
-    assert!(rust_window.selected_minimap_visible_for_tests());
-    let rust_path = write_temp_file("riteed-v4-syntax.rs", b"fn main() {}\n");
-    let rust_uri = gio::File::for_path(&rust_path).uri().to_string();
-    rust_window.request_open_files(vec![gio::File::for_path(&rust_path)], OpenSource::AppOpen);
-    spin_until("rust syntax detected", || {
-        rust_window.selected_language_id_for_tests().as_deref() == Some("rust")
-    });
-
-    let banner_window = build_window(test_app);
-    assert!(banner_window.is_some());
-    let Some(banner_window) = banner_window else {
-        return;
-    };
-    banner_window.present();
-    drain_events(8);
-    banner_window.request_open_files(vec![gio::File::for_path(&rust_path)], OpenSource::AppOpen);
-    spin_until("selected clean file opened", || {
-        banner_window.selected_saved_uri_for_tests() == rust_uri
-    });
-    let _written = fs::write(&rust_path, b"fn main() { println!(\"changed\"); }\n");
-    banner_window
-        .inject_external_event_for_tests(&rust_uri, ExternalFileEvent::ContentPossiblyChanged);
-    banner_window.sync_selected_banner_for_tests(true);
-    drain_events(12);
-    assert_eq!(banner_window.selected_text_for_tests(), "fn main() {}\n");
-    banner_window.trigger_selected_external_action_for_tests();
-    spin_until("selected banner reload applies", || {
-        banner_window.selected_text_for_tests() == "fn main() { println!(\"changed\"); }\n"
-            && !banner_window.selected_banner_visible_for_tests()
-    });
-
-    let first_path = write_temp_file("riteed-v4-auto-a.txt", b"one");
-    let second_path = write_temp_file("riteed-v4-auto-b.txt", b"two");
-    let first_uri = gio::File::for_path(&first_path).uri().to_string();
-    let second_uri = gio::File::for_path(&second_path).uri().to_string();
-    let auto_window = build_window(test_app);
-    assert!(auto_window.is_some());
-    let Some(auto_window) = auto_window else {
-        return;
-    };
-    auto_window.request_open_files(
-        vec![
-            gio::File::for_path(&first_path),
-            gio::File::for_path(&second_path),
-        ],
-        OpenSource::AppOpen,
-    );
-    spin_until("two files for auto reload", || {
-        auto_window.tab_count_for_tests() == 2
-    });
-    auto_window.request_open_recent(&second_uri);
-    drain_events(8);
-    atomic_replace_file(&first_path, b"one updated");
-    spin_until(
-        "background tab monitor reloads after atomic replace",
-        || auto_window.text_for_uri_for_tests(&first_uri).as_deref() == Some("one updated"),
-    );
-    auto_window.request_open_recent(&first_uri);
-    spin_until("background tab was reloaded", || {
-        auto_window.selected_text_for_tests() == "one updated"
-    });
-
-    let stale_path = write_temp_file("riteed-v4-stale.txt", b"disk version");
-    let stale_uri = gio::File::for_path(&stale_path).uri().to_string();
-    let stale_window = build_window(test_app);
-    assert!(stale_window.is_some());
-    let Some(stale_window) = stale_window else {
-        return;
-    };
-    stale_window.request_open_files(vec![gio::File::for_path(&stale_path)], OpenSource::AppOpen);
-    spin_until("stale file open", || {
-        stale_window.selected_saved_uri_for_tests() == stale_uri
-    });
-    stale_window.set_selected_text_for_tests("local edits");
-    dialogs::queue_external_reload_responses_for_tests(&[ExternalReloadResponse::KeepCurrent]);
-    stale_window
-        .inject_external_event_for_tests(&stale_uri, ExternalFileEvent::ContentPossiblyChanged);
-    drain_events(12);
-    dialogs::queue_stale_save_responses_for_tests(&[StaleSaveResponse::Cancel]);
-    stale_window.request_save();
-    drain_events(12);
-    assert_eq!(
-        fs::read_to_string(&stale_path).ok().as_deref(),
-        Some("disk version")
-    );
-
-    let _removed = fs::remove_file(rust_path);
-    let _removed = fs::remove_file(first_path);
-    let _removed = fs::remove_file(second_path);
-    let _removed = fs::remove_file(stale_path);
-}
-
 #[test]
 fn gtk_surfaces_and_editor_flow_work() {
     let _guard = crate::test_support::init_gtk_for_tests();
@@ -582,7 +513,7 @@ fn gtk_surfaces_and_editor_flow_work() {
     assert_app_actions_exist();
 
     let test_app = adw::Application::builder()
-        .application_id("io.github.cadric.Riteed.WindowTests")
+        .application_id("io.github.cadric.Riteed.WindowTabTests")
         .flags(gio::ApplicationFlags::HANDLES_OPEN)
         .build();
     let _registered = test_app.register(None::<&gio::Cancellable>);
@@ -593,5 +524,7 @@ fn gtk_surfaces_and_editor_flow_work() {
     exercise_app_open_actions();
     exercise_app_actions_more();
     exercise_search_and_status(&test_app);
-    exercise_v4_editor_features(&test_app);
+    crate::gtk_tests_v4::exercise_v4_editor_features(&test_app);
+    crate::gtk_tests_v5::exercise_v5_format_io(&test_app);
+    crate::gtk_tests_v5b::exercise_v5b_editor_controls(&test_app);
 }

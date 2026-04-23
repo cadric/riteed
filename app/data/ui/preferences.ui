@@ -5,7 +5,7 @@
   <object class="AdwPreferencesDialog" id="preferences_dialog">
     <property name="title" translatable="yes">Preferences</property>
     <property name="content-width">420</property>
-    <property name="content-height">380</property>
+    <property name="content-height">460</property>
     <child>
       <object class="AdwPreferencesPage">
         <property name="title" translatable="yes">Editor</property>
@@ -34,6 +34,81 @@
               <object class="AdwSwitchRow" id="minimap_row">
                 <property name="title" translatable="yes">Show Minimap</property>
                 <property name="subtitle" translatable="yes">Show a Narrow Document Overview Beside the Editor</property>
+              </object>
+            </child>
+            <child>
+              <object class="AdwActionRow" id="editor_font_row">
+                <property name="activatable">true</property>
+                <property name="title" translatable="yes">Editor Font</property>
+                <property name="subtitle" translatable="yes">Monospace</property>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="AdwPreferencesGroup">
+            <property name="title" translatable="yes">Indentation</property>
+            <child>
+              <object class="AdwSwitchRow" id="insert_spaces_row">
+                <property name="title" translatable="yes">Insert Spaces Instead of Tabs</property>
+                <property name="subtitle" translatable="yes">Use Spaces When the Tab Key Inserts Indentation</property>
+              </object>
+            </child>
+            <child>
+              <object class="AdwSpinRow" id="tab_width_row">
+                <property name="title" translatable="yes">Tab Width</property>
+                <property name="subtitle" translatable="yes">Show Each Tab Character as This Many Columns</property>
+                <property name="editable">true</property>
+                <property name="numeric">true</property>
+                <property name="snap-to-ticks">true</property>
+                <property name="climb-rate">1</property>
+                <property name="digits">0</property>
+                <property name="adjustment">
+                  <object class="GtkAdjustment">
+                    <property name="lower">1</property>
+                    <property name="upper">16</property>
+                    <property name="value">4</property>
+                    <property name="step-increment">1</property>
+                    <property name="page-increment">4</property>
+                  </object>
+                </property>
+              </object>
+            </child>
+            <child>
+              <object class="AdwSpinRow" id="indent_width_row">
+                <property name="title" translatable="yes">Indent Width</property>
+                <property name="subtitle" translatable="yes">Use This Many Columns for Automatic Indentation</property>
+                <property name="editable">true</property>
+                <property name="numeric">true</property>
+                <property name="snap-to-ticks">true</property>
+                <property name="climb-rate">1</property>
+                <property name="digits">0</property>
+                <property name="adjustment">
+                  <object class="GtkAdjustment">
+                    <property name="lower">1</property>
+                    <property name="upper">16</property>
+                    <property name="value">4</property>
+                    <property name="step-increment">1</property>
+                    <property name="page-increment">4</property>
+                  </object>
+                </property>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="AdwPreferencesGroup">
+            <property name="title" translatable="yes">Document Format</property>
+            <child>
+              <object class="AdwActionRow" id="encoding_row">
+                <property name="activatable">true</property>
+                <property name="title" translatable="yes">Text Encoding</property>
+                <property name="subtitle" translatable="yes">UTF-8</property>
+              </object>
+            </child>
+            <child>
+              <object class="AdwComboRow" id="line_ending_row">
+                <property name="title" translatable="yes">Line Endings</property>
               </object>
             </child>
           </object>

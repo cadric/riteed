@@ -27,7 +27,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 97,
+      "line": 103,
       "match": "fn install_actions(app: &adw::Application, state: &Rc<RefCell<AppState>>, factory: WindowFactory) {",
       "kind": "runtime-shared-state",
       "ownership": "App-scoped actions borrow shared application state.",
@@ -35,7 +35,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 201,
+      "line": 207,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "Activation and open lifecycle callbacks borrow shared application state.",
@@ -43,7 +43,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 244,
+      "line": 250,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The window-creation helper updates shared application state.",
@@ -67,15 +67,135 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 83,
+      "line": 95,
       "match": "state: RefCell<EditorTabState>,",
       "kind": "runtime-shared-state",
-      "ownership": "Each editor tab owns its mutable document, file-monitor, and deferred external-change state.",
-      "justification": "A tab must coordinate saved identity, syntax language, monitor bindings, stale-save protection, banner visibility, and reload suppression while the SourceView buffer drives modified state."
+      "ownership": "Each editor tab owns its mutable document format, live source file, file-monitor, deferred external-change state, and in-flight IO state.",
+      "justification": "V5a keeps saved identity, current format, saved-format baseline, monitor bindings, stale-save protection, and cancellable scratch IO on the tab so reload and save remain scratch-then-apply."
+    },
+    {
+      "path": "src/editor_zoom.rs",
+      "line": 29,
+      "match": "base_font: RefCell<pango::FontDescription>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The window-owned zoom controller owns the resolved base editor font description.",
+      "justification": "Zoom and font changes need one mutable source of truth that can update all open tabs and the minimap without duplicating state per tab."
+    },
+    {
+      "path": "src/editor_zoom.rs",
+      "line": 30,
+      "match": "zoom_percent: Cell<i32>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The window-owned zoom controller owns the current zoom percentage for the whole workspace window.",
+      "justification": "Window-scoped zoom actions must clamp, reset, and reapply the same percentage across every attached editor tab."
+    },
+    {
+      "path": "src/window_preferences.rs",
+      "line": 20,
+      "match": "_state: Rc<RefCell<PreferencesState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The preferences controller owns the staged editor-preferences state for the dialog lifetime.",
+      "justification": "SpinRow staging and syncing guards need one shared mutable state cell that all preference-row callbacks can borrow."
+    },
+    {
+      "path": "src/window_preferences.rs",
+      "line": 57,
+      "match": "state: &Rc<RefCell<PreferencesState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Preferences row initialization borrows the shared staged-state cell.",
+      "justification": "Startup row sync must use the same guard state that later prevents local widget updates from writing settings recursively."
+    },
+    {
+      "path": "src/window_preferences.rs",
+      "line": 108,
+      "match": "state: &Rc<RefCell<PreferencesState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Theme preference wiring borrows the shared staged-state cell.",
+      "justification": "The theme row must honor the same syncing guard used by the other preferences rows during initialization."
+    },
+    {
+      "path": "src/window_preferences.rs",
+      "line": 126,
+      "match": "state: &Rc<RefCell<PreferencesState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Toggle preference wiring borrows the shared staged-state cell.",
+      "justification": "Switch rows need the same shared syncing guard so initial UI population never becomes a settings write."
+    },
+    {
+      "path": "src/window_preferences.rs",
+      "line": 166,
+      "match": "state: &Rc<RefCell<PreferencesState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Each switch-row helper borrows the shared staged-state cell.",
+      "justification": "The generic toggle handler must reuse the same local guard state across line numbers, minimap, word wrap, and indentation mode."
+    },
+    {
+      "path": "src/window_preferences.rs",
+      "line": 188,
+      "match": "state: &Rc<RefCell<PreferencesState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "SpinRow setup borrows the shared staged-state cell.",
+      "justification": "Tab-width and indent-width rows stage edits locally before a commit path writes the sanitized value into GSettings."
+    },
+    {
+      "path": "src/window_preferences.rs",
+      "line": 228,
+      "match": "state: &Rc<RefCell<PreferencesState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Each spin-row handler keeps a shared handle to the staged-state cell.",
+      "justification": "The change, activate, and focus-out callbacks must coordinate staged numeric edits through one shared state object."
+    },
+    {
+      "path": "src/window_preferences.rs",
+      "line": 285,
+      "match": "state: &Rc<RefCell<PreferencesState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Spin-row commit logic borrows the shared staged-state cell.",
+      "justification": "Commit-time normalization must read the staged dirty flag and temporarily enter syncing mode before updating the row widget."
+    },
+    {
+      "path": "src/window_preferences.rs",
+      "line": 304,
+      "match": "state: &Rc<RefCell<PreferencesState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Document-format preference wiring borrows the shared staged-state cell.",
+      "justification": "The line-ending row and format-row synchronization must share the same guard so selected-tab updates do not recursively write back into the active document."
+    },
+    {
+      "path": "src/window_preferences.rs",
+      "line": 348,
+      "match": "state: &Rc<RefCell<PreferencesState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Document-format row synchronization borrows the shared staged-state cell.",
+      "justification": "Selected-tab changes need to update encoding and line-ending rows without firing the user-change handlers."
+    },
+    {
+      "path": "src/window_preferences.rs",
+      "line": 478,
+      "match": "fn with_syncing(state: &Rc<RefCell<PreferencesState>>, operation: impl FnOnce()) {",
+      "kind": "runtime-shared-state",
+      "ownership": "The dialog-scoped syncing helper mutates the shared preferences state.",
+      "justification": "Preferences initialization and sanitized write-back need one explicit guard that suppresses recursive signals without weakening GSettings timing rules."
+    },
+    {
+      "path": "src/window_preferences.rs",
+      "line": 484,
+      "match": "fn spin_dirty(state: &Rc<RefCell<PreferencesState>>, dirty_spin: DirtySpin) -> bool {",
+      "kind": "runtime-shared-state",
+      "ownership": "The staged SpinRow read helper borrows the shared preferences state.",
+      "justification": "The dialog must be able to query whether a numeric row has staged changes before deciding to commit on focus-out."
+    },
+    {
+      "path": "src/window_preferences.rs",
+      "line": 492,
+      "match": "fn set_spin_dirty(state: &Rc<RefCell<PreferencesState>>, dirty_spin: DirtySpin, value: bool) {",
+      "kind": "runtime-shared-state",
+      "ownership": "The staged SpinRow write helper mutates the shared preferences state.",
+      "justification": "Numeric preference rows need one explicit place to mark staged edits dirty or clean as the user types and the dialog commits."
     },
     {
       "path": "src/workspace.rs",
-      "line": 48,
+      "line": 52,
       "match": "pub(crate) state: RefCell<WorkspaceState>,",
       "kind": "runtime-shared-state",
       "ownership": "The workspace owns tab collection, recent/session caches, restore gating, and active close flow.",
@@ -91,7 +211,7 @@
     },
     {
       "path": "src/workspace_open.rs",
-      "line": 155,
+      "line": 156,
       "match": "fn finish_open_request(workspace: &Rc<Workspace>, request: &Rc<RefCell<OpenRequest>>) {",
       "kind": "runtime-shared-state",
       "ownership": "The open-request finisher reads shared batch state.",

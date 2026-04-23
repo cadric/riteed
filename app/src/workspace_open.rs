@@ -119,6 +119,7 @@ fn process_open_request(workspace: &Rc<Workspace>, request: Rc<RefCell<OpenReque
     let opened_file = file.clone();
     let tab_for_result = tab.clone();
     tab.clone().load_file(
+        &workspace.shell,
         &file,
         Rc::new(move |result| {
             if let Some(workspace) = weak.upgrade() {
@@ -131,7 +132,7 @@ fn process_open_request(workspace: &Rc<Workspace>, request: Rc<RefCell<OpenReque
                             .borrow()
                             .selected_uri
                             .as_deref()
-                            .is_some_and(|wanted| wanted == uri)
+                            .is_some_and(|wanted| wanted == uri.as_str())
                         {
                             request.borrow_mut().restored_selected_page = tab_for_result.page();
                         }

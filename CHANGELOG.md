@@ -1,6 +1,6 @@
 ---
 created: 2026-04-19
-updated: 2026-04-19
+updated: 2026-04-23
 status: current
 priority: high
 type: release
@@ -25,6 +25,9 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Refactored the embedded Riteed window controller into smaller workspace, tab, close-flow, session, and I/O modules so the GNOME app remains policy-compliant and maintainable as features grow.
 - Migrated the embedded Riteed editor core from `GtkTextView` to `GtkSourceView`, moving dirty-state tracking onto the buffer modified flag for better performance on longer text files.
 - Made the embedded Riteed editor more code-friendly by auto-detecting languages for highlighting, keeping the minimap optional, and surfacing external file changes through in-tab banners and guarded save/reload flows.
+- Extended the embedded Riteed editor to a v5a format-aware IO contract with `GtkSourceFileLoader/FileSaver`, deterministic line-ending state in the status bar, recoverable encoding-reopen flows, and guarded non-UTF-8 save/load handling.
+- Extended the embedded Riteed editor to a v5b controls layer with staged indentation preferences, monospace-only editor font selection, window-scoped zoom controls, and updated status/menu/shortcuts surfaces.
+- Extended the embedded Riteed editor to a v5c polish layer with direct status-bar zoom controls, document format controls in Preferences, fixed-size minimap rendering during zoom, and scroll-past-end editor padding.
 
 ### Fixed
 - Stabilized GTK coverage runs by teaching `tools.coverage_check` to invoke `cargo llvm-cov` with a deterministic `GSK_RENDERER=cairo` environment, with unit coverage for the new tool behavior.
@@ -35,6 +38,8 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Restored the embedded Riteed minimap synchronization by removing the incorrect shared scroll-adjustment wiring that desynced the viewport preview.
 - Restored the embedded Riteed development icon setup so About and the window icon can resolve the app icon during local `cargo run` workflows, and fixed clean window close requests so an untouched window no longer needs a second click to close.
 - Switched the embedded Riteed About dialog to a dedicated full-color app icon alias so it no longer resolves to the symbolic icon variant.
+- Fixed v5 format controls so Preferences can change the selected document encoding and save LF, CRLF, or CR line endings reliably, with GTK coverage for the actual UI path.
+- Fixed v5 editor zoom so the minimap remains a narrow overview instead of scaling with the editor font, and kept zoom feedback visible as a direct percentage in the bottom status bar.
 
 ## 1.0.1 — 2026-04-19
 

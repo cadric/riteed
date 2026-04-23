@@ -6,6 +6,13 @@ use libadwaita::prelude::*;
 use crate::error::AppError;
 use crate::{APP_NAME, REPO_URL};
 
+pub(crate) mod encoding;
+
+pub use encoding::{
+    DecodeFailureResponse, InvalidCharsSaveResponse, ReopenWithEncodingResponse, choose_encoding,
+    confirm_decode_failure, confirm_invalid_chars_save, confirm_reopen_with_encoding,
+};
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum UnsavedResponse {
     Cancel,
@@ -180,13 +187,13 @@ pub fn show_help(parent: &impl IsA<gtk4::Widget>) {
     let getting_started = adw::PreferencesGroup::builder()
         .title(pgettext("help section", "Getting Started"))
         .description(gettext(
-            "Riteed is a lightweight GNOME editor for UTF-8 text, code, config, and markdown files, with tabs, search, syntax highlighting, and session restore.",
+            "Riteed is a lightweight GNOME editor for text, code, config, and markdown files, with tabs, search, syntax highlighting, session restore, and encoding-aware open and save behavior.",
         ))
         .build();
     getting_started.add(&help_row(
         &pgettext("help row", "Tabs and Files"),
         &gettext(
-            "Use New Tab to start another document, and Open to load plain text files into separate tabs.",
+            "Use New Tab to start another document, and Open to load local plain text files into separate tabs with their saved encoding and line endings.",
         ),
     ));
     getting_started.add(&help_row(

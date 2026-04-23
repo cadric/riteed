@@ -15,6 +15,12 @@ pub struct WindowShell {
     pub word_wrap_row: adw::SwitchRow,
     pub line_numbers_row: adw::SwitchRow,
     pub minimap_row: adw::SwitchRow,
+    pub editor_font_row: adw::ActionRow,
+    pub insert_spaces_row: adw::SwitchRow,
+    pub tab_width_row: adw::SpinRow,
+    pub indent_width_row: adw::SpinRow,
+    pub encoding_row: adw::ActionRow,
+    pub line_ending_row: adw::ComboRow,
 }
 
 impl WindowShell {
@@ -40,6 +46,16 @@ impl WindowShell {
         let line_numbers_row: adw::SwitchRow =
             builder_object(&preferences_builder, "line_numbers_row")?;
         let minimap_row: adw::SwitchRow = builder_object(&preferences_builder, "minimap_row")?;
+        let editor_font_row: adw::ActionRow =
+            builder_object(&preferences_builder, "editor_font_row")?;
+        let insert_spaces_row: adw::SwitchRow =
+            builder_object(&preferences_builder, "insert_spaces_row")?;
+        let tab_width_row: adw::SpinRow = builder_object(&preferences_builder, "tab_width_row")?;
+        let indent_width_row: adw::SpinRow =
+            builder_object(&preferences_builder, "indent_width_row")?;
+        let encoding_row: adw::ActionRow = builder_object(&preferences_builder, "encoding_row")?;
+        let line_ending_row: adw::ComboRow =
+            builder_object(&preferences_builder, "line_ending_row")?;
 
         let shortcuts_builder =
             gtk4::Builder::from_resource("/io/github/cadric/Riteed/ui/shortcuts.ui");
@@ -61,6 +77,12 @@ impl WindowShell {
             word_wrap_row,
             line_numbers_row,
             minimap_row,
+            editor_font_row,
+            insert_spaces_row,
+            tab_width_row,
+            indent_width_row,
+            encoding_row,
+            line_ending_row,
         })
     }
 }

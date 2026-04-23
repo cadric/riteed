@@ -1,14 +1,15 @@
 use std::rc::Rc;
 
-use gettextrs::pgettext;
 use gtk4::{gio, glib, prelude::*};
 use libadwaita as adw;
 use libadwaita::prelude::*;
 
 use crate::APP_ID;
 use crate::dialogs;
+use crate::editor_zoom::EditorZoomController;
 use crate::error::AppError;
-use crate::settings::{AppSettings, ThemePreference};
+use crate::settings::AppSettings;
+use crate::window_preferences::WindowPreferencesController;
 use crate::window_shell::WindowShell;
 use crate::workspace::{OpenSource, Workspace, WorkspaceParts};
 
@@ -23,6 +24,8 @@ pub struct Window {
     find_prev_action: gio::SimpleAction,
     settings: AppSettings,
     workspace: Rc<Workspace>,
+    _preferences: WindowPreferencesController,
+    zoom: Rc<EditorZoomController>,
 }
 
 impl Window {
@@ -67,18 +70,6 @@ impl Window {
         shell.window.add_action(&find_next_action);
         shell.window.add_action(&find_prev_action);
 
-        let themes = gtk4::StringList::new(&[
-            &pgettext("theme choice", "System Default"),
-            &pgettext("theme choice", "Light"),
-            &pgettext("theme choice", "Dark"),
-        ]);
-        shell.theme_row.set_model(Some(&themes));
-        shell.theme_row.set_selected(settings.theme().index());
-        shell.word_wrap_row.set_active(settings.word_wrap());
-        shell
-            .line_numbers_row
-            .set_active(settings.show_line_numbers());
-        shell.minimap_row.set_active(settings.show_minimap());
         settings.apply_theme();
 
         let (width, height) = settings.window_size();
@@ -96,6 +87,8 @@ impl Window {
             close_action: &close_action,
             settings: &settings,
         });
+        let zoom = EditorZoomController::new(&shell.window, &workspace, &settings);
+        let preferences = WindowPreferencesController::new(&shell, &settings, &workspace, &zoom);
 
         let window = Rc::new(Self {
             shell,
@@ -108,7 +101,10 @@ impl Window {
             find_prev_action,
             settings,
             workspace,
+            _preferences: preferences,
+            zoom,
         });
+        window.zoom.set_editor_font(&window.settings.editor_font());
         window.install_callbacks();
         Ok(window)
     }
@@ -270,6 +266,49 @@ impl Window {
     }
 
     #[cfg(test)]
+    pub(crate) fn status_format_summary_for_tests(&self) -> String {
+        self.workspace.status_format_summary()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn choose_selected_line_ending_from_preferences_for_tests(
+        &self,
+        line_ending_mode: crate::editor_format::LineEndingMode,
+    ) {
+        let index = match line_ending_mode {
+            crate::editor_format::LineEndingMode::Lf => 0,
+            crate::editor_format::LineEndingMode::CrLf => 1,
+            crate::editor_format::LineEndingMode::Cr => 2,
+        };
+        self.shell.line_ending_row.set_selected(index);
+    }
+
+    #[cfg(test)]
+    pub(crate) fn request_selected_encoding_from_preferences_for_tests(&self) {
+        libadwaita::prelude::ActionRowExt::activate(&self.shell.encoding_row);
+    }
+
+    #[cfg(test)]
+    pub(crate) fn status_zoom_percent_for_tests(&self) -> String {
+        self.workspace.status_zoom_percent()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn activate_status_zoom_in_for_tests(&self) {
+        self.workspace.activate_status_zoom_in();
+    }
+
+    #[cfg(test)]
+    pub(crate) fn activate_status_zoom_out_for_tests(&self) {
+        self.workspace.activate_status_zoom_out();
+    }
+
+    #[cfg(test)]
+    pub(crate) fn activate_status_zoom_reset_for_tests(&self) {
+        self.workspace.activate_status_zoom_reset();
+    }
+
+    #[cfg(test)]
     pub(crate) fn selected_line_numbers_visible_for_tests(&self) -> bool {
         self.workspace.selected_line_numbers_visible()
     }
@@ -301,16 +340,12 @@ impl Window {
 
     #[cfg(test)]
     pub(crate) fn set_line_numbers_for_tests(&self, enabled: bool) {
-        self.settings.set_show_line_numbers(enabled);
         self.shell.line_numbers_row.set_active(enabled);
-        self.refresh_line_numbers();
     }
 
     #[cfg(test)]
     pub(crate) fn set_minimap_for_tests(&self, enabled: bool) {
-        self.settings.set_show_minimap(enabled);
         self.shell.minimap_row.set_active(enabled);
-        self.refresh_minimap();
     }
 
     #[cfg(test)]
@@ -345,6 +380,67 @@ impl Window {
         event: crate::editor_monitor::ExternalFileEvent,
     ) {
         self.workspace.inject_external_event_for_tests(uri, event);
+    }
+
+    #[cfg(test)]
+    pub(crate) fn set_insert_spaces_for_tests(&self, enabled: bool) {
+        self.shell.insert_spaces_row.set_active(enabled);
+    }
+
+    #[cfg(test)]
+    pub(crate) fn set_tab_width_for_tests(&self, width: i32) {
+        self.settings.set_tab_width(width);
+        self.workspace.apply_indentation_to_tabs();
+    }
+
+    #[cfg(test)]
+    pub(crate) fn set_indent_width_for_tests(&self, width: i32) {
+        self.settings.set_indent_width(width);
+        self.workspace.apply_indentation_to_tabs();
+    }
+
+    #[cfg(test)]
+    pub(crate) fn selected_indentation_for_tests(&self) -> Option<(bool, u32, i32)> {
+        self.workspace.selected_indentation_for_tests()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn zoom_percent_for_tests(&self) -> i32 {
+        self.zoom.zoom_percent()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn selected_minimap_font_for_tests(&self) -> Option<gtk4::pango::FontDescription> {
+        self.workspace.selected_minimap_font_for_tests()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn selected_zoom_class_for_tests(&self) -> bool {
+        self.workspace.selected_zoom_class_for_tests()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn selected_scroll_past_end_padding_for_tests(&self) -> Option<(i32, i32)> {
+        self.workspace.selected_scroll_past_end_padding_for_tests()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn preferences_write_log_for_tests(&self) -> Vec<String> {
+        self.settings.write_log_for_tests()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn indentation_control_state_for_tests(&self) -> ((bool, f64), (bool, f64)) {
+        (
+            (
+                self.shell.tab_width_row.is_editable(),
+                self.shell.tab_width_row.adjustment().step_increment(),
+            ),
+            (
+                self.shell.indent_width_row.is_editable(),
+                self.shell.indent_width_row.adjustment().step_increment(),
+            ),
+        )
     }
 
     fn install_callbacks(self: &Rc<Self>) {
@@ -403,42 +499,6 @@ impl Window {
                 window.find_previous();
             }
         });
-
-        let settings = self.settings.clone();
-        self.shell.theme_row.connect_selected_notify(move |row| {
-            let theme = ThemePreference::from_index(row.selected());
-            settings.set_theme(theme);
-            settings.apply_theme();
-        });
-
-        let settings = self.settings.clone();
-        let weak = Rc::downgrade(self);
-        self.shell.word_wrap_row.connect_active_notify(move |row| {
-            settings.set_word_wrap(row.is_active());
-            if let Some(window) = weak.upgrade() {
-                window.refresh_word_wrap();
-            }
-        });
-
-        let settings = self.settings.clone();
-        let weak = Rc::downgrade(self);
-        self.shell
-            .line_numbers_row
-            .connect_active_notify(move |row| {
-                settings.set_show_line_numbers(row.is_active());
-                if let Some(window) = weak.upgrade() {
-                    window.refresh_line_numbers();
-                }
-            });
-
-        let settings = self.settings.clone();
-        let weak = Rc::downgrade(self);
-        self.shell.minimap_row.connect_active_notify(move |row| {
-            settings.set_show_minimap(row.is_active());
-            if let Some(window) = weak.upgrade() {
-                window.refresh_minimap();
-            }
-        });
     }
 
     fn on_close_request(self: &Rc<Self>) -> glib::Propagation {
@@ -447,18 +507,6 @@ impl Window {
             return glib::Propagation::Proceed;
         }
         self.workspace.handle_window_close_request()
-    }
-
-    fn refresh_word_wrap(&self) {
-        self.workspace.apply_word_wrap_to_tabs();
-    }
-
-    fn refresh_line_numbers(&self) {
-        self.workspace.apply_line_numbers_to_tabs();
-    }
-
-    fn refresh_minimap(&self) {
-        self.workspace.apply_minimap_to_tabs();
     }
 
     fn persist_window_size(&self) {

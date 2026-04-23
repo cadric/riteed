@@ -1,35 +1,105 @@
-msgid ""
-msgstr ""
-"Project-Id-Version: io.github.cadric.Riteed 0.1.0\n"
-"Report-Msgid-Bugs-To: https://github.com/cadric/riteed/issues\n"
-"POT-Creation-Date: 2026-04-19 17:55+0000\n"
-"PO-Revision-Date: 2026-04-19 00:00+0000\n"
-"Last-Translator: cadric\n"
-"Language-Team: Danish\n"
-"Language: da\n"
-"MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=UTF-8\n"
-"Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
-
 msgid "%d match"
 msgid_plural "%d matches"
 msgstr[0] ""
 msgstr[1] ""
 
-msgid "Added syntax highlighting, an optional minimap, and safer handling for files that change on disk while they are open."
+msgctxt "menu item"
+msgid "About"
+msgstr ""
+
+msgctxt "error title"
+msgid "Action Cancelled"
+msgstr ""
+
+msgid ""
+"Added syntax highlighting, an optional minimap, and safer handling for files "
+"that change on disk while they are open."
+msgstr ""
+
+msgctxt "file filter"
+msgid "All Files"
+msgstr ""
+
+msgctxt "dialog button"
+msgid "Apply"
+msgstr ""
+
+msgid ""
+"Automatic text decoding was not reliable for this file. Choose a text "
+"encoding manually and try again."
+msgstr ""
+
+msgid ""
+"Automatic text detection or safe conversion was not reliable for this file. "
+"Choose an encoding manually to try opening it."
+msgstr ""
+
+msgctxt "line ending"
+msgid "CR"
+msgstr ""
+
+msgctxt "line ending"
+msgid "CRLF"
+msgstr ""
+
+msgctxt "alert response"
+msgid "Cancel"
+msgstr ""
+
+msgctxt "dialog button"
+msgid "Cancel"
+msgstr ""
+
+msgctxt "alert response"
+msgid "Choose Encoding..."
+msgstr ""
+
+msgid "Choose a Different Encoding to Save"
 msgstr ""
 
 msgid "Choose a Save Location Before Saving This Document."
 msgstr ""
 
+msgid "Choose a Text Encoding"
+msgstr ""
+
+msgid "Choose the encoding to use when opening this document from disk."
+msgstr ""
+
+msgid "Choose the encoding to use when reopening this document from disk."
+msgstr ""
+
+msgid "Choose the encoding to use when reopening this document."
+msgstr ""
+
+msgid "Choose the encoding to use for the next save."
+msgstr ""
+
+msgid "Choose the encoding to use when saving this document."
+msgstr ""
+
+msgctxt "line ending menu"
+msgid "Classic Mac (CR)"
+msgstr ""
+
+msgctxt "alert response"
+msgid "Close"
+msgstr ""
+
+msgctxt "search action"
+msgid "Close Search"
+msgstr ""
+
+msgid ""
+"Controls whether Riteed shows a document overview minimap beside the editor."
+msgstr ""
+
 msgid "Controls whether Riteed shows line numbers in the editor gutter."
 msgstr ""
 
-msgid "Controls whether Riteed shows a document overview minimap beside the editor."
-msgstr ""
-
-msgid "Controls whether Riteed uses the system appearance, a light appearance, or a dark appearance."
+msgid ""
+"Controls whether Riteed uses the system appearance, a light appearance, or a "
+"dark appearance."
 msgstr ""
 
 msgid "Controls whether long lines wrap inside the editor."
@@ -41,19 +111,99 @@ msgstr ""
 msgid "Cursor Position"
 msgstr ""
 
+msgctxt "theme choice"
+msgid "Dark"
+msgstr ""
+
+msgctxt "alert response"
+msgid "Discard"
+msgstr ""
+
+msgid "Document Format"
+msgstr ""
+
 msgid "Edit Text, Code, and Config Files"
 msgstr ""
 
-msgid "Enable line numbers and the minimap in Preferences when you want more structure while reading longer code or markdown files."
+msgctxt "help row"
+msgid "Editor Tools"
 msgstr ""
 
-msgid "It provides tabs, search and replace, syntax highlighting, optional line numbers and minimap, and conservative reload prompts when files change on disk."
+msgid ""
+"Enable line numbers and the minimap in Preferences when you want more "
+"structure while reading longer code or markdown files."
+msgstr ""
+
+msgctxt "help section"
+msgid "Everyday Editing"
+msgstr ""
+
+msgctxt "document format"
+msgid "No Document"
+msgstr ""
+
+msgctxt "status format"
+msgid "Format"
+msgstr ""
+
+msgctxt "help section"
+msgid "Getting Started"
+msgstr ""
+
+msgctxt "help dialog"
+msgid "Help"
+msgstr ""
+
+msgctxt "menu item"
+msgid "Help"
+msgstr ""
+
+msgid ""
+"It provides tabs, search and replace, syntax highlighting, optional line "
+"numbers and minimap, format controls for text encoding and line endings, and "
+"conservative reload prompts when files change on disk."
+msgstr ""
+
+msgctxt "alert response"
+msgid "Keep Current"
+msgstr ""
+
+msgctxt "menu item"
+msgid "Keyboard Shortcuts"
+msgstr ""
+
+msgctxt "line ending"
+msgid "LF"
+msgstr ""
+
+msgctxt "theme choice"
+msgid "Light"
+msgstr ""
+
+msgctxt "status position"
+msgid "Ln %1$d, Col %2$d"
+msgstr ""
+
+msgctxt "search option"
+msgid "Match Case"
 msgstr ""
 
 msgid "Modification State"
 msgstr ""
 
 msgid "Modified"
+msgstr ""
+
+msgctxt "help row"
+msgid "More Shortcuts"
+msgstr ""
+
+msgctxt "menu item"
+msgid "New Tab"
+msgstr ""
+
+msgctxt "search action"
+msgid "Next Match"
 msgstr ""
 
 msgid "No Save Location Is Available"
@@ -65,16 +215,98 @@ msgstr ""
 msgid "Only Local Files Are Supported"
 msgstr ""
 
-msgid "Open Keyboard Shortcuts from the main menu to review the available file, tab, search, and app commands."
+msgctxt "dialog button"
+msgid "Open"
+msgstr ""
+
+msgctxt "file dialog action"
+msgid "Open"
+msgstr ""
+
+msgctxt "menu item"
+msgid "Open"
+msgstr ""
+
+msgid ""
+"Open Keyboard Shortcuts from the main menu to review the available file, "
+"tab, search, and app commands."
+msgstr ""
+
+msgctxt "file dialog title"
+msgid "Open Text Files"
+msgstr ""
+
+msgctxt "help page"
+msgid "Overview"
 msgstr ""
 
 msgid "Overwrite the Changed File?"
 msgstr ""
 
-msgid "Press Ctrl+F to search in the selected document, Ctrl+H to show replace, and F3 or Shift+F3 to move between matches."
+msgctxt "document subtitle"
+msgid "Plain Text Document"
+msgstr ""
+
+msgctxt "file filter"
+msgid "Plain Text Files"
+msgstr ""
+
+msgctxt "menu item"
+msgid "Preferences"
+msgstr ""
+
+msgid ""
+"Press Ctrl+F to search in the selected document, Ctrl+H to show replace, and "
+"F3 or Shift+F3 to move between matches."
+msgstr ""
+
+msgctxt "search action"
+msgid "Previous Match"
 msgstr ""
 
 msgid "Recent Files"
+msgstr ""
+
+msgctxt "menu item"
+msgid "Recent Files"
+msgstr ""
+
+msgctxt "alert response"
+msgid "Reload"
+msgstr ""
+
+msgctxt "external action"
+msgid "Reload"
+msgstr ""
+
+msgid "Reload the Changed File?"
+msgstr ""
+
+msgctxt "alert response"
+msgid "Reopen"
+msgstr ""
+
+msgctxt "dialog button"
+msgid "Reopen"
+msgstr ""
+
+msgid "Reopen With a Different Encoding?"
+msgstr ""
+
+msgid ""
+"Reopening with another encoding will discard unsaved changes in this tab."
+msgstr ""
+
+msgctxt "search action"
+msgid "Replace"
+msgstr ""
+
+msgctxt "search action"
+msgid "Replace All"
+msgstr ""
+
+msgctxt "search field placeholder"
+msgid "Replace With"
 msgstr ""
 
 msgid "Replaced %d match"
@@ -91,19 +323,59 @@ msgstr ""
 msgid "Riteed Only Supports Local Plain Text Files in This Version."
 msgstr ""
 
-msgid "Reload the Changed File?"
+msgid ""
+"Riteed is a lightweight GNOME editor for text, code, config, and markdown "
+"files, with tabs, search, syntax highlighting, session restore, and encoding-"
+"aware open and save behavior."
 msgstr ""
 
-msgid "Riteed is a lightweight GNOME editor for UTF-8 text, code, config, and markdown files, with tabs, search, syntax highlighting, and session restore."
+msgid ""
+"Riteed is a small GNOME text editor for editing local text, code, config, "
+"and markdown files with encoding-aware open and save behavior."
 msgstr ""
 
-msgid "Riteed is a small GNOME text editor for editing UTF-8 text, code, config, and markdown files."
+msgid ""
+"Riteed tracks unsaved changes per tab, restores saved files from your "
+"previous session, and warns before external file changes replace your work."
 msgstr ""
 
-msgid "Riteed tracks unsaved changes per tab, restores saved files from your previous session, and warns before external file changes replace your work."
+msgctxt "alert response"
+msgid "Save"
+msgstr ""
+
+msgctxt "dialog button"
+msgid "Save"
+msgstr ""
+
+msgctxt "external action"
+msgid "Save"
+msgstr ""
+
+msgctxt "file dialog action"
+msgid "Save"
+msgstr ""
+
+msgctxt "alert response"
+msgid "Save Anyway"
 msgstr ""
 
 msgid "Save Changes Before Continuing?"
+msgstr ""
+
+msgctxt "file dialog title"
+msgid "Save the Document"
+msgstr ""
+
+msgctxt "help row"
+msgid "Saving Work"
+msgstr ""
+
+msgctxt "menu item"
+msgid "Search"
+msgstr ""
+
+msgctxt "help row"
+msgid "Search and Replace"
 msgstr ""
 
 msgid "Selected Session File"
@@ -118,16 +390,15 @@ msgstr ""
 msgid "Show Minimap"
 msgstr ""
 
-msgid "Show a Narrow Document Overview Beside the Editor"
-msgstr ""
-
 msgid "Some files could not be opened."
 msgstr ""
 
 msgid "Some files from the last session could not be reopened."
 msgstr ""
 
-msgid "Stores the URI of the selected saved tab. An empty string means no saved tab is selected."
+msgid ""
+"Stores the URI of the selected saved tab. An empty string means no saved tab "
+"is selected."
 msgstr ""
 
 msgid "Stores the currently open saved local text files as URIs in tab order."
@@ -142,104 +413,30 @@ msgstr ""
 msgid "Stores the most recently opened local text files as URIs, newest first."
 msgstr ""
 
-msgid "The File Is Not Valid UTF-8 Text."
+msgctxt "theme choice"
+msgid "System Default"
+msgstr ""
+
+msgctxt "help row"
+msgid "Tabs and Files"
 msgstr ""
 
 msgid "The File Was Reloaded."
 msgstr ""
 
+msgid "The Document Was Saved."
+msgstr ""
+
 msgid "The Requested Action Was Cancelled."
 msgstr ""
 
+msgid "The file changed again on disk and could not be overwritten."
+msgstr ""
+
+msgid "The file is too large to open safely."
+msgstr ""
+
 msgid "Theme Preference"
-msgstr ""
-
-msgid "This document has unsaved changes."
-msgstr ""
-
-msgid "This file changed on disk while you also have unsaved changes."
-msgstr ""
-
-msgid "This file changed on disk. Saving now will replace the external version."
-msgstr ""
-
-msgid "Unable to Build the Window"
-msgstr ""
-
-msgid "Unable to Open Dropped Files"
-msgstr ""
-
-msgid "Unable to Open the File"
-msgstr ""
-
-msgid "Unable to Save the File"
-msgstr ""
-
-msgid "Use New Tab to start another document, and Open to load plain text files into separate tabs."
-msgstr ""
-
-msgid "Window Height"
-msgstr ""
-
-msgid "Window Width"
-msgstr ""
-
-msgid "Word Wrap"
-msgstr ""
-
-msgid "text;editor;code;markdown;config;"
-msgstr ""
-
-msgctxt "alert response"
-msgid "Cancel"
-msgstr ""
-
-msgctxt "alert response"
-msgid "Close"
-msgstr ""
-
-msgctxt "alert response"
-msgid "Discard"
-msgstr ""
-
-msgctxt "alert response"
-msgid "Keep Current"
-msgstr ""
-
-msgctxt "alert response"
-msgid "Reload"
-msgstr ""
-
-msgctxt "alert response"
-msgid "Save"
-msgstr ""
-
-msgctxt "alert response"
-msgid "Save Anyway"
-msgstr ""
-
-msgctxt "document subtitle"
-msgid "Plain Text Document"
-msgstr ""
-
-msgctxt "document title"
-msgid "Untitled"
-msgstr ""
-
-msgctxt "error title"
-msgid "Action Cancelled"
-msgstr ""
-
-msgctxt "error title"
-msgid "Unable to Open Help"
-msgstr ""
-
-msgctxt "external action"
-msgid "Reload"
-msgstr ""
-
-msgctxt "external action"
-msgid "Save"
 msgstr ""
 
 msgctxt "external banner"
@@ -250,142 +447,134 @@ msgctxt "external banner"
 msgid "This File Is Missing on Disk."
 msgstr ""
 
-msgctxt "file dialog action"
-msgid "Open"
+msgid ""
+"This document contains characters that cannot be saved in the current text "
+"encoding."
 msgstr ""
 
-msgctxt "file dialog action"
-msgid "Save"
+msgid "This document has unsaved changes."
 msgstr ""
 
-msgctxt "file dialog title"
-msgid "Open Text Files"
+msgid "This file changed on disk while you also have unsaved changes."
 msgstr ""
 
-msgctxt "file dialog title"
-msgid "Save the Document"
+msgid ""
+"This file changed on disk. Saving now will replace the external version."
 msgstr ""
 
-msgctxt "file filter"
-msgid "All Files"
+msgid "Unable to Build the Window"
 msgstr ""
 
-msgctxt "file filter"
-msgid "Plain Text Files"
+msgid "Unable to Open Dropped Files"
 msgstr ""
 
-msgctxt "help dialog"
-msgid "Help"
+msgctxt "error title"
+msgid "Unable to Open Help"
 msgstr ""
 
-msgctxt "help page"
-msgid "Overview"
+msgid "Unable to Open the File"
 msgstr ""
 
-msgctxt "help row"
-msgid "Editor Tools"
+msgid "Unable to Save the File"
 msgstr ""
 
-msgctxt "help row"
-msgid "More Shortcuts"
+msgid "Choose Editor Font"
 msgstr ""
 
-msgctxt "help row"
-msgid "Saving Work"
+msgid "Controls how many columns a tab character occupies in the editor."
 msgstr ""
 
-msgctxt "help row"
-msgid "Search and Replace"
+msgid ""
+"Controls how many columns automatic indentation and indent actions use in "
+"the editor."
 msgstr ""
 
-msgctxt "help row"
-msgid "Tabs and Files"
+msgid ""
+"Controls whether pressing Tab inserts spaces instead of a literal tab "
+"character."
 msgstr ""
 
-msgctxt "help section"
-msgid "Everyday Editing"
+msgid "Editor Font"
 msgstr ""
 
-msgctxt "help section"
-msgid "Getting Started"
+msgid "Indent Width"
 msgstr ""
 
-msgctxt "menu item"
-msgid "About"
+msgid "Insert Spaces Instead of Tabs"
 msgstr ""
 
-msgctxt "menu item"
-msgid "Help"
+msgid "Only monospace fonts are supported"
 msgstr ""
 
-msgctxt "menu item"
-msgid "Keyboard Shortcuts"
+msgid ""
+"Stores the preferred monospace font description for editor text and the "
+"minimap. An empty value uses the default monospace font."
+msgstr ""
+
+msgid "Tab Width"
 msgstr ""
 
 msgctxt "menu item"
-msgid "New Tab"
+msgid "Actual Size"
 msgstr ""
 
 msgctxt "menu item"
-msgid "Open"
+msgid "Zoom"
+msgstr ""
+
+msgctxt "status zoom"
+msgid "Zoom"
 msgstr ""
 
 msgctxt "menu item"
-msgid "Preferences"
+msgid "Zoom In"
 msgstr ""
 
 msgctxt "menu item"
-msgid "Recent Files"
+msgid "Zoom Out"
 msgstr ""
 
-msgctxt "menu item"
-msgid "Search"
+msgctxt "line ending menu"
+msgid "Unix (LF)"
+msgstr ""
+
+msgctxt "document title"
+msgid "Untitled"
 msgstr ""
 
 msgctxt "save file name"
 msgid "Untitled.txt"
 msgstr ""
 
-msgctxt "search action"
-msgid "Close Search"
+msgid ""
+"Use New Tab to start another document, and Open to load local plain text "
+"files into separate tabs with their saved encoding and line endings."
 msgstr ""
 
-msgctxt "search action"
-msgid "Next Match"
+msgid "Window Height"
 msgstr ""
 
-msgctxt "search action"
-msgid "Previous Match"
+msgid "Window Width"
 msgstr ""
 
-msgctxt "search action"
-msgid "Replace"
+msgctxt "line ending menu"
+msgid "Windows (CRLF)"
 msgstr ""
 
-msgctxt "search action"
-msgid "Replace All"
+msgid "Word Wrap"
 msgstr ""
 
-msgctxt "search field placeholder"
-msgid "Replace With"
+msgctxt "zoom action"
+msgid "Actual Size"
 msgstr ""
 
-msgctxt "search option"
-msgid "Match Case"
+msgctxt "zoom action"
+msgid "Zoom In"
 msgstr ""
 
-msgctxt "status position"
-msgid "Ln %1$d, Col %2$d"
+msgctxt "zoom action"
+msgid "Zoom Out"
 msgstr ""
 
-msgctxt "theme choice"
-msgid "Dark"
-msgstr ""
-
-msgctxt "theme choice"
-msgid "Light"
-msgstr ""
-
-msgctxt "theme choice"
-msgid "System Default"
+msgid "text;editor;code;markdown;config;"
 msgstr ""
