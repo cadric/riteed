@@ -36,6 +36,10 @@ impl EditorTab {
         self.settings.apply_indentation(&self.text_view);
     }
 
+    pub(crate) fn apply_source_style_scheme(&self) {
+        self.settings.apply_source_style_scheme(&self.text_buffer);
+    }
+
     pub fn apply_minimap_font_desc(&self, font_desc: Option<&pango::FontDescription>) {
         self.minimap.set_font_desc(font_desc);
     }

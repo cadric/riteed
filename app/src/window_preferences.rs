@@ -42,7 +42,7 @@ impl WindowPreferencesController {
     ) -> Self {
         let state = Rc::new(RefCell::new(PreferencesState::default()));
         initialize_rows(shell, settings, &state);
-        install_theme_preferences(shell, settings, &state);
+        install_theme_preferences(shell, settings, workspace, &state);
         install_toggle_preferences(shell, settings, workspace, &state);
         install_spin_preferences(shell, settings, workspace, &state);
         install_document_format_preferences(shell, workspace, &state);
@@ -105,10 +105,12 @@ fn configure_spin_row(row: &adw::SpinRow, value: i32) {
 fn install_theme_preferences(
     shell: &WindowShell,
     settings: &AppSettings,
+    workspace: &Rc<Workspace>,
     state: &Rc<RefCell<PreferencesState>>,
 ) {
     let state = Rc::clone(state);
     let settings = settings.clone();
+    let workspace = Rc::downgrade(workspace);
     shell.theme_row.connect_selected_notify(move |row| {
         if state.borrow().syncing {
             return;
@@ -116,6 +118,9 @@ fn install_theme_preferences(
         let theme = ThemePreference::from_index(row.selected());
         settings.set_theme(theme);
         settings.apply_theme();
+        if let Some(workspace) = workspace.upgrade() {
+            workspace.apply_source_style_scheme_to_tabs();
+        }
     });
 }
 
@@ -237,7 +242,6 @@ fn install_spin_row_handler(
         set_spin_dirty(&row_state, dirty_spin, true);
     });
 
-    let row_clone = row.clone();
     let value_state = Rc::clone(state);
     let value_commit = Rc::clone(commit);
     row.connect_value_notify(move |row| {
@@ -245,7 +249,7 @@ fn install_spin_row_handler(
             return;
         }
         set_spin_dirty(&value_state, dirty_spin, true);
-        commit_spin_row(&row_clone, &value_state, dirty_spin, &value_commit);
+        commit_spin_row(row, &value_state, dirty_spin, &value_commit);
         row.queue_draw();
     });
 
@@ -270,12 +274,11 @@ fn install_spin_row_handler(
         });
     }
 
-    let row_clone = row.clone();
     let focus_state = Rc::clone(state);
     let focus_commit = Rc::clone(commit);
     row.connect_has_focus_notify(move |row| {
         if !row.has_focus() {
-            commit_spin_row(&row_clone, &focus_state, dirty_spin, &focus_commit);
+            commit_spin_row(row, &focus_state, dirty_spin, &focus_commit);
         }
     });
 }

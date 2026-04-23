@@ -30,6 +30,12 @@ pub struct EditorZoomController {
     zoom_percent: Cell<i32>,
 }
 
+struct ZoomApplyContext {
+    editor_font: pango::FontDescription,
+    minimap_font: pango::FontDescription,
+    scroll_past_end_padding: i32,
+}
+
 impl EditorZoomController {
     #[must_use]
     pub fn new(
@@ -143,23 +149,36 @@ impl EditorZoomController {
         self.workspace
             .status_bar
             .set_zoom_percent(self.zoom_percent.get());
-        self.update_provider_css();
+        let context = self.apply_context();
+        self.update_provider_css(&context);
         for tab in self.workspace.ordered_tabs() {
-            self.apply_to_tab(&tab);
+            Self::apply_to_tab_with(&tab, &context);
         }
     }
 
     fn apply_to_tab(&self, tab: &EditorTab) {
-        let effective = self.effective_font_description();
-        tab.restore_zoom_style();
-        tab.apply_scroll_past_end_padding(scroll_past_end_bottom_margin(&effective));
-        let minimap_font = self.minimap_font_description();
-        tab.apply_minimap_font_desc(Some(&minimap_font));
+        let context = self.apply_context();
+        Self::apply_to_tab_with(tab, &context);
     }
 
-    fn update_provider_css(&self) {
+    fn apply_to_tab_with(tab: &EditorTab, context: &ZoomApplyContext) {
+        tab.restore_zoom_style();
+        tab.apply_scroll_past_end_padding(context.scroll_past_end_padding);
+        tab.apply_minimap_font_desc(Some(&context.minimap_font));
+    }
+
+    fn update_provider_css(&self, context: &ZoomApplyContext) {
         self.provider
-            .load_from_data(&editor_view_css(&self.effective_font_description()));
+            .load_from_data(&editor_view_css(&context.editor_font));
+    }
+
+    fn apply_context(&self) -> ZoomApplyContext {
+        let editor_font = self.effective_font_description();
+        ZoomApplyContext {
+            scroll_past_end_padding: scroll_past_end_bottom_margin(&editor_font),
+            editor_font,
+            minimap_font: self.minimap_font_description(),
+        }
     }
 
     fn effective_font_description(&self) -> pango::FontDescription {

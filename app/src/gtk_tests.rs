@@ -7,6 +7,7 @@ use gtk4::glib::variant::ToVariant;
 use gtk4::prelude::*;
 use gtk4::{gio, glib};
 use libadwaita as adw;
+use sourceview5::prelude::*;
 
 use crate::app::{AppState, RiteedApp, ensure_window_for_tests, install_for_tests};
 use crate::dialogs::{self, UnsavedResponse};
@@ -77,6 +78,18 @@ fn assert_settings_apply() {
     assert!(!settings.show_line_numbers());
     settings.set_show_line_numbers(true);
     assert!(settings.show_line_numbers());
+
+    let buffer = sourceview5::Buffer::builder().build();
+    settings.apply_source_style_scheme(&buffer);
+    let manager = sourceview5::StyleSchemeManager::default();
+    if manager.scheme("Adwaita-dark").is_some() {
+        assert_eq!(
+            buffer.style_scheme().map(|scheme| scheme.id().to_string()),
+            Some(String::from("Adwaita-dark"))
+        );
+    } else {
+        assert!(buffer.style_scheme().is_some());
+    }
 }
 
 fn assert_app_actions_exist() {

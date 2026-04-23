@@ -3,7 +3,7 @@
   "sites": [
     {
       "path": "src/settings.rs",
-      "line": 163,
+      "line": 165,
       "match": "let _changed = settings.set_string(KEY_THEME, preference.stored());",
       "kind": "gsettings-write",
       "key": "theme",
@@ -11,7 +11,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 194,
+      "line": 211,
       "match": "let _changed = settings.set_boolean(KEY_WORD_WRAP, enabled);",
       "kind": "gsettings-write",
       "key": "word-wrap",
@@ -19,7 +19,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 218,
+      "line": 235,
       "match": "let _changed = settings.set_boolean(KEY_SHOW_LINE_NUMBERS, enabled);",
       "kind": "gsettings-write",
       "key": "show-line-numbers",
@@ -27,7 +27,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 242,
+      "line": 259,
       "match": "let _changed = settings.set_boolean(KEY_SHOW_MINIMAP, enabled);",
       "kind": "gsettings-write",
       "key": "show-minimap",
@@ -35,7 +35,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 277,
+      "line": 294,
       "match": "let _changed = settings.set_boolean(KEY_INSERT_SPACES_INSTEAD_OF_TABS, enabled);",
       "kind": "gsettings-write",
       "key": "insert-spaces-instead-of-tabs",
@@ -43,7 +43,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 304,
+      "line": 321,
       "match": "let _changed = settings.set_int(KEY_TAB_WIDTH, width);",
       "kind": "gsettings-write",
       "key": "tab-width",
@@ -51,7 +51,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 331,
+      "line": 348,
       "match": "let _changed = settings.set_int(KEY_INDENT_WIDTH, width);",
       "kind": "gsettings-write",
       "key": "indent-width",
@@ -59,7 +59,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 355,
+      "line": 372,
       "match": "let _changed = settings.set_string(KEY_EDITOR_FONT, font);",
       "kind": "gsettings-write",
       "key": "editor-font",
@@ -67,7 +67,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 394,
+      "line": 411,
       "match": "let _changed_width = settings.set_int(KEY_WINDOW_WIDTH, width);",
       "kind": "gsettings-write",
       "key": "window-width",
@@ -75,7 +75,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 395,
+      "line": 412,
       "match": "let _changed_height = settings.set_int(KEY_WINDOW_HEIGHT, height);",
       "kind": "gsettings-write",
       "key": "window-height",
@@ -83,7 +83,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 426,
+      "line": 443,
       "match": "let _changed = settings.set_strv(KEY_RECENT_FILES, values);",
       "kind": "gsettings-write",
       "key": "recent-files",
@@ -91,7 +91,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 455,
+      "line": 472,
       "match": "let _changed = settings.set_strv(KEY_SESSION_FILES, values);",
       "kind": "gsettings-write",
       "key": "session-files",
@@ -99,7 +99,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 481,
+      "line": 498,
       "match": "let _changed = settings.set_string(KEY_SESSION_SELECTED_FILE, uri);",
       "kind": "gsettings-write",
       "key": "session-selected-file",
@@ -115,7 +115,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 296,
+      "line": 299,
       "match": "row.set_value(f64::from(applied));",
       "kind": "gsettings-write",
       "key": "tab-width-or-indent-width",

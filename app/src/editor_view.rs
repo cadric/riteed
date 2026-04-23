@@ -21,6 +21,7 @@ impl EditorView {
     #[must_use]
     pub fn new(settings: &AppSettings) -> Self {
         let text_buffer = sourceview5::Buffer::builder().enable_undo(true).build();
+        settings.apply_source_style_scheme(&text_buffer);
         let text_view = sourceview5::View::with_buffer(&text_buffer);
         let scroll_past_end_padding = resolve_scroll_past_end_padding(&settings.editor_font());
         text_view.set_accepts_tab(true);

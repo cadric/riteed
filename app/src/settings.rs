@@ -20,6 +20,8 @@ const KEY_WINDOW_HEIGHT: &str = "window-height";
 const KEY_RECENT_FILES: &str = "recent-files";
 const KEY_SESSION_FILES: &str = "session-files";
 const KEY_SESSION_SELECTED_FILE: &str = "session-selected-file";
+const SOURCE_STYLE_SCHEME_LIGHT: &str = "Adwaita";
+const SOURCE_STYLE_SCHEME_DARK: &str = "Adwaita-dark";
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ThemePreference {
@@ -178,6 +180,21 @@ impl AppSettings {
             ThemePreference::Dark => adw::ColorScheme::PreferDark,
         };
         adw::StyleManager::default().set_color_scheme(color_scheme);
+    }
+
+    pub(crate) fn apply_source_style_scheme(&self, buffer: &sourceview5::Buffer) {
+        let manager = sourceview5::StyleSchemeManager::default();
+        let preferred = match self.theme() {
+            ThemePreference::Dark => SOURCE_STYLE_SCHEME_DARK,
+            ThemePreference::System if adw::StyleManager::default().is_dark() => {
+                SOURCE_STYLE_SCHEME_DARK
+            }
+            ThemePreference::Light | ThemePreference::System => SOURCE_STYLE_SCHEME_LIGHT,
+        };
+        let scheme = manager
+            .scheme(preferred)
+            .or_else(|| manager.scheme(SOURCE_STYLE_SCHEME_LIGHT));
+        buffer.set_style_scheme(scheme.as_ref());
     }
 
     #[must_use]

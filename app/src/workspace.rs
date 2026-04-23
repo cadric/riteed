@@ -237,6 +237,12 @@ impl Workspace {
         }
     }
 
+    pub(crate) fn apply_source_style_scheme_to_tabs(&self) {
+        for tab in &self.state.borrow().tabs {
+            tab.apply_source_style_scheme();
+        }
+    }
+
     fn install_callbacks(self: &Rc<Self>, workspace_box: &gtk4::Box) {
         let weak = Rc::downgrade(self);
         self.tab_view.connect_selected_page_notify(move |_| {

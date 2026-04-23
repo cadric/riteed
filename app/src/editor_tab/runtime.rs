@@ -25,7 +25,7 @@ impl EditorTab {
 
     #[must_use]
     pub fn current_format_summary(&self) -> String {
-        self.current_format().summary()
+        self.state.borrow().document.format().summary()
     }
 
     #[must_use]

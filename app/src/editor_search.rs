@@ -224,7 +224,7 @@ impl EditorSearch {
             self.update_result_state();
             return;
         };
-        let replacement = self.replace_entry.text().to_string();
+        let replacement = self.replace_entry.text();
         if let Err(error) = context.replace(&mut match_start, &mut match_end, &replacement) {
             dialogs::present_error(&self.parent_window, &error.into());
             return;
@@ -242,7 +242,8 @@ impl EditorSearch {
             self.update_result_state();
             return;
         };
-        if self.query().is_empty() {
+        let query = self.query();
+        if query.is_empty() {
             self.update_result_state();
             return;
         }
@@ -254,7 +255,7 @@ impl EditorSearch {
             return;
         }
 
-        let replacement = self.replace_entry.text().to_string();
+        let replacement = self.replace_entry.text();
         buffer.begin_user_action();
         let result = context.replace_all(&replacement);
         buffer.end_user_action();
@@ -432,10 +433,11 @@ impl EditorSearch {
         context: &sourceview5::SearchContext,
     ) -> Option<(gtk4::TextIter, gtk4::TextIter)> {
         let buffer = tab.text_buffer();
+        let query = self.query();
         if let Some((start, end)) = buffer.selection_bounds()
             && selection_matches_query(
                 &buffer.text(&start, &end, true),
-                &self.query(),
+                &query,
                 self.match_case_button.is_active(),
             )
         {
@@ -449,8 +451,8 @@ impl EditorSearch {
             .map(|(match_start, match_end, _wrapped)| (match_start, match_end))
     }
 
-    fn query(&self) -> String {
-        self.search_entry.text().to_string()
+    fn query(&self) -> glib::GString {
+        self.search_entry.text()
     }
 
     fn clear_manual_message(&self) {
@@ -477,7 +479,8 @@ impl EditorSearch {
             .as_ref()
             .map_or(-1, |binding| binding.context.occurrences_count());
 
-        let has_query = !self.query().is_empty();
+        let query = self.query();
+        let has_query = !query.is_empty();
         let label = if !has_query || occurrences < 0 {
             String::new()
         } else if occurrences == 0 {
@@ -490,12 +493,13 @@ impl EditorSearch {
     }
 
     fn set_action_sensitivity(&self, has_matches: bool) {
+        let replace_visible = self.replace_row.is_visible();
         self.previous_button.set_sensitive(has_matches);
         self.next_button.set_sensitive(has_matches);
         self.replace_button
-            .set_sensitive(has_matches && self.replace_row.is_visible());
+            .set_sensitive(has_matches && replace_visible);
         self.replace_all_button
-            .set_sensitive(has_matches && self.replace_row.is_visible());
+            .set_sensitive(has_matches && replace_visible);
     }
 
     #[cfg(test)]

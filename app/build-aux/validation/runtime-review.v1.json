@@ -107,7 +107,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 108,
+      "line": 109,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
       "ownership": "Theme preference wiring borrows the shared staged-state cell.",
@@ -115,7 +115,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 126,
+      "line": 131,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
       "ownership": "Toggle preference wiring borrows the shared staged-state cell.",
@@ -123,7 +123,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 166,
+      "line": 171,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each switch-row helper borrows the shared staged-state cell.",
@@ -131,7 +131,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 188,
+      "line": 193,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
       "ownership": "SpinRow setup borrows the shared staged-state cell.",
@@ -139,7 +139,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 228,
+      "line": 233,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each spin-row handler keeps a shared handle to the staged-state cell.",
@@ -147,7 +147,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 285,
+      "line": 288,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
       "ownership": "Spin-row commit logic borrows the shared staged-state cell.",
@@ -155,7 +155,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 304,
+      "line": 307,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
       "ownership": "Document-format preference wiring borrows the shared staged-state cell.",
@@ -163,7 +163,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 348,
+      "line": 351,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
       "ownership": "Document-format row synchronization borrows the shared staged-state cell.",
@@ -171,7 +171,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 478,
+      "line": 481,
       "match": "fn with_syncing(state: &Rc<RefCell<PreferencesState>>, operation: impl FnOnce()) {",
       "kind": "runtime-shared-state",
       "ownership": "The dialog-scoped syncing helper mutates the shared preferences state.",
@@ -179,7 +179,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 484,
+      "line": 487,
       "match": "fn spin_dirty(state: &Rc<RefCell<PreferencesState>>, dirty_spin: DirtySpin) -> bool {",
       "kind": "runtime-shared-state",
       "ownership": "The staged SpinRow read helper borrows the shared preferences state.",
@@ -187,7 +187,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 492,
+      "line": 495,
       "match": "fn set_spin_dirty(state: &Rc<RefCell<PreferencesState>>, dirty_spin: DirtySpin, value: bool) {",
       "kind": "runtime-shared-state",
       "ownership": "The staged SpinRow write helper mutates the shared preferences state.",
