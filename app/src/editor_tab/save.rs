@@ -162,6 +162,8 @@ impl EditorTab {
                             tab.refresh_language_for_file(&monitored_file);
                             tab.set_loading(false);
                             tab.sync_presentation();
+                            tab.sync_compare_reference_after_save(&new_uri);
+                            tab.sync_presentation();
                             tab.grab_focus();
                             callback(SaveResult::Saved(SaveOutcome {
                                 old_uri: old_uri.clone(),

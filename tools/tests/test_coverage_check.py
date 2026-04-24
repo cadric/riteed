@@ -12,7 +12,7 @@ from tools import coverage_check
 
 
 class CoverageCheckTests(unittest.TestCase):
-    def test_main_passes_cairo_renderer_to_llvm_cov(self) -> None:
+    def test_main_passes_headless_gtk_environment_to_llvm_cov(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             captured: dict[str, object] = {}
@@ -61,7 +61,13 @@ class CoverageCheckTests(unittest.TestCase):
 
             self.assertEqual(captured["cwd"], root)
             self.assertEqual(captured["label"], "cargo llvm-cov failed")
-            self.assertEqual(captured["env"], {"GSK_RENDERER": os.environ.get("GSK_RENDERER", "cairo")})
+            self.assertEqual(
+                captured["env"],
+                {
+                    "GSK_RENDERER": os.environ.get("GSK_RENDERER", "cairo"),
+                    "GTK_A11Y": os.environ.get("GTK_A11Y", "none"),
+                },
+            )
 
 
 if __name__ == "__main__":

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import shlex
 import tempfile
 import xml.etree.ElementTree as ET
@@ -100,12 +101,19 @@ def check_xgettext_completeness(root: Path, errors: list[str]) -> None:
         add(errors, f"Checked-in POT contains messages not produced by current extraction inputs: {preview}")
 
 
+def _headless_gtk_env() -> dict[str, str]:
+    return {
+        "GSK_RENDERER": os.environ.get("GSK_RENDERER", "cairo"),
+        "GTK_A11Y": os.environ.get("GTK_A11Y", "none"),
+    }
+
+
 def run_required_commands(root: Path, errors: list[str]) -> None:
     cfg = validation_policy(root)
     for tool in cfg["required_tools"]:
         require_tool(tool)
     for command in cfg["required_commands"]:
-        run_checked(shlex.split(command), root, command)
+        run_checked(shlex.split(command), root, command, env=_headless_gtk_env())
 
     check_xgettext_completeness(root, errors)
 

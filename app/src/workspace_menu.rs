@@ -35,6 +35,29 @@ pub(crate) fn build_primary_menu(recent_files: &[String]) -> gio::Menu {
     );
     menu.append_submenu(Some(&pgettext("menu item", "Zoom")), &zoom_menu);
 
+    let compare_menu = gio::Menu::new();
+    compare_menu.append(
+        Some(&pgettext("menu item", "Compare With Saved File")),
+        Some("win.compare-with-disk"),
+    );
+    compare_menu.append(
+        Some(&pgettext("menu item", "Compare With File")),
+        Some("win.compare-with-file"),
+    );
+    compare_menu.append(
+        Some(&pgettext("menu item", "Compare Two Files")),
+        Some("win.compare-two-files"),
+    );
+    compare_menu.append(
+        Some(&pgettext("menu item", "Refresh Reference")),
+        Some("win.compare-refresh-reference"),
+    );
+    compare_menu.append(
+        Some(&pgettext("menu item", "Exit Compare")),
+        Some("win.compare-exit"),
+    );
+    menu.append_submenu(Some(&pgettext("menu item", "Compare")), &compare_menu);
+
     let project_menu = gio::Menu::new();
     project_menu.append(
         Some(&pgettext("menu item", "Project Sidebar")),

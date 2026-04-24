@@ -185,6 +185,7 @@ impl EditorTab {
         document: LoadedDocument,
         snapshot: Option<&ReloadSnapshot>,
     ) {
+        self.exit_compare();
         {
             let mut state = self.state.borrow_mut();
             state.document = DocumentState::from_loaded(document.path, document.format.clone());
@@ -207,6 +208,7 @@ impl EditorTab {
     }
 
     pub(super) fn apply_saved_document(&self, saved: SavedDocument) {
+        let saved_uri = saved.uri.clone();
         let mut state = self.state.borrow_mut();
         state.document.set_saved(saved.path);
         state.document.set_format(saved.format.clone());
@@ -215,6 +217,8 @@ impl EditorTab {
         self.text_buffer
             .set_implicit_trailing_newline(saved.format.implicit_trailing_newline());
         self.text_buffer.set_modified(false);
+        drop(state);
+        self.sync_compare_reference_after_save(&saved_uri);
     }
 
     pub(super) fn can_apply_reload(

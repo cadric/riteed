@@ -27,7 +27,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 104,
+      "line": 106,
       "match": "fn install_actions(app: &adw::Application, state: &Rc<RefCell<AppState>>, factory: WindowFactory) {",
       "kind": "runtime-shared-state",
       "ownership": "App-scoped actions borrow shared application state.",
@@ -35,7 +35,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 111,
+      "line": 113,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "File actions borrow shared application state.",
@@ -43,7 +43,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 177,
+      "line": 179,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "Application utility actions borrow shared application state.",
@@ -51,7 +51,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 237,
+      "line": 239,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "Activation and open lifecycle callbacks borrow shared application state.",
@@ -59,7 +59,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 280,
+      "line": 282,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The window-creation helper updates shared application state.",
@@ -83,11 +83,35 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 95,
+      "line": 97,
       "match": "state: RefCell<EditorTabState>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns its mutable document format, live source file, file-monitor, deferred external-change state, and in-flight IO state.",
       "justification": "V5a keeps saved identity, current format, saved-format baseline, monitor bindings, stale-save protection, and cancellable scratch IO on the tab so reload and save remain scratch-then-apply."
+    },
+    {
+      "path": "src/editor_tab.rs",
+      "line": 98,
+      "match": "compare: RefCell<Option<compare::CompareController>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Each editor tab owns its ephemeral compare-mode controller.",
+      "justification": "Compare mode swaps tab-local widgets, reference-buffer state, diff marks, and cancellable reference loading without persisting workspace/session state."
+    },
+    {
+      "path": "src/editor_tab.rs",
+      "line": 99,
+      "match": "compare_request_generation: Cell<u64>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Each editor tab owns the compare reference-load generation token.",
+      "justification": "Async reference loads must ignore stale callbacks after compare exit, target replacement, or tab reload without introducing global state."
+    },
+    {
+      "path": "src/editor_tab/compare/ui.rs",
+      "line": 208,
+      "match": "syncing: &Cell<bool>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Compare scroll synchronization borrows a tab-local reentrancy guard.",
+      "justification": "Ratio-based split-view scrolling needs one shared boolean so left and right adjustment callbacks cannot trigger each other recursively."
     },
     {
       "path": "src/editor_monitor.rs",
@@ -275,7 +299,7 @@
     },
     {
       "path": "src/workspace.rs",
-      "line": 53,
+      "line": 55,
       "match": "pub(crate) state: RefCell<WorkspaceState>,",
       "kind": "runtime-shared-state",
       "ownership": "The workspace owns tab collection, recent/session caches, restore gating, and active close flow.",

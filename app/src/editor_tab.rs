@@ -1,4 +1,4 @@
-use std::cell::{OnceCell, RefCell};
+use std::cell::{Cell, OnceCell, RefCell};
 use std::rc::Rc;
 
 use gettextrs::pgettext;
@@ -13,6 +13,7 @@ use crate::editor_view::EditorView;
 use crate::error::AppError;
 use crate::settings::AppSettings;
 
+mod compare;
 mod open;
 mod runtime;
 mod save;
@@ -88,11 +89,14 @@ pub struct EditorTab {
     banner: adw::Banner,
     minimap: sourceview5::Map,
     minimap_holder: gtk4::Box,
+    content: gtk4::Box,
     scrolled: gtk4::ScrolledWindow,
     text_view: sourceview5::View,
     text_buffer: sourceview5::Buffer,
     settings: AppSettings,
     state: RefCell<EditorTabState>,
+    compare: RefCell<Option<compare::CompareController>>,
+    compare_request_generation: Cell<u64>,
     page: OnceCell<adw::TabPage>,
     on_file_drop: OnceCell<Rc<dyn Fn(Vec<gio::File>)>>,
     on_visual_change: OnceCell<Rc<dyn Fn()>>,
@@ -109,6 +113,7 @@ impl EditorTab {
             banner: view.banner,
             minimap: view.minimap,
             minimap_holder: view.minimap_holder,
+            content: view.content,
             scrolled: view.scrolled,
             text_view: view.text_view,
             text_buffer: view.text_buffer,
@@ -126,6 +131,8 @@ impl EditorTab {
                 io: IoState::default(),
                 language_request_generation: 0,
             }),
+            compare: RefCell::new(None),
+            compare_request_generation: Cell::new(0),
             page: OnceCell::new(),
             on_file_drop: OnceCell::new(),
             on_visual_change: OnceCell::new(),
@@ -436,6 +443,7 @@ impl EditorTab {
     }
 
     fn sync_presentation(&self) {
+        self.recompute_compare_from_editable();
         if let Some(page) = self.page() {
             page.set_title(&self.title());
             page.set_tooltip(&self.subtitle());

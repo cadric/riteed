@@ -9,6 +9,7 @@ use crate::dialogs;
 use crate::editor_zoom::EditorZoomController;
 use crate::error::AppError;
 use crate::settings::AppSettings;
+use crate::window_compare::WindowCompareController;
 use crate::window_preferences::WindowPreferencesController;
 use crate::window_project::WindowProjectController;
 use crate::window_shell::WindowShell;
@@ -29,6 +30,7 @@ pub struct Window {
     settings: AppSettings,
     workspace: Rc<Workspace>,
     _preferences: WindowPreferencesController,
+    compare: Rc<WindowCompareController>,
     project: WindowProjectController,
     zoom: Rc<EditorZoomController>,
 }
@@ -94,6 +96,7 @@ impl Window {
         });
         let zoom = EditorZoomController::new(&shell.window, &workspace, &settings);
         let preferences = WindowPreferencesController::new(&shell, &settings, &workspace, &zoom);
+        let compare = WindowCompareController::new(&shell.window, &workspace);
         let project = WindowProjectController::new(&shell, &settings, &workspace);
 
         let window = Rc::new(Self {
@@ -108,10 +111,12 @@ impl Window {
             settings,
             workspace,
             _preferences: preferences,
+            compare,
             project,
             zoom,
         });
         window.zoom.set_editor_font(&window.settings.editor_font());
+        window.compare.refresh_action_state();
         window.install_callbacks();
         Ok(window)
     }

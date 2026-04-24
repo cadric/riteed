@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -205,6 +206,49 @@ class PolicyCheckTests(unittest.TestCase):
                 errors: list[str] = []
                 commands.check_xgettext_completeness(REPO_ROOT, errors)
                 self.assertTrue(errors)
+
+    def test_required_commands_use_headless_gtk_environment(self) -> None:
+        from tools.checks import commands
+
+        captured: dict[str, object] = {}
+
+        def fake_run_checked(
+            cmd: list[str],
+            cwd: Path,
+            label: str | None = None,
+            env: dict[str, str] | None = None,
+        ) -> str:
+            captured["cmd"] = cmd
+            captured["cwd"] = cwd
+            captured["label"] = label
+            captured["env"] = env
+            return ""
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            with patch.object(
+                commands,
+                "validation_policy",
+                return_value={
+                    "required_tools": [],
+                    "required_commands": ["cargo test"],
+                    "conditional_validators": [],
+                },
+            ):
+                with patch.object(commands, "run_checked", side_effect=fake_run_checked):
+                    with patch.object(commands, "check_xgettext_completeness"):
+                        errors: list[str] = []
+                        commands.run_required_commands(root, errors)
+
+        self.assertEqual(captured["cmd"], ["cargo", "test"])
+        self.assertEqual(captured["label"], "cargo test")
+        self.assertEqual(
+            captured["env"],
+            {
+                "GSK_RENDERER": os.environ.get("GSK_RENDERER", "cairo"),
+                "GTK_A11Y": os.environ.get("GTK_A11Y", "none"),
+            },
+        )
 
 
 if __name__ == "__main__":

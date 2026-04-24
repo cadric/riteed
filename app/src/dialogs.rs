@@ -23,6 +23,7 @@ pub enum UnsavedResponse {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ExternalReloadResponse {
     KeepCurrent,
+    Compare,
     Reload,
 }
 
@@ -107,16 +108,17 @@ pub fn confirm_external_reload(
         .build();
     dialog.add_responses(&[
         ("keep-current", &pgettext("alert response", "Keep Current")),
+        ("compare", &pgettext("alert response", "Compare")),
         ("reload", &pgettext("alert response", "Reload")),
     ]);
     dialog.set_response_appearance("reload", adw::ResponseAppearance::Destructive);
     dialog.set_default_response(Some("keep-current"));
     dialog.set_close_response("keep-current");
     dialog.choose(Some(parent), None::<&gio::Cancellable>, move |response| {
-        let outcome = if response == "reload" {
-            ExternalReloadResponse::Reload
-        } else {
-            ExternalReloadResponse::KeepCurrent
+        let outcome = match response.as_str() {
+            "compare" => ExternalReloadResponse::Compare,
+            "reload" => ExternalReloadResponse::Reload,
+            _ => ExternalReloadResponse::KeepCurrent,
         };
         on_response(outcome);
     });

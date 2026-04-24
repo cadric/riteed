@@ -15,6 +15,7 @@ pub struct EditorView {
     pub minimap: sourceview5::Map,
     pub minimap_holder: gtk4::Box,
     pub scrolled: gtk4::ScrolledWindow,
+    pub content: gtk4::Box,
 }
 
 impl EditorView {
@@ -101,6 +102,7 @@ impl EditorView {
             minimap,
             minimap_holder,
             scrolled,
+            content,
         }
     }
 }

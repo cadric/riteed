@@ -81,7 +81,10 @@ def main() -> int:
                 command,
                 root,
                 "cargo llvm-cov failed",
-                env={"GSK_RENDERER": os.environ.get("GSK_RENDERER", "cairo")},
+                env={
+                    "GSK_RENDERER": os.environ.get("GSK_RENDERER", "cairo"),
+                    "GTK_A11Y": os.environ.get("GTK_A11Y", "none"),
+                },
             )
             payload = json.loads(out.read_text(encoding="utf-8"))
     percent = extract_line_percent(payload)

@@ -253,6 +253,76 @@ impl Window {
         self.project.resolve_symlink_for_tests(file);
     }
 
+    pub(crate) fn compare_action_states_for_tests(
+        &self,
+    ) -> (bool, bool, bool, bool, bool, bool, bool) {
+        self.compare.action_states_for_tests()
+    }
+
+    pub(crate) fn compare_with_disk_for_tests(self: &Rc<Self>) {
+        self.compare.request_compare_with_disk();
+    }
+
+    pub(crate) fn compare_with_file_for_tests(&self, file: &gio::File) {
+        if let Some(tab) = self.workspace.selected_tab() {
+            tab.start_compare_with_file(file, Rc::new(|_result| {}));
+        }
+    }
+
+    pub(crate) fn compare_two_files_for_tests(
+        self: &Rc<Self>,
+        left: &gio::File,
+        right: &gio::File,
+    ) {
+        self.compare.compare_two_files_for_tests(left, right);
+    }
+
+    pub(crate) fn refresh_compare_reference_for_tests(self: &Rc<Self>) {
+        self.compare.refresh_reference();
+    }
+
+    pub(crate) fn exit_compare_for_tests(&self) {
+        self.compare.exit_compare();
+    }
+
+    pub(crate) fn next_diff_for_tests(&self) {
+        self.compare.next_diff();
+    }
+
+    pub(crate) fn previous_diff_for_tests(&self) {
+        self.compare.previous_diff();
+    }
+
+    pub(crate) fn selected_compare_active_for_tests(&self) -> bool {
+        self.workspace
+            .selected_tab()
+            .is_some_and(|tab| tab.is_compare_active())
+    }
+
+    pub(crate) fn selected_compare_diff_count_for_tests(&self) -> usize {
+        self.workspace
+            .selected_tab()
+            .map_or(0, |tab| tab.compare_diff_count_for_tests())
+    }
+
+    pub(crate) fn selected_compare_status_for_tests(&self) -> String {
+        self.workspace
+            .selected_tab()
+            .map_or_else(String::new, |tab| tab.compare_status_for_tests())
+    }
+
+    pub(crate) fn selected_compare_current_hunk_for_tests(&self) -> Option<usize> {
+        self.workspace
+            .selected_tab()
+            .and_then(|tab| tab.compare_current_hunk_for_tests())
+    }
+
+    pub(crate) fn selected_compare_highlight_count_for_tests(&self) -> usize {
+        self.workspace
+            .selected_tab()
+            .map_or(0, |tab| tab.compare_editable_highlight_count_for_tests())
+    }
+
     pub(crate) fn project_monitor_count_for_tests(&self) -> usize {
         self.project.project_monitor_count_for_tests()
     }

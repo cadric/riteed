@@ -132,6 +132,23 @@
         </child>
         <child>
           <object class="GtkShortcutsGroup">
+            <property name="title" translatable="yes">Compare</property>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="accelerator">F8</property>
+                <property name="title" translatable="yes">Next Difference</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="accelerator">&lt;Shift&gt;F8</property>
+                <property name="title" translatable="yes">Previous Difference</property>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="GtkShortcutsGroup">
             <property name="title" translatable="yes">Project</property>
             <child>
               <object class="GtkShortcutsShortcut">

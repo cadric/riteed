@@ -551,4 +551,5 @@ fn gtk_surfaces_and_editor_flow_work() {
     crate::gtk_tests_v5b::exercise_v5b_editor_controls(&test_app);
     crate::gtk_tests_v6::exercise_v6_project_navigation(&test_app);
     crate::gtk_tests_v6::exercise_v6_project_restore(&test_app);
+    crate::gtk_tests_v7::exercise_v7_compare(&test_app);
 }

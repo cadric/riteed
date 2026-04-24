@@ -38,6 +38,7 @@ impl EditorTab {
 
     pub(crate) fn apply_source_style_scheme(&self) {
         self.settings.apply_source_style_scheme(&self.text_buffer);
+        self.apply_compare_source_style_scheme();
     }
 
     pub fn apply_minimap_font_desc(&self, font_desc: Option<&pango::FontDescription>) {

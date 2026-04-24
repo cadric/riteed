@@ -66,6 +66,9 @@ fn sync_selected_tab(workspace: &Rc<Workspace>, tab: &Rc<EditorTab>) {
             if let (Some(workspace), Some(tab)) = (weak_workspace.upgrade(), weak_tab.upgrade()) {
                 tab.mark_external_prompt_active(false);
                 match response {
+                    ExternalReloadResponse::Compare => {
+                        request_compare_with_disk(&workspace, &tab);
+                    }
                     ExternalReloadResponse::Reload => request_reload(&workspace, &tab, false),
                     ExternalReloadResponse::KeepCurrent => {
                         tab.acknowledge_pending_external();
@@ -149,6 +152,22 @@ fn request_reload(workspace: &Rc<Workspace>, tab: &Rc<EditorTab>, automatic: boo
             }
         }),
     );
+}
+
+fn request_compare_with_disk(workspace: &Rc<Workspace>, tab: &Rc<EditorTab>) {
+    let weak_workspace = Rc::downgrade(workspace);
+    let weak_tab = Rc::downgrade(tab);
+    tab.start_compare_with_disk(Rc::new(move |result| {
+        if let (Some(workspace), Some(tab)) = (weak_workspace.upgrade(), weak_tab.upgrade()) {
+            match result {
+                Ok(()) => {
+                    tab.acknowledge_pending_external();
+                    workspace.refresh_selected_state();
+                }
+                Err(error) => dialogs::present_error(&workspace.shell, &error),
+            }
+        }
+    }));
 }
 
 fn is_selected_tab(workspace: &Workspace, tab: &EditorTab) -> bool {

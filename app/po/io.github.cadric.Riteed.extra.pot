@@ -1,102 +1,151 @@
-msgid "The file changed again on disk and could not be overwritten."
+msgctxt "menu item"
+msgid "Compare"
 msgstr ""
 
-msgid "The file is too large to open safely."
+msgctxt "menu item"
+msgid "Compare Two Files"
 msgstr ""
 
-msgid "The previous project folder could not be restored."
+msgctxt "menu item"
+msgid "Compare With File"
 msgstr ""
 
-msgid "Theme Preference"
+msgctxt "menu item"
+msgid "Compare With Saved File"
 msgstr ""
 
-msgctxt "external banner"
-msgid "This File Changed on Disk."
+msgctxt "menu item"
+msgid "Exit Compare"
 msgstr ""
 
-msgctxt "external banner"
-msgid "This File Is Missing on Disk."
+msgctxt "menu item"
+msgid "Help"
 msgstr ""
 
-msgid "This document contains characters that cannot be saved in the current text encoding."
+msgctxt "menu item"
+msgid "Keyboard Shortcuts"
 msgstr ""
 
-msgid "This document has unsaved changes."
+msgctxt "menu item"
+msgid "New Tab"
 msgstr ""
 
-msgid "This file changed on disk while you also have unsaved changes."
+msgctxt "menu item"
+msgid "Open"
 msgstr ""
 
-msgid "This file changed on disk. Saving now will replace the external version."
+msgctxt "menu item"
+msgid "Open Folder"
 msgstr ""
 
-msgid "Unable to Build the Window"
+msgctxt "menu item"
+msgid "Preferences"
 msgstr ""
 
-msgid "Unable to Open Dropped Files"
+msgctxt "menu item"
+msgid "Project"
 msgstr ""
 
-msgctxt "error title"
-msgid "Unable to Open Help"
+msgctxt "menu item"
+msgid "Project Sidebar"
 msgstr ""
 
-msgid "Unable to Open the File"
+msgctxt "menu item"
+msgid "Recent Files"
 msgstr ""
 
-msgid "Unable to Save the File"
+msgctxt "menu item"
+msgid "Refresh Project Tree"
 msgstr ""
 
-msgctxt "line ending menu"
-msgid "Unix (LF)"
+msgctxt "menu item"
+msgid "Refresh Reference"
 msgstr ""
 
-msgctxt "document title"
-msgid "Untitled"
+msgctxt "menu item"
+msgid "Search"
+msgstr ""
+
+msgctxt "menu item"
+msgid "Show Hidden Files"
+msgstr ""
+
+msgctxt "menu item"
+msgid "Zoom"
+msgstr ""
+
+msgctxt "menu item"
+msgid "Zoom In"
+msgstr ""
+
+msgctxt "menu item"
+msgid "Zoom Out"
 msgstr ""
 
 msgctxt "save file name"
 msgid "Untitled.txt"
 msgstr ""
 
-msgid "Use New Tab to start another document, and Open to load local plain text files into separate tabs with their saved encoding and line endings."
+msgctxt "search action"
+msgid "Close Search"
 msgstr ""
 
-msgid "Window Height"
+msgctxt "search action"
+msgid "Next Match"
 msgstr ""
 
-msgid "Window Width"
+msgctxt "search action"
+msgid "Previous Match"
 msgstr ""
 
-msgctxt "line ending menu"
-msgid "Windows (CRLF)"
+msgctxt "search action"
+msgid "Replace"
 msgstr ""
 
-msgid "Word Wrap"
+msgctxt "search action"
+msgid "Replace All"
 msgstr ""
 
-msgctxt "menu item"
-msgid "Zoom"
+msgctxt "search field placeholder"
+msgid "Replace With"
+msgstr ""
+
+msgctxt "search option"
+msgid "Match Case"
+msgstr ""
+
+msgctxt "status format"
+msgid "Format"
+msgstr ""
+
+msgctxt "status position"
+msgid "Ln %1$d, Col %2$d"
 msgstr ""
 
 msgctxt "status zoom"
 msgid "Zoom"
 msgstr ""
 
-msgctxt "menu item"
-msgid "Zoom In"
+msgctxt "theme choice"
+msgid "Dark"
+msgstr ""
+
+msgctxt "theme choice"
+msgid "Light"
+msgstr ""
+
+msgctxt "theme choice"
+msgid "System Default"
+msgstr ""
+
+msgctxt "zoom action"
+msgid "Actual Size"
 msgstr ""
 
 msgctxt "zoom action"
 msgid "Zoom In"
 msgstr ""
 
-msgctxt "menu item"
-msgid "Zoom Out"
-msgstr ""
-
 msgctxt "zoom action"
 msgid "Zoom Out"
-msgstr ""
-
-msgid "text;editor;code;markdown;config;"
 msgstr ""

@@ -16,6 +16,7 @@ use crate::settings::AppSettings;
 mod testing;
 
 type FormatPreferencesHandler = Rc<dyn Fn(Option<Rc<EditorTab>>)>;
+type CompareActionSyncHandler = Rc<dyn Fn(Option<Rc<EditorTab>>)>;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum OpenSource {
@@ -50,6 +51,7 @@ pub struct Workspace {
     pub(crate) search: Rc<EditorSearch>,
     pub(crate) status_bar: EditorStatusBar,
     format_preferences_handler: OnceCell<FormatPreferencesHandler>,
+    compare_action_sync_handler: OnceCell<CompareActionSyncHandler>,
     pub(crate) state: RefCell<WorkspaceState>,
 }
 
@@ -102,6 +104,7 @@ impl Workspace {
             search,
             status_bar,
             format_preferences_handler: OnceCell::new(),
+            compare_action_sync_handler: OnceCell::new(),
             state: RefCell::new(WorkspaceState {
                 tabs: Vec::new(),
                 recent_files: parts.settings.recent_files(),
@@ -425,6 +428,10 @@ impl Workspace {
         let _set_callback = self.format_preferences_handler.set(callback);
     }
 
+    pub(crate) fn set_compare_action_sync_handler(&self, callback: CompareActionSyncHandler) {
+        let _set_callback = self.compare_action_sync_handler.set(callback);
+    }
+
     pub(crate) fn set_selected_line_ending_mode(&self, line_ending_mode: LineEndingMode) {
         if let Some(tab) = self.selected_tab() {
             tab.set_current_line_ending_mode(line_ending_mode);
@@ -490,6 +497,9 @@ impl Workspace {
         let selected = self.selected_tab();
         self.status_bar.update(selected.as_deref());
         if let Some(callback) = self.format_preferences_handler.get() {
+            callback(selected.clone());
+        }
+        if let Some(callback) = self.compare_action_sync_handler.get() {
             callback(selected.clone());
         }
 

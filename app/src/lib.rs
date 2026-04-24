@@ -22,6 +22,7 @@ mod project_tree_monitor;
 pub mod session;
 pub mod settings;
 pub mod window;
+mod window_compare;
 mod window_preferences;
 mod window_project;
 pub mod window_shell;
@@ -41,6 +42,8 @@ mod gtk_tests_v5;
 mod gtk_tests_v5b;
 #[cfg(test)]
 mod gtk_tests_v6;
+#[cfg(test)]
+mod gtk_tests_v7;
 
 use std::sync::OnceLock;
 

@@ -24,13 +24,6 @@
     },
     {
       "path": "src/editor_status.rs",
-      "line": 175,
-      "match": ".tooltip_text(gettext(\"Document Format\"))",
-      "kind": "i18n-short-string",
-      "resolution": "This short tooltip labels the read-only document format field in the bottom status bar, where it sits directly beside zoom and cursor status."
-    },
-    {
-      "path": "src/editor_status.rs",
       "line": 83,
       "match": ".update_property(&[Property::Label(&gettext(\"Document Format\"))]);",
       "kind": "i18n-short-string",
@@ -59,10 +52,24 @@
     },
     {
       "path": "src/editor_status.rs",
+      "line": 175,
+      "match": ".tooltip_text(gettext(\"Document Format\"))",
+      "kind": "i18n-short-string",
+      "resolution": "This short tooltip labels the read-only document format field in the bottom status bar, where it sits directly beside zoom and cursor status."
+    },
+    {
+      "path": "src/editor_status.rs",
       "line": 245,
       "match": "gettext(\"Modified\")",
       "kind": "i18n-short-string",
       "resolution": "This short visible status tag appears immediately after the current document name in the bottom status bar, so its state meaning is explicit from placement."
+    },
+    {
+      "path": "src/editor_tab/compare.rs",
+      "line": 509,
+      "match": "let text = ngettext(\"%d changed line\", \"%d changed lines\", plural_count)",
+      "kind": "i18n-short-string",
+      "resolution": "This plural-sensitive compare status counts changed logical lines while hunk navigation remains visible beside it in the full-width compare toolbar."
     },
     {
       "path": "src/project_browser.rs",

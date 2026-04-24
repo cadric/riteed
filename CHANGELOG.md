@@ -20,6 +20,8 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Extended the embedded Riteed app to a v3 editor with in-document search and replace, optional line numbers, and a bottom status bar for file and cursor feedback.
 - Extended the embedded Riteed app to a v4 editor with syntax highlighting, an optional minimap, and conservative external-file monitoring that protects unsaved work.
 - Extended the embedded Riteed app to a v6 lightweight workspace with Open Folder, Close Folder, an adaptive project sidebar, lazy file-tree browsing, manual refresh, hidden-file toggling, and tab/tree synchronization.
+- Extended the embedded Riteed app to a v7 compare workflow with in-tab split diffs, compare-with-disk, compare-with-file, compare-two-files, manual reference refresh, and F8/Shift+F8 diff navigation.
+- Vendored the pinned `similar` crate for deterministic offline Flatpak-oriented compare/diff builds.
 
 ### Changed
 - Simplified the repository layout so `AGENTS.md`, `policy/`, `tools/`, and `scripts/` live only at the root while `app/` validates directly against the root contract.
@@ -33,6 +35,7 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 
 ### Fixed
 - Stabilized GTK coverage runs by teaching `tools.coverage_check` to invoke `cargo llvm-cov` with a deterministic `GSK_RENDERER=cairo` environment, with unit coverage for the new tool behavior.
+- Stabilized headless GTK validation further by defaulting `GTK_A11Y=none` for policy and coverage test commands.
 - Ignored embedded app build outputs such as `app/target/`, Flatpak cache directories, and app-local coverage directories so routine local validation does not keep leaving commit noise behind.
 - Polished the embedded Riteed v2 tabbed editor so the editor fills the full window, the tab bar hides when only one document is open, and file drag-and-drop still opens documents in tabs instead of inserting links into the text view.
 - Replaced external F1 help launching with an in-app help dialog and shortened recent-file menu labels so the primary menu stays more compact.
@@ -45,6 +48,8 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Fixed gettext completeness sorting for mixed-context extraction results and expanded GTK coverage around folder restore, tree filtering, reveal, symlink, and Flatpak-local project navigation behavior.
 - Added portal-aware fallback polling to Riteed document and project-tree monitors so external edits and folder changes still refresh when document-portal paths miss native monitor events.
 - Ignored local Flatpak build output under `app/build-dir/` so installed test builds do not leave accidental commit noise.
+- Added a Compare response to the external-reload prompt so users can inspect the current buffer against the changed on-disk file before choosing whether to reload.
+- Corrected compare status text to count changed lines instead of hunks, and made Exit Compare clear diff highlights immediately.
 
 ## 1.0.1 — 2026-04-19
 
