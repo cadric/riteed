@@ -1,8 +1,11 @@
 use std::cell::RefCell;
 use std::cmp::Ordering;
+use std::collections::HashMap;
 use std::rc::Rc;
 
 use gtk4::{gio, glib, prelude::*};
+
+use crate::project_tree_monitor::{ProjectDirectoryMonitor, ProjectDirectorySnapshot};
 
 const ENUMERATE_ATTRIBUTES: &str = "standard::name,standard::display-name,standard::type";
 const ENUMERATE_BATCH_SIZE: i32 = 200;
@@ -30,6 +33,8 @@ struct ModelState {
     root: Option<gio::File>,
     root_store: gio::ListStore,
     active_cancellables: Vec<gio::Cancellable>,
+    directory_monitors: HashMap<String, ProjectDirectoryMonitor>,
+    on_structural_change: Option<Rc<dyn Fn()>>,
 }
 
 pub(crate) struct ProjectTreeModel {
@@ -47,6 +52,8 @@ impl ProjectTreeModel {
             root: None,
             root_store: root_store.clone(),
             active_cancellables: Vec::new(),
+            directory_monitors: HashMap::new(),
+            on_structural_change: None,
         }));
 
         let state_for_children = Rc::clone(&state);
@@ -83,6 +90,10 @@ impl ProjectTreeModel {
         &self.tree_model
     }
 
+    pub(crate) fn set_auto_refresh_handler(&self, handler: Rc<dyn Fn()>) {
+        self.state.borrow_mut().on_structural_change = Some(handler);
+    }
+
     pub(crate) fn set_show_hidden(&self, show_hidden: bool) {
         let mut state = self.state.borrow_mut();
         if state.show_hidden == show_hidden {
@@ -97,9 +108,7 @@ impl ProjectTreeModel {
         {
             let mut state = self.state.borrow_mut();
             state.generation += 1;
-            for cancellable in state.active_cancellables.drain(..) {
-                cancellable.cancel();
-            }
+            cancel_transient_state(&mut state);
             state.root = root;
             state.root_store.remove_all();
         }
@@ -213,6 +222,37 @@ impl ProjectTreeModel {
         }
         names
     }
+
+    #[cfg(test)]
+    pub(crate) fn expand_entry_for_tests(&self, name: &str) -> bool {
+        for position in 0..self.tree_model.n_items() {
+            let Some(row) = self.tree_model.row(position) else {
+                continue;
+            };
+            let Some(item) = row.item() else {
+                continue;
+            };
+            let Ok(boxed) = item.downcast::<glib::BoxedAnyObject>() else {
+                continue;
+            };
+            let Ok(borrowed) = boxed.try_borrow::<ProjectTreeItem>() else {
+                continue;
+            };
+            let ProjectTreeItem::Entry(entry) = &*borrowed else {
+                continue;
+            };
+            if entry.file_type == gio::FileType::Directory && entry.name == name {
+                row.set_expanded(true);
+                return true;
+            }
+        }
+        false
+    }
+
+    #[cfg(test)]
+    pub(crate) fn monitor_count_for_tests(&self) -> usize {
+        self.state.borrow().directory_monitors.len()
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -299,12 +339,7 @@ fn collect_enumerator_batch(load: &DirectoryLoad, mut collected: Vec<gio::FileIn
             match result {
                 Ok(batch) => {
                     if batch.is_empty() {
-                        finish_directory_load(
-                            &load_for_callback.store,
-                            &load_for_callback.directory,
-                            load_for_callback.show_hidden,
-                            &collected,
-                        );
+                        finish_directory_load(&load_for_callback, &collected);
                         return;
                     }
                     collected.extend(batch);
@@ -321,12 +356,7 @@ fn collect_enumerator_batch(load: &DirectoryLoad, mut collected: Vec<gio::FileIn
     );
 }
 
-fn finish_directory_load(
-    store: &gio::ListStore,
-    directory: &gio::File,
-    show_hidden: bool,
-    infos: &[gio::FileInfo],
-) {
+fn finish_directory_load(load: &DirectoryLoad, infos: &[gio::FileInfo]) {
     let mut entries = Vec::new();
     for info in infos {
         let file_type = info.file_type();
@@ -338,11 +368,11 @@ fn finish_directory_load(
         }
 
         let name = info.name().to_string_lossy().to_string();
-        if !show_hidden && name.starts_with('.') {
+        if !load.show_hidden && name.starts_with('.') {
             continue;
         }
 
-        let file = directory.child(info.name());
+        let file = load.directory.child(info.name());
         let uri = file.uri().to_string();
         let display_name = info.display_name().to_string();
         entries.push(ProjectTreeEntry {
@@ -356,10 +386,15 @@ fn finish_directory_load(
     }
 
     entries.sort_by(compare_entry);
-    store.remove_all();
+    load.store.remove_all();
     for entry in entries {
-        store.append(&glib::BoxedAnyObject::new(ProjectTreeItem::Entry(entry)));
+        load.store
+            .append(&glib::BoxedAnyObject::new(ProjectTreeItem::Entry(entry)));
     }
+    install_directory_monitor(
+        load,
+        &ProjectDirectorySnapshot::from_infos(infos, load.show_hidden),
+    );
 }
 
 fn compare_entry(left: &ProjectTreeEntry, right: &ProjectTreeEntry) -> Ordering {
@@ -392,4 +427,51 @@ fn handle_directory_error(
     store.append(&glib::BoxedAnyObject::new(ProjectTreeItem::Error(
         error.message().to_string(),
     )));
+}
+
+fn cancel_transient_state(state: &mut ModelState) {
+    for cancellable in state.active_cancellables.drain(..) {
+        cancellable.cancel();
+    }
+    for (_uri, monitor) in state.directory_monitors.drain() {
+        monitor.cancel();
+    }
+}
+
+fn install_directory_monitor(load: &DirectoryLoad, initial_snapshot: &ProjectDirectorySnapshot) {
+    let uri = load.directory.uri().to_string();
+    let Some(handler) = load.state.borrow().on_structural_change.clone() else {
+        return;
+    };
+    if load.state.borrow().generation != load.generation
+        || load.state.borrow().directory_monitors.contains_key(&uri)
+    {
+        return;
+    }
+
+    let weak_state = Rc::downgrade(&load.state);
+    let generation = load.generation;
+    let callback = Rc::new(move || {
+        let Some(state) = weak_state.upgrade() else {
+            return;
+        };
+        if state.borrow().generation == generation {
+            handler();
+        }
+    });
+    let Ok(monitor) = ProjectDirectoryMonitor::new(
+        &load.directory,
+        initial_snapshot.clone(),
+        load.show_hidden,
+        callback,
+    ) else {
+        return;
+    };
+
+    let mut state = load.state.borrow_mut();
+    if state.generation != generation || state.directory_monitors.contains_key(&uri) {
+        monitor.cancel();
+        return;
+    }
+    state.directory_monitors.insert(uri, monitor);
 }

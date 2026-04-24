@@ -14,6 +14,9 @@ use crate::window_project::WindowProjectController;
 use crate::window_shell::WindowShell;
 use crate::workspace::{OpenSource, Workspace, WorkspaceParts};
 
+#[cfg(test)]
+mod testing;
+
 pub struct Window {
     shell: WindowShell,
     save_action: gio::SimpleAction,

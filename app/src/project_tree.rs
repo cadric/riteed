@@ -59,6 +59,27 @@ impl ProjectTree {
         self.model.set_root(root);
         self.clear_selection();
     }
+
+    #[cfg(test)]
+    pub(crate) fn expand_entry_for_tests(&self, name: &str) -> bool {
+        self.model.expand_entry_for_tests(name)
+    }
+
+    #[cfg(test)]
+    pub(crate) fn selected_uri_for_tests(&self) -> Option<String> {
+        let position = self.selection.selected();
+        if position == gtk4::INVALID_LIST_POSITION {
+            return None;
+        }
+        let row = self.model.model().row(position)?;
+        let item = row.item()?;
+        let boxed = item.downcast::<glib::BoxedAnyObject>().ok()?;
+        let borrowed = boxed.try_borrow::<ProjectTreeItem>().ok()?;
+        match &*borrowed {
+            ProjectTreeItem::Entry(entry) => Some(entry.uri.clone()),
+            ProjectTreeItem::Loading | ProjectTreeItem::Error(_) => None,
+        }
+    }
 }
 
 fn create_factory() -> gtk4::SignalListItemFactory {

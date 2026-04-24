@@ -18,6 +18,7 @@ pub mod error;
 mod project_browser;
 mod project_tree;
 mod project_tree_model;
+mod project_tree_monitor;
 pub mod session;
 pub mod settings;
 pub mod window;

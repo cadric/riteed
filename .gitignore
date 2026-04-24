@@ -20,6 +20,7 @@
 /app/.flatpak-builder/
 /builddir/
 /app/builddir/
+/app/build-dir/
 /_build/
 /app/_build/
 *.flatpak

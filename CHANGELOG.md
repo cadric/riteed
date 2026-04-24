@@ -43,6 +43,8 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Fixed v5 format controls so Preferences can change the selected document encoding and save LF, CRLF, or CR line endings reliably, with GTK coverage for the actual UI path.
 - Fixed v5 editor zoom so the minimap remains a narrow overview instead of scaling with the editor font, and kept zoom feedback visible as a direct percentage in the bottom status bar.
 - Fixed gettext completeness sorting for mixed-context extraction results and expanded GTK coverage around folder restore, tree filtering, reveal, symlink, and Flatpak-local project navigation behavior.
+- Added portal-aware fallback polling to Riteed document and project-tree monitors so external edits and folder changes still refresh when document-portal paths miss native monitor events.
+- Ignored local Flatpak build output under `app/build-dir/` so installed test builds do not leave accidental commit noise.
 
 ## 1.0.1 — 2026-04-19
 

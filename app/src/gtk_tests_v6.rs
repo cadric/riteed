@@ -68,6 +68,56 @@ fn exercise_tree_model_expansion(root: &std::path::Path) {
     assert!(model.visible_entry_names_for_tests().is_empty());
 }
 
+fn exercise_project_auto_refresh(window: &Window, root: &std::path::Path, project_uri: &str) {
+    spin_until("project reveal selects opened file", || {
+        window.selected_project_tree_uri_for_tests().as_deref() == Some(project_uri)
+    });
+
+    let auto_file = root.join("auto-created.txt");
+    assert!(fs::write(&auto_file, b"auto").is_ok());
+    window.trigger_project_auto_refresh_for_tests();
+    spin_until("project auto refresh sees created root file", || {
+        window
+            .project_tree_entry_names_for_tests()
+            .contains(&String::from("auto-created.txt"))
+    });
+    spin_until("project auto refresh preserves selected root file", || {
+        window.selected_project_tree_uri_for_tests().as_deref() == Some(project_uri)
+    });
+
+    let renamed_file = root.join("auto-renamed.txt");
+    assert!(fs::rename(&auto_file, &renamed_file).is_ok());
+    window.trigger_project_auto_refresh_for_tests();
+    spin_until("project auto refresh sees renamed root file", || {
+        let names = window.project_tree_entry_names_for_tests();
+        names.contains(&String::from("auto-renamed.txt"))
+            && !names.contains(&String::from("auto-created.txt"))
+    });
+    assert!(fs::remove_file(&renamed_file).is_ok());
+    window.trigger_project_auto_refresh_for_tests();
+    spin_until("project auto refresh sees deleted root file", || {
+        let names = window.project_tree_entry_names_for_tests();
+        names.contains(&String::from("folder"))
+            && !names.contains(&String::from("auto-renamed.txt"))
+    });
+
+    assert!(window.expand_project_tree_entry_for_tests("folder"));
+    spin_until("project tree expands folder for auto refresh", || {
+        window
+            .project_tree_entry_names_for_tests()
+            .contains(&String::from("nested.txt"))
+    });
+    let nested_auto = root.join("folder").join("auto-nested.txt");
+    assert!(fs::write(&nested_auto, b"nested-auto").is_ok());
+    window.trigger_project_auto_refresh_for_tests();
+    spin_until("project auto refresh sees loaded subdir file", || {
+        window
+            .project_tree_entry_names_for_tests()
+            .contains(&String::from("auto-nested.txt"))
+    });
+    assert!(window.project_monitor_count_for_tests() <= 2);
+}
+
 pub(crate) fn exercise_v6_project_navigation(test_app: &adw::Application) {
     let (root, extra, open_file) = create_project_tree();
     exercise_tree_model_expansion(&root);
@@ -127,6 +177,7 @@ pub(crate) fn exercise_v6_project_navigation(test_app: &adw::Application) {
     assert_eq!(window.selected_saved_uri_for_tests(), project_uri);
     window.refresh_project_for_tests();
     wait_millis("project reveal timer drains", 80);
+    exercise_project_auto_refresh(&window, &root, &project_uri);
 
     #[cfg(unix)]
     {
@@ -155,6 +206,7 @@ pub(crate) fn exercise_v6_project_navigation(test_app: &adw::Application) {
 
     window.close_project_for_tests();
     assert_eq!(window.project_root_uri_for_tests(), None);
+    assert_eq!(window.project_monitor_count_for_tests(), 0);
     assert_eq!(
         window.project_action_states_for_tests(),
         (false, false, false, false)

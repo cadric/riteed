@@ -16,6 +16,7 @@ use crate::workspace::{OpenSource, Workspace};
 const ROOT_QUERY_ATTRIBUTES: &str = "standard::type,standard::display-name";
 
 mod app_open;
+mod auto_refresh;
 mod reveal;
 mod symlink;
 
@@ -130,6 +131,24 @@ impl WindowProjectController {
         });
         *tree_activation_handler.borrow_mut() = Some(handler);
 
+        let auto_refresh = auto_refresh::ProjectAutoRefresh::new({
+            let state = Rc::downgrade(&state);
+            Rc::new(move || {
+                if let Some(state) = state.upgrade() {
+                    auto_refresh::refresh_tree(&state);
+                }
+            })
+        });
+        let auto_refresh_for_model = auto_refresh.clone();
+        state
+            .borrow()
+            .browser
+            .tree()
+            .model()
+            .set_auto_refresh_handler(Rc::new(move || {
+                auto_refresh_for_model.schedule();
+            }));
+
         let controller = Self { state };
 
         controller.install_callbacks();
@@ -206,13 +225,42 @@ impl WindowProjectController {
     }
 
     #[cfg(test)]
+    pub(crate) fn project_monitor_count_for_tests(&self) -> usize {
+        self.state
+            .borrow()
+            .browser
+            .tree()
+            .model()
+            .monitor_count_for_tests()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn trigger_project_auto_refresh_for_tests(&self) {
+        auto_refresh::refresh_tree(&self.state);
+    }
+
+    #[cfg(test)]
+    pub(crate) fn expand_tree_entry_for_tests(&self, name: &str) -> bool {
+        self.state
+            .borrow()
+            .browser
+            .tree()
+            .expand_entry_for_tests(name)
+    }
+
+    #[cfg(test)]
+    pub(crate) fn selected_tree_uri_for_tests(&self) -> Option<String> {
+        self.state.borrow().browser.tree().selected_uri_for_tests()
+    }
+
+    #[cfg(test)]
     pub(crate) fn close_for_tests(&self) {
         close_root(&self.state);
     }
 
     #[cfg(test)]
     pub(crate) fn refresh_for_tests(&self) {
-        refresh_tree(&self.state);
+        auto_refresh::refresh_tree(&self.state);
     }
 
     #[cfg(test)]
@@ -292,7 +340,7 @@ impl WindowProjectController {
                 let Some(state) = state.upgrade() else {
                     return;
                 };
-                refresh_tree(&state);
+                auto_refresh::refresh_tree(&state);
             });
 
         let state = Rc::downgrade(&self.state);
@@ -540,20 +588,4 @@ fn sync_root_none(state: &Rc<RefCell<ProjectState>>, clear_settings: bool) {
         }
     }
     sync_actions_for_root(state);
-}
-
-fn refresh_tree(state: &Rc<RefCell<ProjectState>>) {
-    let expanded = {
-        let state = state.borrow();
-        if state.root.is_none() {
-            return;
-        }
-        let tree = state.browser.tree().model();
-        let expanded = tree.snapshot_expanded_uris();
-        tree.refresh();
-        expanded
-    };
-
-    reveal::schedule_restore_expanded(state, expanded);
-    reveal::sync_reveal_for_selection(state);
 }
