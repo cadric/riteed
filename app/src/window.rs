@@ -12,6 +12,7 @@ use crate::dialogs;
 use crate::editor_zoom::EditorZoomController;
 use crate::error::AppError;
 use crate::settings::AppSettings;
+use crate::window_appearance::WindowAppearanceController;
 use crate::window_compare::WindowCompareController;
 use crate::window_preferences::WindowPreferencesController;
 use crate::window_project::WindowProjectController;
@@ -34,6 +35,7 @@ pub struct Window {
     focus_project_action: gio::SimpleAction,
     settings: AppSettings,
     workspace: Rc<Workspace>,
+    appearance: WindowAppearanceController,
     _preferences: WindowPreferencesController,
     compare: Rc<WindowCompareController>,
     project: WindowProjectController,
@@ -68,6 +70,7 @@ impl Window {
         let shell = WindowShell::new(app)?;
         sourceview5::init();
         configure_runtime_icon_support(&shell.window);
+        WindowAppearanceController::install_css(&gtk4::prelude::WidgetExt::display(&shell.window));
         let save_action = gio::SimpleAction::new("save", None);
         let save_as_action = gio::SimpleAction::new("save-as", None);
         let close_action = gio::SimpleAction::new("close", None);
@@ -106,6 +109,7 @@ impl Window {
             settings: &settings,
         });
         let zoom = EditorZoomController::new(&shell.window, &workspace, &settings);
+        let appearance = WindowAppearanceController::new(&shell, &settings, &workspace)?;
         let preferences = WindowPreferencesController::new(&shell, &settings, &workspace, &zoom);
         let compare = WindowCompareController::new(&shell.window, &workspace);
         let project = WindowProjectController::new(&shell, &settings, &workspace);
@@ -123,6 +127,7 @@ impl Window {
             focus_project_action,
             settings,
             workspace,
+            appearance,
             _preferences: preferences,
             compare,
             project,
@@ -131,6 +136,7 @@ impl Window {
         });
         window.zoom.set_editor_font(&window.settings.editor_font());
         window.install_accessible_labels();
+        window.appearance.sync();
         window.compare.refresh_action_state();
         window.install_callbacks();
         window.install_style_callbacks();
@@ -364,6 +370,9 @@ impl Window {
         self.shell
             .save_button
             .update_property(&[Property::Label(&gettext("Save the Selected Document"))]);
+        self.shell
+            .appearance_button
+            .update_property(&[Property::Label(&gettext("Appearance"))]);
         self.shell
             .primary_menu_button
             .update_property(&[Property::Label(&gettext("Main Menu"))]);

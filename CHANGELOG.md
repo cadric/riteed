@@ -34,6 +34,7 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Extended the embedded Riteed editor to a v5c polish layer with direct status-bar zoom controls, document format controls in Preferences, fixed-size minimap rendering during zoom, and scroll-past-end editor padding.
 - Added a folder-navigation split layout using `AdwOverlaySplitView` inside the existing toast overlay, keeping project state separate from document/tab state while preserving the lightweight editor workflow.
 - Made compare highlighting follow the effective editor palette instead of the application theme, and kept autosave saves silent so they do not reorder recent files, persist session state, or show save toasts.
+- Moved quick app appearance, editor palette, and current-line highlight controls into an icon-only header-bar Appearance panel with visual palette previews, while keeping deeper editor settings in Preferences.
 
 ### Fixed
 - Stabilized GTK coverage runs by teaching `tools.coverage_check` to invoke `cargo llvm-cov` with a deterministic `GSK_RENDERER=cairo` environment, with unit coverage for the new tool behavior.
@@ -54,6 +55,8 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Corrected compare status text to count changed lines instead of hunks, and made Exit Compare clear diff highlights immediately.
 - Added read-only and autosave-paused banners with explicit actions, guarded dirty external-change prompts while compare is active, and preserved the last non-fullscreen window size when closing from fullscreen.
 - Corrected the policy checker so GSettings enum and flags keys are accepted as typed schema keys instead of being flagged as missing a free-form type.
+- Fixed the new Appearance header-bar button so it opens a small libadwaita visual panel reliably instead of relying on fragile popover activation.
+- Added a visible close button to the Appearance panel so it is not only dismissible with Escape.
 
 ## 1.0.1 — 2026-04-19
 

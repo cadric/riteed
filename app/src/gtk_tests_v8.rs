@@ -5,7 +5,7 @@ use libadwaita as adw;
 
 use crate::editor_tab::Writability;
 use crate::gtk_tests::{build_window_with_settings, spin_until, write_temp_file};
-use crate::settings::AppSettings;
+use crate::settings::{AppSettings, EditorPalette, ThemePreference};
 use crate::workspace::OpenSource;
 
 pub(crate) fn exercise_v8_polish_and_safety(test_app: &adw::Application) {
@@ -19,7 +19,14 @@ fn exercise_presentation_preferences(test_app: &adw::Application) {
         return;
     };
     window.ensure_default_tab();
-    window.select_editor_palette_for_tests(1);
+    let writes_before_sync = window.preferences_write_log_for_tests();
+    window.sync_appearance_for_tests();
+    assert_eq!(window.preferences_write_log_for_tests(), writes_before_sync);
+    window.present_appearance_for_tests();
+    assert_eq!(window.preferences_write_log_for_tests(), writes_before_sync);
+
+    window.set_app_appearance_for_tests(ThemePreference::Light);
+    window.select_editor_palette_for_tests(2);
     window.set_current_line_highlight_for_tests(false);
     window.set_autosave_for_tests(true);
     window.set_fullscreen_for_tests(true);
@@ -27,11 +34,16 @@ fn exercise_presentation_preferences(test_app: &adw::Application) {
     window.persist_window_size_for_tests();
 
     let writes = window.preferences_write_log_for_tests();
+    assert!(writes.contains(&String::from("theme")));
     assert!(writes.contains(&String::from("editor-palette")));
     assert!(writes.contains(&String::from("highlight-current-line")));
     assert!(writes.contains(&String::from("autosave-enabled")));
     assert!(writes.contains(&String::from("window-width")));
     assert!(writes.contains(&String::from("window-height")));
+    assert_eq!(
+        window.selected_appearance_palette_for_tests(),
+        EditorPalette::AdwaitaDark
+    );
 }
 
 fn exercise_autosave_is_silent_and_gsettings_clean(test_app: &adw::Application) {

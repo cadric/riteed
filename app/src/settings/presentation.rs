@@ -1,4 +1,4 @@
-use gettextrs::pgettext;
+use gettextrs::{gettext, pgettext};
 use gtk4::prelude::*;
 use libadwaita as adw;
 
@@ -85,11 +85,11 @@ impl EditorPalette {
     #[must_use]
     pub fn label(self) -> String {
         match self {
-            Self::FollowSystem => pgettext("editor palette", "Follow System"),
+            Self::FollowSystem => gettext("Match App Appearance"),
             Self::AdwaitaLight => pgettext("editor palette", "Adwaita Light"),
             Self::AdwaitaDark => pgettext("editor palette", "Adwaita Dark"),
             Self::Classic => pgettext("editor palette", "Classic"),
-            Self::Kate => pgettext("editor palette", "Kate"),
+            Self::Kate => pgettext("editor palette", "Kate Light"),
             Self::KateDark => pgettext("editor palette", "Kate Dark"),
             Self::SolarizedLight => pgettext("editor palette", "Solarized Light"),
             Self::SolarizedDark => pgettext("editor palette", "Solarized Dark"),
@@ -193,29 +193,6 @@ impl AppSettings {
                 });
             }
         }
-    }
-
-    #[must_use]
-    pub(crate) fn available_editor_palettes() -> Vec<EditorPalette> {
-        let manager = sourceview5::StyleSchemeManager::default();
-        EditorPalette::ALL
-            .into_iter()
-            .filter(|palette| {
-                palette
-                    .scheme_id()
-                    .is_none_or(|scheme_id| manager.scheme(scheme_id).is_some())
-            })
-            .collect()
-    }
-
-    #[must_use]
-    pub(crate) fn editor_palette_index(&self, available: &[EditorPalette]) -> u32 {
-        let selected = self.editor_palette();
-        available
-            .iter()
-            .position(|palette| *palette == selected)
-            .and_then(|index| u32::try_from(index).ok())
-            .unwrap_or(0)
     }
 
     #[must_use]

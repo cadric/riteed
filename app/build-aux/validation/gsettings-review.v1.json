@@ -171,7 +171,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 115,
+      "line": 95,
       "match": "row.set_value(f64::from(value));",
       "kind": "gsettings-write",
       "key": "tab-width-or-indent-width",
@@ -179,7 +179,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 351,
+      "line": 278,
       "match": "row.set_value(f64::from(applied));",
       "kind": "gsettings-write",
       "key": "tab-width-or-indent-width",

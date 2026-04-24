@@ -2,11 +2,21 @@
   "version": 1,
   "surfaces": [
     {
+      "path": "data/ui/appearance_panel.ui",
+      "line": 5,
+      "match": "<object class=\"AdwDialog\" id=\"appearance_dialog\">",
+      "smallest_width": 320,
+      "adaptive_pattern": "Small libadwaita appearance panel opened from the header-bar Appearance button with app appearance controls, visual editor palette tiles, and current-line highlight.",
+      "collapse_behavior": "The compact controls remain vertically stacked, and the palette grid keeps stable visual choices without hiding palettes dynamically.",
+      "copy_reviewed": true,
+      "a11y_reviewed": true
+    },
+    {
       "path": "data/ui/preferences.ui",
       "line": 5,
       "match": "<object class=\"AdwPreferencesDialog\" id=\"preferences_dialog\">",
       "smallest_width": 320,
-      "adaptive_pattern": "Single-page libadwaita preferences dialog with standard rows for theme, word wrap, line numbers, optional minimap, monospace editor font, and staged indentation controls.",
+      "adaptive_pattern": "Single-page libadwaita preferences dialog with standard rows for word wrap, line numbers, optional minimap, monospace editor font, staged indentation controls, autosave, and document format controls.",
       "collapse_behavior": "Rows stay vertically stacked, SpinRows keep their numeric editor inline without horizontal scrolling, and the dialog remains usable at narrow widths without secondary pages.",
       "copy_reviewed": true,
       "a11y_reviewed": true

@@ -221,7 +221,7 @@ pub fn show_help(parent: &impl IsA<gtk4::Widget>) {
     editing.add(&help_row(
         &pgettext("help row", "Editor Tools"),
         &gettext(
-            "Enable line numbers and the minimap in Preferences when you want more structure while reading longer code or markdown files.",
+            "Use the Appearance button to adjust app appearance, editor palettes, and current-line highlight. Enable line numbers and the minimap in Preferences when you want more structure while reading longer code or markdown files.",
         ),
     ));
     editing.add(&help_row(

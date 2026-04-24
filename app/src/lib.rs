@@ -22,6 +22,7 @@ mod project_tree_monitor;
 pub mod session;
 pub mod settings;
 pub mod window;
+mod window_appearance;
 mod window_compare;
 mod window_preferences;
 mod window_project;

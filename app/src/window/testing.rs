@@ -143,7 +143,7 @@ impl Window {
     }
 
     pub(crate) fn set_current_line_highlight_for_tests(&self, enabled: bool) {
-        self.shell.current_line_row.set_active(enabled);
+        self.appearance.set_highlight_for_tests(enabled);
     }
 
     pub(crate) fn set_autosave_for_tests(&self, enabled: bool) {
@@ -151,7 +151,34 @@ impl Window {
     }
 
     pub(crate) fn select_editor_palette_for_tests(&self, index: u32) {
-        self.shell.editor_palette_row.set_selected(index);
+        let palette = match index {
+            1 => crate::settings::EditorPalette::AdwaitaLight,
+            2 => crate::settings::EditorPalette::AdwaitaDark,
+            3 => crate::settings::EditorPalette::Kate,
+            4 => crate::settings::EditorPalette::KateDark,
+            5 => crate::settings::EditorPalette::SolarizedLight,
+            6 => crate::settings::EditorPalette::SolarizedDark,
+            7 => crate::settings::EditorPalette::Classic,
+            _ => crate::settings::EditorPalette::FollowSystem,
+        };
+        self.appearance.set_palette_for_tests(palette);
+    }
+
+    pub(crate) fn set_app_appearance_for_tests(&self, theme: crate::settings::ThemePreference) {
+        self.appearance.set_theme_for_tests(theme);
+    }
+
+    pub(crate) fn sync_appearance_for_tests(&self) {
+        self.appearance.sync_for_tests();
+    }
+
+    pub(crate) fn present_appearance_for_tests(&self) {
+        self.appearance
+            .present_for_tests(&self.shell.appearance_button);
+    }
+
+    pub(crate) fn selected_appearance_palette_for_tests(&self) -> crate::settings::EditorPalette {
+        self.appearance.selected_palette_for_tests()
     }
 
     pub(crate) fn set_fullscreen_for_tests(&self, fullscreen: bool) {

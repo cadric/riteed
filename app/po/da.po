@@ -113,3 +113,37 @@ msgstr ""
 msgctxt "save safety banner"
 msgid "This File Is Read-Only."
 msgstr ""
+
+msgid "Appearance"
+msgstr ""
+
+msgid "Close Appearance Panel"
+msgstr ""
+
+msgid "Match App Appearance"
+msgstr ""
+
+msgid "Preview unavailable"
+msgstr ""
+
+msgid "Unavailable"
+msgstr ""
+
+msgid "Use the Appearance button to adjust app appearance, editor palettes, and current-line highlight. Enable line numbers and the minimap in Preferences when you want more structure while reading longer code or markdown files."
+msgstr ""
+
+msgctxt "app appearance"
+msgid "Dark"
+msgstr ""
+
+msgctxt "app appearance"
+msgid "Follow System"
+msgstr ""
+
+msgctxt "app appearance"
+msgid "Light"
+msgstr ""
+
+msgctxt "editor palette"
+msgid "Kate Light"
+msgstr ""

@@ -45,6 +45,12 @@
               </object>
             </child>
             <child type="end">
+              <object class="GtkButton" id="appearance_button">
+                <property name="icon-name">preferences-desktop-appearance-symbolic</property>
+                <property name="tooltip-text" translatable="yes">Appearance</property>
+              </object>
+            </child>
+            <child type="end">
               <object class="GtkMenuButton" id="primary_menu_button">
                 <property name="icon-name">open-menu-symbolic</property>
                 <property name="tooltip-text" translatable="yes">Main Menu</property>

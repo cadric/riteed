@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk" version="4.0"/>
+  <requires lib="libadwaita" version="1.5"/>
+  <object class="AdwDialog" id="appearance_dialog">
+    <property name="title" translatable="yes">Appearance</property>
+    <property name="content-width">360</property>
+    <property name="follows-content-size">true</property>
+    <property name="child">
+      <object class="GtkBox">
+        <style>
+          <class name="riteed-appearance-panel"/>
+        </style>
+        <property name="orientation">vertical</property>
+        <property name="spacing">12</property>
+        <property name="margin-start">12</property>
+        <property name="margin-end">12</property>
+        <property name="margin-top">12</property>
+        <property name="margin-bottom">12</property>
+        <child>
+          <object class="GtkBox">
+            <property name="orientation">horizontal</property>
+            <property name="spacing">6</property>
+            <child>
+              <object class="GtkLabel">
+                <property name="xalign">0</property>
+                <property name="hexpand">true</property>
+                <property name="label" translatable="yes">Appearance</property>
+                <style>
+                  <class name="title-4"/>
+                </style>
+              </object>
+            </child>
+            <child>
+              <object class="GtkButton" id="appearance_close_button">
+                <property name="icon-name">window-close-symbolic</property>
+                <property name="tooltip-text" translatable="yes">Close Appearance Panel</property>
+                <style>
+                  <class name="flat"/>
+                  <class name="circular"/>
+                </style>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="GtkLabel">
+            <property name="xalign">0</property>
+            <property name="label" translatable="yes">App Appearance</property>
+            <style>
+              <class name="heading"/>
+            </style>
+          </object>
+        </child>
+        <child>
+          <object class="GtkBox" id="app_appearance_box">
+            <property name="orientation">vertical</property>
+          </object>
+        </child>
+        <child>
+          <object class="GtkLabel">
+            <property name="xalign">0</property>
+            <property name="label" translatable="yes">Editor Palette</property>
+            <style>
+              <class name="heading"/>
+            </style>
+          </object>
+        </child>
+        <child>
+          <object class="GtkGrid" id="palette_grid">
+            <property name="row-spacing">8</property>
+            <property name="column-spacing">8</property>
+          </object>
+        </child>
+        <child>
+          <object class="AdwSwitchRow" id="highlight_current_line_row">
+            <property name="title" translatable="yes">Highlight Current Line</property>
+            <property name="subtitle" translatable="yes">Subtly highlight the line with the text cursor</property>
+          </object>
+        </child>
+      </object>
+    </property>
+  </object>
+</interface>

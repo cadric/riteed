@@ -11,13 +11,7 @@
         <property name="title" translatable="yes">Editor</property>
         <child>
           <object class="AdwPreferencesGroup">
-            <property name="title" translatable="yes">Appearance</property>
-            <child>
-              <object class="AdwComboRow" id="theme_row">
-                <property name="title" translatable="yes">Theme</property>
-                <property name="subtitle" translatable="yes">Choose How Riteed Matches the Desktop Appearance</property>
-              </object>
-            </child>
+            <property name="title" translatable="yes">Editor View</property>
             <child>
               <object class="AdwSwitchRow" id="word_wrap_row">
                 <property name="title" translatable="yes">Word Wrap</property>
@@ -34,18 +28,6 @@
               <object class="AdwSwitchRow" id="minimap_row">
                 <property name="title" translatable="yes">Show Minimap</property>
                 <property name="subtitle" translatable="yes">Show a Narrow Document Overview Beside the Editor</property>
-              </object>
-            </child>
-            <child>
-              <object class="AdwComboRow" id="editor_palette_row">
-                <property name="title" translatable="yes">Editor Palette</property>
-                <property name="subtitle" translatable="yes">Choose the Color Palette Used by Editor Buffers</property>
-              </object>
-            </child>
-            <child>
-              <object class="AdwSwitchRow" id="current_line_row">
-                <property name="title" translatable="yes">Highlight Current Line</property>
-                <property name="subtitle" translatable="yes">Subtly Highlight the Line with the Text Cursor</property>
               </object>
             </child>
             <child>

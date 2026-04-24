@@ -307,7 +307,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 58,
+      "line": 56,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The preferences controller borrows the shared staged preferences state.",
@@ -315,7 +315,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 122,
+      "line": 102,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The preferences controller borrows the shared staged preferences state.",
@@ -323,7 +323,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 145,
+      "line": 150,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The preferences controller borrows the shared staged preferences state.",
@@ -331,7 +331,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 167,
+      "line": 172,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The preferences controller borrows the shared staged preferences state.",
@@ -339,7 +339,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 223,
+      "line": 212,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The preferences controller borrows the shared staged preferences state.",
@@ -347,7 +347,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 245,
+      "line": 267,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The preferences controller borrows the shared staged preferences state.",
@@ -355,7 +355,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 285,
+      "line": 286,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The preferences controller borrows the shared staged preferences state.",
@@ -363,7 +363,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 340,
+      "line": 330,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The preferences controller borrows the shared staged preferences state.",
@@ -371,23 +371,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 359,
-      "match": "state: &Rc<RefCell<PreferencesState>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The preferences controller borrows the shared staged preferences state.",
-      "justification": "Preference callbacks need one syncing guard and staged numeric state so UI population and write-back do not recursively write settings."
-    },
-    {
-      "path": "src/window_preferences.rs",
-      "line": 403,
-      "match": "state: &Rc<RefCell<PreferencesState>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The preferences controller borrows the shared staged preferences state.",
-      "justification": "Preference callbacks need one syncing guard and staged numeric state so UI population and write-back do not recursively write settings."
-    },
-    {
-      "path": "src/window_preferences.rs",
-      "line": 533,
+      "line": 460,
       "match": "fn with_syncing(state: &Rc<RefCell<PreferencesState>>, operation: impl FnOnce()) {",
       "kind": "runtime-shared-state",
       "ownership": "The dialog-scoped syncing helper mutates the shared preferences state.",
@@ -395,7 +379,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 539,
+      "line": 466,
       "match": "fn spin_dirty(state: &Rc<RefCell<PreferencesState>>, dirty_spin: DirtySpin) -> bool {",
       "kind": "runtime-shared-state",
       "ownership": "The staged SpinRow read helper borrows the shared preferences state.",
@@ -403,7 +387,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 547,
+      "line": 474,
       "match": "fn set_spin_dirty(state: &Rc<RefCell<PreferencesState>>, dirty_spin: DirtySpin, value: bool) {",
       "kind": "runtime-shared-state",
       "ownership": "The staged SpinRow write helper mutates the shared preferences state.",

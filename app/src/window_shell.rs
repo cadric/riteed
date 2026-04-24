@@ -14,14 +14,12 @@ pub struct WindowShell {
     pub open_button: gtk4::Button,
     pub project_sidebar_button: gtk4::ToggleButton,
     pub save_button: gtk4::Button,
+    pub appearance_button: gtk4::Button,
     pub primary_menu_button: gtk4::MenuButton,
     pub preferences_dialog: adw::PreferencesDialog,
-    pub theme_row: adw::ComboRow,
     pub word_wrap_row: adw::SwitchRow,
     pub line_numbers_row: adw::SwitchRow,
     pub minimap_row: adw::SwitchRow,
-    pub editor_palette_row: adw::ComboRow,
-    pub current_line_row: adw::SwitchRow,
     pub editor_font_row: adw::ActionRow,
     pub autosave_row: adw::SwitchRow,
     pub insert_spaces_row: adw::SwitchRow,
@@ -49,6 +47,7 @@ impl WindowShell {
         let project_sidebar_button: gtk4::ToggleButton =
             builder_object(&builder, "project_sidebar_button")?;
         let save_button: gtk4::Button = builder_object(&builder, "save_button")?;
+        let appearance_button: gtk4::Button = builder_object(&builder, "appearance_button")?;
         let primary_menu_button: gtk4::MenuButton =
             builder_object(&builder, "primary_menu_button")?;
 
@@ -56,15 +55,10 @@ impl WindowShell {
             gtk4::Builder::from_resource("/io/github/cadric/Riteed/ui/preferences.ui");
         let preferences_dialog: adw::PreferencesDialog =
             builder_object(&preferences_builder, "preferences_dialog")?;
-        let theme_row: adw::ComboRow = builder_object(&preferences_builder, "theme_row")?;
         let word_wrap_row: adw::SwitchRow = builder_object(&preferences_builder, "word_wrap_row")?;
         let line_numbers_row: adw::SwitchRow =
             builder_object(&preferences_builder, "line_numbers_row")?;
         let minimap_row: adw::SwitchRow = builder_object(&preferences_builder, "minimap_row")?;
-        let editor_palette_row: adw::ComboRow =
-            builder_object(&preferences_builder, "editor_palette_row")?;
-        let current_line_row: adw::SwitchRow =
-            builder_object(&preferences_builder, "current_line_row")?;
         let editor_font_row: adw::ActionRow =
             builder_object(&preferences_builder, "editor_font_row")?;
         let autosave_row: adw::SwitchRow = builder_object(&preferences_builder, "autosave_row")?;
@@ -96,14 +90,12 @@ impl WindowShell {
             open_button,
             project_sidebar_button,
             save_button,
+            appearance_button,
             primary_menu_button,
             preferences_dialog,
-            theme_row,
             word_wrap_row,
             line_numbers_row,
             minimap_row,
-            editor_palette_row,
-            current_line_row,
             editor_font_row,
             autosave_row,
             insert_spaces_row,

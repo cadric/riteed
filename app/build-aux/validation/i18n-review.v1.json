@@ -107,36 +107,64 @@
       "resolution": "This short inline row label is shown beside a spinner while the project tree enumerates a directory."
     },
     {
+      "path": "src/settings/presentation.rs",
+      "line": 88,
+      "match": "Self::FollowSystem => gettext(\"Match App Appearance\"),",
+      "kind": "i18n-short-string",
+      "resolution": "This short palette label appears in the dedicated Appearance panel where it means the editor palette follows the app appearance choice."
+    },
+    {
       "path": "src/window.rs",
-      "line": 357,
+      "line": 363,
       "match": ".update_property(&[Property::Label(&gettext(\"New Tab\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
     },
     {
       "path": "src/window.rs",
-      "line": 360,
+      "line": 366,
       "match": ".update_property(&[Property::Label(&gettext(\"Open Text Files\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
     },
     {
       "path": "src/window.rs",
-      "line": 363,
+      "line": 369,
       "match": ".update_property(&[Property::Label(&gettext(\"Project Sidebar\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
     },
     {
       "path": "src/window.rs",
-      "line": 369,
+      "line": 375,
+      "match": ".update_property(&[Property::Label(&gettext(\"Appearance\"))]);",
+      "kind": "i18n-short-string",
+      "resolution": "This short accessible label names the icon-only header-bar button that opens the app appearance and editor palette panel."
+    },
+    {
+      "path": "src/window.rs",
+      "line": 378,
       "match": ".update_property(&[Property::Label(&gettext(\"Main Menu\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
     },
     {
+      "path": "src/window_appearance.rs",
+      "line": 384,
+      "match": "let label = gtk4::Label::new(Some(&gettext(\"Unavailable\")));",
+      "kind": "i18n-short-string",
+      "resolution": "This short overlay label is shown directly on palette tiles whose source style scheme is not available on the current system."
+    },
+    {
+      "path": "src/window_appearance.rs",
+      "line": 416,
+      "match": "let label = gtk4::Label::new(Some(&gettext(\"Preview unavailable\")));",
+      "kind": "i18n-short-string",
+      "resolution": "This compact fallback appears inside an editor palette tile when no safe preview style scheme can be resolved."
+    },
+    {
       "path": "src/window_preferences.rs",
-      "line": 461,
+      "line": 388,
       "match": "font_dialog.set_title(&gettext(\"Choose Editor Font\"));",
       "kind": "i18n-short-string",
       "resolution": "This short dialog title appears at the top of the font chooser and the accompanying copy explains that the selection affects only the editor font."
