@@ -52,6 +52,7 @@ Review artifacts use fixed semantic tags where a field would otherwise be ambigu
 - `ui.menus[].standard_items` is a list of lowercase semantic tags, not raw labels. Supported tags are `about`, `preferences`, `shortcuts`, `help`, `quit`, and `close`.
 - `ui.surfaces[].smallest_width` is the reviewed narrowest supported window width in logical pixels.
 - `gsettings.sites[].kind` must match the scanner kinds `gsettings-write` or `gsettings-bind`.
+- GSettings schema keys satisfy the schema-type check with exactly one of `type`, `enum`, or `flags`, matching `glib-compile-schemas`.
 - `runtime.sites[].kind` must match the scanner kinds emitted from policy, currently `runtime-strong-capture` and `runtime-shared-state`.
 
 Template-source note:

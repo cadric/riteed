@@ -30,6 +30,7 @@ pub enum ExternalReloadResponse {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum StaleSaveResponse {
     Cancel,
+    Compare,
     SaveAnyway,
 }
 
@@ -145,6 +146,7 @@ pub fn confirm_stale_save(
         .build();
     dialog.add_responses(&[
         ("cancel", &pgettext("alert response", "Cancel")),
+        ("compare", &pgettext("alert response", "Compare")),
         ("save-anyway", &pgettext("alert response", "Save Anyway")),
     ]);
     dialog.set_response_appearance("save-anyway", adw::ResponseAppearance::Destructive);
@@ -153,6 +155,8 @@ pub fn confirm_stale_save(
     dialog.choose(Some(parent), None::<&gio::Cancellable>, move |response| {
         let outcome = if response == "save-anyway" {
             StaleSaveResponse::SaveAnyway
+        } else if response == "compare" {
+            StaleSaveResponse::Compare
         } else {
             StaleSaveResponse::Cancel
         };

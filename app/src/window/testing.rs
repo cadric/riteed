@@ -142,6 +142,26 @@ impl Window {
         self.shell.minimap_row.set_active(enabled);
     }
 
+    pub(crate) fn set_current_line_highlight_for_tests(&self, enabled: bool) {
+        self.shell.current_line_row.set_active(enabled);
+    }
+
+    pub(crate) fn set_autosave_for_tests(&self, enabled: bool) {
+        self.shell.autosave_row.set_active(enabled);
+    }
+
+    pub(crate) fn select_editor_palette_for_tests(&self, index: u32) {
+        self.shell.editor_palette_row.set_selected(index);
+    }
+
+    pub(crate) fn set_fullscreen_for_tests(&self, fullscreen: bool) {
+        self.set_fullscreen(fullscreen);
+    }
+
+    pub(crate) fn persist_window_size_for_tests(&self) {
+        self.persist_window_size();
+    }
+
     pub(crate) fn selected_minimap_visible_for_tests(&self) -> bool {
         self.workspace.selected_minimap_visible()
     }
@@ -154,12 +174,20 @@ impl Window {
         self.workspace.selected_banner_visible()
     }
 
+    pub(crate) fn selected_writability_for_tests(&self) -> Option<crate::editor_tab::Writability> {
+        self.workspace.selected_writability()
+    }
+
     pub(crate) fn sync_selected_banner_for_tests(&self, window_active: bool) {
         self.workspace.sync_selected_banner_for_tests(window_active);
     }
 
     pub(crate) fn trigger_selected_external_action_for_tests(&self) {
         self.workspace.trigger_selected_external_action_for_tests();
+    }
+
+    pub(crate) fn request_selected_autosave_for_tests(&self) {
+        self.workspace.request_selected_autosave_for_tests();
     }
 
     pub(crate) fn inject_external_event_for_tests(

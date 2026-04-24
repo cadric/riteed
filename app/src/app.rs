@@ -91,6 +91,8 @@ fn install_accels(app: &adw::Application) {
     app.set_accels_for_action("win.diff-next", &["F8"]);
     app.set_accels_for_action("win.diff-prev", &["<Shift>F8"]);
     app.set_accels_for_action("win.refresh-project-tree", &["F5"]);
+    app.set_accels_for_action("win.focus-project-sidebar", &["F9"]);
+    app.set_accels_for_action("win.fullscreen", &["F11"]);
     app.set_accels_for_action(
         "win.zoom-in",
         &["<Ctrl>plus", "<Ctrl>equal", "<Ctrl>KP_Add"],

@@ -74,4 +74,8 @@ impl ProjectBrowser {
         self.title.set_title(title);
         self.title.set_subtitle("");
     }
+
+    pub(crate) fn focus_tree_after_reveal(&self) {
+        self.tree.focus_after_map_or_idle();
+    }
 }

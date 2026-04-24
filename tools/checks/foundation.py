@@ -550,8 +550,8 @@ def check_ui_localization(root: Path, errors: list[str]) -> None:
             if not schema.get("path"):
                 add(errors, f"{relpath(path, root)}: schema path is required for non-relocatable app preferences")
             for key in schema.findall("./key"):
-                if not key.get("type"):
-                    add(errors, f"{relpath(path, root)}: key {key.get('name')} must declare type")
+                if not (key.get("type") or key.get("enum") or key.get("flags")):
+                    add(errors, f"{relpath(path, root)}: key {key.get('name')} must declare type, enum, or flags")
                 for child in ("default", "summary", "description"):
                     value = (key.findtext(child) or "").strip()
                     if not value:

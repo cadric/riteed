@@ -1,6 +1,9 @@
+use std::cell::Cell;
 use std::rc::Rc;
 
-use gtk4::{gio, glib, prelude::*};
+use gettextrs::gettext;
+use gtk4::accessible::Property;
+use gtk4::{gdk, gio, glib, prelude::*};
 use libadwaita as adw;
 use libadwaita::prelude::*;
 
@@ -27,12 +30,15 @@ pub struct Window {
     replace_action: gio::SimpleAction,
     find_next_action: gio::SimpleAction,
     find_prev_action: gio::SimpleAction,
+    fullscreen_action: gio::SimpleAction,
+    focus_project_action: gio::SimpleAction,
     settings: AppSettings,
     workspace: Rc<Workspace>,
     _preferences: WindowPreferencesController,
     compare: Rc<WindowCompareController>,
     project: WindowProjectController,
     zoom: Rc<EditorZoomController>,
+    last_non_fullscreen_size: Cell<(i32, i32)>,
 }
 
 impl Window {
@@ -69,6 +75,9 @@ impl Window {
         let replace_action = gio::SimpleAction::new("replace", None);
         let find_next_action = gio::SimpleAction::new("find-next", None);
         let find_prev_action = gio::SimpleAction::new("find-prev", None);
+        let fullscreen_action =
+            gio::SimpleAction::new_stateful("fullscreen", None, &false.to_variant());
+        let focus_project_action = gio::SimpleAction::new("focus-project-sidebar", None);
         shell.window.add_action(&save_action);
         shell.window.add_action(&save_as_action);
         shell.window.add_action(&close_action);
@@ -76,6 +85,8 @@ impl Window {
         shell.window.add_action(&replace_action);
         shell.window.add_action(&find_next_action);
         shell.window.add_action(&find_prev_action);
+        shell.window.add_action(&fullscreen_action);
+        shell.window.add_action(&focus_project_action);
 
         settings.apply_theme();
 
@@ -108,16 +119,21 @@ impl Window {
             replace_action,
             find_next_action,
             find_prev_action,
+            fullscreen_action,
+            focus_project_action,
             settings,
             workspace,
             _preferences: preferences,
             compare,
             project,
             zoom,
+            last_non_fullscreen_size: Cell::new((width, height)),
         });
         window.zoom.set_editor_font(&window.settings.editor_font());
+        window.install_accessible_labels();
         window.compare.refresh_action_state();
         window.install_callbacks();
+        window.install_style_callbacks();
         Ok(window)
     }
 
@@ -209,6 +225,11 @@ impl Window {
             })
         });
 
+        self.install_document_callbacks();
+        self.install_window_state_callbacks();
+    }
+
+    fn install_document_callbacks(self: &Rc<Self>) {
         let weak = Rc::downgrade(self);
         self.save_action.connect_activate(move |_, _| {
             if let Some(window) = weak.upgrade() {
@@ -259,6 +280,116 @@ impl Window {
         });
     }
 
+    fn install_window_state_callbacks(self: &Rc<Self>) {
+        let weak = Rc::downgrade(self);
+        self.fullscreen_action.connect_activate(move |action, _| {
+            let enabled = action
+                .state()
+                .and_then(|state| state.get::<bool>())
+                .is_some_and(|state| state);
+            if let Some(window) = weak.upgrade() {
+                window.set_fullscreen(!enabled);
+            }
+        });
+
+        let weak = Rc::downgrade(self);
+        self.focus_project_action.connect_activate(move |_, _| {
+            if let Some(window) = weak.upgrade() {
+                window.project.focus_sidebar();
+            }
+        });
+
+        let weak = Rc::downgrade(self);
+        self.shell.window.connect_fullscreened_notify(move |shell| {
+            if let Some(window) = weak.upgrade() {
+                let fullscreened = shell.is_fullscreen();
+                window
+                    .fullscreen_action
+                    .set_state(&fullscreened.to_variant());
+                if !fullscreened {
+                    window.capture_non_fullscreen_size();
+                }
+            }
+        });
+
+        let weak = Rc::downgrade(self);
+        self.shell.window.connect_default_width_notify(move |_| {
+            if let Some(window) = weak.upgrade() {
+                window.capture_non_fullscreen_size();
+            }
+        });
+
+        let weak = Rc::downgrade(self);
+        self.shell.window.connect_default_height_notify(move |_| {
+            if let Some(window) = weak.upgrade() {
+                window.capture_non_fullscreen_size();
+            }
+        });
+
+        let key_controller = gtk4::EventControllerKey::new();
+        let weak = Rc::downgrade(self);
+        key_controller.connect_key_pressed(move |_, key, _, modifiers| {
+            if key == gdk::Key::Escape
+                && modifiers.is_empty()
+                && let Some(window) = weak.upgrade()
+                && window.shell.window.is_fullscreen()
+            {
+                window.set_fullscreen(false);
+                return glib::Propagation::Stop;
+            }
+            glib::Propagation::Proceed
+        });
+        self.shell.window.add_controller(key_controller);
+    }
+
+    fn install_style_callbacks(self: &Rc<Self>) {
+        let weak = Rc::downgrade(self);
+        let _handler = adw::StyleManager::default().connect_dark_notify(move |_| {
+            if let Some(window) = weak.upgrade() {
+                window.workspace.apply_source_style_scheme_to_tabs();
+            }
+        });
+    }
+
+    fn install_accessible_labels(&self) {
+        self.shell
+            .new_button
+            .update_property(&[Property::Label(&gettext("New Tab"))]);
+        self.shell
+            .open_button
+            .update_property(&[Property::Label(&gettext("Open Text Files"))]);
+        self.shell
+            .project_sidebar_button
+            .update_property(&[Property::Label(&gettext("Project Sidebar"))]);
+        self.shell
+            .save_button
+            .update_property(&[Property::Label(&gettext("Save the Selected Document"))]);
+        self.shell
+            .primary_menu_button
+            .update_property(&[Property::Label(&gettext("Main Menu"))]);
+    }
+
+    fn set_fullscreen(&self, fullscreen: bool) {
+        if fullscreen {
+            self.capture_non_fullscreen_size();
+            self.shell.window.fullscreen();
+        } else {
+            self.shell.window.unfullscreen();
+        }
+        self.fullscreen_action.set_state(&fullscreen.to_variant());
+    }
+
+    fn capture_non_fullscreen_size(&self) {
+        if self.shell.window.is_fullscreen() {
+            return;
+        }
+        let width = self.shell.window.width();
+        let height = self.shell.window.height();
+        if width > 0 && height > 0 {
+            self.last_non_fullscreen_size.set((width, height));
+        }
+    }
+
     fn on_close_request(self: &Rc<Self>) -> glib::Propagation {
         if self.workspace.allow_window_close() {
             self.persist_window_size();
@@ -268,8 +399,12 @@ impl Window {
     }
 
     fn persist_window_size(&self) {
-        self.settings
-            .set_window_size(self.shell.window.width(), self.shell.window.height());
+        let (width, height) = if self.shell.window.is_fullscreen() {
+            self.last_non_fullscreen_size.get()
+        } else {
+            (self.shell.window.width(), self.shell.window.height())
+        };
+        self.settings.set_window_size(width, height);
     }
 }
 

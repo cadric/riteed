@@ -188,6 +188,29 @@ class PolicyCheckTests(unittest.TestCase):
         self.assertTrue(any("forbidden standard items" in item for item in errors))
         self.assertFalse(any("exceeds max items" in item for item in errors))
 
+    def test_gsettings_enum_keys_are_valid_schema_keys(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            _write(
+                root / "data" / "schemas" / "demo.gschema.xml",
+                """<schemalist>
+  <enum id="demo.Color">
+    <value nick="system" value="0"/>
+  </enum>
+  <schema id="demo.App" path="/demo/App/">
+    <key name="color" enum="demo.Color">
+      <default>'system'</default>
+      <summary>Color</summary>
+      <description>Color preference.</description>
+    </key>
+  </schema>
+</schemalist>
+""",
+            )
+            errors: list[str] = []
+            foundation.check_ui_localization(root, errors)
+            self.assertEqual(errors, [])
+
     def test_xgettext_completeness_uses_normalized_sets(self) -> None:
         from tools.checks import commands
 

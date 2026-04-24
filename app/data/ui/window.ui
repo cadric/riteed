@@ -11,21 +11,21 @@
         <child type="top">
           <object class="AdwHeaderBar">
             <child type="start">
-              <object class="GtkButton">
+              <object class="GtkButton" id="new_button">
                 <property name="action-name">app.new</property>
                 <property name="icon-name">document-new-symbolic</property>
                 <property name="tooltip-text" translatable="yes">New Tab</property>
               </object>
             </child>
             <child type="start">
-              <object class="GtkButton">
+              <object class="GtkButton" id="open_button">
                 <property name="action-name">app.open</property>
                 <property name="icon-name">document-open-symbolic</property>
                 <property name="tooltip-text" translatable="yes">Open Text Files</property>
               </object>
             </child>
             <child type="start">
-              <object class="GtkToggleButton">
+              <object class="GtkToggleButton" id="project_sidebar_button">
                 <property name="action-name">win.project-sidebar-visible</property>
                 <property name="icon-name">sidebar-show-symbolic</property>
                 <property name="tooltip-text" translatable="yes">Project Sidebar</property>
@@ -38,7 +38,7 @@
               </object>
             </property>
             <child type="end">
-              <object class="GtkButton">
+              <object class="GtkButton" id="save_button">
                 <property name="action-name">win.save</property>
                 <property name="icon-name">document-save-symbolic</property>
                 <property name="tooltip-text" translatable="yes">Save the Selected Document</property>

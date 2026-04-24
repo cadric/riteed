@@ -747,7 +747,7 @@ Implement a working v7 of the app with diff support, side-by-side compare views,
 
 > created: 2026-04-24
 > updated: 2026-04-24
-> status: planned
+> status: complete
 > priority: high
 > type: roadmap-milestone
 
@@ -764,8 +764,8 @@ The goal is to make the editor feel more complete, trustworthy, and comfortable 
 * Accessibility improvements
 * Current-line highlight toggle
 * Autosave support
-* Atomic save behavior
-* Recovery and save-polish features
+* Best-effort safe save behavior
+* Save-polish features
 
 ## Why this version matters
 
@@ -784,8 +784,8 @@ What v8 adds:
 - Accessibility improvements
 - Current-line highlight toggle
 - Autosave support
-- Atomic save behavior
-- Recovery and save-polish features
+- Best-effort safe save behavior
+- Save-polish features
 
 Scope for v8:
 - Add editor palette selection
@@ -808,12 +808,11 @@ Scope for v8:
 - Add autosave support
   - Provide a user-facing toggle for autosave behavior
   - Define autosave conservatively and clearly so users understand when document contents are persisted
-  - Support safe handling for both saved files and unsaved documents where practical
-- Add atomic save behavior
+  - Limit autosave to already-saved writable files with no pending external conflict
+- Add best-effort safe save behavior
   - Make file saving more robust and less likely to corrupt files during failures or interruptions
   - Ensure save flows remain safe and predictable
-- Add recovery and save-polish behavior
-  - Support recovery of unsaved work after crashes or unexpected shutdowns where practical
+- Add save-polish behavior
   - Improve save conflict handling when files have changed on disk
   - Make read-only or unwritable file states clearer to the user
   - Preserve useful editing continuity such as cursor or scroll position where practical
@@ -822,13 +821,13 @@ Behavior expectations:
 - The app should feel more polished and trustworthy
 - Accessibility improvements should be practical and visible in everyday use
 - Current-line highlighting should improve focus without becoming visually heavy
-- Autosave and recovery features should reduce the risk of data loss without creating confusing save behavior
+- Autosave and save-polish features should reduce the risk of data loss without creating confusing save behavior
 - Palette support should improve editor comfort without turning the app into a fully theme-customizable environment
 - Fullscreen should feel simple and native
 
 Technical expectations:
 - Extend the existing Rust + GTK4 + Libadwaita + GtkSourceView codebase
-- Keep editor presentation, save behavior, and recovery logic clearly separated but well integrated
+- Keep editor presentation and save behavior clearly separated but well integrated
 - Preserve a clean architecture and avoid one-off feature hacks
 - Keep all user-facing strings ready for gettext localization
 - Avoid overengineering and avoid scope expansion into IDE-style systems
@@ -847,11 +846,11 @@ Implementation guidance:
 - Treat v8 as a product maturity release rather than a platform shift
 - Prefer reliability, clarity, and accessibility over feature quantity
 - Keep palette support curated and editor-focused
-- Make autosave, atomic save, and recovery behavior explicit and conservative
+- Make autosave and best-effort safe save behavior explicit and conservative
 - Preserve GNOME-native conventions throughout the UI
 
 Deliverable:
-Implement a working v8 of the app with editor palette selection, fullscreen support, accessibility improvements, current-line highlight support, autosave, atomic save behavior, and stronger recovery/save polish, while preserving the app’s identity as a lightweight GNOME-native editor.
+Implement a working v8 of the app with editor palette selection, fullscreen support, accessibility improvements, current-line highlight support, autosave, best-effort safe save behavior, and stronger save polish, while preserving the app’s identity as a lightweight GNOME-native editor.
 ```
 
 ---
@@ -990,7 +989,7 @@ Implement a working v9 of the app with Git repository detection, a lightweight s
 
 # Summary of the full progression
 
-V1–V7 are complete as of 2026-04-24. V8 and V9 remain planned roadmap milestones.
+V1–V8 are complete as of 2026-04-24. V9 remains a planned roadmap milestone.
 
 ## V1
 

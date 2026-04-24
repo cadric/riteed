@@ -149,3 +149,109 @@ msgstr ""
 msgctxt "zoom action"
 msgid "Zoom Out"
 msgstr ""
+
+msgid "Autosave"
+msgstr ""
+
+msgid "Autosave is available for already-saved writable files, while read-only and externally changed files stay guarded by explicit user choices."
+msgstr ""
+
+msgid "Autosave paused because the document contains characters that cannot be saved with the selected encoding."
+msgstr ""
+
+msgid "Autosave paused because the file changed on disk."
+msgstr ""
+
+msgid "Autosave paused because the file could not be written."
+msgstr ""
+
+msgid "Controls the color palette used for editor buffers."
+msgstr ""
+
+msgid "Controls whether Riteed automatically saves already-saved writable files after edits."
+msgstr ""
+
+msgid "Controls whether Riteed highlights the active line in editable documents."
+msgstr ""
+
+msgid "Editor Palette"
+msgstr ""
+
+msgid "Highlight Current Line"
+msgstr ""
+
+msgid "It provides tabs, search and replace, syntax highlighting, optional line numbers and minimap, format controls for text encoding and line endings, curated editor palettes, and conservative reload prompts when files change on disk."
+msgstr ""
+
+msgid "Main Menu"
+msgstr ""
+
+msgid "Open Text Files"
+msgstr ""
+
+msgid "Save the Selected Document"
+msgstr ""
+
+msgid "The document contains characters that cannot be saved with the selected encoding."
+msgstr ""
+
+msgid "The file changed on disk."
+msgstr ""
+
+msgctxt "editor palette"
+msgid "Adwaita Dark"
+msgstr ""
+
+msgctxt "editor palette"
+msgid "Adwaita Light"
+msgstr ""
+
+msgctxt "editor palette"
+msgid "Classic"
+msgstr ""
+
+msgctxt "editor palette"
+msgid "Follow System"
+msgstr ""
+
+msgctxt "editor palette"
+msgid "Kate"
+msgstr ""
+
+msgctxt "editor palette"
+msgid "Kate Dark"
+msgstr ""
+
+msgctxt "editor palette"
+msgid "Solarized Dark"
+msgstr ""
+
+msgctxt "editor palette"
+msgid "Solarized Light"
+msgstr ""
+
+msgctxt "menu item"
+msgid "Fullscreen"
+msgstr ""
+
+msgctxt "save safety action"
+msgid "Save"
+msgstr ""
+
+msgctxt "save safety action"
+msgid "Save As"
+msgstr ""
+
+msgctxt "save safety banner"
+msgid "This File Is Read-Only."
+msgstr ""
+
+msgid "New Tab"
+msgstr ""
+
+msgid "Project Sidebar"
+msgstr ""
+
+msgctxt "file dialog title"
+msgid "Open Text Files"
+msgstr ""

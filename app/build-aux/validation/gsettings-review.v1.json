@@ -3,7 +3,7 @@
   "sites": [
     {
       "path": "src/editor_tab/compare/ui.rs",
-      "line": 219,
+      "line": 221,
       "match": "target.set_value((source.value() / source_max) * target_max);",
       "kind": "gsettings-write",
       "key": "compare-scroll-adjustment",
@@ -11,7 +11,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 173,
+      "line": 189,
       "match": "let _changed = settings.set_string(KEY_THEME, preference.stored());",
       "kind": "gsettings-write",
       "key": "theme",
@@ -19,55 +19,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 219,
-      "match": "let _changed = settings.set_boolean(KEY_WORD_WRAP, enabled);",
-      "kind": "gsettings-write",
-      "key": "word-wrap",
-      "trigger": "Explicit word-wrap toggle in the preferences dialog."
-    },
-    {
-      "path": "src/settings.rs",
-      "line": 243,
-      "match": "let _changed = settings.set_boolean(KEY_SHOW_LINE_NUMBERS, enabled);",
-      "kind": "gsettings-write",
-      "key": "show-line-numbers",
-      "trigger": "Explicit line-number toggle in the preferences dialog."
-    },
-    {
-      "path": "src/settings.rs",
-      "line": 267,
-      "match": "let _changed = settings.set_boolean(KEY_SHOW_MINIMAP, enabled);",
-      "kind": "gsettings-write",
-      "key": "show-minimap",
-      "trigger": "Explicit minimap toggle in the preferences dialog."
-    },
-    {
-      "path": "src/settings.rs",
-      "line": 302,
-      "match": "let _changed = settings.set_boolean(KEY_INSERT_SPACES_INSTEAD_OF_TABS, enabled);",
-      "kind": "gsettings-write",
-      "key": "insert-spaces-instead-of-tabs",
-      "trigger": "Explicit indentation-mode toggle in the preferences dialog."
-    },
-    {
-      "path": "src/settings.rs",
-      "line": 329,
-      "match": "let _changed = settings.set_int(KEY_TAB_WIDTH, width);",
-      "kind": "gsettings-write",
-      "key": "tab-width",
-      "trigger": "Committed tab-width change from the staged SpinRow in the preferences dialog."
-    },
-    {
-      "path": "src/settings.rs",
-      "line": 356,
-      "match": "let _changed = settings.set_int(KEY_INDENT_WIDTH, width);",
-      "kind": "gsettings-write",
-      "key": "indent-width",
-      "trigger": "Committed indent-width change from the staged SpinRow in the preferences dialog."
-    },
-    {
-      "path": "src/settings.rs",
-      "line": 380,
+      "line": 231,
       "match": "let _changed = settings.set_string(KEY_EDITOR_FONT, font);",
       "kind": "gsettings-write",
       "key": "editor-font",
@@ -75,7 +27,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 419,
+      "line": 261,
       "match": "let _changed_width = settings.set_int(KEY_WINDOW_WIDTH, width);",
       "kind": "gsettings-write",
       "key": "window-width",
@@ -83,7 +35,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 420,
+      "line": 262,
       "match": "let _changed_height = settings.set_int(KEY_WINDOW_HEIGHT, height);",
       "kind": "gsettings-write",
       "key": "window-height",
@@ -91,7 +43,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 450,
+      "line": 292,
       "match": "let _changed = settings.set_strv(KEY_RECENT_FILES, files);",
       "kind": "gsettings-write",
       "key": "recent-files",
@@ -99,7 +51,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 478,
+      "line": 320,
       "match": "let _changed = settings.set_strv(KEY_SESSION_FILES, files);",
       "kind": "gsettings-write",
       "key": "session-files",
@@ -107,11 +59,83 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 504,
+      "line": 346,
       "match": "let _changed = settings.set_string(KEY_SESSION_SELECTED_FILE, uri);",
       "kind": "gsettings-write",
       "key": "session-selected-file",
       "trigger": "Selecting a saved tab or externally renaming the selected saved tab triggers the existing selected-session write site outside restore mode."
+    },
+    {
+      "path": "src/settings/display.rs",
+      "line": 23,
+      "match": "let _changed = settings.set_boolean(KEY_WORD_WRAP, enabled);",
+      "kind": "gsettings-write",
+      "key": "word-wrap",
+      "trigger": "Explicit word-wrap toggle in the preferences dialog."
+    },
+    {
+      "path": "src/settings/display.rs",
+      "line": 47,
+      "match": "let _changed = settings.set_boolean(KEY_SHOW_LINE_NUMBERS, enabled);",
+      "kind": "gsettings-write",
+      "key": "show-line-numbers",
+      "trigger": "Explicit line-number toggle in the preferences dialog."
+    },
+    {
+      "path": "src/settings/display.rs",
+      "line": 71,
+      "match": "let _changed = settings.set_boolean(KEY_SHOW_MINIMAP, enabled);",
+      "kind": "gsettings-write",
+      "key": "show-minimap",
+      "trigger": "Explicit minimap toggle in the preferences dialog."
+    },
+    {
+      "path": "src/settings/indentation.rs",
+      "line": 26,
+      "match": "let _changed = settings.set_boolean(KEY_INSERT_SPACES_INSTEAD_OF_TABS, enabled);",
+      "kind": "gsettings-write",
+      "key": "insert-spaces-instead-of-tabs",
+      "trigger": "Explicit indentation-mode toggle in the preferences dialog."
+    },
+    {
+      "path": "src/settings/indentation.rs",
+      "line": 53,
+      "match": "let _changed = settings.set_int(KEY_TAB_WIDTH, width);",
+      "kind": "gsettings-write",
+      "key": "tab-width",
+      "trigger": "Committed tab-width change from the staged SpinRow in the preferences dialog."
+    },
+    {
+      "path": "src/settings/indentation.rs",
+      "line": 80,
+      "match": "let _changed = settings.set_int(KEY_INDENT_WIDTH, width);",
+      "kind": "gsettings-write",
+      "key": "indent-width",
+      "trigger": "Committed indent-width change from the staged SpinRow in the preferences dialog."
+    },
+    {
+      "path": "src/settings/presentation.rs",
+      "line": 139,
+      "match": "let _changed = settings.set_enum(KEY_EDITOR_PALETTE, palette.enum_value());",
+      "kind": "gsettings-write",
+      "key": "editor-palette",
+      "trigger": "Explicit editor-palette selection in the preferences dialog."
+    },
+    {
+      "path": "src/settings/presentation.rs",
+      "line": 163,
+      "match": "let _changed = settings.set_boolean(KEY_HIGHLIGHT_CURRENT_LINE, enabled);",
+      "kind": "gsettings-write",
+      "key": "highlight-current-line",
+      "trigger": "Explicit current-line highlight toggle in the preferences dialog."
+    },
+    {
+      "path": "src/settings/presentation.rs",
+      "line": 187,
+      "match": "let _changed = settings.set_boolean(KEY_AUTOSAVE_ENABLED, enabled);",
+      "kind": "gsettings-write",
+      "key": "autosave-enabled",
+      "trigger": "Explicit autosave toggle in the preferences dialog."
     },
     {
       "path": "src/settings/project.rs",
@@ -147,7 +171,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 102,
+      "line": 115,
       "match": "row.set_value(f64::from(value));",
       "kind": "gsettings-write",
       "key": "tab-width-or-indent-width",
@@ -155,7 +179,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 299,
+      "line": 351,
       "match": "row.set_value(f64::from(applied));",
       "kind": "gsettings-write",
       "key": "tab-width-or-indent-width",

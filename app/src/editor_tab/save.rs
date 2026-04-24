@@ -8,8 +8,8 @@ use libadwaita as adw;
 use crate::dialogs::{self, InvalidCharsSaveResponse, StaleSaveResponse};
 use crate::document::DocumentState;
 use crate::editor_format::{EncodingInfo, SavedTextFormat};
-use crate::editor_io::{self, SaveFailure};
-use crate::editor_tab::{EditorTab, SaveOutcome, SaveResult};
+use crate::editor_io::{self, SaveFailure, SavedDocument};
+use crate::editor_tab::{EditorTab, SaveKind, SaveOutcome, SaveResult};
 use crate::error::AppError;
 
 #[derive(Clone)]
@@ -18,6 +18,7 @@ struct SaveRetryContext {
     path: PathBuf,
     flags: sourceview5::FileSaverFlags,
     allow_stale_prompt: bool,
+    save_kind: SaveKind,
     callback: Rc<dyn Fn(SaveResult)>,
 }
 
@@ -26,11 +27,22 @@ impl EditorTab {
         self: &Rc<Self>,
         parent: &adw::ApplicationWindow,
         force_save_as: bool,
+        save_kind: SaveKind,
         callback: Rc<dyn Fn(SaveResult)>,
     ) {
         let current_path = self.state.borrow().document.path();
         if !force_save_as && let Some(path) = current_path {
             if self.should_show_stale_save_conflict() {
+                if save_kind == SaveKind::Autosave {
+                    self.pause_autosave(gettext(
+                        "Autosave paused because the file changed on disk.",
+                    ));
+                    callback(SaveResult::Failed(AppError::WriteFailed(
+                        path,
+                        gettext("The file changed on disk."),
+                    )));
+                    return;
+                }
                 let prompt_parent = parent.clone();
                 let save_parent = parent.clone();
                 let weak = Rc::downgrade(self);
@@ -43,8 +55,12 @@ impl EditorTab {
                                     &path,
                                     sourceview5::FileSaverFlags::IGNORE_MODIFICATION_TIME,
                                     false,
+                                    SaveKind::Manual,
                                     callback.clone(),
                                 );
+                            }
+                            StaleSaveResponse::Compare => {
+                                tab.start_compare_with_disk(callback_for_compare(callback.clone()));
                             }
                             StaleSaveResponse::Cancel => {
                                 callback(SaveResult::CancelledByUser);
@@ -59,8 +75,13 @@ impl EditorTab {
                 &path,
                 sourceview5::FileSaverFlags::NONE,
                 true,
+                save_kind,
                 callback,
             );
+            return;
+        }
+        if save_kind == SaveKind::Autosave {
+            callback(SaveResult::CancelledByUser);
             return;
         }
         self.show_save_dialog(parent, callback);
@@ -99,6 +120,7 @@ impl EditorTab {
                                     &normalized,
                                     sourceview5::FileSaverFlags::NONE,
                                     true,
+                                    SaveKind::Manual,
                                     callback.clone(),
                                 );
                             }
@@ -120,6 +142,7 @@ impl EditorTab {
         path: &Path,
         flags: sourceview5::FileSaverFlags,
         allow_stale_prompt: bool,
+        save_kind: SaveKind,
         callback: Rc<dyn Fn(SaveResult)>,
     ) {
         let old_uri = self.uri();
@@ -138,6 +161,7 @@ impl EditorTab {
             path: save_path.clone(),
             flags,
             allow_stale_prompt,
+            save_kind,
             callback: callback.clone(),
         };
         editor_io::save_text_file(
@@ -154,27 +178,40 @@ impl EditorTab {
                     }
                     match result {
                         Ok(saved) => {
-                            let monitored_file = gio::File::for_path(&saved.path);
-                            let new_uri = saved.uri.clone();
-                            tab.apply_saved_document(saved);
-                            tab.resolve_pending_external();
-                            tab.swap_monitor(&monitored_file);
-                            tab.refresh_language_for_file(&monitored_file);
-                            tab.set_loading(false);
-                            tab.sync_presentation();
-                            tab.sync_compare_reference_after_save(&new_uri);
-                            tab.sync_presentation();
-                            tab.grab_focus();
-                            callback(SaveResult::Saved(SaveOutcome {
-                                old_uri: old_uri.clone(),
-                                new_uri,
-                            }));
+                            tab.finish_successful_save(saved, old_uri.clone(), &callback);
                         }
-                        Err(SaveFailure::InvalidChars) => tab.handle_invalid_chars_save_failure(
-                            previous_file.as_ref(),
-                            &dialog_format,
-                            &retry_context,
-                        ),
+                        Err(SaveFailure::InvalidChars) => {
+                            if retry_context.save_kind == SaveKind::Autosave {
+                                tab.pause_autosave(gettext(
+                                    "Autosave paused because the document contains characters that cannot be saved with the selected encoding.",
+                                ));
+                                tab.restore_after_failed_save(previous_file.as_ref());
+                                callback(SaveResult::Failed(AppError::WriteFailed(
+                                    save_path.clone(),
+                                    gettext(
+                                        "The document contains characters that cannot be saved with the selected encoding.",
+                                    ),
+                                )));
+                            } else {
+                                tab.handle_invalid_chars_save_failure(
+                                    previous_file.as_ref(),
+                                    &dialog_format,
+                                    &retry_context,
+                                );
+                            }
+                        }
+                        Err(SaveFailure::ExternallyModified)
+                            if retry_context.save_kind == SaveKind::Autosave =>
+                        {
+                            tab.pause_autosave(gettext(
+                                "Autosave paused because the file changed on disk.",
+                            ));
+                            tab.restore_after_failed_save(previous_file.as_ref());
+                            callback(SaveResult::Failed(AppError::WriteFailed(
+                                save_path.clone(),
+                                gettext("The file changed on disk."),
+                            )));
+                        }
                         Err(SaveFailure::ExternallyModified) if allow_stale_prompt => {
                             tab.handle_stale_save_failure(previous_file.as_ref(), &retry_context);
                         }
@@ -188,6 +225,11 @@ impl EditorTab {
                             )));
                         }
                         Err(SaveFailure::Failed(error)) => {
+                            if retry_context.save_kind == SaveKind::Autosave {
+                                tab.pause_autosave(gettext(
+                                    "Autosave paused because the file could not be written.",
+                                ));
+                            }
                             tab.restore_after_failed_save(previous_file.as_ref());
                             callback(SaveResult::Failed(error));
                         }
@@ -203,6 +245,26 @@ impl EditorTab {
         }
         self.set_loading(false);
         self.sync_presentation();
+    }
+
+    fn finish_successful_save(
+        self: &Rc<Self>,
+        saved: SavedDocument,
+        old_uri: Option<String>,
+        callback: &Rc<dyn Fn(SaveResult)>,
+    ) {
+        let monitored_file = gio::File::for_path(&saved.path);
+        let new_uri = saved.uri.clone();
+        self.apply_saved_document(saved);
+        self.resolve_pending_external();
+        self.swap_monitor(&monitored_file);
+        self.refresh_language_for_file(&monitored_file);
+        self.set_loading(false);
+        self.sync_presentation();
+        self.sync_compare_reference_after_save(&new_uri);
+        self.sync_presentation();
+        self.grab_focus();
+        callback(SaveResult::Saved(SaveOutcome { old_uri, new_uri }));
     }
 
     fn handle_invalid_chars_save_failure(
@@ -257,6 +319,7 @@ impl EditorTab {
                         &retry_context.path,
                         retry_context.flags,
                         retry_context.allow_stale_prompt,
+                        retry_context.save_kind,
                         retry_context.callback.clone(),
                     );
                 }
@@ -281,8 +344,14 @@ impl EditorTab {
                         &retry_context.path,
                         sourceview5::FileSaverFlags::IGNORE_MODIFICATION_TIME,
                         false,
+                        retry_context.save_kind,
                         retry_context.callback.clone(),
                     ),
+                    StaleSaveResponse::Compare => {
+                        tab.start_compare_with_disk(callback_for_compare(
+                            retry_context.callback.clone(),
+                        ));
+                    }
                     StaleSaveResponse::Cancel => {
                         (retry_context.callback)(SaveResult::CancelledByUser);
                     }
@@ -290,4 +359,11 @@ impl EditorTab {
             }
         });
     }
+}
+
+fn callback_for_compare(callback: Rc<dyn Fn(SaveResult)>) -> Rc<dyn Fn(Result<(), AppError>)> {
+    Rc::new(move |result| match result {
+        Ok(()) => callback(SaveResult::CancelledByUser),
+        Err(error) => callback(SaveResult::Failed(error)),
+    })
 }

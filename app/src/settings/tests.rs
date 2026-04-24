@@ -1,4 +1,6 @@
-use super::{AppSettings, ThemePreference, sanitize_dimension, sanitize_editor_width};
+use super::{
+    AppSettings, EditorPalette, ThemePreference, sanitize_dimension, sanitize_editor_width,
+};
 #[test]
 fn theme_preference_roundtrips_indices() {
     assert_eq!(ThemePreference::from_index(0), ThemePreference::System);
@@ -21,6 +23,18 @@ fn theme_preference_parses_stored_values() {
 }
 
 #[test]
+fn editor_palette_roundtrips_enum_values() {
+    for palette in EditorPalette::ALL {
+        assert_eq!(
+            EditorPalette::from_enum_value(palette.enum_value()),
+            palette,
+            "{}",
+            palette.nick()
+        );
+    }
+}
+
+#[test]
 fn invalid_dimensions_fall_back() {
     assert_eq!(sanitize_dimension(900, 840), 900);
     assert_eq!(sanitize_dimension(0, 840), 840);
@@ -38,9 +52,12 @@ fn invalid_editor_widths_fall_back() {
 fn memory_backend_roundtrips_values() {
     let settings = AppSettings::new_for_tests();
     settings.set_theme(ThemePreference::Dark);
+    settings.set_editor_palette(EditorPalette::KateDark);
     settings.set_word_wrap(true);
     settings.set_show_line_numbers(true);
     settings.set_show_minimap(true);
+    settings.set_highlight_current_line(false);
+    settings.set_autosave_enabled(true);
     settings.set_insert_spaces_instead_of_tabs(false);
     settings.set_tab_width(8);
     settings.set_indent_width(2);
@@ -58,9 +75,12 @@ fn memory_backend_roundtrips_values() {
     settings.set_project_show_hidden(true);
 
     assert_eq!(settings.theme(), ThemePreference::Dark);
+    assert_eq!(settings.editor_palette(), EditorPalette::KateDark);
     assert!(settings.word_wrap());
     assert!(settings.show_line_numbers());
     assert!(settings.show_minimap());
+    assert!(!settings.highlight_current_line());
+    assert!(settings.autosave_enabled());
     assert!(!settings.insert_spaces_instead_of_tabs());
     assert_eq!(settings.tab_width(), 8);
     assert_eq!(settings.indent_width(), 2);
@@ -91,12 +111,14 @@ fn memory_backend_records_writes_for_tests() {
     settings.set_tab_width(6);
     settings.set_project_show_hidden(true);
     settings.set_editor_font("Monospace 11");
+    settings.set_autosave_enabled(true);
     assert_eq!(
         settings.write_log_for_tests(),
         vec![
             String::from("tab-width"),
             String::from("project-show-hidden"),
             String::from("editor-font"),
+            String::from("autosave-enabled"),
         ]
     );
 }

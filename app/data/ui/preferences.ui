@@ -37,6 +37,18 @@
               </object>
             </child>
             <child>
+              <object class="AdwComboRow" id="editor_palette_row">
+                <property name="title" translatable="yes">Editor Palette</property>
+                <property name="subtitle" translatable="yes">Choose the Color Palette Used by Editor Buffers</property>
+              </object>
+            </child>
+            <child>
+              <object class="AdwSwitchRow" id="current_line_row">
+                <property name="title" translatable="yes">Highlight Current Line</property>
+                <property name="subtitle" translatable="yes">Subtly Highlight the Line with the Text Cursor</property>
+              </object>
+            </child>
+            <child>
               <object class="AdwActionRow" id="editor_font_row">
                 <property name="activatable">true</property>
                 <property name="title" translatable="yes">Editor Font</property>
@@ -92,6 +104,17 @@
                     <property name="page-increment">4</property>
                   </object>
                 </property>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="AdwPreferencesGroup">
+            <property name="title" translatable="yes">Saving</property>
+            <child>
+              <object class="AdwSwitchRow" id="autosave_row">
+                <property name="title" translatable="yes">Autosave Saved Files</property>
+                <property name="subtitle" translatable="yes">Automatically Save Existing Writable Files After Edits</property>
               </object>
             </child>
           </object>

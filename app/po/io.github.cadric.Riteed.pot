@@ -101,9 +101,6 @@ msgstr ""
 msgid "Insert Spaces Instead of Tabs"
 msgstr ""
 
-msgid "It provides tabs, search and replace, syntax highlighting, optional line numbers and minimap, format controls for text encoding and line endings, and conservative reload prompts when files change on disk."
-msgstr ""
-
 msgid "Loading..."
 msgstr ""
 
@@ -461,9 +458,6 @@ msgid "Open Folder"
 msgstr ""
 
 msgctxt "file dialog title"
-msgid "Open Text Files"
-msgstr ""
-
 msgctxt "file dialog title"
 msgid "Save the Document"
 msgstr ""

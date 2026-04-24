@@ -38,7 +38,12 @@ impl EditorTab {
 
     pub(crate) fn apply_source_style_scheme(&self) {
         self.settings.apply_source_style_scheme(&self.text_buffer);
-        self.apply_compare_source_style_scheme();
+        self.apply_compare_style();
+    }
+
+    pub fn apply_current_line_highlight(&self) {
+        self.text_view
+            .set_highlight_current_line(self.settings.highlight_current_line());
     }
 
     pub fn apply_minimap_font_desc(&self, font_desc: Option<&pango::FontDescription>) {

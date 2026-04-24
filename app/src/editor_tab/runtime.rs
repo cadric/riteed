@@ -7,7 +7,7 @@ use crate::document::DocumentState;
 use crate::editor_io::{LoadedDocument, SavedDocument};
 use crate::editor_language::{self, LanguageDetection};
 use crate::editor_monitor::PendingExternalState;
-use crate::editor_tab::{EditorTab, ReloadCause};
+use crate::editor_tab::{EditorTab, ReloadCause, Writability};
 use crate::editor_view::ReloadSnapshot;
 
 impl EditorTab {
@@ -18,6 +18,15 @@ impl EditorTab {
             state.io.cancellable.take()
         };
         if let Some(cancellable) = cancellable {
+            cancellable.cancel();
+        }
+        if let Some(cancellable) = self
+            .state
+            .borrow_mut()
+            .safety
+            .writability_cancellable
+            .take()
+        {
             cancellable.cancel();
         }
     }
@@ -89,6 +98,7 @@ impl EditorTab {
                     }
                     self.swap_monitor(&new_file);
                     self.refresh_language_for_file(&new_file);
+                    self.refresh_writability_for_file(&new_file);
                     self.set_attention(false);
                     self.sync_presentation();
                     self.notify_external_state_change();
@@ -181,7 +191,7 @@ impl EditorTab {
     }
 
     pub(super) fn apply_loaded_document(
-        &self,
+        self: &Rc<Self>,
         document: LoadedDocument,
         snapshot: Option<&ReloadSnapshot>,
     ) {
@@ -192,7 +202,10 @@ impl EditorTab {
             state.saved_format = document.format.clone();
             state.source_file = Some(document.source_file);
             state.pending_external = PendingExternalState::Idle;
+            state.safety.writability = Writability::Unknown;
+            state.safety.autosave_paused = None;
             state.ui.external_prompt_active = false;
+            state.ui.visible_banner = crate::editor_tab::VisibleBannerState::None;
             state.content_type = None;
             state.language_id = None;
             state.ui.suppress_changes = true;
@@ -205,20 +218,75 @@ impl EditorTab {
         self.state.borrow_mut().ui.suppress_changes = false;
         self.set_attention(false);
         self.set_banner_revealed(false);
+        if let Some(file) = self.saved_file() {
+            self.refresh_writability_for_file(&file);
+        }
     }
 
-    pub(super) fn apply_saved_document(&self, saved: SavedDocument) {
+    pub(super) fn apply_saved_document(self: &Rc<Self>, saved: SavedDocument) {
         let saved_uri = saved.uri.clone();
+        let saved_file = gio::File::for_path(&saved.path);
         let mut state = self.state.borrow_mut();
         state.document.set_saved(saved.path);
         state.document.set_format(saved.format.clone());
         state.saved_format = saved.format.clone();
         state.source_file = Some(saved.source_file);
+        state.safety.writability = Writability::Writable;
+        state.safety.autosave_paused = None;
         self.text_buffer
             .set_implicit_trailing_newline(saved.format.implicit_trailing_newline());
         self.text_buffer.set_modified(false);
         drop(state);
         self.sync_compare_reference_after_save(&saved_uri);
+        self.refresh_writability_for_file(&saved_file);
+    }
+
+    pub(super) fn refresh_writability_for_file(self: &Rc<Self>, file: &gio::File) {
+        let expected_uri = file.uri().to_string();
+        let (generation, cancellable) = {
+            let mut state = self.state.borrow_mut();
+            if let Some(cancellable) = state.safety.writability_cancellable.take() {
+                cancellable.cancel();
+            }
+            state.safety.writability_generation += 1;
+            let generation = state.safety.writability_generation;
+            let cancellable = gio::Cancellable::new();
+            state.safety.writability_cancellable = Some(cancellable.clone());
+            (generation, cancellable)
+        };
+        let weak = Rc::downgrade(self);
+        file.query_info_async(
+            "access::can-write",
+            gio::FileQueryInfoFlags::NONE,
+            gtk4::glib::Priority::default(),
+            Some(&cancellable),
+            move |result| {
+                let Some(tab) = weak.upgrade() else {
+                    return;
+                };
+                let writability = match result {
+                    Ok(info) if info.boolean("access::can-write") => Writability::Writable,
+                    Ok(_) => Writability::Unwritable,
+                    Err(error) if error.matches(gio::IOErrorEnum::Cancelled) => return,
+                    Err(_) => Writability::Unknown,
+                };
+                let should_apply = {
+                    let mut state = tab.state.borrow_mut();
+                    if state.safety.writability_generation != generation
+                        || state.document.uri().as_deref() != Some(expected_uri.as_str())
+                    {
+                        return;
+                    }
+                    state.safety.writability_cancellable = None;
+                    state.safety.writability = writability;
+                    true
+                };
+                if should_apply {
+                    tab.sync_external_banner(true, true);
+                    tab.notify_external_state_change();
+                }
+            },
+        );
     }
 
     pub(super) fn can_apply_reload(

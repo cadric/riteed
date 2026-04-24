@@ -21,6 +21,7 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Extended the embedded Riteed app to a v4 editor with syntax highlighting, an optional minimap, and conservative external-file monitoring that protects unsaved work.
 - Extended the embedded Riteed app to a v6 lightweight workspace with Open Folder, Close Folder, an adaptive project sidebar, lazy file-tree browsing, manual refresh, hidden-file toggling, and tab/tree synchronization.
 - Extended the embedded Riteed app to a v7 compare workflow with in-tab split diffs, compare-with-disk, compare-with-file, compare-two-files, manual reference refresh, and F8/Shift+F8 diff navigation.
+- Extended the embedded Riteed app to a v8 polish layer with editor palette selection, current-line highlight preferences, fullscreen support, F9 project-sidebar focus, and conservative autosave for already-saved writable files.
 - Vendored the pinned `similar` crate for deterministic offline Flatpak-oriented compare/diff builds.
 
 ### Changed
@@ -32,6 +33,7 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Extended the embedded Riteed editor to a v5b controls layer with staged indentation preferences, monospace-only editor font selection, window-scoped zoom controls, and updated status/menu/shortcuts surfaces.
 - Extended the embedded Riteed editor to a v5c polish layer with direct status-bar zoom controls, document format controls in Preferences, fixed-size minimap rendering during zoom, and scroll-past-end editor padding.
 - Added a folder-navigation split layout using `AdwOverlaySplitView` inside the existing toast overlay, keeping project state separate from document/tab state while preserving the lightweight editor workflow.
+- Made compare highlighting follow the effective editor palette instead of the application theme, and kept autosave saves silent so they do not reorder recent files, persist session state, or show save toasts.
 
 ### Fixed
 - Stabilized GTK coverage runs by teaching `tools.coverage_check` to invoke `cargo llvm-cov` with a deterministic `GSK_RENDERER=cairo` environment, with unit coverage for the new tool behavior.
@@ -50,6 +52,8 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Ignored local Flatpak build output under `app/build-dir/` so installed test builds do not leave accidental commit noise.
 - Added a Compare response to the external-reload prompt so users can inspect the current buffer against the changed on-disk file before choosing whether to reload.
 - Corrected compare status text to count changed lines instead of hunks, and made Exit Compare clear diff highlights immediately.
+- Added read-only and autosave-paused banners with explicit actions, guarded dirty external-change prompts while compare is active, and preserved the last non-fullscreen window size when closing from fullscreen.
+- Corrected the policy checker so GSettings enum and flags keys are accepted as typed schema keys instead of being flagged as missing a free-form type.
 
 ## 1.0.1 — 2026-04-19
 

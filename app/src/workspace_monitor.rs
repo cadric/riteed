@@ -97,6 +97,9 @@ fn on_banner_action(workspace: &Rc<Workspace>, tab: &Rc<EditorTab>) {
                 }),
             );
         }
+        Some(BannerActionKind::SaveAs) => {
+            workspace.request_save_tab(tab, true, Rc::new(|_result| {}));
+        }
         None => {}
     }
 }

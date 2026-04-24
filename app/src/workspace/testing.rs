@@ -134,6 +134,10 @@ impl Workspace {
             .is_some_and(|tab| tab.banner_visible_for_tests())
     }
 
+    pub(crate) fn selected_writability(&self) -> Option<crate::editor_tab::Writability> {
+        self.selected_tab().map(|tab| tab.writability())
+    }
+
     pub(crate) fn sync_selected_banner_for_tests(&self, window_active: bool) {
         if let Some(tab) = self.selected_tab() {
             tab.sync_banner_for_tests(true, window_active);
@@ -143,6 +147,17 @@ impl Workspace {
     pub(crate) fn trigger_selected_external_action_for_tests(&self) {
         if let Some(tab) = self.selected_tab() {
             tab.trigger_external_action_for_tests();
+        }
+    }
+
+    pub(crate) fn request_selected_autosave_for_tests(self: &Rc<Self>) {
+        if let Some(tab) = self.selected_tab() {
+            self.request_save_tab_kind(
+                &tab,
+                false,
+                crate::editor_tab::SaveKind::Autosave,
+                Rc::new(|_| {}),
+            );
         }
     }
 

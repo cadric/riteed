@@ -31,6 +31,7 @@ impl EditorView {
         text_view.set_left_margin(12);
         text_view.set_monospace(true);
         text_view.set_right_margin(12);
+        text_view.set_highlight_current_line(settings.highlight_current_line());
         text_view.set_show_line_numbers(settings.show_line_numbers());
         text_view.set_top_margin(12);
         text_view.set_vexpand(true);

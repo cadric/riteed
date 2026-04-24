@@ -14,7 +14,7 @@ impl AppSettings {
                 settings.string(KEY_PROJECT_FOLDER_URI).to_string()
             }
             SettingsBackend::Memory(memory) => {
-                super::with_memory(memory, |state| state.project_folder_uri.clone())
+                super::with_memory(memory, |state| state.project.folder_uri.clone())
             }
         }
     }
@@ -26,7 +26,7 @@ impl AppSettings {
             }
             SettingsBackend::Memory(memory) => {
                 super::with_memory_mut(memory, |state| {
-                    state.project_folder_uri = String::from(uri);
+                    state.project.folder_uri = String::from(uri);
                     super::record_memory_write(state, KEY_PROJECT_FOLDER_URI);
                 });
             }
@@ -40,7 +40,7 @@ impl AppSettings {
                 settings.string(KEY_PROJECT_FOLDER_DISPLAY_NAME).to_string()
             }
             SettingsBackend::Memory(memory) => {
-                super::with_memory(memory, |state| state.project_folder_display_name.clone())
+                super::with_memory(memory, |state| state.project.folder_display_name.clone())
             }
         }
     }
@@ -52,7 +52,7 @@ impl AppSettings {
             }
             SettingsBackend::Memory(memory) => {
                 super::with_memory_mut(memory, |state| {
-                    state.project_folder_display_name = String::from(name);
+                    state.project.folder_display_name = String::from(name);
                     super::record_memory_write(state, KEY_PROJECT_FOLDER_DISPLAY_NAME);
                 });
             }
@@ -64,7 +64,7 @@ impl AppSettings {
         match &self.backend {
             SettingsBackend::GSettings(settings) => settings.boolean(KEY_PROJECT_SIDEBAR_VISIBLE),
             SettingsBackend::Memory(memory) => {
-                super::with_memory(memory, |state| state.project_sidebar_visible)
+                super::with_memory(memory, |state| state.project.sidebar_visible)
             }
         }
     }
@@ -76,7 +76,7 @@ impl AppSettings {
             }
             SettingsBackend::Memory(memory) => {
                 super::with_memory_mut(memory, |state| {
-                    state.project_sidebar_visible = visible;
+                    state.project.sidebar_visible = visible;
                     super::record_memory_write(state, KEY_PROJECT_SIDEBAR_VISIBLE);
                 });
             }
@@ -88,7 +88,7 @@ impl AppSettings {
         match &self.backend {
             SettingsBackend::GSettings(settings) => settings.boolean(KEY_PROJECT_SHOW_HIDDEN),
             SettingsBackend::Memory(memory) => {
-                super::with_memory(memory, |state| state.project_show_hidden)
+                super::with_memory(memory, |state| state.project.show_hidden)
             }
         }
     }
@@ -100,7 +100,7 @@ impl AppSettings {
             }
             SettingsBackend::Memory(memory) => {
                 super::with_memory_mut(memory, |state| {
-                    state.project_show_hidden = show_hidden;
+                    state.project.show_hidden = show_hidden;
                     super::record_memory_write(state, KEY_PROJECT_SHOW_HIDDEN);
                 });
             }

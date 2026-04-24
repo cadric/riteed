@@ -48,7 +48,7 @@ pub(crate) fn build_window(app: &adw::Application) -> Option<std::rc::Rc<Window>
     Window::new_for_tests(app).ok()
 }
 
-fn build_window_with_settings(
+pub(crate) fn build_window_with_settings(
     app: &adw::Application,
     settings: AppSettings,
 ) -> Option<std::rc::Rc<Window>> {
@@ -494,9 +494,10 @@ fn exercise_search_and_status(test_app: &adw::Application) {
 
     search_window.set_replace_text_for_tests("z");
     search_window.replace_all_for_tests();
-    drain_events(8);
-    assert_eq!(search_window.selected_text_for_tests(), "omega beta z");
-    assert_eq!(search_window.search_result_for_tests(), "Replaced 1 match");
+    spin_until("replace all result appears", || {
+        search_window.selected_text_for_tests() == "omega beta z"
+            && search_window.search_result_for_tests() == "Replaced 1 match"
+    });
     search_window.undo_selected_for_tests();
     drain_events(8);
     assert_eq!(search_window.selected_text_for_tests(), "omega beta alpha");
@@ -552,4 +553,5 @@ fn gtk_surfaces_and_editor_flow_work() {
     crate::gtk_tests_v6::exercise_v6_project_navigation(&test_app);
     crate::gtk_tests_v6::exercise_v6_project_restore(&test_app);
     crate::gtk_tests_v7::exercise_v7_compare(&test_app);
+    crate::gtk_tests_v8::exercise_v8_polish_and_safety(&test_app);
 }

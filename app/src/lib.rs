@@ -44,6 +44,8 @@ mod gtk_tests_v5b;
 mod gtk_tests_v6;
 #[cfg(test)]
 mod gtk_tests_v7;
+#[cfg(test)]
+mod gtk_tests_v8;
 
 use std::sync::OnceLock;
 

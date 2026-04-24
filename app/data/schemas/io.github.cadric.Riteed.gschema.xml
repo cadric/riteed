@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist gettext-domain="io.github.cadric.Riteed">
+  <enum id="io.github.cadric.Riteed.EditorPalette">
+    <value nick="follow-system" value="0"/>
+    <value nick="adwaita-light" value="1"/>
+    <value nick="adwaita-dark" value="2"/>
+    <value nick="classic" value="3"/>
+    <value nick="kate" value="4"/>
+    <value nick="kate-dark" value="5"/>
+    <value nick="solarized-light" value="6"/>
+    <value nick="solarized-dark" value="7"/>
+  </enum>
   <schema id="io.github.cadric.Riteed" path="/io/github/cadric/Riteed/">
     <key name="theme" type="s">
       <default>'system'</default>
@@ -20,6 +30,21 @@
       <default>false</default>
       <summary>Show Minimap</summary>
       <description>Controls whether Riteed shows a document overview minimap beside the editor.</description>
+    </key>
+    <key name="editor-palette" enum="io.github.cadric.Riteed.EditorPalette">
+      <default>'follow-system'</default>
+      <summary>Editor Palette</summary>
+      <description>Controls the color palette used for editor buffers.</description>
+    </key>
+    <key name="highlight-current-line" type="b">
+      <default>true</default>
+      <summary>Highlight Current Line</summary>
+      <description>Controls whether Riteed highlights the active line in editable documents.</description>
+    </key>
+    <key name="autosave-enabled" type="b">
+      <default>false</default>
+      <summary>Autosave</summary>
+      <description>Controls whether Riteed automatically saves already-saved writable files after edits.</description>
     </key>
     <key name="insert-spaces-instead-of-tabs" type="b">
       <default>true</default>

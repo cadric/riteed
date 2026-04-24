@@ -13,6 +13,7 @@ use crate::editor_view::EditorView;
 use crate::error::AppError;
 use crate::settings::AppSettings;
 
+mod banner;
 mod compare;
 mod open;
 mod runtime;
@@ -33,6 +34,12 @@ pub enum SaveResult {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SaveKind {
+    Manual,
+    Autosave,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ReloadCause {
     Automatic,
     UserRequested,
@@ -48,6 +55,25 @@ pub enum ReloadResult {
 pub enum BannerActionKind {
     Reload,
     Save,
+    SaveAs,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub enum Writability {
+    #[default]
+    Unknown,
+    Writable,
+    Unwritable,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub enum VisibleBannerState {
+    External,
+    Missing,
+    ReadOnly,
+    AutosavePaused,
+    #[default]
+    None,
 }
 
 struct EditorTabState {
@@ -58,6 +84,7 @@ struct EditorTabState {
     language_id: Option<String>,
     monitor: Option<MonitorBinding>,
     pending_external: PendingExternalState,
+    safety: SafetyState,
     progress: ProgressState,
     ui: UiState,
     io: IoState,
@@ -72,6 +99,14 @@ struct IoState {
 }
 
 #[derive(Default)]
+struct SafetyState {
+    writability: Writability,
+    writability_generation: u64,
+    writability_cancellable: Option<gio::Cancellable>,
+    autosave_paused: Option<String>,
+}
+
+#[derive(Default)]
 struct ProgressState {
     loading: bool,
     external_reload_in_progress: bool,
@@ -82,6 +117,7 @@ struct UiState {
     suppress_changes: bool,
     external_prompt_active: bool,
     banner_syncing: bool,
+    visible_banner: VisibleBannerState,
 }
 
 pub struct EditorTab {
@@ -97,6 +133,7 @@ pub struct EditorTab {
     state: RefCell<EditorTabState>,
     compare: RefCell<Option<compare::CompareController>>,
     compare_request_generation: Cell<u64>,
+    autosave_generation: Cell<u64>,
     page: OnceCell<adw::TabPage>,
     on_file_drop: OnceCell<Rc<dyn Fn(Vec<gio::File>)>>,
     on_visual_change: OnceCell<Rc<dyn Fn()>>,
@@ -126,6 +163,7 @@ impl EditorTab {
                 language_id: None,
                 monitor: None,
                 pending_external: PendingExternalState::Idle,
+                safety: SafetyState::default(),
                 progress: ProgressState::default(),
                 ui: UiState::default(),
                 io: IoState::default(),
@@ -133,6 +171,7 @@ impl EditorTab {
             }),
             compare: RefCell::new(None),
             compare_request_generation: Cell::new(0),
+            autosave_generation: Cell::new(0),
             page: OnceCell::new(),
             on_file_drop: OnceCell::new(),
             on_visual_change: OnceCell::new(),
@@ -187,6 +226,32 @@ impl EditorTab {
     #[must_use]
     pub fn is_loading(&self) -> bool {
         self.state.borrow().progress.loading
+    }
+
+    #[must_use]
+    pub fn is_autosave_eligible(&self) -> bool {
+        let state = self.state.borrow();
+        let is_dirty =
+            self.text_buffer.is_modified() || state.document.format() != &state.saved_format;
+        self.settings.autosave_enabled()
+            && is_dirty
+            && state.document.path().is_some()
+            && state.pending_external.is_idle()
+            && state.safety.writability == Writability::Writable
+            && !state.progress.loading
+            && self.compare.borrow().is_none()
+    }
+
+    #[must_use]
+    pub fn next_autosave_generation(&self) -> u64 {
+        let next = self.autosave_generation.get().saturating_add(1);
+        self.autosave_generation.set(next);
+        next
+    }
+
+    #[must_use]
+    pub fn autosave_generation(&self) -> u64 {
+        self.autosave_generation.get()
     }
 
     #[must_use]
@@ -259,29 +324,12 @@ impl EditorTab {
     }
 
     #[must_use]
-    pub fn should_present_dirty_reload_prompt(&self) -> bool {
-        let state = self.state.borrow();
-        self.is_dirty()
-            && matches!(
-                state.pending_external,
-                PendingExternalState::ContentPossiblyChanged {
-                    acknowledged: false
-                }
-            )
-            && !state.ui.external_prompt_active
+    pub fn writability(&self) -> Writability {
+        self.state.borrow().safety.writability
     }
 
-    #[must_use]
-    pub fn banner_action_kind(&self) -> Option<BannerActionKind> {
-        match self.state.borrow().pending_external {
-            PendingExternalState::ContentPossiblyChanged {
-                acknowledged: false,
-            } if !self.is_dirty() => Some(BannerActionKind::Reload),
-            PendingExternalState::Missing {
-                acknowledged: false,
-            } => Some(BannerActionKind::Save),
-            _ => None,
-        }
+    pub fn set_writability_for_tests(&self, writability: Writability) {
+        self.state.borrow_mut().safety.writability = writability;
     }
 
     #[must_use]
@@ -304,83 +352,6 @@ impl EditorTab {
             .as_ref()
             .map(|binding| binding.target_uri().to_string());
         current == target
-    }
-
-    pub fn mark_external_prompt_active(&self, active: bool) {
-        self.state.borrow_mut().ui.external_prompt_active = active;
-    }
-
-    pub fn acknowledge_pending_external(&self) {
-        {
-            let mut state = self.state.borrow_mut();
-            state.pending_external.acknowledge();
-            state.ui.external_prompt_active = false;
-        }
-        self.sync_external_banner(true, true);
-        self.notify_external_state_change();
-    }
-
-    pub fn resolve_pending_external(&self) {
-        {
-            let mut state = self.state.borrow_mut();
-            state.pending_external = PendingExternalState::Idle;
-            state.ui.external_prompt_active = false;
-            state.progress.external_reload_in_progress = false;
-        }
-        self.set_attention(false);
-        self.set_banner_revealed(false);
-        self.notify_external_state_change();
-    }
-
-    pub fn sync_external_banner(&self, is_selected: bool, window_active: bool) {
-        let should_offer_reload = is_selected && window_active && !self.is_dirty();
-        let (title, action) = {
-            let state = self.state.borrow();
-            match &state.pending_external {
-                PendingExternalState::ContentPossiblyChanged {
-                    acknowledged: false,
-                } if should_offer_reload => (
-                    Some(pgettext("external banner", "This File Changed on Disk.")),
-                    Some(pgettext("external action", "Reload")),
-                ),
-                PendingExternalState::Missing {
-                    acknowledged: false,
-                } if is_selected => (
-                    Some(pgettext("external banner", "This File Is Missing on Disk.")),
-                    Some(pgettext("external action", "Save")),
-                ),
-                PendingExternalState::Idle
-                | PendingExternalState::Moved { .. }
-                | PendingExternalState::ContentPossiblyChanged { .. }
-                | PendingExternalState::Missing { .. } => (None, None),
-            }
-        };
-
-        if let Some(title) = title {
-            self.banner.set_title(&title);
-            self.banner.set_button_label(action.as_deref());
-            self.set_banner_revealed(true);
-        } else {
-            self.banner.set_button_label(None);
-            self.set_banner_revealed(false);
-        }
-    }
-
-    #[cfg(test)]
-    pub(crate) fn banner_visible_for_tests(&self) -> bool {
-        self.banner.is_revealed()
-    }
-
-    #[cfg(test)]
-    pub(crate) fn sync_banner_for_tests(&self, is_selected: bool, window_active: bool) {
-        self.sync_external_banner(is_selected, window_active);
-    }
-
-    #[cfg(test)]
-    pub(crate) fn trigger_external_action_for_tests(&self) {
-        if let Some(callback) = self.on_external_action.get() {
-            callback();
-        }
     }
 
     fn install_callbacks(self: &Rc<Self>) {
@@ -430,7 +401,11 @@ impl EditorTab {
             };
             let should_ack = {
                 let state = tab.state.borrow();
-                !state.ui.banner_syncing && !state.pending_external.is_idle()
+                !state.ui.banner_syncing
+                    && matches!(
+                        state.ui.visible_banner,
+                        VisibleBannerState::External | VisibleBannerState::Missing
+                    )
             };
             if should_ack {
                 tab.acknowledge_pending_external();

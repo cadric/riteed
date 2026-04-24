@@ -7,13 +7,9 @@ use sourceview5::prelude::*;
 
 use crate::APP_ID;
 
+pub use presentation::EditorPalette;
+
 const KEY_THEME: &str = "theme";
-const KEY_WORD_WRAP: &str = "word-wrap";
-const KEY_SHOW_LINE_NUMBERS: &str = "show-line-numbers";
-const KEY_SHOW_MINIMAP: &str = "show-minimap";
-const KEY_INSERT_SPACES_INSTEAD_OF_TABS: &str = "insert-spaces-instead-of-tabs";
-const KEY_TAB_WIDTH: &str = "tab-width";
-const KEY_INDENT_WIDTH: &str = "indent-width";
 const KEY_EDITOR_FONT: &str = "editor-font";
 const KEY_WINDOW_WIDTH: &str = "window-width";
 const KEY_WINDOW_HEIGHT: &str = "window-height";
@@ -84,16 +80,14 @@ struct MemorySettings {
     theme: ThemePreference,
     display: MemoryDisplaySettings,
     indentation: MemoryIndentationSettings,
+    presentation: MemoryPresentationSettings,
     editor_font: String,
     window_width: i32,
     window_height: i32,
     recent_files: Vec<String>,
     session_files: Vec<String>,
     session_selected_file: String,
-    project_folder_uri: String,
-    project_folder_display_name: String,
-    project_sidebar_visible: bool,
-    project_show_hidden: bool,
+    project: MemoryProjectSettings,
     #[cfg(test)]
     write_log: Vec<String>,
 }
@@ -110,6 +104,21 @@ struct MemoryIndentationSettings {
     insert_spaces_instead_of_tabs: bool,
     tab_width: i32,
     indent_width: i32,
+}
+
+#[derive(Clone)]
+struct MemoryPresentationSettings {
+    editor_palette: EditorPalette,
+    highlight_current_line: bool,
+    autosave_enabled: bool,
+}
+
+#[derive(Clone)]
+struct MemoryProjectSettings {
+    folder_uri: String,
+    folder_display_name: String,
+    sidebar_visible: bool,
+    show_hidden: bool,
 }
 
 impl Default for AppSettings {
@@ -141,16 +150,23 @@ impl AppSettings {
                     tab_width: 4,
                     indent_width: 4,
                 },
+                presentation: MemoryPresentationSettings {
+                    editor_palette: EditorPalette::FollowSystem,
+                    highlight_current_line: true,
+                    autosave_enabled: false,
+                },
                 editor_font: String::new(),
                 window_width: 840,
                 window_height: 620,
                 recent_files: Vec::new(),
                 session_files: Vec::new(),
                 session_selected_file: String::new(),
-                project_folder_uri: String::new(),
-                project_folder_display_name: String::new(),
-                project_sidebar_visible: false,
-                project_show_hidden: false,
+                project: MemoryProjectSettings {
+                    folder_uri: String::new(),
+                    folder_display_name: String::new(),
+                    sidebar_visible: false,
+                    show_hidden: false,
+                },
                 #[cfg(test)]
                 write_log: Vec::new(),
             }))),
@@ -192,176 +208,11 @@ impl AppSettings {
 
     pub(crate) fn apply_source_style_scheme(&self, buffer: &sourceview5::Buffer) {
         let manager = sourceview5::StyleSchemeManager::default();
-        let preferred = match self.theme() {
-            ThemePreference::Dark => SOURCE_STYLE_SCHEME_DARK,
-            ThemePreference::System if adw::StyleManager::default().is_dark() => {
-                SOURCE_STYLE_SCHEME_DARK
-            }
-            ThemePreference::Light | ThemePreference::System => SOURCE_STYLE_SCHEME_LIGHT,
-        };
+        let preferred = self.resolved_source_style_scheme_id();
         let scheme = manager
-            .scheme(preferred)
+            .scheme(&preferred)
             .or_else(|| manager.scheme(SOURCE_STYLE_SCHEME_LIGHT));
         buffer.set_style_scheme(scheme.as_ref());
-    }
-
-    #[must_use]
-    pub fn word_wrap(&self) -> bool {
-        match &self.backend {
-            SettingsBackend::GSettings(settings) => settings.boolean(KEY_WORD_WRAP),
-            SettingsBackend::Memory(memory) => with_memory(memory, |state| state.display.word_wrap),
-        }
-    }
-
-    pub fn set_word_wrap(&self, enabled: bool) {
-        match &self.backend {
-            SettingsBackend::GSettings(settings) => {
-                let _changed = settings.set_boolean(KEY_WORD_WRAP, enabled);
-            }
-            SettingsBackend::Memory(memory) => {
-                with_memory_mut(memory, |state| {
-                    state.display.word_wrap = enabled;
-                    record_memory_write(state, KEY_WORD_WRAP);
-                });
-            }
-        }
-    }
-
-    #[must_use]
-    pub fn show_line_numbers(&self) -> bool {
-        match &self.backend {
-            SettingsBackend::GSettings(settings) => settings.boolean(KEY_SHOW_LINE_NUMBERS),
-            SettingsBackend::Memory(memory) => {
-                with_memory(memory, |state| state.display.show_line_numbers)
-            }
-        }
-    }
-
-    pub fn set_show_line_numbers(&self, enabled: bool) {
-        match &self.backend {
-            SettingsBackend::GSettings(settings) => {
-                let _changed = settings.set_boolean(KEY_SHOW_LINE_NUMBERS, enabled);
-            }
-            SettingsBackend::Memory(memory) => {
-                with_memory_mut(memory, |state| {
-                    state.display.show_line_numbers = enabled;
-                    record_memory_write(state, KEY_SHOW_LINE_NUMBERS);
-                });
-            }
-        }
-    }
-
-    #[must_use]
-    pub fn show_minimap(&self) -> bool {
-        match &self.backend {
-            SettingsBackend::GSettings(settings) => settings.boolean(KEY_SHOW_MINIMAP),
-            SettingsBackend::Memory(memory) => {
-                with_memory(memory, |state| state.display.show_minimap)
-            }
-        }
-    }
-
-    pub fn set_show_minimap(&self, enabled: bool) {
-        match &self.backend {
-            SettingsBackend::GSettings(settings) => {
-                let _changed = settings.set_boolean(KEY_SHOW_MINIMAP, enabled);
-            }
-            SettingsBackend::Memory(memory) => {
-                with_memory_mut(memory, |state| {
-                    state.display.show_minimap = enabled;
-                    record_memory_write(state, KEY_SHOW_MINIMAP);
-                });
-            }
-        }
-    }
-
-    pub fn apply_word_wrap<T: IsA<gtk4::TextView>>(&self, text_view: &T) {
-        let wrap_mode = if self.word_wrap() {
-            gtk4::WrapMode::WordChar
-        } else {
-            gtk4::WrapMode::None
-        };
-        text_view.set_wrap_mode(wrap_mode);
-    }
-
-    #[must_use]
-    pub fn insert_spaces_instead_of_tabs(&self) -> bool {
-        match &self.backend {
-            SettingsBackend::GSettings(settings) => {
-                settings.boolean(KEY_INSERT_SPACES_INSTEAD_OF_TABS)
-            }
-            SettingsBackend::Memory(memory) => with_memory(memory, |state| {
-                state.indentation.insert_spaces_instead_of_tabs
-            }),
-        }
-    }
-
-    pub fn set_insert_spaces_instead_of_tabs(&self, enabled: bool) {
-        match &self.backend {
-            SettingsBackend::GSettings(settings) => {
-                let _changed = settings.set_boolean(KEY_INSERT_SPACES_INSTEAD_OF_TABS, enabled);
-            }
-            SettingsBackend::Memory(memory) => {
-                with_memory_mut(memory, |state| {
-                    state.indentation.insert_spaces_instead_of_tabs = enabled;
-                    record_memory_write(state, KEY_INSERT_SPACES_INSTEAD_OF_TABS);
-                });
-            }
-        }
-    }
-
-    #[must_use]
-    pub fn tab_width(&self) -> u32 {
-        match &self.backend {
-            SettingsBackend::GSettings(settings) => {
-                sanitize_editor_width(settings.int(KEY_TAB_WIDTH), 4).cast_unsigned()
-            }
-            SettingsBackend::Memory(memory) => with_memory(memory, |state| {
-                sanitize_editor_width(state.indentation.tab_width, 4).cast_unsigned()
-            }),
-        }
-    }
-
-    pub fn set_tab_width(&self, width: i32) {
-        let width = sanitize_editor_width(width, 4);
-        match &self.backend {
-            SettingsBackend::GSettings(settings) => {
-                let _changed = settings.set_int(KEY_TAB_WIDTH, width);
-            }
-            SettingsBackend::Memory(memory) => {
-                with_memory_mut(memory, |state| {
-                    state.indentation.tab_width = width;
-                    record_memory_write(state, KEY_TAB_WIDTH);
-                });
-            }
-        }
-    }
-
-    #[must_use]
-    pub fn indent_width(&self) -> i32 {
-        match &self.backend {
-            SettingsBackend::GSettings(settings) => {
-                sanitize_editor_width(settings.int(KEY_INDENT_WIDTH), 4)
-            }
-            SettingsBackend::Memory(memory) => with_memory(memory, |state| {
-                sanitize_editor_width(state.indentation.indent_width, 4)
-            }),
-        }
-    }
-
-    pub fn set_indent_width(&self, width: i32) {
-        let width = sanitize_editor_width(width, 4);
-        match &self.backend {
-            SettingsBackend::GSettings(settings) => {
-                let _changed = settings.set_int(KEY_INDENT_WIDTH, width);
-            }
-            SettingsBackend::Memory(memory) => {
-                with_memory_mut(memory, |state| {
-                    state.indentation.indent_width = width;
-                    record_memory_write(state, KEY_INDENT_WIDTH);
-                });
-            }
-        }
     }
 
     #[must_use]
@@ -386,15 +237,6 @@ impl AppSettings {
                 });
             }
         }
-    }
-
-    pub fn apply_indentation<T: IsA<sourceview5::View>>(&self, view: &T) {
-        view.set_auto_indent(true);
-        view.set_smart_backspace(true);
-        view.set_indent_on_tab(true);
-        view.set_insert_spaces_instead_of_tabs(self.insert_spaces_instead_of_tabs());
-        view.set_tab_width(self.tab_width());
-        view.set_indent_width(self.indent_width());
     }
 
     #[must_use]
@@ -561,4 +403,7 @@ fn record_memory_write(_state: &mut MemorySettings, _key: &str) {}
 #[cfg(test)]
 mod tests;
 
+mod display;
+mod indentation;
+mod presentation;
 mod project;

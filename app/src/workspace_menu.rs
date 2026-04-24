@@ -34,6 +34,10 @@ pub(crate) fn build_primary_menu(recent_files: &[String]) -> gio::Menu {
         Some("win.zoom-reset"),
     );
     menu.append_submenu(Some(&pgettext("menu item", "Zoom")), &zoom_menu);
+    menu.append(
+        Some(&pgettext("menu item", "Fullscreen")),
+        Some("win.fullscreen"),
+    );
 
     let compare_menu = gio::Menu::new();
     compare_menu.append(

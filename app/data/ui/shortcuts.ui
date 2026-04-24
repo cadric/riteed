@@ -128,6 +128,12 @@
                 <property name="title" translatable="yes">Reset Zoom</property>
               </object>
             </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="accelerator">F11</property>
+                <property name="title" translatable="yes">Toggle Fullscreen</property>
+              </object>
+            </child>
           </object>
         </child>
         <child>
@@ -154,6 +160,12 @@
               <object class="GtkShortcutsShortcut">
                 <property name="accelerator">F5</property>
                 <property name="title" translatable="yes">Refresh Project Tree</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="accelerator">F9</property>
+                <property name="title" translatable="yes">Focus Project Sidebar</property>
               </object>
             </child>
           </object>

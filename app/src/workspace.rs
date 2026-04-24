@@ -9,9 +9,10 @@ use crate::close_flow::CloseCoordinator;
 use crate::editor_format::{EncodingInfo, LineEndingMode};
 use crate::editor_search::EditorSearch;
 use crate::editor_status::EditorStatusBar;
-use crate::editor_tab::{EditorTab, SaveResult};
+use crate::editor_tab::{EditorTab, SaveKind, SaveResult};
 use crate::settings::AppSettings;
 
+mod autosave;
 #[cfg(test)]
 mod testing;
 
@@ -235,6 +236,19 @@ impl Workspace {
         }
     }
 
+    pub fn apply_current_line_highlight_to_tabs(&self) {
+        for tab in &self.state.borrow().tabs {
+            tab.apply_current_line_highlight();
+        }
+    }
+
+    pub fn apply_autosave_setting_to_tabs(&self) {
+        for tab in &self.state.borrow().tabs {
+            tab.sync_external_banner(true, self.shell.is_active());
+        }
+        self.refresh_selected_state();
+    }
+
     pub fn apply_indentation_to_tabs(&self) {
         for tab in &self.state.borrow().tabs {
             tab.apply_indentation();
@@ -321,6 +335,7 @@ impl Workspace {
             }
         }));
         crate::workspace_monitor::install_tab_hooks(self, &tab);
+        autosave::install_tab_autosave(self, &tab);
         let page = tab.attach(&self.tab_view);
         self.state.borrow_mut().tabs.push(tab.clone());
         if select {
@@ -328,6 +343,7 @@ impl Workspace {
         }
         tab.apply_line_numbers();
         tab.apply_minimap_visibility();
+        tab.apply_current_line_highlight();
         tab.apply_indentation();
         tab
     }
@@ -338,23 +354,39 @@ impl Workspace {
         force_save_as: bool,
         callback: Rc<dyn Fn(SaveResult)>,
     ) {
+        self.request_save_tab_kind(tab, force_save_as, SaveKind::Manual, callback);
+    }
+
+    pub(crate) fn request_save_tab_kind(
+        self: &Rc<Self>,
+        tab: &Rc<EditorTab>,
+        force_save_as: bool,
+        save_kind: SaveKind,
+        callback: Rc<dyn Fn(SaveResult)>,
+    ) {
         let weak = Rc::downgrade(self);
         tab.request_save(
             &self.shell,
             force_save_as,
+            save_kind,
             Rc::new(move |result| {
                 if let Some(workspace) = weak.upgrade() {
-                    match &result {
-                        SaveResult::Saved(outcome) => {
-                            workspace.remember_recent_uri(&outcome.new_uri);
-                            workspace.persist_session_state_if_needed();
-                            workspace.refresh_selected_state();
-                            workspace.show_toast(&gettextrs::gettext("The Document Was Saved."));
+                    if save_kind == SaveKind::Manual {
+                        match &result {
+                            SaveResult::Saved(outcome) => {
+                                workspace.remember_recent_uri(&outcome.new_uri);
+                                workspace.persist_session_state_if_needed();
+                                workspace.refresh_selected_state();
+                                workspace
+                                    .show_toast(&gettextrs::gettext("The Document Was Saved."));
+                            }
+                            SaveResult::CancelledByUser => {}
+                            SaveResult::Failed(error) => {
+                                crate::dialogs::present_error(&workspace.shell, error);
+                            }
                         }
-                        SaveResult::CancelledByUser => {}
-                        SaveResult::Failed(error) => {
-                            crate::dialogs::present_error(&workspace.shell, error);
-                        }
+                    } else {
+                        workspace.refresh_selected_state();
                     }
                     callback(result);
                 }

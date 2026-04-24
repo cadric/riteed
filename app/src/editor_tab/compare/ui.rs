@@ -2,8 +2,8 @@ use std::cell::Cell;
 use std::rc::Rc;
 
 use gettextrs::pgettext;
+use gtk4::accessible::Property;
 use gtk4::{gdk, glib, prelude::*};
-use libadwaita as adw;
 use sourceview5::prelude::*;
 
 use super::diff::DiffPlan;
@@ -37,8 +37,7 @@ impl CompareTags {
         tags
     }
 
-    pub(super) fn apply_colors(&self) {
-        let dark = adw::StyleManager::default().is_dark();
+    pub(super) fn apply_colors(&self, dark: bool) {
         self.editable_changed
             .set_background_rgba(Some(&compare_color(dark, CompareColor::Editable)));
         self.reference_changed
@@ -57,6 +56,7 @@ pub(super) fn configure_reference_view(tab: &EditorTab, view: &sourceview5::View
     view.set_cursor_visible(false);
     view.set_editable(false);
     view.set_hexpand(true);
+    view.set_highlight_current_line(false);
     view.set_left_margin(12);
     view.set_monospace(true);
     view.set_right_margin(12);
@@ -195,11 +195,13 @@ pub(super) fn buffer_text(buffer: &sourceview5::Buffer) -> String {
 }
 
 fn toolbar_button(icon_name: &str, tooltip: &str, action_name: &str) -> gtk4::Button {
-    gtk4::Button::builder()
+    let button = gtk4::Button::builder()
         .icon_name(icon_name)
         .tooltip_text(tooltip)
         .action_name(action_name)
-        .build()
+        .build();
+    button.update_property(&[Property::Label(tooltip)]);
+    button
 }
 
 fn sync_adjustment_ratio(

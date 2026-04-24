@@ -19,6 +19,8 @@ mod app_open;
 mod auto_refresh;
 mod reveal;
 mod symlink;
+#[cfg(test)]
+mod testing;
 
 #[derive(Clone, Debug)]
 struct ProjectRoot {
@@ -194,84 +196,14 @@ impl WindowProjectController {
         self.restore_from_settings();
     }
 
-    #[cfg(test)]
-    pub(crate) fn root_uri_for_tests(&self) -> Option<String> {
-        self.state
-            .borrow()
-            .root
-            .as_ref()
-            .map(|root| root.file.uri().to_string())
-    }
-
-    #[cfg(test)]
-    pub(crate) fn action_states_for_tests(&self) -> (bool, bool, bool, bool) {
+    pub(crate) fn focus_sidebar(&self) {
         let state = self.state.borrow();
-        (
-            state.sidebar_visible_action.is_enabled(),
-            state.show_hidden_action.is_enabled(),
-            state.refresh_action.is_enabled(),
-            state.close_action.is_enabled(),
-        )
-    }
-
-    #[cfg(test)]
-    pub(crate) fn tree_entry_names_for_tests(&self) -> Vec<String> {
-        self.state
-            .borrow()
-            .browser
-            .tree()
-            .model()
-            .visible_entry_names_for_tests()
-    }
-
-    #[cfg(test)]
-    pub(crate) fn project_monitor_count_for_tests(&self) -> usize {
-        self.state
-            .borrow()
-            .browser
-            .tree()
-            .model()
-            .monitor_count_for_tests()
-    }
-
-    #[cfg(test)]
-    pub(crate) fn trigger_project_auto_refresh_for_tests(&self) {
-        auto_refresh::refresh_tree(&self.state);
-    }
-
-    #[cfg(test)]
-    pub(crate) fn expand_tree_entry_for_tests(&self, name: &str) -> bool {
-        self.state
-            .borrow()
-            .browser
-            .tree()
-            .expand_entry_for_tests(name)
-    }
-
-    #[cfg(test)]
-    pub(crate) fn selected_tree_uri_for_tests(&self) -> Option<String> {
-        self.state.borrow().browser.tree().selected_uri_for_tests()
-    }
-
-    #[cfg(test)]
-    pub(crate) fn close_for_tests(&self) {
-        close_root(&self.state);
-    }
-
-    #[cfg(test)]
-    pub(crate) fn refresh_for_tests(&self) {
-        auto_refresh::refresh_tree(&self.state);
-    }
-
-    #[cfg(test)]
-    pub(crate) fn set_show_hidden_for_tests(&self, show_hidden: bool) {
-        let action = self.state.borrow().show_hidden_action.clone();
-        action.change_state(&show_hidden.to_variant());
-    }
-
-    #[cfg(test)]
-    pub(crate) fn resolve_symlink_for_tests(&self, file: &gio::File) {
-        symlink::handle_symlink_activation(&self.state, file);
+        if state.root.is_none() {
+            return;
+        }
+        state.split_view.set_show_sidebar(true);
+        state.sidebar_visible_action.set_state(&true.to_variant());
+        state.browser.focus_tree_after_reveal();
     }
 
     fn restore_from_settings(&self) {

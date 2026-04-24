@@ -141,13 +141,15 @@ impl EditorTab {
         }
     }
 
-    pub(super) fn apply_compare_source_style_scheme(&self) {
+    pub(super) fn apply_compare_style(&self) {
         let Ok(compare_state) = self.compare.try_borrow() else {
             return;
         };
         if let Some(compare) = compare_state.as_ref() {
             self.settings
                 .apply_source_style_scheme(&compare.reference_buffer);
+            compare.apply_tag_colors(self.settings.editor_palette_is_dark());
+            compare.apply_current_hunk(&self.text_buffer);
         }
     }
 
@@ -226,7 +228,7 @@ impl EditorTab {
         compare.paned.set_start_child(Some(&self.scrolled));
         self.root.append(&compare.toolbar);
         self.root.append(&compare.paned);
-        compare.apply_tag_colors();
+        compare.apply_tag_colors(self.settings.editor_palette_is_dark());
         self.compare.borrow_mut().replace(compare);
         self.sync_presentation();
     }
@@ -356,7 +358,7 @@ impl CompareController {
             if let Some(tab) = weak.upgrade()
                 && let Some(compare) = tab.compare.borrow_mut().as_mut()
             {
-                compare.apply_tag_colors();
+                compare.apply_tag_colors(tab.settings.editor_palette_is_dark());
                 compare.apply_current_hunk(&tab.text_buffer);
             }
         });
@@ -516,8 +518,8 @@ impl CompareController {
         }
     }
 
-    fn apply_tag_colors(&self) {
-        self.tags.apply_colors();
+    fn apply_tag_colors(&self, dark: bool) {
+        self.tags.apply_colors(dark);
     }
 }
 

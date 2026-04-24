@@ -12,7 +12,7 @@ use crate::editor_zoom::{
     EditorZoomController, font_row_subtitle, resolve_editor_font_description, resolve_font_family,
     resolve_font_family_in_map,
 };
-use crate::settings::{AppSettings, ThemePreference};
+use crate::settings::{AppSettings, EditorPalette, ThemePreference};
 use crate::window_shell::WindowShell;
 use crate::workspace::Workspace;
 
@@ -43,6 +43,7 @@ impl WindowPreferencesController {
         let state = Rc::new(RefCell::new(PreferencesState::default()));
         initialize_rows(shell, settings, &state);
         install_theme_preferences(shell, settings, workspace, &state);
+        install_palette_preferences(shell, settings, workspace, &state);
         install_toggle_preferences(shell, settings, workspace, &state);
         install_spin_preferences(shell, settings, workspace, &state);
         install_document_format_preferences(shell, workspace, &state);
@@ -65,9 +66,17 @@ fn initialize_rows(
     let crlf = LineEndingMode::CrLf.menu_label();
     let cr = LineEndingMode::Cr.menu_label();
     let line_endings = gtk4::StringList::new(&[lf.as_str(), crlf.as_str(), cr.as_str()]);
+    let palettes = AppSettings::available_editor_palettes();
+    let palette_labels: Vec<String> = palettes.iter().map(|palette| palette.label()).collect();
+    let palette_refs: Vec<&str> = palette_labels.iter().map(String::as_str).collect();
+    let palette_model = gtk4::StringList::new(&palette_refs);
     with_syncing(state, || {
         shell.theme_row.set_model(Some(&themes));
         shell.theme_row.set_selected(settings.theme().index());
+        shell.editor_palette_row.set_model(Some(&palette_model));
+        shell
+            .editor_palette_row
+            .set_selected(settings.editor_palette_index(&palettes));
         shell.line_ending_row.set_model(Some(&line_endings));
         shell.line_ending_row.set_selected(0);
         shell.word_wrap_row.set_active(settings.word_wrap());
@@ -75,6 +84,10 @@ fn initialize_rows(
             .line_numbers_row
             .set_active(settings.show_line_numbers());
         shell.minimap_row.set_active(settings.show_minimap());
+        shell
+            .current_line_row
+            .set_active(settings.highlight_current_line());
+        shell.autosave_row.set_active(settings.autosave_enabled());
         shell
             .insert_spaces_row
             .set_active(settings.insert_spaces_instead_of_tabs());
@@ -100,6 +113,29 @@ fn configure_spin_row(row: &adw::SpinRow, value: i32) {
     row.set_snap_to_ticks(true);
     row.set_digits(0);
     row.set_value(f64::from(value));
+}
+
+fn install_palette_preferences(
+    shell: &WindowShell,
+    settings: &AppSettings,
+    workspace: &Rc<Workspace>,
+    state: &Rc<RefCell<PreferencesState>>,
+) {
+    let state = Rc::clone(state);
+    let settings = settings.clone();
+    let workspace = Rc::downgrade(workspace);
+    shell
+        .editor_palette_row
+        .connect_selected_notify(move |row| {
+            if state.borrow().syncing {
+                return;
+            }
+            let available = AppSettings::available_editor_palettes();
+            settings.set_editor_palette(EditorPalette::from_index(row.selected(), &available));
+            if let Some(workspace) = workspace.upgrade() {
+                workspace.apply_source_style_scheme_to_tabs();
+            }
+        });
 }
 
 fn install_theme_preferences(
@@ -153,6 +189,22 @@ fn install_toggle_preferences(
         state,
         AppSettings::set_show_minimap,
         Workspace::apply_minimap_to_tabs,
+    );
+    install_switch_handler(
+        &shell.current_line_row,
+        settings,
+        workspace,
+        state,
+        AppSettings::set_highlight_current_line,
+        Workspace::apply_current_line_highlight_to_tabs,
+    );
+    install_switch_handler(
+        &shell.autosave_row,
+        settings,
+        workspace,
+        state,
+        AppSettings::set_autosave_enabled,
+        Workspace::apply_autosave_setting_to_tabs,
     );
     install_switch_handler(
         &shell.insert_spaces_row,
