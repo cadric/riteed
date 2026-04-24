@@ -1,4 +1,12 @@
 ---
+created: 2026-04-19
+updated: 2026-04-24
+status: active
+priority: high
+type: roadmap
+completed_through: v7
+next_version: v8
+---
 
 # Complete Roadmap: Mini GNOME Text Editor in Rust
 
@@ -30,6 +38,13 @@ Explicit non-goals across the roadmap:
 ---
 
 # V1 — Minimal usable GNOME text editor
+
+> created: 2026-04-19
+> updated: 2026-04-19
+> status: complete
+> priority: high
+> type: roadmap-milestone
+> implementation: `77e7643` — Add embedded Riteed GNOME editor app
 
 ## Purpose
 
@@ -124,6 +139,13 @@ Create the initial application structure and implement a working v1 of this mini
 ---
 
 # V2 — Multi-document workflow
+
+> created: 2026-04-19
+> updated: 2026-04-19
+> status: complete
+> priority: high
+> type: roadmap-milestone
+> implementation: `3afc4b8` — Implement Riteed v2 tabbed editor workflow
 
 ## Purpose
 
@@ -221,6 +243,13 @@ Implement a working v2 of the mini GNOME text editor with tabs, recent files, se
 
 # V3 — Editing polish and daily usability
 
+> created: 2026-04-19
+> updated: 2026-04-19
+> status: complete
+> priority: high
+> type: roadmap-milestone
+> implementation: `013dfd1` — Build Riteed v3 editing workflow
+
 ## Purpose
 
 V3 improves the editing experience itself.
@@ -313,6 +342,13 @@ Implement a working v3 of the mini GNOME text editor with search, replace, line 
 ---
 
 # V4 — Lightweight code-friendly editor
+
+> created: 2026-04-19
+> updated: 2026-04-19
+> status: complete
+> priority: high
+> type: roadmap-milestone
+> implementation: `6aee029` — Build Riteed v4 code editor workflow
 
 ## Purpose
 
@@ -407,6 +443,13 @@ Implement a working v4 of the app as a lightweight GNOME editor with GtkSourceVi
 ---
 
 # V5 — Editor control and text-format awareness
+
+> created: 2026-04-23
+> updated: 2026-04-23
+> status: complete
+> priority: high
+> type: roadmap-milestone
+> implementation: `063944c`, `67423d6`, `27836c5` — v5 controls, internals, and policy fixes
 
 ## Purpose
 
@@ -507,6 +550,13 @@ Implement a working v5 of the app with automatic indentation, tabs-versus-spaces
 
 # V6 — Workspace navigation
 
+> created: 2026-04-24
+> updated: 2026-04-24
+> status: complete
+> priority: high
+> type: roadmap-milestone
+> implementation: `d299e3c`, `63bed14` — v6 folder navigation and project-tree auto-refresh fallback
+
 ## Purpose
 
 V6 introduces lightweight workspace behavior.
@@ -519,6 +569,7 @@ The app is still not a full IDE, but it becomes much better for working across s
 * Project tree view
 * Split-pane layout
 * Better multi-file navigation
+* Automatic refresh for loaded project-tree folders where practical
 
 ## Why this version matters
 
@@ -597,6 +648,13 @@ Implement a working v6 of the app with open-folder support, a project tree view,
 
 # V7 — Compare and advanced split workflows
 
+> created: 2026-04-24
+> updated: 2026-04-24
+> status: complete
+> priority: high
+> type: roadmap-milestone
+> implementation: `2e42722`, `e97f857` — v7 compare prep and compare workflows
+
 ## Purpose
 
 V7 adds powerful comparison workflows.
@@ -609,6 +667,8 @@ The goal is to support diff and side-by-side inspection without turning the app 
 * Side-by-side compare view
 * Compare current buffer with saved/on-disk version
 * Compare two files
+* Manual reference refresh
+* Difference navigation
 * Stronger split-view workflows
 
 ## Why this version matters
@@ -683,7 +743,254 @@ Implement a working v7 of the app with diff support, side-by-side compare views,
 
 ---
 
+# V8 — Polish, accessibility, and editing safety
+
+> created: 2026-04-24
+> updated: 2026-04-24
+> status: planned
+> priority: high
+> type: roadmap-milestone
+
+## Purpose
+
+V8 focuses on product maturity.
+
+The goal is to make the editor feel more complete, trustworthy, and comfortable in everyday use. This version is about polish, accessibility, editor comfort, and stronger protection against accidental data loss.
+
+## What V8 adds
+
+* Editor palette selection
+* Fullscreen support
+* Accessibility improvements
+* Current-line highlight toggle
+* Autosave support
+* Atomic save behavior
+* Recovery and save-polish features
+
+## Why this version matters
+
+V8 is where the product starts to feel finished rather than merely feature-complete. It improves readability, workflow comfort, reliability, and resilience while keeping the app lightweight and restrained.
+
+## Prompt for V8
+
+```text
+Build v8 of the GNOME desktop application in Rust by focusing on polish, accessibility, editing safety, and overall product maturity.
+
+The goal of v8 is to make the editor feel more complete, trustworthy, and comfortable in everyday use. This version should improve presentation, accessibility, save reliability, and user confidence without changing the product into an IDE or adding large new subsystems.
+
+What v8 adds:
+- Editor palette selection
+- Fullscreen support
+- Accessibility improvements
+- Current-line highlight toggle
+- Autosave support
+- Atomic save behavior
+- Recovery and save-polish features
+
+Scope for v8:
+- Add editor palette selection
+  - Allow the user to choose between a small curated set of editor color palettes
+  - Keep palette selection focused on the editor surface rather than introducing full custom application theming
+  - Make palette behavior work cleanly with syntax highlighting and dark/light modes where practical
+- Add fullscreen support
+  - Support fullscreen toggle, including an F11 shortcut
+  - Make fullscreen behavior feel native and predictable
+- Improve accessibility
+  - Improve keyboard navigation across the app
+  - Ensure controls have clear labels and accessible names
+  - Strengthen focus visibility and general UI clarity
+  - Improve contrast and readability where practical
+  - Avoid relying on color alone to communicate important state
+- Add current-line highlight support
+  - Allow the user to enable or disable highlighting of the active line
+  - Keep the visual treatment subtle, readable, and non-distracting
+  - Ensure it works well across palettes, light/dark presentation, and accessibility-focused usage
+- Add autosave support
+  - Provide a user-facing toggle for autosave behavior
+  - Define autosave conservatively and clearly so users understand when document contents are persisted
+  - Support safe handling for both saved files and unsaved documents where practical
+- Add atomic save behavior
+  - Make file saving more robust and less likely to corrupt files during failures or interruptions
+  - Ensure save flows remain safe and predictable
+- Add recovery and save-polish behavior
+  - Support recovery of unsaved work after crashes or unexpected shutdowns where practical
+  - Improve save conflict handling when files have changed on disk
+  - Make read-only or unwritable file states clearer to the user
+  - Preserve useful editing continuity such as cursor or scroll position where practical
+
+Behavior expectations:
+- The app should feel more polished and trustworthy
+- Accessibility improvements should be practical and visible in everyday use
+- Current-line highlighting should improve focus without becoming visually heavy
+- Autosave and recovery features should reduce the risk of data loss without creating confusing save behavior
+- Palette support should improve editor comfort without turning the app into a fully theme-customizable environment
+- Fullscreen should feel simple and native
+
+Technical expectations:
+- Extend the existing Rust + GTK4 + Libadwaita + GtkSourceView codebase
+- Keep editor presentation, save behavior, and recovery logic clearly separated but well integrated
+- Preserve a clean architecture and avoid one-off feature hacks
+- Keep all user-facing strings ready for gettext localization
+- Avoid overengineering and avoid scope expansion into IDE-style systems
+
+Non-goals for v8:
+- No LSP integration
+- No debugger integration
+- No terminal pane
+- No plugin system
+- No advanced refactoring tools
+- No build or run tooling
+- No full custom application theme engine
+- No major new workspace model
+
+Implementation guidance:
+- Treat v8 as a product maturity release rather than a platform shift
+- Prefer reliability, clarity, and accessibility over feature quantity
+- Keep palette support curated and editor-focused
+- Make autosave, atomic save, and recovery behavior explicit and conservative
+- Preserve GNOME-native conventions throughout the UI
+
+Deliverable:
+Implement a working v8 of the app with editor palette selection, fullscreen support, accessibility improvements, current-line highlight support, autosave, atomic save behavior, and stronger recovery/save polish, while preserving the app’s identity as a lightweight GNOME-native editor.
+```
+
+---
+
+# V9 — Lightweight Git source control sidebar
+
+> created: 2026-04-24
+> updated: 2026-04-24
+> status: planned
+> priority: high
+> type: roadmap-milestone
+
+## Purpose
+
+V9 introduces practical Git awareness and basic source control workflows through a dedicated side panel.
+
+The goal is to support repository state, changed files, per-file diffs, and local commits directly in the editor while keeping the app clearly outside the scope of a full IDE or standalone Git client.
+
+## What V9 adds
+
+* Git repository detection
+* Source control side panel
+* File status in the project tree
+* Per-file Git diff
+* Stage and unstage actions
+* Commit workflow
+* Refreshable repository state
+* Optional lightweight recent-commit history
+
+## Why this version matters
+
+V9 ties together the workspace model, diff infrastructure, and file awareness built in earlier versions. It gives the editor a practical source-control workflow without changing the product into a complex development environment.
+
+## Prompt for V9
+
+```text
+Build v9 of the GNOME desktop application in Rust by adding lightweight Git source control support through a dedicated side panel.
+
+The goal of v9 is to introduce practical, editor-friendly Git integration without turning the application into a full Git client or IDE. This version should help users understand repository state, inspect changed files, review diffs, and perform simple commit workflows directly inside the app.
+
+What v9 adds:
+- Git repository detection
+- Source control side panel
+- File status in the project tree
+- Per-file diff from Git state
+- Stage and unstage actions
+- Commit workflow
+- Refreshable repository state
+- Optional lightweight recent-commit history
+
+Scope for v9:
+- Detect whether the current folder or open file belongs to a Git repository
+- Show basic repository information such as the current branch
+- Add a separate source control side panel
+  - Present changed files clearly
+  - Keep the UI lightweight and easy to scan
+  - Make refresh behavior explicit and reliable
+- Show Git file state in the project tree where practical
+  - Modified
+  - Added
+  - Deleted
+  - Untracked
+  - Staged where appropriate
+- Support per-file diff
+  - Let the user inspect Git changes for a selected file
+  - Reuse the existing split/diff infrastructure where possible
+- Support stage and unstage actions
+  - Allow file-level staging and unstaging
+  - Keep the flows simple and predictable
+- Add commit support
+  - Provide a lightweight commit UI, either inline in the side panel or through a simple dialog
+  - Require a commit message
+  - Keep the flow focused on normal local commits
+- Add refresh state support
+  - Allow manual refresh of repository status
+  - Keep repository state synchronized with editor saves where practical
+- Add lightweight recent commit history if practical
+  - Show a small read-only list of recent commits
+  - Allow commit selection for inspection
+  - Keep history browsing simple and avoid turning it into a full log browser
+
+Behavior expectations:
+- The app should remain a lightweight GNOME editor, not a full source control client
+- Git features should support the editing workflow rather than dominate it
+- Changed files should be easy to scan and open
+- Diff views should feel integrated with the existing compare/split workflow
+- Commit actions should be simple, safe, and understandable
+
+Technical expectations:
+- Use the installed Git CLI rather than embedding a full Git implementation
+- Execute Git commands safely via subprocess calls without shell-string shortcuts
+- Run Git operations off the main UI thread
+- Parse stable machine-friendly Git output where practical
+- Handle missing Git installations and non-repository folders gracefully
+- Keep Git logic centralized in a dedicated service layer
+- Reuse the existing workspace, diff, and document architecture wherever possible
+- Keep all user-facing strings ready for gettext localization
+
+Recommended UI shape:
+- A dedicated source control side panel
+- Repository / branch information near the top
+- A refresh action
+- A commit message entry and commit action
+- A changes list with file status indicators
+- Optional recent commits section below the changes list
+
+Nice-to-have for v9:
+- Current branch display
+- Discard file changes
+- A filter or quick view for changed files only
+- A lightweight recent commits list
+
+Non-goals for v9:
+- No branch switching UI
+- No merge conflict resolution UI
+- No stash manager
+- No rebase or cherry-pick tooling
+- No push/pull UI
+- No blame view
+- No GitHub or GitLab integration
+- No full log browser
+- No advanced repository management
+
+Implementation guidance:
+- Treat Git support as a lightweight editor-side workflow
+- Reuse the existing diff system rather than building a separate comparison UI
+- Keep state transitions explicit and safe
+- Prefer clarity and reliability over feature breadth
+- Preserve GNOME-native patterns and avoid turning the side panel into a complex dashboard
+
+Deliverable:
+Implement a working v9 of the app with Git repository detection, a lightweight source control side panel, project-tree file status indicators, per-file diff, stage/unstage actions, commit support, refreshable repository state, and optional recent commit history, while preserving the app’s identity as a lightweight GNOME-native editor.
+```
+
+---
+
 # Summary of the full progression
+
+V1–V7 are complete as of 2026-04-24. V8 and V9 remain planned roadmap milestones.
 
 ## V1
 
@@ -713,6 +1020,14 @@ Add lightweight workspace navigation.
 
 Add comparison and advanced split editing workflows.
 
+## V8
+
+Improve polish, accessibility, and editing safety.
+
+## V9
+
+Add lightweight Git awareness and source control workflow support.
+
 ---
 
 # The shape of the product over time
@@ -722,8 +1037,8 @@ By the end of the roadmap, the app becomes:
 * a GNOME-native Rust editor
 * lightweight but capable
 * suitable for plain text, config files, markdown, and light code editing
-* stronger in editing and comparison than a basic notepad
-* intentionally still smaller and simpler than a full IDE
+* stronger in editing, comparison, and repository awareness than a basic notepad
+* intentionally still smaller and simpler than a full IDE or dedicated Git client
 
 ---
 
@@ -736,6 +1051,7 @@ Each version should preserve these principles:
 * Reuse workflows instead of duplicating logic
 * Prefer GNOME conventions over custom UI inventions
 * Add only the structure needed for the next step
+* Keep Git support lightweight and editor-centered
 * Stay out of IDE territory
 
 ---
