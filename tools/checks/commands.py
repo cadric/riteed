@@ -89,8 +89,9 @@ def check_xgettext_completeness(root: Path, errors: list[str]) -> None:
     if not generated:
         return
     existing = normalized_pot_messages(root)
-    missing = sorted(generated - existing)
-    extra = sorted(existing - generated)
+    sort_key = lambda item: (item[0] or "", item[1], item[2] or "")
+    missing = sorted(generated - existing, key=sort_key)
+    extra = sorted(existing - generated, key=sort_key)
     if missing:
         preview = ", ".join(repr(item[1]) for item in missing[:5])
         add(errors, f"Checked-in POT is missing extracted messages: {preview}")

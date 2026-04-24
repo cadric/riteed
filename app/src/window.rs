@@ -10,6 +10,7 @@ use crate::editor_zoom::EditorZoomController;
 use crate::error::AppError;
 use crate::settings::AppSettings;
 use crate::window_preferences::WindowPreferencesController;
+use crate::window_project::WindowProjectController;
 use crate::window_shell::WindowShell;
 use crate::workspace::{OpenSource, Workspace, WorkspaceParts};
 
@@ -25,6 +26,7 @@ pub struct Window {
     settings: AppSettings,
     workspace: Rc<Workspace>,
     _preferences: WindowPreferencesController,
+    project: WindowProjectController,
     zoom: Rc<EditorZoomController>,
 }
 
@@ -89,6 +91,7 @@ impl Window {
         });
         let zoom = EditorZoomController::new(&shell.window, &workspace, &settings);
         let preferences = WindowPreferencesController::new(&shell, &settings, &workspace, &zoom);
+        let project = WindowProjectController::new(&shell, &settings, &workspace);
 
         let window = Rc::new(Self {
             shell,
@@ -102,6 +105,7 @@ impl Window {
             settings,
             workspace,
             _preferences: preferences,
+            project,
             zoom,
         });
         window.zoom.set_editor_font(&window.settings.editor_font());
@@ -123,6 +127,7 @@ impl Window {
     }
 
     pub fn restore_session(self: &Rc<Self>) {
+        self.project.restore_before_session();
         self.workspace.restore_session();
     }
 
@@ -138,8 +143,16 @@ impl Window {
         self.workspace.request_open_files(files, source);
     }
 
+    pub fn request_open_folder_dialog(&self) {
+        self.project.request_open_folder_dialog();
+    }
+
     pub fn request_open_recent(self: &Rc<Self>, uri: &str) {
         self.workspace.request_open_recent(uri);
+    }
+
+    pub fn handle_application_open(&self, files: Vec<gio::File>) {
+        self.project.handle_application_open(files);
     }
 
     pub fn request_save(self: &Rc<Self>) {
@@ -441,6 +454,46 @@ impl Window {
                 self.shell.indent_width_row.adjustment().step_increment(),
             ),
         )
+    }
+
+    #[cfg(test)]
+    pub(crate) fn project_root_uri_for_tests(&self) -> Option<String> {
+        self.project.root_uri_for_tests()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn project_sidebar_visible_for_tests(&self) -> bool {
+        self.shell.project_split_view.shows_sidebar()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn project_action_states_for_tests(&self) -> (bool, bool, bool, bool) {
+        self.project.action_states_for_tests()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn project_tree_entry_names_for_tests(&self) -> Vec<String> {
+        self.project.tree_entry_names_for_tests()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn close_project_for_tests(&self) {
+        self.project.close_for_tests();
+    }
+
+    #[cfg(test)]
+    pub(crate) fn refresh_project_for_tests(&self) {
+        self.project.refresh_for_tests();
+    }
+
+    #[cfg(test)]
+    pub(crate) fn set_project_show_hidden_for_tests(&self, show_hidden: bool) {
+        self.project.set_show_hidden_for_tests(show_hidden);
+    }
+
+    #[cfg(test)]
+    pub(crate) fn resolve_project_symlink_for_tests(&self, file: &gio::File) {
+        self.project.resolve_symlink_for_tests(file);
     }
 
     fn install_callbacks(self: &Rc<Self>) {

@@ -23,6 +23,7 @@ pub enum OpenSource {
     AppOpen,
     Recent,
     SessionRestore,
+    ProjectTree,
     Drop,
 }
 
@@ -539,6 +540,7 @@ impl Workspace {
             .cloned()
     }
 
+    #[cfg(test)]
     pub(crate) fn find_tab_by_uri(&self, uri: &str) -> Option<Rc<EditorTab>> {
         self.state
             .borrow()

@@ -196,6 +196,16 @@ class PolicyCheckTests(unittest.TestCase):
                 commands.check_xgettext_completeness(REPO_ROOT, errors)
                 self.assertEqual(errors, [])
 
+    def test_xgettext_completeness_sorts_mixed_contexts(self) -> None:
+        from tools.checks import commands
+
+        generated = {(None, "Plain", None), ("menu item", "Open", None)}
+        with patch.object(commands, "_xgettext_messages", return_value=generated):
+            with patch("tools.checks.commands.normalized_pot_messages", return_value=set()):
+                errors: list[str] = []
+                commands.check_xgettext_completeness(REPO_ROOT, errors)
+                self.assertTrue(errors)
+
 
 if __name__ == "__main__":
     unittest.main()

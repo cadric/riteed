@@ -3,7 +3,7 @@
   "sites": [
     {
       "path": "src/settings.rs",
-      "line": 165,
+      "line": 173,
       "match": "let _changed = settings.set_string(KEY_THEME, preference.stored());",
       "kind": "gsettings-write",
       "key": "theme",
@@ -11,7 +11,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 211,
+      "line": 219,
       "match": "let _changed = settings.set_boolean(KEY_WORD_WRAP, enabled);",
       "kind": "gsettings-write",
       "key": "word-wrap",
@@ -19,7 +19,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 235,
+      "line": 243,
       "match": "let _changed = settings.set_boolean(KEY_SHOW_LINE_NUMBERS, enabled);",
       "kind": "gsettings-write",
       "key": "show-line-numbers",
@@ -27,7 +27,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 259,
+      "line": 267,
       "match": "let _changed = settings.set_boolean(KEY_SHOW_MINIMAP, enabled);",
       "kind": "gsettings-write",
       "key": "show-minimap",
@@ -35,7 +35,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 294,
+      "line": 302,
       "match": "let _changed = settings.set_boolean(KEY_INSERT_SPACES_INSTEAD_OF_TABS, enabled);",
       "kind": "gsettings-write",
       "key": "insert-spaces-instead-of-tabs",
@@ -43,7 +43,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 321,
+      "line": 329,
       "match": "let _changed = settings.set_int(KEY_TAB_WIDTH, width);",
       "kind": "gsettings-write",
       "key": "tab-width",
@@ -51,7 +51,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 348,
+      "line": 356,
       "match": "let _changed = settings.set_int(KEY_INDENT_WIDTH, width);",
       "kind": "gsettings-write",
       "key": "indent-width",
@@ -59,7 +59,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 372,
+      "line": 380,
       "match": "let _changed = settings.set_string(KEY_EDITOR_FONT, font);",
       "kind": "gsettings-write",
       "key": "editor-font",
@@ -67,7 +67,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 411,
+      "line": 419,
       "match": "let _changed_width = settings.set_int(KEY_WINDOW_WIDTH, width);",
       "kind": "gsettings-write",
       "key": "window-width",
@@ -75,7 +75,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 412,
+      "line": 420,
       "match": "let _changed_height = settings.set_int(KEY_WINDOW_HEIGHT, height);",
       "kind": "gsettings-write",
       "key": "window-height",
@@ -83,7 +83,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 442,
+      "line": 450,
       "match": "let _changed = settings.set_strv(KEY_RECENT_FILES, files);",
       "kind": "gsettings-write",
       "key": "recent-files",
@@ -91,7 +91,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 470,
+      "line": 478,
       "match": "let _changed = settings.set_strv(KEY_SESSION_FILES, files);",
       "kind": "gsettings-write",
       "key": "session-files",
@@ -99,11 +99,43 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 496,
+      "line": 504,
       "match": "let _changed = settings.set_string(KEY_SESSION_SELECTED_FILE, uri);",
       "kind": "gsettings-write",
       "key": "session-selected-file",
       "trigger": "Selecting a saved tab or externally renaming the selected saved tab triggers the existing selected-session write site outside restore mode."
+    },
+    {
+      "path": "src/settings/project.rs",
+      "line": 25,
+      "match": "let _changed = settings.set_string(KEY_PROJECT_FOLDER_URI, uri);",
+      "kind": "gsettings-write",
+      "key": "project-folder-uri",
+      "trigger": "Opening, restoring, or closing a project folder updates the remembered project folder URI."
+    },
+    {
+      "path": "src/settings/project.rs",
+      "line": 51,
+      "match": "let _changed = settings.set_string(KEY_PROJECT_FOLDER_DISPLAY_NAME, name);",
+      "kind": "gsettings-write",
+      "key": "project-folder-display-name",
+      "trigger": "Opening, restoring, or closing a project folder updates the remembered folder display name."
+    },
+    {
+      "path": "src/settings/project.rs",
+      "line": 75,
+      "match": "let _changed = settings.set_boolean(KEY_PROJECT_SIDEBAR_VISIBLE, visible);",
+      "kind": "gsettings-write",
+      "key": "project-sidebar-visible",
+      "trigger": "Toggling the project sidebar visibility or closing a project folder updates the stored sidebar visibility preference."
+    },
+    {
+      "path": "src/settings/project.rs",
+      "line": 99,
+      "match": "let _changed = settings.set_boolean(KEY_PROJECT_SHOW_HIDDEN, show_hidden);",
+      "kind": "gsettings-write",
+      "key": "project-show-hidden",
+      "trigger": "Toggling Show Hidden Files in the project sidebar updates the stored hidden-files preference."
     },
     {
       "path": "src/window_preferences.rs",

@@ -15,10 +15,14 @@ pub mod editor_tab;
 mod editor_view;
 mod editor_zoom;
 pub mod error;
+mod project_browser;
+mod project_tree;
+mod project_tree_model;
 pub mod session;
 pub mod settings;
 pub mod window;
 mod window_preferences;
+mod window_project;
 pub mod window_shell;
 pub mod workspace;
 mod workspace_close;
@@ -34,6 +38,8 @@ mod gtk_tests_v4;
 mod gtk_tests_v5;
 #[cfg(test)]
 mod gtk_tests_v5b;
+#[cfg(test)]
+mod gtk_tests_v6;
 
 use std::sync::OnceLock;
 
@@ -69,12 +75,16 @@ pub(crate) mod test_support {
 
     static GTK_TEST_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
 
-    pub(crate) fn init_gtk_for_tests() -> MutexGuard<'static, ()> {
+    pub(crate) fn lock_for_tests() -> MutexGuard<'static, ()> {
         let lock = GTK_TEST_LOCK.get_or_init(|| Mutex::new(()));
-        let guard = match lock.lock() {
+        match lock.lock() {
             Ok(guard) => guard,
             Err(poisoned) => poisoned.into_inner(),
-        };
+        }
+    }
+
+    pub(crate) fn init_gtk_for_tests() -> MutexGuard<'static, ()> {
+        let guard = lock_for_tests();
         let _gtk = gtk4::init();
         crate::bootstrap_runtime();
         let _adw = adw::init();

@@ -90,6 +90,10 @@ struct MemorySettings {
     recent_files: Vec<String>,
     session_files: Vec<String>,
     session_selected_file: String,
+    project_folder_uri: String,
+    project_folder_display_name: String,
+    project_sidebar_visible: bool,
+    project_show_hidden: bool,
     #[cfg(test)]
     write_log: Vec<String>,
 }
@@ -143,6 +147,10 @@ impl AppSettings {
                 recent_files: Vec::new(),
                 session_files: Vec::new(),
                 session_selected_file: String::new(),
+                project_folder_uri: String::new(),
+                project_folder_display_name: String::new(),
+                project_sidebar_visible: false,
+                project_show_hidden: false,
                 #[cfg(test)]
                 write_log: Vec::new(),
             }))),
@@ -552,3 +560,5 @@ fn record_memory_write(_state: &mut MemorySettings, _key: &str) {}
 
 #[cfg(test)]
 mod tests;
+
+mod project;

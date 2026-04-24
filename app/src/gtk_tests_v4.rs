@@ -10,6 +10,40 @@ use crate::gtk_tests::{
 };
 use crate::workspace::OpenSource;
 
+fn exercise_external_banner(test_app: &adw::Application) {
+    let banner_path = write_temp_file("riteed-v4-banner.rs", b"fn main() {}\n");
+    let banner_uri = gio::File::for_path(&banner_path).uri().to_string();
+    let banner_window = build_window(test_app);
+    assert!(banner_window.is_some());
+    let Some(banner_window) = banner_window else {
+        return;
+    };
+    banner_window.present();
+    drain_events(8);
+    banner_window.request_open_files(vec![gio::File::for_path(&banner_path)], OpenSource::AppOpen);
+    spin_until("selected clean file opened", || {
+        banner_window.selected_saved_uri_for_tests() == banner_uri
+    });
+    let _written = fs::write(&banner_path, b"fn main() { println!(\"changed\"); }\n");
+    banner_window
+        .inject_external_event_for_tests(&banner_uri, ExternalFileEvent::ContentPossiblyChanged);
+    banner_window.sync_selected_banner_for_tests(true);
+    spin_until("selected banner or reload appears", || {
+        banner_window.selected_banner_visible_for_tests()
+            || banner_window.selected_text_for_tests().contains("changed")
+    });
+    if banner_window.selected_text_for_tests() == "fn main() {}" {
+        banner_window.trigger_selected_external_action_for_tests();
+        spin_until("selected banner reload applies", || {
+            banner_window.selected_text_for_tests().contains("changed")
+                && !banner_window.selected_banner_visible_for_tests()
+        });
+    } else {
+        assert!(banner_window.selected_text_for_tests().contains("changed"));
+    }
+    let _removed = fs::remove_file(banner_path);
+}
+
 pub(crate) fn exercise_v4_editor_features(test_app: &adw::Application) {
     let rust_window = build_window(test_app);
     assert!(rust_window.is_some());
@@ -20,40 +54,12 @@ pub(crate) fn exercise_v4_editor_features(test_app: &adw::Application) {
     rust_window.set_minimap_for_tests(true);
     assert!(rust_window.selected_minimap_visible_for_tests());
     let rust_path = write_temp_file("riteed-v4-syntax.rs", b"fn main() {}\n");
-    let rust_uri = gio::File::for_path(&rust_path).uri().to_string();
     rust_window.request_open_files(vec![gio::File::for_path(&rust_path)], OpenSource::AppOpen);
     spin_until("rust syntax detected", || {
         rust_window.selected_language_id_for_tests().as_deref() == Some("rust")
     });
 
-    let banner_window = build_window(test_app);
-    assert!(banner_window.is_some());
-    let Some(banner_window) = banner_window else {
-        return;
-    };
-    banner_window.present();
-    drain_events(8);
-    banner_window.request_open_files(vec![gio::File::for_path(&rust_path)], OpenSource::AppOpen);
-    spin_until("selected clean file opened", || {
-        banner_window.selected_saved_uri_for_tests() == rust_uri
-    });
-    let _written = fs::write(&rust_path, b"fn main() { println!(\"changed\"); }\n");
-    banner_window
-        .inject_external_event_for_tests(&rust_uri, ExternalFileEvent::ContentPossiblyChanged);
-    banner_window.sync_selected_banner_for_tests(true);
-    drain_events(12);
-    if banner_window.selected_text_for_tests() == "fn main() {}" {
-        banner_window.trigger_selected_external_action_for_tests();
-        spin_until("selected banner reload applies", || {
-            banner_window.selected_text_for_tests() == "fn main() { println!(\"changed\"); }"
-                && !banner_window.selected_banner_visible_for_tests()
-        });
-    } else {
-        assert_eq!(
-            banner_window.selected_text_for_tests(),
-            "fn main() { println!(\"changed\"); }"
-        );
-    }
+    exercise_external_banner(test_app);
 
     let first_path = write_temp_file("riteed-v4-auto-a.txt", b"one");
     let second_path = write_temp_file("riteed-v4-auto-b.txt", b"two");

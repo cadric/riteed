@@ -15,7 +15,7 @@ struct OpenRequest {
     index: usize,
     failures: usize,
     successes: usize,
-    selected_uri: Option<String>,
+    selected_file: Option<gio::File>,
     restored_selected_page: Option<adw::TabPage>,
 }
 
@@ -68,7 +68,7 @@ pub(crate) fn open_files_internal(
         index: 0,
         failures: 0,
         successes: 0,
-        selected_uri,
+        selected_file: selected_uri.map(|uri| gio::File::for_uri(&uri)),
         restored_selected_page: None,
     }));
     process_open_request(workspace, request);
@@ -90,15 +90,16 @@ fn process_open_request(workspace: &Rc<Workspace>, request: Rc<RefCell<OpenReque
         return;
     };
 
-    if let Some(existing) = workspace.find_tab_by_uri(&desired_uri) {
+    if let Some(existing) = find_tab_by_file(workspace, &file) {
         request.borrow_mut().successes += 1;
+        let existing_uri = existing.uri().unwrap_or_else(|| desired_uri.clone());
         if source != OpenSource::SessionRestore {
-            workspace.remember_recent_uri(&desired_uri);
+            workspace.remember_recent_uri(&existing_uri);
         } else if request
             .borrow()
-            .selected_uri
-            .as_deref()
-            .is_some_and(|uri| uri == desired_uri)
+            .selected_file
+            .as_ref()
+            .is_some_and(|wanted| wanted.equal(&file))
         {
             request.borrow_mut().restored_selected_page = existing.page();
         }
@@ -130,9 +131,9 @@ fn process_open_request(workspace: &Rc<Workspace>, request: Rc<RefCell<OpenReque
                             workspace.remember_recent_uri(&uri);
                         } else if request
                             .borrow()
-                            .selected_uri
-                            .as_deref()
-                            .is_some_and(|wanted| wanted == uri.as_str())
+                            .selected_file
+                            .as_ref()
+                            .is_some_and(|wanted| wanted.equal(&gio::File::for_uri(&uri)))
                         {
                             request.borrow_mut().restored_selected_page = tab_for_result.page();
                         }
@@ -174,7 +175,8 @@ fn finish_open_request(workspace: &Rc<Workspace>, request: &Rc<RefCell<OpenReque
                 request.restored_selected_page.clone(),
             );
         }
-        OpenSource::Dialog | OpenSource::AppOpen | OpenSource::Recent => {}
+        OpenSource::Dialog | OpenSource::AppOpen | OpenSource::Recent | OpenSource::ProjectTree => {
+        }
     }
 }
 
@@ -230,9 +232,28 @@ fn handle_open_failure(
                 workspace.prune_recent_uri(&file.uri());
             }
         }
-        OpenSource::Dialog | OpenSource::AppOpen => dialogs::present_error(&workspace.shell, error),
+        OpenSource::Dialog | OpenSource::AppOpen | OpenSource::ProjectTree => {
+            dialogs::present_error(&workspace.shell, error);
+        }
         OpenSource::SessionRestore | OpenSource::Drop => {}
     }
+}
+
+fn find_tab_by_file(
+    workspace: &Workspace,
+    file: &gio::File,
+) -> Option<Rc<crate::editor_tab::EditorTab>> {
+    workspace
+        .state
+        .borrow()
+        .tabs
+        .iter()
+        .find(|tab| {
+            tab.uri()
+                .as_deref()
+                .is_some_and(|uri| file.equal(&gio::File::for_uri(uri)))
+        })
+        .cloned()
 }
 
 fn apply_text_filters(dialog: &gtk4::FileDialog) {

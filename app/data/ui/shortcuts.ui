@@ -25,6 +25,12 @@
             </child>
             <child>
               <object class="GtkShortcutsShortcut">
+                <property name="accelerator">&lt;Ctrl&gt;&lt;Shift&gt;o</property>
+                <property name="title" translatable="yes">Open Folder</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
                 <property name="accelerator">&lt;Ctrl&gt;s</property>
                 <property name="title" translatable="yes">Save Selected Tab</property>
               </object>
@@ -120,6 +126,17 @@
               <object class="GtkShortcutsShortcut">
                 <property name="accelerator">&lt;Ctrl&gt;0</property>
                 <property name="title" translatable="yes">Reset Zoom</property>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="GtkShortcutsGroup">
+            <property name="title" translatable="yes">Project</property>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="accelerator">F5</property>
+                <property name="title" translatable="yes">Refresh Project Tree</property>
               </object>
             </child>
           </object>

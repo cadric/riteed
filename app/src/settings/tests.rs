@@ -52,6 +52,10 @@ fn memory_backend_roundtrips_values() {
     ]);
     settings.set_session_files(&[String::from("file:///tmp/session.txt")]);
     settings.set_session_selected_file("file:///tmp/session.txt");
+    settings.set_project_folder_uri("file:///tmp/project");
+    settings.set_project_folder_display_name("Project");
+    settings.set_project_sidebar_visible(true);
+    settings.set_project_show_hidden(true);
 
     assert_eq!(settings.theme(), ThemePreference::Dark);
     assert!(settings.word_wrap());
@@ -74,6 +78,10 @@ fn memory_backend_roundtrips_values() {
         vec![String::from("file:///tmp/session.txt")]
     );
     assert_eq!(settings.session_selected_file(), "file:///tmp/session.txt");
+    assert_eq!(settings.project_folder_uri(), "file:///tmp/project");
+    assert_eq!(settings.project_folder_display_name(), "Project");
+    assert!(settings.project_sidebar_visible());
+    assert!(settings.project_show_hidden());
 }
 
 #[test]
@@ -81,9 +89,14 @@ fn memory_backend_records_writes_for_tests() {
     let settings = AppSettings::new_for_tests();
     assert!(settings.write_log_for_tests().is_empty());
     settings.set_tab_width(6);
+    settings.set_project_show_hidden(true);
     settings.set_editor_font("Monospace 11");
     assert_eq!(
         settings.write_log_for_tests(),
-        vec![String::from("tab-width"), String::from("editor-font")]
+        vec![
+            String::from("tab-width"),
+            String::from("project-show-hidden"),
+            String::from("editor-font"),
+        ]
     );
 }

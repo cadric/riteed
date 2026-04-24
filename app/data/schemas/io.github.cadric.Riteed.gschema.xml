@@ -68,5 +68,25 @@
       <summary>Selected Session File</summary>
       <description>Stores the URI of the selected saved tab. An empty string means no saved tab is selected.</description>
     </key>
+    <key name="project-folder-uri" type="s">
+      <default>''</default>
+      <summary>Project Folder URI</summary>
+      <description>Stores the last selected project folder as a URI. An empty string means no folder is remembered.</description>
+    </key>
+    <key name="project-folder-display-name" type="s">
+      <default>''</default>
+      <summary>Project Folder Display Name</summary>
+      <description>Stores the display name for the remembered project folder.</description>
+    </key>
+    <key name="project-sidebar-visible" type="b">
+      <default>false</default>
+      <summary>Project Sidebar Visible</summary>
+      <description>Controls whether the project sidebar is shown when a project folder is active.</description>
+    </key>
+    <key name="project-show-hidden" type="b">
+      <default>false</default>
+      <summary>Show Hidden Files</summary>
+      <description>Controls whether the project tree shows dot-prefixed hidden files and folders.</description>
+    </key>
   </schema>
 </schemalist>

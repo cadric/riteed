@@ -16,7 +16,7 @@
       "line": 4,
       "match": "<object class=\"GtkShortcutsWindow\" id=\"shortcuts_window\">",
       "smallest_width": 360,
-      "adaptive_pattern": "Standard shortcuts window grouped into file, tab, search, view, and app actions.",
+      "adaptive_pattern": "Standard shortcuts window grouped into file, tab, search, view, project, and app actions (including Open Folder and Refresh Project Tree).",
       "collapse_behavior": "Shortcut groups continue stacking in reading order as width tightens.",
       "copy_reviewed": true,
       "a11y_reviewed": true
@@ -26,14 +26,14 @@
       "line": 5,
       "match": "<object class=\"AdwApplicationWindow\" id=\"window\">",
       "smallest_width": 360,
-      "adaptive_pattern": "Single-window editor shell with a header bar, a runtime-inserted search bar above the tabs, per-tab banners for ongoing file state, optional minimaps inside tab content, a tabbed workspace, and a bottom status bar whose format menu also exposes zoom actions.",
-      "collapse_behavior": "Header actions stay reachable while the search rows stack above the tabs, per-tab banners stay above editor content, the minimap remains a narrow fixed strip when enabled without taking over the layout, and the single status-bar format surface keeps format and zoom actions reachable at narrow widths.",
+      "adaptive_pattern": "Single-window editor shell with a header bar, an overlay project sidebar for folder navigation, a runtime-inserted search bar above the tabs, per-tab banners for ongoing file state, optional minimaps inside tab content, a tabbed workspace, and a bottom status bar whose format menu also exposes zoom actions.",
+      "collapse_behavior": "Header actions stay reachable while the project sidebar can be shown or hidden without displacing the editor, the search rows stack above the tabs, per-tab banners stay above editor content, the minimap remains a narrow fixed strip when enabled without taking over the layout, and the single status-bar format surface keeps format and zoom actions reachable at narrow widths.",
       "copy_reviewed": true,
       "a11y_reviewed": true
     },
     {
       "path": "data/ui/window.ui",
-      "line": 28,
+      "line": 35,
       "match": "<object class=\"AdwWindowTitle\" id=\"window_title\">",
       "smallest_width": 320,
       "adaptive_pattern": "Centered window title reflects the selected tab title and subtitle while search, banners, and status chrome are added outside the title area.",

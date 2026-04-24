@@ -8,7 +8,6 @@ use libadwaita::prelude::*;
 
 use crate::dialogs;
 use crate::window::Window;
-use crate::workspace::OpenSource;
 use crate::{APP_ID, APP_NAME};
 
 pub(crate) struct AppState {
@@ -80,6 +79,7 @@ pub(crate) fn ensure_window_for_tests(
 fn install_accels(app: &adw::Application) {
     app.set_accels_for_action("app.new", &["<Ctrl>n"]);
     app.set_accels_for_action("app.open", &["<Ctrl>o"]);
+    app.set_accels_for_action("app.open-folder", &["<Ctrl><Shift>o"]);
     app.set_accels_for_action("app.open-recent", &[]);
     app.set_accels_for_action("win.save", &["<Ctrl>s"]);
     app.set_accels_for_action("win.save-as", &["<Ctrl><Shift>s"]);
@@ -88,6 +88,7 @@ fn install_accels(app: &adw::Application) {
     app.set_accels_for_action("win.replace", &["<Ctrl>h"]);
     app.set_accels_for_action("win.find-next", &["F3"]);
     app.set_accels_for_action("win.find-prev", &["<Shift>F3"]);
+    app.set_accels_for_action("win.refresh-project-tree", &["F5"]);
     app.set_accels_for_action(
         "win.zoom-in",
         &["<Ctrl>plus", "<Ctrl>equal", "<Ctrl>KP_Add"],
@@ -101,6 +102,15 @@ fn install_accels(app: &adw::Application) {
 }
 
 fn install_actions(app: &adw::Application, state: &Rc<RefCell<AppState>>, factory: WindowFactory) {
+    install_file_actions(app, state, factory);
+    install_app_actions(app, state, factory);
+}
+
+fn install_file_actions(
+    app: &adw::Application,
+    state: &Rc<RefCell<AppState>>,
+    factory: WindowFactory,
+) {
     let new_action = gio::SimpleAction::new("new", None);
     let app_clone = app.clone();
     let state_clone = Rc::clone(state);
@@ -130,6 +140,20 @@ fn install_actions(app: &adw::Application, state: &Rc<RefCell<AppState>>, factor
     });
     app.add_action(&open_action);
 
+    let open_folder_action = gio::SimpleAction::new("open-folder", None);
+    let app_clone = app.clone();
+    let state_clone = Rc::clone(state);
+    open_folder_action.connect_activate(move |_, _| {
+        if let Some((window, created)) = ensure_window(&app_clone, &state_clone, factory) {
+            if created {
+                window.ensure_default_tab();
+            }
+            window.present();
+            window.request_open_folder_dialog();
+        }
+    });
+    app.add_action(&open_folder_action);
+
     let open_recent_action = gio::SimpleAction::new("open-recent", Some(glib::VariantTy::STRING));
     let app_clone = app.clone();
     let state_clone = Rc::clone(state);
@@ -146,7 +170,13 @@ fn install_actions(app: &adw::Application, state: &Rc<RefCell<AppState>>, factor
         }
     });
     app.add_action(&open_recent_action);
+}
 
+fn install_app_actions(
+    app: &adw::Application,
+    state: &Rc<RefCell<AppState>>,
+    factory: WindowFactory,
+) {
     let preferences_action = gio::SimpleAction::new("preferences", None);
     let app_clone = app.clone();
     let state_clone = Rc::clone(state);
@@ -238,7 +268,7 @@ fn install_lifecycle(
             if items.is_empty() {
                 window.present();
             } else {
-                window.request_open_files(items, OpenSource::AppOpen);
+                window.handle_application_open(items);
                 window.present();
             }
         }

@@ -7,6 +7,10 @@ pub(crate) fn build_primary_menu(recent_files: &[String]) -> gio::Menu {
     let menu = gio::Menu::new();
     menu.append(Some(&pgettext("menu item", "New Tab")), Some("app.new"));
     menu.append(Some(&pgettext("menu item", "Open")), Some("app.open"));
+    menu.append(
+        Some(&pgettext("menu item", "Open Folder")),
+        Some("app.open-folder"),
+    );
     menu.append(Some(&pgettext("menu item", "Search")), Some("win.search"));
 
     if !recent_files.is_empty() {
@@ -30,6 +34,25 @@ pub(crate) fn build_primary_menu(recent_files: &[String]) -> gio::Menu {
         Some("win.zoom-reset"),
     );
     menu.append_submenu(Some(&pgettext("menu item", "Zoom")), &zoom_menu);
+
+    let project_menu = gio::Menu::new();
+    project_menu.append(
+        Some(&pgettext("menu item", "Project Sidebar")),
+        Some("win.project-sidebar-visible"),
+    );
+    project_menu.append(
+        Some(&pgettext("menu item", "Show Hidden Files")),
+        Some("win.project-show-hidden"),
+    );
+    project_menu.append(
+        Some(&pgettext("menu item", "Refresh Project Tree")),
+        Some("win.refresh-project-tree"),
+    );
+    project_menu.append(
+        Some(&pgettext("menu item", "Close Folder")),
+        Some("win.close-folder"),
+    );
+    menu.append_submenu(Some(&pgettext("menu item", "Project")), &project_menu);
 
     menu.append(
         Some(&pgettext("menu item", "Keyboard Shortcuts")),

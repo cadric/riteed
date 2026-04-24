@@ -1,0 +1,102 @@
+msgid "The file changed again on disk and could not be overwritten."
+msgstr ""
+
+msgid "The file is too large to open safely."
+msgstr ""
+
+msgid "The previous project folder could not be restored."
+msgstr ""
+
+msgid "Theme Preference"
+msgstr ""
+
+msgctxt "external banner"
+msgid "This File Changed on Disk."
+msgstr ""
+
+msgctxt "external banner"
+msgid "This File Is Missing on Disk."
+msgstr ""
+
+msgid "This document contains characters that cannot be saved in the current text encoding."
+msgstr ""
+
+msgid "This document has unsaved changes."
+msgstr ""
+
+msgid "This file changed on disk while you also have unsaved changes."
+msgstr ""
+
+msgid "This file changed on disk. Saving now will replace the external version."
+msgstr ""
+
+msgid "Unable to Build the Window"
+msgstr ""
+
+msgid "Unable to Open Dropped Files"
+msgstr ""
+
+msgctxt "error title"
+msgid "Unable to Open Help"
+msgstr ""
+
+msgid "Unable to Open the File"
+msgstr ""
+
+msgid "Unable to Save the File"
+msgstr ""
+
+msgctxt "line ending menu"
+msgid "Unix (LF)"
+msgstr ""
+
+msgctxt "document title"
+msgid "Untitled"
+msgstr ""
+
+msgctxt "save file name"
+msgid "Untitled.txt"
+msgstr ""
+
+msgid "Use New Tab to start another document, and Open to load local plain text files into separate tabs with their saved encoding and line endings."
+msgstr ""
+
+msgid "Window Height"
+msgstr ""
+
+msgid "Window Width"
+msgstr ""
+
+msgctxt "line ending menu"
+msgid "Windows (CRLF)"
+msgstr ""
+
+msgid "Word Wrap"
+msgstr ""
+
+msgctxt "menu item"
+msgid "Zoom"
+msgstr ""
+
+msgctxt "status zoom"
+msgid "Zoom"
+msgstr ""
+
+msgctxt "menu item"
+msgid "Zoom In"
+msgstr ""
+
+msgctxt "zoom action"
+msgid "Zoom In"
+msgstr ""
+
+msgctxt "menu item"
+msgid "Zoom Out"
+msgstr ""
+
+msgctxt "zoom action"
+msgid "Zoom Out"
+msgstr ""
+
+msgid "text;editor;code;markdown;config;"
+msgstr ""

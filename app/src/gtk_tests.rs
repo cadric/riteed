@@ -18,7 +18,7 @@ use crate::window::Window;
 use crate::workspace::OpenSource;
 
 pub(crate) fn spin_until(label: &str, done: impl Fn() -> bool) {
-    for _ in 0..240 {
+    for _ in 0..600 {
         while glib::MainContext::default().iteration(false) {}
         if done() {
             return;
@@ -33,6 +33,15 @@ pub(crate) fn drain_events(rounds: usize) {
     for _ in 0..rounds {
         while glib::MainContext::default().iteration(false) {}
     }
+}
+
+pub(crate) fn wait_millis(label: &str, millis: u64) {
+    let fired = std::rc::Rc::new(std::cell::Cell::new(false));
+    let fired_for_callback = std::rc::Rc::clone(&fired);
+    let _source = glib::timeout_add_local_once(Duration::from_millis(millis), move || {
+        fired_for_callback.set(true);
+    });
+    spin_until(label, || fired.get());
 }
 
 pub(crate) fn build_window(app: &adw::Application) -> Option<std::rc::Rc<Window>> {
@@ -540,4 +549,6 @@ fn gtk_surfaces_and_editor_flow_work() {
     crate::gtk_tests_v4::exercise_v4_editor_features(&test_app);
     crate::gtk_tests_v5::exercise_v5_format_io(&test_app);
     crate::gtk_tests_v5b::exercise_v5b_editor_controls(&test_app);
+    crate::gtk_tests_v6::exercise_v6_project_navigation(&test_app);
+    crate::gtk_tests_v6::exercise_v6_project_restore(&test_app);
 }

@@ -24,6 +24,13 @@
                 <property name="tooltip-text" translatable="yes">Open Text Files</property>
               </object>
             </child>
+            <child type="start">
+              <object class="GtkToggleButton">
+                <property name="action-name">win.project-sidebar-visible</property>
+                <property name="icon-name">sidebar-show-symbolic</property>
+                <property name="tooltip-text" translatable="yes">Project Sidebar</property>
+              </object>
+            </child>
             <property name="title-widget">
               <object class="AdwWindowTitle" id="window_title">
                 <property name="title" translatable="yes">Untitled</property>
@@ -48,8 +55,12 @@
         <property name="content">
           <object class="AdwToastOverlay" id="toast_overlay">
             <property name="child">
-              <object class="GtkBox" id="workspace_box">
-                <property name="orientation">vertical</property>
+              <object class="AdwOverlaySplitView" id="project_split_view">
+                <property name="content">
+                  <object class="GtkBox" id="workspace_box">
+                    <property name="orientation">vertical</property>
+                  </object>
+                </property>
               </object>
             </property>
           </object>

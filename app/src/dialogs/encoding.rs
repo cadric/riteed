@@ -419,6 +419,7 @@ mod tests {
 
     #[test]
     fn test_queues_roundtrip() {
+        let _guard = crate::test_support::lock_for_tests();
         queue_decode_failure_responses_for_tests(&[DecodeFailureResponse::ChooseEncoding]);
         assert_eq!(
             take_decode_failure_response_for_tests(),

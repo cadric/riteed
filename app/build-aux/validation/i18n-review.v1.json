@@ -65,11 +65,60 @@
       "resolution": "This short visible status tag appears immediately after the current document name in the bottom status bar, so its state meaning is explicit from placement."
     },
     {
+      "path": "src/project_browser.rs",
+      "line": 21,
+      "match": "gettext(\"Project\")",
+      "kind": "i18n-short-string",
+      "resolution": "This short title labels the project sidebar header, where it is immediately followed by folder navigation controls."
+    },
+    {
+      "path": "src/project_browser.rs",
+      "line": 29,
+      "match": "gettext(\"Show Hidden Files\")",
+      "kind": "i18n-short-string",
+      "resolution": "This tooltip and accessible label belongs to the project sidebar toggle that filters dot-prefixed files and folders, so the action meaning is explicit from placement."
+    },
+    {
+      "path": "src/project_browser.rs",
+      "line": 38,
+      "match": "gettext(\"Refresh Project Tree\")",
+      "kind": "i18n-short-string",
+      "resolution": "This tooltip and accessible label belongs to the refresh button in the project sidebar header, where it sits next to the folder tree."
+    },
+    {
+      "path": "src/project_browser.rs",
+      "line": 47,
+      "match": "gettext(\"Close Folder\")",
+      "kind": "i18n-short-string",
+      "resolution": "This tooltip and accessible label belongs to the close-folder button in the project sidebar header, so the action target is unambiguous."
+    },
+    {
+      "path": "src/project_tree.rs",
+      "line": 141,
+      "match": "gettext(\"Loading...\")",
+      "kind": "i18n-short-string",
+      "resolution": "This short inline row label is shown beside a spinner while the project tree enumerates a directory."
+    },
+    {
       "path": "src/window_preferences.rs",
       "line": 409,
       "match": "font_dialog.set_title(&gettext(\"Choose Editor Font\"));",
       "kind": "i18n-short-string",
       "resolution": "This short dialog title appears at the top of the font chooser and the accompanying copy explains that the selection affects only the editor font."
+    },
+    {
+      "path": "src/window_project.rs",
+      "line": 516,
+      "match": "gettext(\"Project\")",
+      "kind": "i18n-short-string",
+      "resolution": "This short fallback title is used when closing a project folder so the sidebar still has a clear header label."
+    },
+    {
+      "path": "src/window_project.rs",
+      "line": 534,
+      "match": "gettext(\"Project\")",
+      "kind": "i18n-short-string",
+      "resolution": "This short fallback title is used when no project folder is active (including restore failure), keeping the sidebar label consistent."
     }
   ]
 }

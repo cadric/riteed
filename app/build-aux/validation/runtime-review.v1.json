@@ -3,7 +3,7 @@
   "sites": [
     {
       "path": "src/app.rs",
-      "line": 24,
+      "line": 23,
       "match": "state: Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The application controller owns the shared single-window lifecycle state.",
@@ -11,7 +11,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 66,
+      "line": 65,
       "match": "pub(crate) fn install_for_tests(app: &adw::Application, state: &Rc<RefCell<AppState>>) {",
       "kind": "runtime-shared-state",
       "ownership": "GTK tests reuse the shared application-state slot.",
@@ -19,7 +19,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 75,
+      "line": 74,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The test-only window helper borrows the shared app-state slot.",
@@ -27,7 +27,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 103,
+      "line": 104,
       "match": "fn install_actions(app: &adw::Application, state: &Rc<RefCell<AppState>>, factory: WindowFactory) {",
       "kind": "runtime-shared-state",
       "ownership": "App-scoped actions borrow shared application state.",
@@ -35,7 +35,23 @@
     },
     {
       "path": "src/app.rs",
-      "line": 207,
+      "line": 111,
+      "match": "state: &Rc<RefCell<AppState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "File actions borrow shared application state.",
+      "justification": "New, open, open-folder, and recent-open actions need the same active-window slot as the rest of application startup."
+    },
+    {
+      "path": "src/app.rs",
+      "line": 177,
+      "match": "state: &Rc<RefCell<AppState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Application utility actions borrow shared application state.",
+      "justification": "Preferences, help, about, and quit actions must present against the current window or create one through the central window helper."
+    },
+    {
+      "path": "src/app.rs",
+      "line": 237,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "Activation and open lifecycle callbacks borrow shared application state.",
@@ -43,7 +59,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 250,
+      "line": 280,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The window-creation helper updates shared application state.",
@@ -195,7 +211,7 @@
     },
     {
       "path": "src/workspace.rs",
-      "line": 52,
+      "line": 53,
       "match": "pub(crate) state: RefCell<WorkspaceState>,",
       "kind": "runtime-shared-state",
       "ownership": "The workspace owns tab collection, recent/session caches, restore gating, and active close flow.",
@@ -211,11 +227,195 @@
     },
     {
       "path": "src/workspace_open.rs",
-      "line": 156,
+      "line": 157,
       "match": "fn finish_open_request(workspace: &Rc<Workspace>, request: &Rc<RefCell<OpenRequest>>) {",
       "kind": "runtime-shared-state",
       "ownership": "The open-request finisher reads shared batch state.",
       "justification": "Completion handling needs the accumulated batch results to decide between restore selection, aggregated toasts, and fallback UI state."
+    },
+    {
+      "path": "src/project_tree_model.rs",
+      "line": 36,
+      "match": "state: Rc<RefCell<ModelState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The project tree model owns shared lazy-loading state.",
+      "justification": "Directory enumeration and refresh callbacks need a generation counter, hidden filter state, active root, and cancellables shared across tree expansions."
+    },
+    {
+      "path": "src/project_tree_model.rs",
+      "line": 236,
+      "match": "state: &Rc<RefCell<ModelState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Directory-load helpers borrow shared tree model state.",
+      "justification": "Async enumeration must consult the current generation and hidden filter and cancel stale callbacks when the root changes."
+    },
+    {
+      "path": "src/project_tree_model.rs",
+      "line": 226,
+      "match": "state: Rc<RefCell<ModelState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Enumerator batching carries shared tree state across async callbacks.",
+      "justification": "Batch iteration needs generation checks and cancellable ownership without global variables."
+    },
+    {
+      "path": "src/project_tree_model.rs",
+      "line": 380,
+      "match": "state: &Rc<RefCell<ModelState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Enumeration error handling uses shared tree state.",
+      "justification": "Error callbacks must ignore stale generations and update the correct list store without racing refresh operations."
+    },
+    {
+      "path": "src/window_project.rs",
+      "line": 62,
+      "match": "state: Rc<RefCell<ProjectState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The window project controller owns shared project sidebar state.",
+      "justification": "Sidebar actions, async folder open/restore, refresh, and tab→tree reveal must coordinate through one mutable state cell."
+    },
+    {
+      "path": "src/window_project.rs",
+      "line": 83,
+      "match": "let tree_activation_handler: Rc<RefCell<Option<TreeActivationHandler>>> =",
+      "kind": "runtime-shared-state",
+      "ownership": "Tree activation wiring stores one late-bound handler closure.",
+      "justification": "Activation callbacks need the project state Rc after construction without creating a reference cycle between the tree and controller."
+    },
+    {
+      "path": "src/window_project.rs",
+      "line": 342,
+      "match": "fn sync_actions_for_root(state: &Rc<RefCell<ProjectState>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "Root-action synchronization borrows shared project state.",
+      "justification": "Root transitions must consistently enable/disable window actions and sidebar visibility from one state source of truth."
+    },
+    {
+      "path": "src/window_project.rs",
+      "line": 355,
+      "match": "fn open_file_from_tree(state: &Rc<RefCell<ProjectState>>, file: gio::File) {",
+      "kind": "runtime-shared-state",
+      "ownership": "Tree activation routing borrows shared project state.",
+      "justification": "Opening from the project tree needs access to the shared workspace handle and consistent open-source behavior."
+    },
+    {
+      "path": "src/window_project.rs",
+      "line": 363,
+      "match": "state: &Rc<RefCell<ProjectState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Root-change helpers borrow shared project state.",
+      "justification": "Opening/restoring/replacing the project root must cancel in-flight async operations and update runtime state consistently."
+    },
+    {
+      "path": "src/window_project.rs",
+      "line": 499,
+      "match": "fn close_root(state: &Rc<RefCell<ProjectState>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "Close-folder handling mutates shared project state.",
+      "justification": "Closing a project folder cancels async work, clears reveal state, resets the sidebar model, and updates remembered settings."
+    },
+    {
+      "path": "src/window_project.rs",
+      "line": 523,
+      "match": "fn sync_root_none(state: &Rc<RefCell<ProjectState>>, clear_settings: bool) {",
+      "kind": "runtime-shared-state",
+      "ownership": "No-root synchronization mutates shared project state.",
+      "justification": "Restore failures and first-run state need a single path to reset runtime state without clearing remembered settings unless requested."
+    },
+    {
+      "path": "src/window_project.rs",
+      "line": 545,
+      "match": "fn refresh_tree(state: &Rc<RefCell<ProjectState>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "Refresh handling borrows shared project state.",
+      "justification": "Manual refresh needs the active root, expansion snapshotting, and reveal coordination without spawning background threads."
+    },
+    {
+      "path": "src/window_project.rs",
+      "line": 479,
+      "match": "fn set_sidebar_visible_for_root(state: &Rc<RefCell<ProjectState>>, visible: bool) {",
+      "kind": "runtime-shared-state",
+      "ownership": "Root-change sidebar visibility borrows shared project state after mutation is complete.",
+      "justification": "Split-view notify handlers can re-enter project state, so visibility changes run after root mutation releases its mutable borrow."
+    },
+    {
+      "path": "src/window_project/app_open.rs",
+      "line": 19,
+      "match": "pub(super) fn handle_application_open(state: &Rc<RefCell<ProjectState>>, files: Vec<gio::File>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "App-open handling borrows shared project state.",
+      "justification": "GApplication::open classification needs access to project state so a folder input can replace the active project root."
+    },
+    {
+      "path": "src/window_project/app_open.rs",
+      "line": 33,
+      "match": "state: &Rc<RefCell<ProjectState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "App-open request processing borrows shared project state.",
+      "justification": "Async file-type probes must enqueue follow-up callbacks against the same project state to apply root replacement and toasts safely."
+    },
+    {
+      "path": "src/window_project/app_open.rs",
+      "line": 34,
+      "match": "request: Rc<RefCell<AppOpenRequest>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The app-open request accumulates classification results across async callbacks.",
+      "justification": "Mixed directory/file opens must collect results before deciding which folder to activate and which files to open as tabs."
+    },
+    {
+      "path": "src/window_project/app_open.rs",
+      "line": 87,
+      "match": "state: &Rc<RefCell<ProjectState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "App-open finishing borrows shared project state.",
+      "justification": "Completion logic needs shared access to the active workspace and toast overlay to apply the aggregated open decisions."
+    },
+    {
+      "path": "src/window_project/app_open.rs",
+      "line": 88,
+      "match": "request: &Rc<RefCell<AppOpenRequest>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The app-open finisher reads the accumulated request state.",
+      "justification": "Finishing needs the collected directory/file lists to open the first folder and then open any remaining files as tabs."
+    },
+    {
+      "path": "src/window_project/reveal.rs",
+      "line": 19,
+      "match": "pub(super) fn cancel_reveal(state: &Rc<RefCell<ProjectState>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "Reveal cancellation borrows shared project state.",
+      "justification": "Tab→tree synchronization needs a cancellable, generation-checked reveal path so selection changes cannot race root changes."
+    },
+    {
+      "path": "src/window_project/reveal.rs",
+      "line": 26,
+      "match": "pub(super) fn schedule_restore_expanded(state: &Rc<RefCell<ProjectState>>, expanded: Vec<String>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "Expanded-row restore borrows shared project state.",
+      "justification": "Refresh and show-hidden toggles need to restore expansion state opportunistically while the lazy model repopulates."
+    },
+    {
+      "path": "src/window_project/reveal.rs",
+      "line": 48,
+      "match": "pub(super) fn sync_reveal_for_selection(state: &Rc<RefCell<ProjectState>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "Reveal synchronization borrows shared project state.",
+      "justification": "Selected-tab changes need one coordinated place to start/cancel reveal and to clear selection when files are outside the active root."
+    },
+    {
+      "path": "src/window_project/reveal.rs",
+      "line": 80,
+      "match": "fn start_reveal(state: &Rc<RefCell<ProjectState>>, root: &gio::File, target: &gio::File) {",
+      "kind": "runtime-shared-state",
+      "ownership": "Reveal polling mutates shared project state.",
+      "justification": "Lazy directory expansion requires a generation-checked, cancellable reveal loop that can be interrupted by root changes and refreshes."
+    },
+    {
+      "path": "src/window_project/symlink.rs",
+      "line": 15,
+      "match": "pub(super) fn handle_symlink_activation(state: &Rc<RefCell<ProjectState>>, file: &gio::File) {",
+      "kind": "runtime-shared-state",
+      "ownership": "Symlink activation borrows shared project state.",
+      "justification": "Symlink resolution needs cancellable state and toast deduplication shared with other sidebar operations."
     }
   ]
 }
