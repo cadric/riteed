@@ -9,7 +9,9 @@
 - Added the V8 appearance panel polish: an icon-only header-bar Appearance button for app appearance, visual editor palette previews, and current-line highlight while keeping deeper editor options in Preferences.
 - Replaced the fragile `GtkPopover` Appearance path with a small libadwaita visual panel presented directly from the header-bar button.
 - Added an explicit visible close button to the Appearance panel because Escape-only dismissal was not discoverable enough.
-- Built and installed the local user Flatpak for testing; current installed user commit is `1e8216f1e52bab562067ee1b624a88e9b267514895038721f411d3fe55efcabb`.
+- Added document-portal host-path display resolution so status/title surfaces, Recent Files, and Compare show user-facing paths while keeping portal paths for actual I/O.
+- Added deterministic indentation behavior coverage for tab insertion, space indentation, indent width, and unindent behavior.
+- Built and installed the local user Flatpak for testing; current installed user commit is `6ac168d07aa88bd2deaf6cc0be04b4131d607b66a3ca4bd4599e1ed83b7cec3b`.
 - Final validation passed before commit preparation: `python3 -m tools.policy_check --root app --strict` and `python3 -m tools.coverage_check --root app`.
 
 ## DECISIONS
@@ -27,7 +29,8 @@
 - `cond_move` was an unrelated untracked ELF artifact and was safe to remove during commit cleanup.
 - The line-diff UI should distinguish changed-line count from hunk count; users read "differences" as changed lines in this surface.
 - Compare highlights must be treated as transient compare state, not as post-compare document annotations.
+- Document Portal `GetHostPaths` can map `/run/user/$UID/doc/...` mounts back to host paths for display, but Riteed must keep the portal path as the authoritative access path.
 
 ## PROGRESS
-- `CHANGELOG.md`, gettext POTs, validation review artifacts, tests, and local Flatpak build are updated for the V8 appearance panel refresh.
+- `CHANGELOG.md`, validation review artifacts, tests, and local Flatpak build are updated for the portal path display and indentation coverage pass.
 - Latest validation passed: `python3 -m tools.policy_check --root app --strict` and `python3 -m tools.coverage_check --root app`.

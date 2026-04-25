@@ -64,6 +64,8 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Fixed the new Appearance header-bar button so it opens a small libadwaita visual panel reliably instead of relying on fragile popover activation.
 - Added a visible close button to the Appearance panel so it is not only dismissible with Escape.
 - Fixed follow-up regressions in the menu/compare pass: editor zoom and font changes now style the GtkSourceView text node, compare mode restores normal editor scrolling, Recent Files uses a wider dialog, and Saved Version is suppressed while autosave is enabled.
+- Displayed document-portal files with host/home-relative paths in the title/status, Recent Files, and Compare source UI while preserving portal access paths for sandbox-safe I/O.
+- Removed invalid Appearance CSS size properties and added deterministic indentation coverage for tabs, spaces, indent width, and unindent behavior.
 
 ## 1.0.1 — 2026-04-19
 

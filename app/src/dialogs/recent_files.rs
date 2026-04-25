@@ -5,6 +5,7 @@ use gtk4::{gio, prelude::*};
 use libadwaita as adw;
 use libadwaita::prelude::*;
 
+use crate::document;
 use crate::settings::AppSettings;
 
 pub fn show_recent_files_dialog(
@@ -165,12 +166,16 @@ fn recent_labels(uri: &str) -> (String, String) {
     let Some(path) = file.path() else {
         return (String::from(uri), String::new());
     };
-    let title = path
+    let display_path = document::portal_host_display_path(&path).unwrap_or(path);
+    let title = display_path
         .file_name()
         .and_then(std::ffi::OsStr::to_str)
-        .map_or_else(|| path.display().to_string(), ToString::to_string);
-    let subtitle = path
+        .map_or_else(
+            || document::display_path(&display_path),
+            ToString::to_string,
+        );
+    let subtitle = display_path
         .parent()
-        .map_or_else(String::new, |parent| parent.display().to_string());
+        .map_or_else(String::new, document::display_path);
     (title, subtitle)
 }

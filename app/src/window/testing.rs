@@ -205,8 +205,16 @@ impl Window {
         self.workspace.selected_writability()
     }
 
+    pub(crate) fn selected_autosave_eligible_for_tests(&self) -> bool {
+        self.workspace.selected_autosave_eligible()
+    }
+
     pub(crate) fn sync_selected_banner_for_tests(&self, window_active: bool) {
         self.workspace.sync_selected_banner_for_tests(window_active);
+    }
+
+    pub(crate) fn resolve_selected_external_for_tests(&self) {
+        self.workspace.resolve_selected_external_for_tests();
     }
 
     pub(crate) fn trigger_selected_external_action_for_tests(&self) {
@@ -241,6 +249,19 @@ impl Window {
 
     pub(crate) fn selected_indentation_for_tests(&self) -> Option<(bool, u32, i32)> {
         self.workspace.selected_indentation_for_tests()
+    }
+
+    pub(crate) fn indent_selected_lines_for_tests(&self) {
+        self.workspace.indent_selected_lines_for_tests();
+    }
+
+    pub(crate) fn unindent_selected_lines_for_tests(&self) {
+        self.workspace.unindent_selected_lines_for_tests();
+    }
+
+    pub(crate) fn selected_visual_column_at_offset_for_tests(&self, offset: i32) -> Option<u32> {
+        self.workspace
+            .selected_visual_column_at_offset_for_tests(offset)
     }
 
     pub(crate) fn zoom_percent_for_tests(&self) -> i32 {

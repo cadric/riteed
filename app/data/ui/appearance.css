@@ -28,12 +28,8 @@
 
 .riteed-palette-preview {
   border-radius: 9px;
-  /* GtkSourceStyleSchemePreview can report an oversized preferred size on its first map.
-     Clamp the widget so the palette grid never "pops" smaller after the first interaction. */
   min-width: 132px;
   min-height: 80px;
-  max-width: 132px;
-  max-height: 80px;
 }
 
 .riteed-palette-preview:not(.selected) {

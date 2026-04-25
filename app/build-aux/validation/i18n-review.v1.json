@@ -3,14 +3,14 @@
   "strings": [
     {
       "path": "src/dialogs/recent_files.rs",
-      "line": 37,
+      "line": 38,
       "match": ".title(gettext(\"No Recent Files\"))",
       "kind": "i18n-short-string",
       "resolution": "This short empty-state title appears in the Recent Files dialog directly above the explanatory body text."
     },
     {
       "path": "src/dialogs/recent_files.rs",
-      "line": 85,
+      "line": 86,
       "match": ".heading(gettext(\"Clear Recent Files?\"))",
       "kind": "i18n-short-string",
       "resolution": "This short confirmation heading is shown in the Clear All confirmation dialog, where the body text explains the irreversible action."

@@ -443,8 +443,7 @@ fn compare_source_buttons_row() -> gtk4::Box {
 }
 
 fn file_detail(file: &gio::File) -> String {
-    file.path()
-        .map_or_else(|| file.uri().to_string(), |path| path.display().to_string())
+    crate::document::display_path_for_file(file)
 }
 
 fn choose_file(

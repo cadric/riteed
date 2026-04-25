@@ -49,6 +49,65 @@ fn exercise_preference_startup_and_indentation(test_app: &adw::Application) {
     });
 }
 
+fn exercise_indentation_content_behavior(test_app: &adw::Application) {
+    let settings = AppSettings::new_for_tests();
+    let window = Window::new_with_settings_for_tests(test_app, settings).ok();
+    assert!(window.is_some());
+    let Some(window) = window else {
+        return;
+    };
+
+    window.ensure_default_tab();
+    window.set_tab_width_for_tests(10);
+    window.set_indent_width_for_tests(4);
+    window.set_insert_spaces_for_tests(true);
+    spin_until("space indentation preferences apply", || {
+        window.selected_indentation_for_tests() == Some((true, 10, 4))
+    });
+    window.set_selected_text_for_tests("alpha\nbeta");
+    window.select_offsets_for_tests(0, 0);
+    window.indent_selected_lines_for_tests();
+    assert_eq!(window.selected_text_for_tests(), "    alpha\nbeta");
+    window.unindent_selected_lines_for_tests();
+    assert_eq!(window.selected_text_for_tests(), "alpha\nbeta");
+
+    window.set_insert_spaces_for_tests(false);
+    spin_until("tab indentation preference applies", || {
+        window.selected_indentation_for_tests() == Some((false, 10, 4))
+    });
+    window.set_selected_text_for_tests("alpha\nbeta");
+    window.select_offsets_for_tests(0, 0);
+    window.indent_selected_lines_for_tests();
+    assert_eq!(window.selected_text_for_tests(), "    alpha\nbeta");
+    window.unindent_selected_lines_for_tests();
+    assert_eq!(window.selected_text_for_tests(), "alpha\nbeta");
+
+    window.set_indent_width_for_tests(10);
+    spin_until("tab-aligned indentation preference applies", || {
+        window.selected_indentation_for_tests() == Some((false, 10, 10))
+    });
+    window.set_selected_text_for_tests("alpha\nbeta");
+    window.select_offsets_for_tests(0, 0);
+    window.indent_selected_lines_for_tests();
+    assert_eq!(window.selected_text_for_tests(), "\talpha\nbeta");
+    assert_eq!(
+        window.selected_visual_column_at_offset_for_tests(1),
+        Some(10)
+    );
+    window.unindent_selected_lines_for_tests();
+    assert_eq!(window.selected_text_for_tests(), "alpha\nbeta");
+
+    window.set_tab_width_for_tests(2);
+    spin_until("tab width preference reapplies visually", || {
+        window.selected_indentation_for_tests() == Some((false, 2, 10))
+    });
+    window.set_selected_text_for_tests("\talpha");
+    assert_eq!(
+        window.selected_visual_column_at_offset_for_tests(1),
+        Some(2)
+    );
+}
+
 fn exercise_zoom_controller(test_app: &adw::Application) {
     let window = Window::new_for_tests(test_app).ok();
     assert!(window.is_some());
@@ -123,5 +182,6 @@ fn exercise_zoom_controller(test_app: &adw::Application) {
 
 pub(crate) fn exercise_v5b_editor_controls(test_app: &adw::Application) {
     exercise_preference_startup_and_indentation(test_app);
+    exercise_indentation_content_behavior(test_app);
     exercise_zoom_controller(test_app);
 }

@@ -113,6 +113,40 @@ impl EditorTab {
     }
 
     #[cfg(test)]
+    pub(crate) fn indent_selected_lines_for_tests(&self) {
+        let (mut start, mut end) = if let Some(bounds) = self.text_buffer.selection_bounds() {
+            bounds
+        } else {
+            let cursor = self
+                .text_buffer
+                .iter_at_mark(&self.text_buffer.get_insert());
+            (cursor, cursor)
+        };
+        self.text_view.indent_lines(&mut start, &mut end);
+        self.sync_presentation();
+    }
+
+    #[cfg(test)]
+    pub(crate) fn unindent_selected_lines_for_tests(&self) {
+        let (mut start, mut end) = if let Some(bounds) = self.text_buffer.selection_bounds() {
+            bounds
+        } else {
+            let cursor = self
+                .text_buffer
+                .iter_at_mark(&self.text_buffer.get_insert());
+            (cursor, cursor)
+        };
+        self.text_view.unindent_lines(&mut start, &mut end);
+        self.sync_presentation();
+    }
+
+    #[cfg(test)]
+    pub(crate) fn visual_column_at_offset_for_tests(&self, offset: i32) -> u32 {
+        let iter = self.text_buffer.iter_at_offset(offset);
+        self.text_view.visual_column(&iter)
+    }
+
+    #[cfg(test)]
     pub(crate) fn minimap_font_desc_for_tests(&self) -> Option<pango::FontDescription> {
         self.minimap.font_desc()
     }

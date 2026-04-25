@@ -11,6 +11,7 @@ use crate::error::AppError;
 #[derive(Clone)]
 pub struct LoadedDocument {
     pub path: PathBuf,
+    pub display_path: Option<PathBuf>,
     pub text: String,
     pub uri: String,
     pub format: SavedTextFormat,
@@ -20,9 +21,15 @@ pub struct LoadedDocument {
 #[derive(Clone)]
 pub struct SavedDocument {
     pub path: PathBuf,
+    pub display_path: Option<PathBuf>,
     pub uri: String,
     pub format: SavedTextFormat,
     pub source_file: sourceview5::File,
+}
+
+pub struct LocalPathInfo {
+    pub path: PathBuf,
+    pub display_path: Option<PathBuf>,
 }
 
 #[derive(Clone, Debug)]
@@ -45,13 +52,14 @@ pub fn load_text_file(
     cancellable: Option<&gio::Cancellable>,
     callback: Rc<dyn Fn(Result<LoadedDocument, LoadFailure>)>,
 ) {
-    let path = match local_path(file) {
-        Ok(path) => path,
+    let path_info = match local_path_info(file) {
+        Ok(path_info) => path_info,
         Err(error) => {
             callback(Err(LoadFailure::Failed(error)));
             return;
         }
     };
+    let path = path_info.path;
 
     let source_file = sourceview5::File::builder().location(file).build();
     let scratch_buffer = sourceview5::Buffer::builder()
@@ -65,6 +73,7 @@ pub fn load_text_file(
     let callback_loader = loader.clone();
 
     let callback_path = path.clone();
+    let callback_display_path = path_info.display_path.clone();
     let callback_file = file.clone();
     loader.load_async(
         glib::Priority::DEFAULT,
@@ -80,6 +89,7 @@ pub fn load_text_file(
                 );
                 callback(Ok(LoadedDocument {
                     path: callback_path.clone(),
+                    display_path: callback_display_path.clone(),
                     text: loaded_format.text,
                     uri: callback_file.uri().to_string(),
                     format: loaded_format.format,
@@ -102,6 +112,7 @@ pub fn save_text_file(
 ) {
     let path = target_path.to_path_buf();
     let target_file = gio::File::for_path(&path);
+    let display_path = crate::document::portal_host_display_path(&path);
     let use_live_source_file = live_source_file
         .and_then(|file| file.location().path())
         .is_some_and(|current_path| current_path == path);
@@ -132,6 +143,7 @@ pub fn save_text_file(
         move |result| match result {
             Ok(()) => callback(Ok(SavedDocument {
                 path: path.clone(),
+                display_path: display_path.clone(),
                 uri: target_file.uri().to_string(),
                 format: saved_format.clone(),
                 source_file: source_file.clone(),
@@ -173,7 +185,16 @@ fn map_save_failure(path: &Path, error: &glib::Error) -> SaveFailure {
 ///
 /// Returns an error when the provided file is not backed by a local path.
 pub fn local_path(file: &gio::File) -> Result<PathBuf, AppError> {
-    file.path().ok_or(AppError::NonLocalFile)
+    local_path_info(file).map(|info| info.path)
+}
+
+/// # Errors
+///
+/// Returns an error when the provided file is not backed by a local path.
+pub fn local_path_info(file: &gio::File) -> Result<LocalPathInfo, AppError> {
+    let path = file.path().ok_or(AppError::NonLocalFile)?;
+    let display_path = crate::document::portal_host_display_path(&path);
+    Ok(LocalPathInfo { path, display_path })
 }
 
 #[cfg(test)]

@@ -90,10 +90,12 @@ impl EditorTab {
     pub fn handle_external_event(self: &Rc<Self>, event: crate::editor_monitor::ExternalFileEvent) {
         match event {
             crate::editor_monitor::ExternalFileEvent::Moved { new_file } => {
-                if let Ok(path) = crate::editor_io::local_path(&new_file) {
+                if let Ok(path_info) = crate::editor_io::local_path_info(&new_file) {
                     {
                         let mut state = self.state.borrow_mut();
-                        state.document.set_saved(path);
+                        state
+                            .document
+                            .set_saved_with_display_path(path_info.path, path_info.display_path);
                         state.pending_external = PendingExternalState::Idle;
                     }
                     self.swap_monitor(&new_file);
@@ -198,7 +200,11 @@ impl EditorTab {
         self.exit_compare();
         {
             let mut state = self.state.borrow_mut();
-            state.document = DocumentState::from_loaded(document.path, document.format.clone());
+            state.document = DocumentState::from_loaded_with_display_path(
+                document.path,
+                document.display_path,
+                document.format.clone(),
+            );
             state.saved_format = document.format.clone();
             state.source_file = Some(document.source_file);
             state.pending_external = PendingExternalState::Idle;
@@ -227,7 +233,9 @@ impl EditorTab {
         let saved_uri = saved.uri.clone();
         let saved_file = gio::File::for_path(&saved.path);
         let mut state = self.state.borrow_mut();
-        state.document.set_saved(saved.path);
+        state
+            .document
+            .set_saved_with_display_path(saved.path, saved.display_path.clone());
         state.document.set_format(saved.format.clone());
         state.saved_format = saved.format.clone();
         state.source_file = Some(saved.source_file);

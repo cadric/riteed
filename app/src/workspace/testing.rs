@@ -110,6 +110,25 @@ impl Workspace {
         self.selected_tab().map(|tab| tab.indentation_for_tests())
     }
 
+    pub(crate) fn indent_selected_lines_for_tests(&self) {
+        if let Some(tab) = self.selected_tab() {
+            tab.indent_selected_lines_for_tests();
+            self.refresh_selected_state();
+        }
+    }
+
+    pub(crate) fn unindent_selected_lines_for_tests(&self) {
+        if let Some(tab) = self.selected_tab() {
+            tab.unindent_selected_lines_for_tests();
+            self.refresh_selected_state();
+        }
+    }
+
+    pub(crate) fn selected_visual_column_at_offset_for_tests(&self, offset: i32) -> Option<u32> {
+        self.selected_tab()
+            .map(|tab| tab.visual_column_at_offset_for_tests(offset))
+    }
+
     pub(crate) fn selected_minimap_font_for_tests(&self) -> Option<gtk4::pango::FontDescription> {
         self.selected_tab()
             .and_then(|tab| tab.minimap_font_desc_for_tests())
@@ -138,9 +157,20 @@ impl Workspace {
         self.selected_tab().map(|tab| tab.writability())
     }
 
+    pub(crate) fn selected_autosave_eligible(&self) -> bool {
+        self.selected_tab()
+            .is_some_and(|tab| tab.is_autosave_eligible())
+    }
+
     pub(crate) fn sync_selected_banner_for_tests(&self, window_active: bool) {
         if let Some(tab) = self.selected_tab() {
             tab.sync_banner_for_tests(true, window_active);
+        }
+    }
+
+    pub(crate) fn resolve_selected_external_for_tests(&self) {
+        if let Some(tab) = self.selected_tab() {
+            tab.resolve_pending_external();
         }
     }
 
