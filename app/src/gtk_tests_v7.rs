@@ -1,6 +1,7 @@
 use std::fs;
+use std::time::Duration;
 
-use gtk4::{gio, prelude::*};
+use gtk4::{gio, glib, prelude::*};
 use libadwaita as adw;
 
 use crate::gtk_tests::{build_window, drain_events, spin_until, write_temp_file};
@@ -10,7 +11,45 @@ pub(crate) fn exercise_v7_compare(test_app: &adw::Application) {
     exercise_compare_with_disk_and_file(test_app);
     exercise_compare_navigation(test_app);
     exercise_compare_two_files(test_app);
+    exercise_compare_dialog_entry(test_app);
     exercise_compare_exits_on_open(test_app);
+}
+
+fn collect_buttons(root: &gtk4::Widget, label: &str) -> Vec<gtk4::Button> {
+    let mut stack = vec![root.clone()];
+    let mut matches = Vec::new();
+    while let Some(widget) = stack.pop() {
+        if let Ok(button) = widget.clone().downcast::<gtk4::Button>()
+            && button.label().as_deref() == Some(label)
+        {
+            matches.push(button);
+        }
+
+        let mut child = widget.first_child();
+        while let Some(next) = child {
+            child = next.next_sibling();
+            stack.push(next);
+        }
+    }
+    matches
+}
+
+fn click_first_button(root: &gtk4::Widget, label: &str) {
+    if let Some(button) = collect_buttons(root, label).first() {
+        button.emit_clicked();
+    }
+}
+
+fn wait_for_button(root: &gtk4::Widget, label: &str, reason: &str) {
+    spin_until(reason, || !collect_buttons(root, label).is_empty());
+}
+
+fn wait_for_sensitive_button(root: &gtk4::Widget, label: &str, reason: &str) {
+    spin_until(reason, || {
+        collect_buttons(root, label)
+            .first()
+            .is_some_and(gtk4::prelude::WidgetExt::is_sensitive)
+    });
 }
 
 fn exercise_compare_with_disk_and_file(test_app: &adw::Application) {
@@ -31,7 +70,7 @@ fn exercise_compare_with_disk_and_file(test_app: &adw::Application) {
     });
     assert_eq!(
         window.compare_action_states_for_tests(),
-        (true, true, true, false, false, false, false)
+        (true, false, false, false, false)
     );
 
     window.compare_with_disk_for_tests();
@@ -42,7 +81,7 @@ fn exercise_compare_with_disk_and_file(test_app: &adw::Application) {
     assert!(!window.selected_minimap_visible_for_tests());
     assert_eq!(
         window.compare_action_states_for_tests(),
-        (false, false, true, true, true, true, true)
+        (false, true, true, true, true)
     );
 
     window.set_selected_text_for_tests("a\nchanged\nc");
@@ -99,10 +138,23 @@ fn exercise_compare_navigation(test_app: &adw::Application) {
             .ends_with("riteed-v7-nav.txt")
     });
     window.compare_with_file_for_tests(&gio::File::for_path(&nav_ref));
-    spin_until("v7 compare has two hunks", || {
-        window.selected_compare_diff_count_for_tests() == 2
-            && window.selected_compare_current_hunk_for_tests() == Some(0)
-    });
+    for _ in 0..600 {
+        while glib::MainContext::default().iteration(false) {}
+        let diff_count = window.selected_compare_diff_count_for_tests();
+        let current = window.selected_compare_current_hunk_for_tests();
+        if diff_count == 2 && current == Some(0) {
+            break;
+        }
+        let _source = glib::timeout_add_local_once(Duration::from_millis(10), || {});
+        let _dispatched = glib::MainContext::default().iteration(true);
+    }
+    let diff_count = window.selected_compare_diff_count_for_tests();
+    let current = window.selected_compare_current_hunk_for_tests();
+    let status = window.selected_compare_status_for_tests();
+    assert!(
+        diff_count == 2 && current == Some(0),
+        "v7 compare has two hunks (diff_count={diff_count}, current={current:?}, status={status})"
+    );
     window.next_diff_for_tests();
     spin_until("v7 next diff moves current hunk", || {
         window.selected_compare_current_hunk_for_tests() == Some(1)
@@ -170,4 +222,82 @@ fn exercise_compare_exits_on_open(test_app: &adw::Application) {
     let _removed = fs::remove_file(compare_path);
     let _removed = fs::remove_file(reference_path);
     let _removed = fs::remove_file(replacement_path);
+}
+
+fn exercise_compare_dialog_entry(test_app: &adw::Application) {
+    let Some(window) = build_window(test_app) else {
+        return;
+    };
+    let compare_path = write_temp_file("riteed-v7-dialog-entry.txt", b"before\n");
+    let compare_uri = gio::File::for_path(&compare_path).uri().to_string();
+    window.request_open_files(
+        vec![gio::File::for_path(&compare_path)],
+        OpenSource::AppOpen,
+    );
+    spin_until("v7 compare dialog file opened", || {
+        window.selected_saved_uri_for_tests() == compare_uri
+    });
+    window.set_selected_text_for_tests("before\nchanged");
+    window.present();
+    assert!(
+        gtk4::prelude::WidgetExt::activate_action(window.widget(), "win.compare", None).is_ok()
+    );
+    drain_events(16);
+
+    let root_widget = window.widget().clone().upcast::<gtk4::Widget>();
+    wait_for_button(&root_widget, "Saved Version", "v7 compare dialog shown");
+
+    let right_buttons_parent = collect_buttons(&root_widget, "Saved Version")
+        .first()
+        .and_then(gtk4::prelude::WidgetExt::parent);
+    let left_buttons_parent = collect_buttons(&root_widget, "Current Document")
+        .first()
+        .and_then(gtk4::prelude::WidgetExt::parent);
+    assert!(right_buttons_parent.is_some());
+    assert!(left_buttons_parent.is_some());
+    let Some(right_buttons_parent) = right_buttons_parent else {
+        return;
+    };
+    let Some(left_buttons_parent) = left_buttons_parent else {
+        return;
+    };
+
+    click_first_button(&right_buttons_parent, "Clear");
+    drain_events(16);
+
+    click_first_button(&left_buttons_parent, "Paste Text...");
+    drain_events(16);
+
+    wait_for_button(&root_widget, "Use Text", "v7 compare paste dialog opened");
+    click_first_button(&root_widget, "Use Text");
+    drain_events(16);
+
+    click_first_button(&right_buttons_parent, "Paste Text...");
+    drain_events(16);
+
+    wait_for_button(
+        &root_widget,
+        "Use Text",
+        "v7 compare paste dialog opened again",
+    );
+    click_first_button(&root_widget, "Use Text");
+    drain_events(16);
+
+    wait_for_sensitive_button(&root_widget, "Swap", "v7 compare dialog swap enabled");
+    click_first_button(&root_widget, "Swap");
+    drain_events(16);
+
+    wait_for_sensitive_button(
+        &root_widget,
+        "Compare",
+        "v7 compare dialog compare button enabled",
+    );
+    click_first_button(&root_widget, "Compare");
+    spin_until("v7 compare started from dialog", || {
+        window.selected_compare_active_for_tests()
+    });
+    window.exit_compare_for_tests();
+    drain_events(16);
+
+    let _removed = fs::remove_file(compare_path);
 }

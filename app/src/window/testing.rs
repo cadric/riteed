@@ -308,19 +308,21 @@ impl Window {
         self.project.resolve_symlink_for_tests(file);
     }
 
-    pub(crate) fn compare_action_states_for_tests(
-        &self,
-    ) -> (bool, bool, bool, bool, bool, bool, bool) {
+    pub(crate) fn compare_action_states_for_tests(&self) -> (bool, bool, bool, bool, bool) {
         self.compare.action_states_for_tests()
     }
 
     pub(crate) fn compare_with_disk_for_tests(self: &Rc<Self>) {
-        self.compare.request_compare_with_disk();
+        if let Some(tab) = self.workspace.selected_tab() {
+            tab.start_compare_with_disk(Rc::new(|_result| {}));
+            self.workspace.refresh_selected_state();
+        }
     }
 
     pub(crate) fn compare_with_file_for_tests(&self, file: &gio::File) {
         if let Some(tab) = self.workspace.selected_tab() {
             tab.start_compare_with_file(file, Rc::new(|_result| {}));
+            self.workspace.refresh_selected_state();
         }
     }
 

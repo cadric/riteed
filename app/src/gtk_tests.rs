@@ -353,7 +353,8 @@ fn exercise_app_open_actions() {
         .build();
     let _registered = test_app.register(None::<&gio::Cancellable>);
     let state = std::rc::Rc::new(std::cell::RefCell::new(AppState {
-        window: None,
+        windows: Vec::new(),
+        last_focused_window: None,
         session_restore_attempted: false,
     }));
     install_for_tests(&test_app, &state);
@@ -393,7 +394,8 @@ fn exercise_app_actions_more() {
         .build();
     let _registered = test_app.register(None::<&gio::Cancellable>);
     let state = std::rc::Rc::new(std::cell::RefCell::new(AppState {
-        window: None,
+        windows: Vec::new(),
+        last_focused_window: None,
         session_restore_attempted: false,
     }));
     install_for_tests(&test_app, &state);

@@ -122,17 +122,59 @@ pub(super) fn compare_toolbar(reference_title: &str) -> gtk4::Box {
 pub(super) fn install_scroll_sync(
     left: &gtk4::Adjustment,
     right: &gtk4::Adjustment,
+    left_view: &sourceview5::View,
+    right_view: &sourceview5::View,
 ) -> (glib::SignalHandlerId, glib::SignalHandlerId) {
     let syncing = Rc::new(Cell::new(false));
-    let right_for_left = right.clone();
+    let idle_redraw_pending = Rc::new(Cell::new(false));
+
+    let left_view = left_view.downgrade();
+    let right_view = right_view.downgrade();
+
+    let right_for_left = right.downgrade();
+    let right_pending = Rc::new(Cell::new(false));
+    let right_pending_value = Rc::new(Cell::new(0.0));
     let syncing_for_left = Rc::clone(&syncing);
+    let idle_for_left = Rc::clone(&idle_redraw_pending);
+    let left_view_for_left = left_view.clone();
+    let right_view_for_left = right_view.clone();
+    let right_pending_for_left = Rc::clone(&right_pending);
+    let right_pending_value_for_left = Rc::clone(&right_pending_value);
     let left_handler = left.connect_value_changed(move |left| {
-        sync_adjustment_ratio(left, &right_for_left, &syncing_for_left);
+        if syncing_for_left.get() {
+            return;
+        }
+        schedule_adjustment_sync(
+            left,
+            &right_for_left,
+            &syncing_for_left,
+            &right_pending_for_left,
+            &right_pending_value_for_left,
+        );
+        queue_compare_redraw(&left_view_for_left, &right_view_for_left, &idle_for_left);
     });
-    let left_for_right = left.clone();
+
+    let left_for_right = left.downgrade();
+    let left_pending = Rc::new(Cell::new(false));
+    let left_pending_value = Rc::new(Cell::new(0.0));
     let syncing_for_right = Rc::clone(&syncing);
+    let idle_for_right = Rc::clone(&idle_redraw_pending);
+    let left_view_for_right = left_view.clone();
+    let right_view_for_right = right_view.clone();
+    let left_pending_for_right = Rc::clone(&left_pending);
+    let left_pending_value_for_right = Rc::clone(&left_pending_value);
     let right_handler = right.connect_value_changed(move |right| {
-        sync_adjustment_ratio(right, &left_for_right, &syncing_for_right);
+        if syncing_for_right.get() {
+            return;
+        }
+        schedule_adjustment_sync(
+            right,
+            &left_for_right,
+            &syncing_for_right,
+            &left_pending_for_right,
+            &left_pending_value_for_right,
+        );
+        queue_compare_redraw(&left_view_for_right, &right_view_for_right, &idle_for_right);
     });
     (left_handler, right_handler)
 }
@@ -204,22 +246,95 @@ fn toolbar_button(icon_name: &str, tooltip: &str, action_name: &str) -> gtk4::Bu
     button
 }
 
-fn sync_adjustment_ratio(
+fn schedule_adjustment_sync(
+    source: &gtk4::Adjustment,
+    target: &glib::WeakRef<gtk4::Adjustment>,
+    syncing: &Rc<Cell<bool>>,
+    pending: &Rc<Cell<bool>>,
+    pending_value: &Rc<Cell<f64>>,
+) {
+    let target_weak = target.clone();
+    let Some(target) = target_weak.upgrade() else {
+        return;
+    };
+    let Some(value) = sync_adjustment_ratio_value(source, &target) else {
+        return;
+    };
+    if (target.value() - value).abs() < 0.5 {
+        return;
+    }
+    pending_value.set(value);
+    if pending.replace(true) {
+        return;
+    }
+    let syncing = Rc::clone(syncing);
+    let pending = Rc::clone(pending);
+    let pending_value = Rc::clone(pending_value);
+    glib::idle_add_local_once(move || {
+        pending.set(false);
+        if syncing.get() {
+            return;
+        }
+        let Some(target) = target_weak.upgrade() else {
+            return;
+        };
+        syncing.set(true);
+        target.set_value(pending_value.get());
+        syncing.set(false);
+    });
+}
+
+fn sync_adjustment_ratio_value(
     source: &gtk4::Adjustment,
     target: &gtk4::Adjustment,
-    syncing: &Cell<bool>,
-) {
-    if syncing.get() {
-        return;
-    }
-    let source_max = (source.upper() - source.page_size()).max(0.0);
-    let target_max = (target.upper() - target.page_size()).max(0.0);
+) -> Option<f64> {
+    let source_lower = source.lower();
+    let source_upper = (source.upper() - source.page_size()).max(source_lower);
+    let source_max = (source_upper - source_lower).max(0.0);
+    let target_lower = target.lower();
+    let target_upper = (target.upper() - target.page_size()).max(target_lower);
+    let target_max = (target_upper - target_lower).max(0.0);
+
     if source_max <= f64::EPSILON || target_max <= f64::EPSILON {
+        return None;
+    }
+
+    let ratio = ((source.value() - source_lower) / source_max).clamp(0.0, 1.0);
+    Some((target_lower + (ratio * target_max)).round())
+}
+
+fn queue_compare_redraw(
+    left_view: &glib::WeakRef<sourceview5::View>,
+    right_view: &glib::WeakRef<sourceview5::View>,
+    idle_pending: &Rc<Cell<bool>>,
+) {
+    let Some(left_view) = left_view.upgrade() else {
+        return;
+    };
+    let Some(right_view) = right_view.upgrade() else {
+        return;
+    };
+    left_view.queue_draw();
+    right_view.queue_draw();
+
+    if idle_pending.replace(true) {
         return;
     }
-    syncing.set(true);
-    target.set_value((source.value() / source_max) * target_max);
-    syncing.set(false);
+
+    let left_view = left_view.downgrade();
+    let right_view = right_view.downgrade();
+    let idle_pending = Rc::clone(idle_pending);
+    glib::idle_add_local_once(move || {
+        idle_pending.set(false);
+        let Some(left_view) = left_view.upgrade() else {
+            return;
+        };
+        let Some(right_view) = right_view.upgrade() else {
+            return;
+        };
+        left_view.queue_draw();
+        right_view.queue_draw();
+    });
 }
 
 fn remove_buffer_tag(buffer: &sourceview5::Buffer, tag: &gtk4::TextTag) {

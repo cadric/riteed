@@ -1,5 +1,5 @@
 use std::cell::RefCell;
-use std::rc::Rc;
+use std::rc::{Rc, Weak};
 
 use gettextrs::gettext;
 use gtk4::{gio, glib, prelude::*};
@@ -11,11 +11,18 @@ use crate::window::Window;
 use crate::{APP_ID, APP_NAME};
 
 pub(crate) struct AppState {
-    pub(crate) window: Option<Rc<Window>>,
+    pub(crate) windows: Vec<Rc<Window>>,
+    pub(crate) last_focused_window: Option<Weak<Window>>,
     pub(crate) session_restore_attempted: bool,
 }
 
 type WindowFactory = fn(&adw::Application) -> Result<Rc<Window>, crate::error::AppError>;
+
+#[derive(Clone, Copy)]
+struct WindowFactories {
+    primary: WindowFactory,
+    secondary: WindowFactory,
+}
 
 #[derive(Clone)]
 pub struct RiteedApp {
@@ -38,20 +45,25 @@ impl RiteedApp {
             .resource_base_path("/io/github/cadric/Riteed")
             .build();
         let state = Rc::new(RefCell::new(AppState {
-            window: None,
+            windows: Vec::new(),
+            last_focused_window: None,
             session_restore_attempted: false,
         }));
 
         install_accels(&app);
-        install_actions(&app, &state, Window::new);
-        install_lifecycle(&app, &state, Window::new);
+        let factories = WindowFactories {
+            primary: Window::new,
+            secondary: Window::new_secondary,
+        };
+        install_actions(&app, &state, factories);
+        install_lifecycle(&app, &state, factories);
 
         Self { app, state }
     }
 
     #[must_use]
     pub fn run(&self) -> gtk4::glib::ExitCode {
-        let _keep_state_alive = self.state.borrow().window.clone();
+        let _keep_state_alive = self.state.borrow().windows.clone();
         self.app.run()
     }
 
@@ -64,8 +76,12 @@ impl RiteedApp {
 #[cfg(test)]
 pub(crate) fn install_for_tests(app: &adw::Application, state: &Rc<RefCell<AppState>>) {
     install_accels(app);
-    install_actions(app, state, Window::new_for_tests);
-    install_lifecycle(app, state, Window::new_for_tests);
+    let factories = WindowFactories {
+        primary: Window::new_for_tests,
+        secondary: Window::new_secondary_for_tests,
+    };
+    install_actions(app, state, factories);
+    install_lifecycle(app, state, factories);
 }
 
 #[cfg(test)]
@@ -73,7 +89,11 @@ pub(crate) fn ensure_window_for_tests(
     app: &adw::Application,
     state: &Rc<RefCell<AppState>>,
 ) -> Option<Rc<Window>> {
-    ensure_window(app, state, Window::new_for_tests).map(|(window, _created)| window)
+    let factories = WindowFactories {
+        primary: Window::new_for_tests,
+        secondary: Window::new_secondary_for_tests,
+    };
+    ensure_window(app, state, factories).map(|(window, _created)| window)
 }
 
 fn install_accels(app: &adw::Application) {
@@ -105,21 +125,25 @@ fn install_accels(app: &adw::Application) {
     app.set_accels_for_action("app.quit", &["<Ctrl>q"]);
 }
 
-fn install_actions(app: &adw::Application, state: &Rc<RefCell<AppState>>, factory: WindowFactory) {
-    install_file_actions(app, state, factory);
-    install_app_actions(app, state, factory);
+fn install_actions(
+    app: &adw::Application,
+    state: &Rc<RefCell<AppState>>,
+    factories: WindowFactories,
+) {
+    install_file_actions(app, state, factories);
+    install_app_actions(app, state, factories);
 }
 
 fn install_file_actions(
     app: &adw::Application,
     state: &Rc<RefCell<AppState>>,
-    factory: WindowFactory,
+    factories: WindowFactories,
 ) {
     let new_action = gio::SimpleAction::new("new", None);
     let app_clone = app.clone();
     let state_clone = Rc::clone(state);
     new_action.connect_activate(move |_, _| {
-        if let Some((window, created)) = ensure_window(&app_clone, &state_clone, factory) {
+        if let Some((window, created)) = ensure_window(&app_clone, &state_clone, factories) {
             if created {
                 window.ensure_default_tab();
             } else {
@@ -130,11 +154,22 @@ fn install_file_actions(
     });
     app.add_action(&new_action);
 
+    let new_window_action = gio::SimpleAction::new("new-window", None);
+    let app_clone = app.clone();
+    let state_clone = Rc::clone(state);
+    new_window_action.connect_activate(move |_, _| {
+        if let Some(window) = create_window(&app_clone, &state_clone, factories.secondary) {
+            window.ensure_default_tab();
+            window.present();
+        }
+    });
+    app.add_action(&new_window_action);
+
     let open_action = gio::SimpleAction::new("open", None);
     let app_clone = app.clone();
     let state_clone = Rc::clone(state);
     open_action.connect_activate(move |_, _| {
-        if let Some((window, created)) = ensure_window(&app_clone, &state_clone, factory) {
+        if let Some((window, created)) = ensure_window(&app_clone, &state_clone, factories) {
             if created {
                 window.ensure_default_tab();
             }
@@ -148,7 +183,7 @@ fn install_file_actions(
     let app_clone = app.clone();
     let state_clone = Rc::clone(state);
     open_folder_action.connect_activate(move |_, _| {
-        if let Some((window, created)) = ensure_window(&app_clone, &state_clone, factory) {
+        if let Some((window, created)) = ensure_window(&app_clone, &state_clone, factories) {
             if created {
                 window.ensure_default_tab();
             }
@@ -165,7 +200,7 @@ fn install_file_actions(
         let Some(uri) = parameter.and_then(glib::Variant::str) else {
             return;
         };
-        if let Some((window, created)) = ensure_window(&app_clone, &state_clone, factory) {
+        if let Some((window, created)) = ensure_window(&app_clone, &state_clone, factories) {
             if created {
                 window.ensure_default_tab();
             }
@@ -179,13 +214,13 @@ fn install_file_actions(
 fn install_app_actions(
     app: &adw::Application,
     state: &Rc<RefCell<AppState>>,
-    factory: WindowFactory,
+    factories: WindowFactories,
 ) {
     let preferences_action = gio::SimpleAction::new("preferences", None);
     let app_clone = app.clone();
     let state_clone = Rc::clone(state);
     preferences_action.connect_activate(move |_, _| {
-        if let Some((window, created)) = ensure_window(&app_clone, &state_clone, factory) {
+        if let Some((window, created)) = ensure_window(&app_clone, &state_clone, factories) {
             if created {
                 window.ensure_default_tab();
             }
@@ -199,7 +234,7 @@ fn install_app_actions(
     let app_clone = app.clone();
     let state_clone = Rc::clone(state);
     help_action.connect_activate(move |_, _| {
-        if let Some((window, created)) = ensure_window(&app_clone, &state_clone, factory) {
+        if let Some((window, created)) = ensure_window(&app_clone, &state_clone, factories) {
             if created {
                 window.ensure_default_tab();
             }
@@ -213,7 +248,7 @@ fn install_app_actions(
     let app_clone = app.clone();
     let state_clone = Rc::clone(state);
     about_action.connect_activate(move |_, _| {
-        if let Some((window, created)) = ensure_window(&app_clone, &state_clone, factory) {
+        if let Some((window, created)) = ensure_window(&app_clone, &state_clone, factories) {
             if created {
                 window.ensure_default_tab();
             }
@@ -227,10 +262,13 @@ fn install_app_actions(
     let app_clone = app.clone();
     let state_clone = Rc::clone(state);
     quit_action.connect_activate(move |_, _| {
-        if let Some((window, _created)) = ensure_window(&app_clone, &state_clone, factory) {
-            window.widget().close();
-        } else {
+        let windows = state_clone.borrow().windows.clone();
+        if windows.is_empty() {
             app_clone.quit();
+            return;
+        }
+        for window in windows {
+            window.widget().close();
         }
     });
     app.add_action(&quit_action);
@@ -239,11 +277,11 @@ fn install_app_actions(
 fn install_lifecycle(
     app: &adw::Application,
     state: &Rc<RefCell<AppState>>,
-    factory: WindowFactory,
+    factories: WindowFactories,
 ) {
     let state_clone = Rc::clone(state);
     app.connect_activate(move |app| {
-        if let Some((window, _created)) = ensure_window(app, &state_clone, factory) {
+        if let Some((window, _created)) = ensure_window(app, &state_clone, factories) {
             let should_restore = {
                 let mut app_state = state_clone.borrow_mut();
                 if app_state.session_restore_attempted {
@@ -264,7 +302,7 @@ fn install_lifecycle(
 
     let state_clone = Rc::clone(state);
     app.connect_open(move |app, files, _hint| {
-        if let Some((window, created)) = ensure_window(app, &state_clone, factory) {
+        if let Some((window, created)) = ensure_window(app, &state_clone, factories) {
             if created {
                 window.ensure_default_tab();
             }
@@ -282,28 +320,36 @@ fn install_lifecycle(
 fn ensure_window(
     app: &adw::Application,
     state: &Rc<RefCell<AppState>>,
-    factory: WindowFactory,
+    factories: WindowFactories,
 ) -> Option<(Rc<Window>, bool)> {
-    if let Some(window) = state.borrow().window.clone() {
+    if let Some(window) = resolve_window(state) {
         return Some((window, false));
     }
 
+    create_window(app, state, factories.primary).map(|window| (window, true))
+}
+
+fn resolve_window(state: &Rc<RefCell<AppState>>) -> Option<Rc<Window>> {
+    let app_state = state.borrow();
+    if let Some(window) = app_state
+        .last_focused_window
+        .as_ref()
+        .and_then(Weak::upgrade)
+    {
+        return Some(window);
+    }
+    app_state.windows.last().cloned()
+}
+
+fn create_window(
+    app: &adw::Application,
+    state: &Rc<RefCell<AppState>>,
+    factory: WindowFactory,
+) -> Option<Rc<Window>> {
     match factory(app) {
         Ok(window) => {
-            let state_clone = Rc::clone(state);
-            let window_clone = Rc::clone(&window);
-            window.widget().connect_destroy(move |_| {
-                let should_clear = state_clone
-                    .borrow()
-                    .window
-                    .as_ref()
-                    .is_some_and(|current| Rc::ptr_eq(current, &window_clone));
-                if should_clear {
-                    state_clone.borrow_mut().window = None;
-                }
-            });
-            state.borrow_mut().window = Some(Rc::clone(&window));
-            Some((window, true))
+            register_window(state, &window);
+            Some(window)
         }
         Err(error) => {
             let fallback = adw::ApplicationWindow::builder()
@@ -323,4 +369,43 @@ fn ensure_window(
             None
         }
     }
+}
+
+fn register_window(state: &Rc<RefCell<AppState>>, window: &Rc<Window>) {
+    let window_weak = Rc::downgrade(window);
+    let state_for_destroy = Rc::clone(state);
+    window.widget().connect_destroy(move |_| {
+        let Some(window) = window_weak.upgrade() else {
+            return;
+        };
+        let mut app_state = state_for_destroy.borrow_mut();
+        if let Some(focused) = app_state
+            .last_focused_window
+            .as_ref()
+            .and_then(Weak::upgrade)
+            && Rc::ptr_eq(&focused, &window)
+        {
+            app_state.last_focused_window = None;
+        }
+        app_state
+            .windows
+            .retain(|candidate| !Rc::ptr_eq(candidate, &window));
+    });
+
+    let window_weak = Rc::downgrade(window);
+    let state_for_focus = Rc::clone(state);
+    window
+        .widget()
+        .connect_is_active_notify(move |window_widget| {
+            if !window_widget.is_active() {
+                return;
+            }
+            if let Some(window) = window_weak.upgrade() {
+                state_for_focus.borrow_mut().last_focused_window = Some(Rc::downgrade(&window));
+            }
+        });
+
+    let mut app_state = state.borrow_mut();
+    app_state.last_focused_window = Some(Rc::downgrade(window));
+    app_state.windows.push(Rc::clone(window));
 }

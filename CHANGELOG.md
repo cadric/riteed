@@ -1,6 +1,6 @@
 ---
 created: 2026-04-19
-updated: 2026-04-24
+updated: 2026-04-25
 status: current
 priority: high
 type: release
@@ -22,6 +22,7 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Extended the embedded Riteed app to a v6 lightweight workspace with Open Folder, Close Folder, an adaptive project sidebar, lazy file-tree browsing, manual refresh, hidden-file toggling, and tab/tree synchronization.
 - Extended the embedded Riteed app to a v7 compare workflow with in-tab split diffs, compare-with-disk, compare-with-file, compare-two-files, manual reference refresh, and F8/Shift+F8 diff navigation.
 - Extended the embedded Riteed app to a v8 polish layer with editor palette selection, current-line highlight preferences, fullscreen support, F9 project-sidebar focus, and conservative autosave for already-saved writable files.
+- Added a real New Window action that opens a fresh editor window without copying tabs, compare state, or project folders.
 - Vendored the pinned `similar` crate for deterministic offline Flatpak-oriented compare/diff builds.
 
 ### Changed
@@ -36,6 +37,10 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Made compare highlighting follow the effective editor palette instead of the application theme, and kept autosave saves silent so they do not reorder recent files, persist session state, or show save toasts.
 - Moved quick app appearance and editor palette controls into an icon-only header-bar Appearance panel with visual palette previews, while keeping editor view toggles such as current-line highlight in Preferences.
 - Refined the editor chrome by putting Project Sidebar first in the header bar, moving Save beside Open, moving a friendly file location into the bottom status bar, and removing the status-bar Actual Size button.
+- Simplified the primary menu into a lean app menu (New Window, Open..., Open Folder..., Recent Files..., Search, Compare..., Keyboard Shortcuts, Preferences, Help, About).
+- Reworked Compare into a single-entry flow: Compare... opens a dedicated compare dialog where the user chooses sources (current document, saved version, file, or pasted text), with left as the editable side and right as the reference.
+- Moved compare-session actions (refresh reference, exit compare, next/previous diff) out of the main menu and into the compare view/toolbar.
+- Switched Recent Files to a lightweight dialog listing recent documents (most recent first) instead of nested menu flows.
 
 ### Fixed
 - Stabilized GTK coverage runs by teaching `tools.coverage_check` to invoke `cargo llvm-cov` with a deterministic `GSK_RENDERER=cairo` environment, with unit coverage for the new tool behavior.
@@ -58,6 +63,7 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Corrected the policy checker so GSettings enum and flags keys are accepted as typed schema keys instead of being flagged as missing a free-form type.
 - Fixed the new Appearance header-bar button so it opens a small libadwaita visual panel reliably instead of relying on fragile popover activation.
 - Added a visible close button to the Appearance panel so it is not only dismissible with Escape.
+- Fixed follow-up regressions in the menu/compare pass: editor zoom and font changes now style the GtkSourceView text node, compare mode restores normal editor scrolling, Recent Files uses a wider dialog, and Saved Version is suppressed while autosave is enabled.
 
 ## 1.0.1 — 2026-04-19
 

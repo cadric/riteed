@@ -4,12 +4,13 @@ use gtk4::{gio, prelude::*};
 use libadwaita as adw;
 
 use crate::editor_tab::Writability;
-use crate::gtk_tests::{build_window_with_settings, spin_until, write_temp_file};
+use crate::gtk_tests::{build_window_with_settings, drain_events, spin_until, write_temp_file};
 use crate::settings::{AppSettings, EditorPalette, ThemePreference};
 use crate::workspace::OpenSource;
 
 pub(crate) fn exercise_v8_polish_and_safety(test_app: &adw::Application) {
     exercise_presentation_preferences(test_app);
+    exercise_recent_files_dialog(test_app);
     exercise_autosave_is_silent_and_gsettings_clean(test_app);
 }
 
@@ -71,4 +72,27 @@ fn exercise_autosave_is_silent_and_gsettings_clean(test_app: &adw::Application) 
     assert_eq!(window.preferences_write_log_for_tests(), writes_before);
 
     let _removed = fs::remove_file(path);
+}
+
+fn exercise_recent_files_dialog(test_app: &adw::Application) {
+    let settings = AppSettings::new_for_tests();
+    let first = write_temp_file("riteed-v8-recent-first.txt", b"first");
+    let second = write_temp_file("riteed-v8-recent-second.txt", b"second");
+    let first_uri = gio::File::for_path(&first).uri().to_string();
+    let second_uri = gio::File::for_path(&second).uri().to_string();
+    settings.set_recent_files(&[first_uri, second_uri]);
+
+    let Some(window) = build_window_with_settings(test_app, settings) else {
+        return;
+    };
+    window.ensure_default_tab();
+    window.present();
+    assert!(
+        gtk4::prelude::WidgetExt::activate_action(window.widget(), "win.recent-files", None)
+            .is_ok()
+    );
+    drain_events(16);
+
+    let _removed = fs::remove_file(first);
+    let _removed = fs::remove_file(second);
 }

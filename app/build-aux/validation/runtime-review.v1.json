@@ -2,70 +2,6 @@
   "version": 1,
   "sites": [
     {
-      "path": "src/app.rs",
-      "line": 23,
-      "match": "state: Rc<RefCell<AppState>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The application controller owns the shared single-window lifecycle state.",
-      "justification": "App actions and activation signals need one mutable slot for the active window and the one-shot session-restore gate."
-    },
-    {
-      "path": "src/app.rs",
-      "line": 65,
-      "match": "pub(crate) fn install_for_tests(app: &adw::Application, state: &Rc<RefCell<AppState>>) {",
-      "kind": "runtime-shared-state",
-      "ownership": "GTK tests reuse the shared application-state slot.",
-      "justification": "The test harness drives the same window lifecycle and restore behavior as the runtime application wiring."
-    },
-    {
-      "path": "src/app.rs",
-      "line": 74,
-      "match": "state: &Rc<RefCell<AppState>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The test-only window helper borrows the shared app-state slot.",
-      "justification": "Tests need controlled access to the active-window slot without introducing a second window-lifecycle path."
-    },
-    {
-      "path": "src/app.rs",
-      "line": 108,
-      "match": "fn install_actions(app: &adw::Application, state: &Rc<RefCell<AppState>>, factory: WindowFactory) {",
-      "kind": "runtime-shared-state",
-      "ownership": "App-scoped actions borrow shared application state.",
-      "justification": "New, open, recent-open, and quit actions must reuse the current window or create one exactly once."
-    },
-    {
-      "path": "src/app.rs",
-      "line": 115,
-      "match": "state: &Rc<RefCell<AppState>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "Application actions and lifecycle callbacks borrow shared application state.",
-      "justification": "The single-window lifecycle needs one active-window slot and restore gate reused across app actions, activation, and file-open handling."
-    },
-    {
-      "path": "src/app.rs",
-      "line": 181,
-      "match": "state: &Rc<RefCell<AppState>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "Application actions and lifecycle callbacks borrow shared application state.",
-      "justification": "The single-window lifecycle needs one active-window slot and restore gate reused across app actions, activation, and file-open handling."
-    },
-    {
-      "path": "src/app.rs",
-      "line": 241,
-      "match": "state: &Rc<RefCell<AppState>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "Application actions and lifecycle callbacks borrow shared application state.",
-      "justification": "The single-window lifecycle needs one active-window slot and restore gate reused across app actions, activation, and file-open handling."
-    },
-    {
-      "path": "src/app.rs",
-      "line": 284,
-      "match": "state: &Rc<RefCell<AppState>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "Application actions and lifecycle callbacks borrow shared application state.",
-      "justification": "The single-window lifecycle needs one active-window slot and restore gate reused across app actions, activation, and file-open handling."
-    },
-    {
       "path": "src/close_flow.rs",
       "line": 21,
       "match": "state: RefCell<CloseState>,",
@@ -179,11 +115,35 @@
     },
     {
       "path": "src/editor_tab/compare/ui.rs",
-      "line": 210,
-      "match": "syncing: &Cell<bool>,",
+      "line": 252,
+      "match": "syncing: &Rc<Cell<bool>>,",
       "kind": "runtime-shared-state",
       "ownership": "Compare scroll synchronization borrows a tab-local reentrancy guard.",
       "justification": "Ratio-based split-view scrolling needs one shared boolean so left and right adjustment callbacks cannot trigger each other recursively."
+    },
+    {
+      "path": "src/editor_tab/compare/ui.rs",
+      "line": 253,
+      "match": "pending: &Rc<Cell<bool>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Compare scroll synchronization owns its per-direction idle-sync guard.",
+      "justification": "Scroll updates can arrive in bursts, and setting a peer Adjustment inside the value-changed handler can trigger rendering glitches. The pending flag coalesces updates so the peer scroll is applied once per main-loop idle."
+    },
+    {
+      "path": "src/editor_tab/compare/ui.rs",
+      "line": 254,
+      "match": "pending_value: &Rc<Cell<f64>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Compare scroll synchronization owns its pending peer-scroll value.",
+      "justification": "Coalesced peer scrolling needs to remember the most recent target Adjustment value until the idle callback runs."
+    },
+    {
+      "path": "src/editor_tab/compare/ui.rs",
+      "line": 309,
+      "match": "idle_pending: &Rc<Cell<bool>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Compare scroll synchronization owns its coalesced idle-redraw guard.",
+      "justification": "Scroll synchronization can emit bursts of adjustment updates. A single shared pending flag ensures redraw scheduling is coalesced without creating feedback loops or leaking state outside compare mode."
     },
     {
       "path": "src/editor_zoom.rs",
@@ -298,6 +258,30 @@
       "justification": "Snapshot comparison is centralized so root and loaded-dir polling trigger refreshes only on visible structural changes."
     },
     {
+      "path": "src/window_compare.rs",
+      "line": 24,
+      "match": "compare_action_installed: Cell<bool>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The compare controller owns its action-installed guard.",
+      "justification": "Compare is hidden from the main menu during active compare sessions by removing the window action, so a mutable guard tracks whether the action is currently installed."
+    },
+    {
+      "path": "src/window_compare/dialog.rs",
+      "line": 363,
+      "match": "left: RefCell<CompareSlot>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The compare dialog owns the mutable left-side source selection.",
+      "justification": "Button callbacks update the left compare source while keeping the dialog responsive without spreading selection state across window code."
+    },
+    {
+      "path": "src/window_compare/dialog.rs",
+      "line": 364,
+      "match": "right: RefCell<CompareSlot>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The compare dialog owns the mutable right-side source selection.",
+      "justification": "Button callbacks update the right compare source and keep the Compare button sensitivity in sync with the current selection."
+    },
+    {
       "path": "src/window_preferences.rs",
       "line": 20,
       "match": "_state: Rc<RefCell<PreferencesState>>,",
@@ -403,7 +387,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 86,
+      "line": 91,
       "match": "let tree_activation_handler: Rc<RefCell<Option<TreeActivationHandler>>> =",
       "kind": "runtime-shared-state",
       "ownership": "Tree activation wiring stores one late-bound handler closure.",
@@ -411,7 +395,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 322,
+      "line": 329,
       "match": "fn sync_actions_for_root(state: &Rc<RefCell<ProjectState>>) {",
       "kind": "runtime-shared-state",
       "ownership": "Root-action synchronization borrows shared project state.",
@@ -419,7 +403,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 335,
+      "line": 342,
       "match": "fn open_file_from_tree(state: &Rc<RefCell<ProjectState>>, file: gio::File) {",
       "kind": "runtime-shared-state",
       "ownership": "Tree activation routing borrows shared project state.",
@@ -427,7 +411,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 343,
+      "line": 350,
       "match": "state: &Rc<RefCell<ProjectState>>,",
       "kind": "runtime-shared-state",
       "ownership": "Project root transition helpers borrow shared project state.",
@@ -435,7 +419,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 459,
+      "line": 466,
       "match": "fn set_sidebar_visible_for_root(state: &Rc<RefCell<ProjectState>>, visible: bool) {",
       "kind": "runtime-shared-state",
       "ownership": "Root-change sidebar visibility borrows shared project state after mutation is complete.",
@@ -443,7 +427,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 479,
+      "line": 486,
       "match": "fn close_root(state: &Rc<RefCell<ProjectState>>) {",
       "kind": "runtime-shared-state",
       "ownership": "Close-folder handling mutates shared project state.",
@@ -451,7 +435,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 503,
+      "line": 510,
       "match": "fn sync_root_none(state: &Rc<RefCell<ProjectState>>, clear_settings: bool) {",
       "kind": "runtime-shared-state",
       "ownership": "No-root synchronization mutates shared project state.",
@@ -555,7 +539,7 @@
     },
     {
       "path": "src/workspace.rs",
-      "line": 56,
+      "line": 58,
       "match": "pub(crate) state: RefCell<WorkspaceState>,",
       "kind": "runtime-shared-state",
       "ownership": "The workspace owns tab collection, recent/session caches, restore gating, and active close flow.",

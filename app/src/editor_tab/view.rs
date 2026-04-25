@@ -22,7 +22,7 @@ impl EditorTab {
     }
 
     pub fn apply_minimap_visibility(&self) {
-        let show_minimap = self.settings.show_minimap();
+        let show_minimap = self.settings.show_minimap() && !self.is_compare_active();
         self.minimap_holder.set_visible(show_minimap);
         let policy = if show_minimap {
             gtk4::PolicyType::External

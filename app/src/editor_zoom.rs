@@ -325,7 +325,7 @@ fn editor_view_css(desc: &pango::FontDescription) -> String {
     };
     let weight = desc.weight().into_glib();
     format!(
-        ".{EDITOR_VIEW_CSS_CLASS} {{ font-family: \"{family}\"; font-size: {size_points:.2}pt; font-style: {style}; font-weight: {weight}; }}"
+        ".{EDITOR_VIEW_CSS_CLASS}, .{EDITOR_VIEW_CSS_CLASS} text {{ font-family: \"{family}\"; font-size: {size_points:.2}pt; font-style: {style}; font-weight: {weight}; }}"
     )
 }
 
@@ -405,6 +405,7 @@ mod tests {
         let desc = resolve_editor_font_description("JetBrains Mono");
         let css = editor_view_css(&desc);
         assert!(css.contains(".riteed-editor-view"));
+        assert!(css.contains(".riteed-editor-view text"));
         assert!(css.contains("font-family: \"JetBrains Mono\""));
     }
 

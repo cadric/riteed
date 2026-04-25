@@ -13,6 +13,7 @@ use crate::editor_tab::{EditorTab, SaveKind, SaveResult};
 use crate::settings::AppSettings;
 
 mod autosave;
+mod recent;
 #[cfg(test)]
 mod testing;
 
@@ -34,6 +35,7 @@ pub(crate) struct WorkspaceState {
     pub(crate) recent_files: Vec<String>,
     pub(crate) stored_session_files: Vec<String>,
     pub(crate) stored_selected_file: String,
+    pub(crate) persist_session: bool,
     pub(crate) restoring_session: bool,
     pub(crate) close_flow: Option<Rc<CloseCoordinator>>,
     pub(crate) allow_window_close: bool,
@@ -68,6 +70,7 @@ pub struct WorkspaceParts<'a> {
     pub save_as_action: &'a gio::SimpleAction,
     pub close_action: &'a gio::SimpleAction,
     pub settings: &'a AppSettings,
+    pub persist_session: bool,
 }
 
 impl Workspace {
@@ -111,6 +114,7 @@ impl Workspace {
                 recent_files: parts.settings.recent_files(),
                 stored_session_files: parts.settings.session_files(),
                 stored_selected_file: parts.settings.session_selected_file(),
+                persist_session: parts.persist_session,
                 restoring_session: false,
                 close_flow: None,
                 allow_window_close: false,
@@ -394,35 +398,6 @@ impl Workspace {
         );
     }
 
-    pub(crate) fn remember_recent_uri(&self, uri: &str) {
-        let Ok(mut state) = self.state.try_borrow_mut() else {
-            return;
-        };
-        if state.restoring_session {
-            return;
-        }
-        let updated = crate::session::remember_recent(&state.recent_files, uri);
-        if crate::session::list_changed(&state.recent_files, &updated) {
-            self.settings.set_recent_files(&updated);
-            state.recent_files = updated;
-            drop(state);
-            self.rebuild_primary_menu();
-        }
-    }
-
-    pub(crate) fn prune_recent_uri(&self, uri: &str) {
-        let Ok(mut state) = self.state.try_borrow_mut() else {
-            return;
-        };
-        let updated = crate::session::forget_recent(&state.recent_files, uri);
-        if crate::session::list_changed(&state.recent_files, &updated) {
-            self.settings.set_recent_files(&updated);
-            state.recent_files = updated;
-            drop(state);
-            self.rebuild_primary_menu();
-        }
-    }
-
     pub(crate) fn persist_session_state_if_needed(&self) {
         let snapshot = crate::session::session_snapshot(
             &self
@@ -440,6 +415,9 @@ impl Workspace {
         if state.restoring_session {
             return;
         }
+        if !state.persist_session {
+            return;
+        }
         if crate::session::list_changed(&state.stored_session_files, &snapshot) {
             self.settings.set_session_files(&snapshot);
             state.stored_session_files = snapshot;
@@ -451,8 +429,7 @@ impl Workspace {
     }
 
     pub(crate) fn rebuild_primary_menu(&self) {
-        let popover =
-            crate::workspace_menu::build_primary_popover(&self.state.borrow().recent_files);
+        let popover = crate::workspace_menu::build_primary_popover();
         self.menu_button.set_popover(Some(&popover));
     }
 

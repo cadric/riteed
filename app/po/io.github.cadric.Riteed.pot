@@ -20,7 +20,7 @@ msgstr ""
 msgid "Choose Editor Font"
 msgstr ""
 
-msgid "Choose Two Files to Compare"
+msgid "Choose File... or Paste Text..."
 msgstr ""
 
 msgid "Choose a Different Encoding to Save"
@@ -45,6 +45,9 @@ msgid "Choose the encoding to use when reopening this document."
 msgstr ""
 
 msgid "Choose the encoding to use when saving this document."
+msgstr ""
+
+msgid "Clear Recent Files?"
 msgstr ""
 
 msgid "Close Folder"
@@ -92,7 +95,7 @@ msgstr ""
 msgid "Editor Font"
 msgstr ""
 
-msgid "Use the Appearance button to adjust app appearance and editor palettes. Enable current-line highlight, line numbers, and the minimap in Preferences when you want more structure while reading longer code or markdown files."
+msgid "Files you open will appear here."
 msgstr ""
 
 msgid "Indent Width"
@@ -108,6 +111,9 @@ msgid "Modification State"
 msgstr ""
 
 msgid "Modified"
+msgstr ""
+
+msgid "No Recent Files"
 msgstr ""
 
 msgid "No Save Location Is Available"
@@ -138,6 +144,9 @@ msgid "Overwrite the Changed File?"
 msgstr ""
 
 msgid "Press Ctrl+F to search in the selected document, Ctrl+H to show replace, and F3 or Shift+F3 to move between matches."
+msgstr ""
+
+msgid "Press Ctrl+N to create another tab, and use Open... (Ctrl+O) to load local plain text files into separate tabs with their saved encoding and line endings."
 msgstr ""
 
 msgid "Project"
@@ -193,7 +202,7 @@ msgstr ""
 msgid "Save Changes Before Continuing?"
 msgstr ""
 
-msgid "Select two local text files before starting a comparison."
+msgid "Select the editable document on the left and the reference on the right."
 msgstr ""
 
 msgid "Selected Session File"
@@ -283,6 +292,9 @@ msgstr ""
 msgid "This file changed on disk. Saving now will replace the external version."
 msgstr ""
 
+msgid "This removes all recent file entries."
+msgstr ""
+
 msgid "Too large to compare differences."
 msgstr ""
 
@@ -298,7 +310,7 @@ msgstr ""
 msgid "Unable to Save the File"
 msgstr ""
 
-msgid "Use New Tab to start another document, and Open to load local plain text files into separate tabs with their saved encoding and line endings."
+msgid "Use the Appearance button to adjust app appearance and editor palettes. Enable current-line highlight, line numbers, and the minimap in Preferences when you want more structure while reading longer code or markdown files."
 msgstr ""
 
 msgid "Window Height"
@@ -319,6 +331,10 @@ msgstr ""
 
 msgctxt "alert response"
 msgid "Choose Encoding..."
+msgstr ""
+
+msgctxt "alert response"
+msgid "Clear"
 msgstr ""
 
 msgctxt "alert response"
@@ -386,6 +402,18 @@ msgid "Cancel"
 msgstr ""
 
 msgctxt "dialog button"
+msgid "Clear All"
+msgstr ""
+
+msgctxt "dialog button"
+msgid "Close"
+msgstr ""
+
+msgctxt "dialog button"
+msgid "Compare"
+msgstr ""
+
+msgctxt "dialog button"
 msgid "Open"
 msgstr ""
 
@@ -395,6 +423,10 @@ msgstr ""
 
 msgctxt "dialog button"
 msgid "Save"
+msgstr ""
+
+msgctxt "dialog button"
+msgid "Use Text"
 msgstr ""
 
 msgctxt "document format"
@@ -434,7 +466,7 @@ msgid "This File Is Missing on Disk."
 msgstr ""
 
 msgctxt "file dialog action"
-msgid "Compare"
+msgid "Choose"
 msgstr ""
 
 msgctxt "file dialog action"
@@ -446,18 +478,9 @@ msgid "Save"
 msgstr ""
 
 msgctxt "file dialog title"
-msgid "Compare Two Files"
-msgstr ""
-
-msgctxt "file dialog title"
-msgid "Compare With File"
-msgstr ""
-
-msgctxt "file dialog title"
 msgid "Open Folder"
 msgstr ""
 
-msgctxt "file dialog title"
 msgctxt "file dialog title"
 msgid "Save the Document"
 msgstr ""
@@ -530,14 +553,10 @@ msgctxt "line ending menu"
 msgid "Windows (CRLF)"
 msgstr ""
 
-msgctxt "menu item"
-msgid "About"
+msgctxt "paste dialog title"
+msgid "Paste Text"
 msgstr ""
 
-msgctxt "menu item"
-msgid "Actual Size"
-msgstr ""
-
-msgctxt "menu item"
-msgid "Close Folder"
+msgctxt "recent files dialog title"
+msgid "Recent Files"
 msgstr ""

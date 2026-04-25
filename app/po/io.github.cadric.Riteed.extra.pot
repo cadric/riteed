@@ -1,9 +1,6 @@
 msgid "Appearance"
 msgstr ""
 
-msgid "Close Appearance Panel"
-msgstr ""
-
 msgid "Autosave"
 msgstr ""
 
@@ -17,6 +14,9 @@ msgid "Autosave paused because the file changed on disk."
 msgstr ""
 
 msgid "Autosave paused because the file could not be written."
+msgstr ""
+
+msgid "Close Appearance Panel"
 msgstr ""
 
 msgid "Controls the color palette used for editor buffers."
@@ -79,6 +79,54 @@ msgctxt "app appearance"
 msgid "Light"
 msgstr ""
 
+msgctxt "compare dialog action"
+msgid "Choose File..."
+msgstr ""
+
+msgctxt "compare dialog action"
+msgid "Clear"
+msgstr ""
+
+msgctxt "compare dialog action"
+msgid "Paste Text..."
+msgstr ""
+
+msgctxt "compare dialog action"
+msgid "Swap"
+msgstr ""
+
+msgctxt "compare dialog side"
+msgid "Left Side"
+msgstr ""
+
+msgctxt "compare dialog side"
+msgid "Right Side"
+msgstr ""
+
+msgctxt "compare dialog title"
+msgid "Compare"
+msgstr ""
+
+msgctxt "compare source"
+msgid "Current Document"
+msgstr ""
+
+msgctxt "compare source"
+msgid "File"
+msgstr ""
+
+msgctxt "compare source"
+msgid "Not Set"
+msgstr ""
+
+msgctxt "compare source"
+msgid "Pasted Text"
+msgstr ""
+
+msgctxt "compare source"
+msgid "Saved Version"
+msgstr ""
+
 msgctxt "editor palette"
 msgid "Adwaita Dark"
 msgstr ""
@@ -108,31 +156,19 @@ msgid "Solarized Light"
 msgstr ""
 
 msgctxt "file dialog title"
+msgid "Choose a File"
+msgstr ""
+
+msgctxt "file dialog title"
 msgid "Open Text Files"
 msgstr ""
 
 msgctxt "menu item"
-msgid "Compare"
+msgid "About Riteed"
 msgstr ""
 
 msgctxt "menu item"
-msgid "Compare Two Files"
-msgstr ""
-
-msgctxt "menu item"
-msgid "Compare With File"
-msgstr ""
-
-msgctxt "menu item"
-msgid "Compare With Saved File"
-msgstr ""
-
-msgctxt "menu item"
-msgid "Exit Compare"
-msgstr ""
-
-msgctxt "menu item"
-msgid "Fullscreen"
+msgid "Compare..."
 msgstr ""
 
 msgctxt "menu item"
@@ -144,15 +180,15 @@ msgid "Keyboard Shortcuts"
 msgstr ""
 
 msgctxt "menu item"
-msgid "New Tab"
+msgid "New Window"
 msgstr ""
 
 msgctxt "menu item"
-msgid "Open"
+msgid "Open Folder..."
 msgstr ""
 
 msgctxt "menu item"
-msgid "Open Folder"
+msgid "Open..."
 msgstr ""
 
 msgctxt "menu item"
@@ -160,43 +196,11 @@ msgid "Preferences"
 msgstr ""
 
 msgctxt "menu item"
-msgid "Project"
-msgstr ""
-
-msgctxt "menu item"
-msgid "Project Sidebar"
-msgstr ""
-
-msgctxt "menu item"
-msgid "Recent Files"
-msgstr ""
-
-msgctxt "menu item"
-msgid "Refresh Project Tree"
-msgstr ""
-
-msgctxt "menu item"
-msgid "Refresh Reference"
+msgid "Recent Files..."
 msgstr ""
 
 msgctxt "menu item"
 msgid "Search"
-msgstr ""
-
-msgctxt "menu item"
-msgid "Show Hidden Files"
-msgstr ""
-
-msgctxt "menu item"
-msgid "Zoom"
-msgstr ""
-
-msgctxt "menu item"
-msgid "Zoom In"
-msgstr ""
-
-msgctxt "menu item"
-msgid "Zoom Out"
 msgstr ""
 
 msgctxt "save file name"

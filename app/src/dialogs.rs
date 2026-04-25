@@ -7,11 +7,13 @@ use crate::error::AppError;
 use crate::{APP_NAME, REPO_URL};
 
 pub(crate) mod encoding;
+pub(crate) mod recent_files;
 
 pub use encoding::{
     DecodeFailureResponse, InvalidCharsSaveResponse, ReopenWithEncodingResponse, choose_encoding,
     confirm_decode_failure, confirm_invalid_chars_save, confirm_reopen_with_encoding,
 };
+pub use recent_files::show_recent_files_dialog;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum UnsavedResponse {
@@ -200,7 +202,7 @@ pub fn show_help(parent: &impl IsA<gtk4::Widget>) {
     getting_started.add(&help_row(
         &pgettext("help row", "Tabs and Files"),
         &gettext(
-            "Use New Tab to start another document, and Open to load local plain text files into separate tabs with their saved encoding and line endings.",
+            "Press Ctrl+N to create another tab, and use Open... (Ctrl+O) to load local plain text files into separate tabs with their saved encoding and line endings.",
         ),
     ));
     getting_started.add(&help_row(

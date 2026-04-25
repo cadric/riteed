@@ -10,27 +10,15 @@ use crate::editor_io::{self, LoadFailure};
 use crate::error::AppError;
 
 mod diff;
+mod target;
 mod ui;
 
 use diff::{DiffPlan, compute_diff_plan};
+use target::{CompareTarget, CompareTargetKind};
 use ui::{
     CompareTags, apply_diff_tags, apply_line_tag, buffer_text, clear_tags, compare_toolbar,
     configure_reference_view, install_scroll_sync, remove_current_tags, scroll_to_line,
 };
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum CompareTargetKind {
-    Disk,
-    File,
-}
-
-#[derive(Clone)]
-struct CompareTarget {
-    file: gio::File,
-    uri: String,
-    title: String,
-    kind: CompareTargetKind,
-}
 
 pub(crate) struct CompareController {
     target: CompareTarget,
@@ -65,13 +53,23 @@ impl EditorTab {
     }
 
     #[must_use]
+    pub fn compare_reference_is_refreshable(&self) -> bool {
+        self.compare.try_borrow().is_ok_and(|compare| {
+            compare
+                .as_ref()
+                .is_some_and(|compare| compare.target.is_refreshable())
+        })
+    }
+
+    #[must_use]
     pub fn is_compare_with_current_disk(&self) -> bool {
         let Some(uri) = self.uri() else {
             return false;
         };
         self.compare.try_borrow().is_ok_and(|compare| {
             compare.as_ref().is_some_and(|compare| {
-                compare.target.kind == CompareTargetKind::Disk && compare.target.uri == uri
+                compare.target.kind == CompareTargetKind::Disk
+                    && compare.target.uri.as_deref() == Some(uri.as_str())
             })
         })
     }
@@ -81,7 +79,7 @@ impl EditorTab {
             callback(Err(AppError::MissingSavePath));
             return;
         };
-        let target = CompareTarget::new(file, CompareTargetKind::Disk);
+        let target = CompareTarget::disk(file);
         self.start_compare_with_target(&target, callback);
     }
 
@@ -90,7 +88,16 @@ impl EditorTab {
         file: &gio::File,
         callback: Rc<dyn Fn(Result<(), AppError>)>,
     ) {
-        let target = CompareTarget::new(file.clone(), CompareTargetKind::File);
+        let target = CompareTarget::file(file.clone());
+        self.start_compare_with_target(&target, callback);
+    }
+
+    pub fn start_compare_with_text(
+        self: &Rc<Self>,
+        text: &str,
+        callback: Rc<dyn Fn(Result<(), AppError>)>,
+    ) {
+        let target = CompareTarget::text(pgettext("compare source", "Pasted Text"), text.into());
         self.start_compare_with_target(&target, callback);
     }
 
@@ -109,14 +116,15 @@ impl EditorTab {
 
     pub fn exit_compare(&self) {
         self.bump_compare_generation();
-        if let Some(mut compare) = self.compare.borrow_mut().take() {
+        let compare = self.compare.borrow_mut().take();
+        if let Some(mut compare) = compare {
             compare.cancel();
             clear_tags(&self.text_buffer, &compare.reference_buffer, &compare.tags);
             self.root.remove(&compare.toolbar);
             self.root.remove(&compare.paned);
             compare.paned.set_start_child(Option::<&gtk4::Widget>::None);
             compare.paned.set_end_child(Option::<&gtk4::Widget>::None);
-            self.content.prepend(&self.scrolled);
+            drop(compare);
             self.root.append(&self.content);
             self.apply_minimap_visibility();
             self.sync_presentation();
@@ -160,7 +168,7 @@ impl EditorTab {
         };
         if let Some(compare) = compare_state.as_mut()
             && compare.target.kind == CompareTargetKind::Disk
-            && compare.target.uri == saved_uri
+            && compare.target.uri.as_deref() == Some(saved_uri)
         {
             compare.set_reference_text(&text, false);
             compare.recompute(&self.text_buffer, &self.text_view, &text);
@@ -222,10 +230,11 @@ impl EditorTab {
     fn enter_compare_layout(self: &Rc<Self>, target: &CompareTarget) {
         self.exit_compare();
         self.root.remove(&self.content);
-        self.content.remove(&self.scrolled);
         self.minimap_holder.set_visible(false);
+        self.scrolled
+            .set_vscrollbar_policy(gtk4::PolicyType::Automatic);
         let compare = CompareController::new(self, target.clone());
-        compare.paned.set_start_child(Some(&self.scrolled));
+        compare.paned.set_start_child(Some(&self.content));
         self.root.append(&compare.toolbar);
         self.root.append(&compare.paned);
         compare.apply_tag_colors(self.settings.editor_palette_is_dark());
@@ -238,15 +247,48 @@ impl EditorTab {
         target: &CompareTarget,
         callback: Rc<dyn Fn(Result<(), AppError>)>,
     ) {
+        if target.kind == CompareTargetKind::Text {
+            let Some(reference_text) = target.text.as_deref() else {
+                callback(Err(AppError::Cancelled));
+                return;
+            };
+            let editable_text = self.buffer_text();
+            let applied = {
+                let mut compare_state = self.compare.borrow_mut();
+                if let Some(compare) = compare_state.as_mut() {
+                    compare.set_reference_text(reference_text, target.implicit_trailing_newline);
+                    compare.recompute(&self.text_buffer, &self.text_view, &editable_text);
+                    true
+                } else {
+                    false
+                }
+            };
+            self.sync_presentation();
+            callback(if applied {
+                Ok(())
+            } else {
+                Err(AppError::Cancelled)
+            });
+            return;
+        }
+
+        let Some(file) = target.file.as_ref() else {
+            callback(Err(AppError::Cancelled));
+            return;
+        };
+        let Some(target_uri) = target.uri.clone() else {
+            callback(Err(AppError::Cancelled));
+            return;
+        };
+
         let generation = self.bump_compare_generation();
         let cancellable = gio::Cancellable::new();
         if let Some(compare) = self.compare.borrow_mut().as_mut() {
             compare.set_loading(&cancellable);
         }
-        let target_uri = target.uri.clone();
         let weak = Rc::downgrade(self);
         editor_io::load_text_file(
-            &target.file,
+            file,
             None,
             Some(&cancellable),
             Rc::new(move |result| {
@@ -262,7 +304,7 @@ impl EditorTab {
                         let applied = {
                             let mut compare_state = tab.compare.borrow_mut();
                             if let Some(compare) = compare_state.as_mut()
-                                && compare.target.uri == target_uri
+                                && compare.target.uri.as_deref() == Some(target_uri.as_str())
                             {
                                 compare.finish_loading();
                                 compare.set_reference_text(
@@ -302,20 +344,6 @@ impl EditorTab {
     }
 }
 
-impl CompareTarget {
-    fn new(file: gio::File, kind: CompareTargetKind) -> Self {
-        Self {
-            uri: file.uri().to_string(),
-            title: file.basename().map_or_else(
-                || file.uri().to_string(),
-                |name| name.to_string_lossy().to_string(),
-            ),
-            file,
-            kind,
-        }
-    }
-}
-
 impl CompareController {
     fn new(tab: &Rc<EditorTab>, target: CompareTarget) -> Self {
         let reference_buffer = sourceview5::Buffer::builder()
@@ -350,8 +378,12 @@ impl CompareController {
 
         let left_adjustment = tab.scrolled.vadjustment();
         let right_adjustment = reference_scrolled.vadjustment();
-        let (left_handler, right_handler) =
-            install_scroll_sync(&left_adjustment, &right_adjustment);
+        let (left_handler, right_handler) = install_scroll_sync(
+            &left_adjustment,
+            &right_adjustment,
+            &tab.text_view,
+            &reference_view,
+        );
         let style_manager = adw::StyleManager::default();
         let weak = Rc::downgrade(tab);
         let style_handler = style_manager.connect_dark_notify(move |_| {

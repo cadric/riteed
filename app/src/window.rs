@@ -22,11 +22,36 @@ use crate::workspace::{OpenSource, Workspace, WorkspaceParts};
 #[cfg(test)]
 mod testing;
 
+#[derive(Clone, Copy, Debug)]
+pub struct WindowInit {
+    pub persist_session: bool,
+    pub restore_project: bool,
+}
+
+impl WindowInit {
+    #[must_use]
+    pub const fn primary() -> Self {
+        Self {
+            persist_session: true,
+            restore_project: true,
+        }
+    }
+
+    #[must_use]
+    pub const fn secondary() -> Self {
+        Self {
+            persist_session: false,
+            restore_project: false,
+        }
+    }
+}
+
 pub struct Window {
     shell: WindowShell,
     save_action: gio::SimpleAction,
     save_as_action: gio::SimpleAction,
     close_action: gio::SimpleAction,
+    recent_files_action: gio::SimpleAction,
     search_action: gio::SimpleAction,
     replace_action: gio::SimpleAction,
     find_next_action: gio::SimpleAction,
@@ -48,14 +73,28 @@ impl Window {
     ///
     /// Returns an error when the resource-backed editor UI cannot be loaded.
     pub fn new(app: &adw::Application) -> Result<Rc<Self>, AppError> {
-        Self::build(app, AppSettings::new())
+        Self::build(app, AppSettings::new(), WindowInit::primary())
+    }
+
+    /// # Errors
+    ///
+    /// Returns an error when the resource-backed editor UI cannot be loaded.
+    pub fn new_secondary(app: &adw::Application) -> Result<Rc<Self>, AppError> {
+        Self::build(app, AppSettings::new(), WindowInit::secondary())
     }
 
     /// # Errors
     ///
     /// Returns an error when the resource-backed editor UI cannot be loaded.
     pub fn new_for_tests(app: &adw::Application) -> Result<Rc<Self>, AppError> {
-        Self::build(app, AppSettings::new_for_tests())
+        Self::build(app, AppSettings::new_for_tests(), WindowInit::primary())
+    }
+
+    /// # Errors
+    ///
+    /// Returns an error when the resource-backed editor UI cannot be loaded.
+    pub fn new_secondary_for_tests(app: &adw::Application) -> Result<Rc<Self>, AppError> {
+        Self::build(app, AppSettings::new_for_tests(), WindowInit::secondary())
     }
 
     #[cfg(test)]
@@ -63,10 +102,14 @@ impl Window {
         app: &adw::Application,
         settings: AppSettings,
     ) -> Result<Rc<Self>, AppError> {
-        Self::build(app, settings)
+        Self::build(app, settings, WindowInit::primary())
     }
 
-    fn build(app: &adw::Application, settings: AppSettings) -> Result<Rc<Self>, AppError> {
+    fn build(
+        app: &adw::Application,
+        settings: AppSettings,
+        init: WindowInit,
+    ) -> Result<Rc<Self>, AppError> {
         let shell = WindowShell::new(app)?;
         sourceview5::init();
         configure_runtime_icon_support(&shell.window);
@@ -74,6 +117,7 @@ impl Window {
         let save_action = gio::SimpleAction::new("save", None);
         let save_as_action = gio::SimpleAction::new("save-as", None);
         let close_action = gio::SimpleAction::new("close", None);
+        let recent_files_action = gio::SimpleAction::new("recent-files", None);
         let search_action = gio::SimpleAction::new("search", None);
         let replace_action = gio::SimpleAction::new("replace", None);
         let find_next_action = gio::SimpleAction::new("find-next", None);
@@ -84,6 +128,7 @@ impl Window {
         shell.window.add_action(&save_action);
         shell.window.add_action(&save_as_action);
         shell.window.add_action(&close_action);
+        shell.window.add_action(&recent_files_action);
         shell.window.add_action(&search_action);
         shell.window.add_action(&replace_action);
         shell.window.add_action(&find_next_action);
@@ -107,18 +152,21 @@ impl Window {
             save_as_action: &save_as_action,
             close_action: &close_action,
             settings: &settings,
+            persist_session: init.persist_session,
         });
         let zoom = EditorZoomController::new(&shell.window, &workspace, &settings);
         let appearance = WindowAppearanceController::new(&shell, &settings, &workspace)?;
         let preferences = WindowPreferencesController::new(&shell, &settings, &workspace, &zoom);
         let compare = WindowCompareController::new(&shell.window, &workspace);
-        let project = WindowProjectController::new(&shell, &settings, &workspace);
+        let project =
+            WindowProjectController::new(&shell, &settings, &workspace, init.restore_project);
 
         let window = Rc::new(Self {
             shell,
             save_action,
             save_as_action,
             close_action,
+            recent_files_action,
             search_action,
             replace_action,
             find_next_action,
@@ -223,6 +271,16 @@ impl Window {
         dialogs::show_help(&self.shell.window);
     }
 
+    pub fn show_recent_files(self: &Rc<Self>) {
+        let weak = Rc::downgrade(self);
+        let on_open_uri: Rc<dyn Fn(String)> = Rc::new(move |uri| {
+            if let Some(window) = weak.upgrade() {
+                window.request_open_recent(&uri);
+            }
+        });
+        dialogs::show_recent_files_dialog(&self.shell.window, &self.settings, &on_open_uri);
+    }
+
     fn install_callbacks(self: &Rc<Self>) {
         let weak = Rc::downgrade(self);
         self.shell.window.connect_close_request(move |_| {
@@ -240,6 +298,13 @@ impl Window {
         self.save_action.connect_activate(move |_, _| {
             if let Some(window) = weak.upgrade() {
                 window.request_save();
+            }
+        });
+
+        let weak = Rc::downgrade(self);
+        self.recent_files_action.connect_activate(move |_, _| {
+            if let Some(window) = weak.upgrade() {
+                window.show_recent_files();
             }
         });
 

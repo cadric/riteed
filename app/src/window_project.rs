@@ -67,7 +67,12 @@ pub struct WindowProjectController {
 
 impl WindowProjectController {
     #[must_use]
-    pub fn new(shell: &WindowShell, settings: &AppSettings, workspace: &Rc<Workspace>) -> Self {
+    pub fn new(
+        shell: &WindowShell,
+        settings: &AppSettings,
+        workspace: &Rc<Workspace>,
+        restore_project: bool,
+    ) -> Self {
         let sidebar_visible_action =
             gio::SimpleAction::new_stateful("project-sidebar-visible", None, &false.to_variant());
         let show_hidden_action = gio::SimpleAction::new_stateful(
@@ -154,7 +159,9 @@ impl WindowProjectController {
         let controller = Self { state };
 
         controller.install_callbacks();
-        controller.restore_from_settings();
+        if restore_project {
+            controller.restore_from_settings();
+        }
         controller
     }
 

@@ -2,6 +2,20 @@
   "version": 1,
   "strings": [
     {
+      "path": "src/dialogs/recent_files.rs",
+      "line": 37,
+      "match": ".title(gettext(\"No Recent Files\"))",
+      "kind": "i18n-short-string",
+      "resolution": "This short empty-state title appears in the Recent Files dialog directly above the explanatory body text."
+    },
+    {
+      "path": "src/dialogs/recent_files.rs",
+      "line": 85,
+      "match": ".heading(gettext(\"Clear Recent Files?\"))",
+      "kind": "i18n-short-string",
+      "resolution": "This short confirmation heading is shown in the Clear All confirmation dialog, where the body text explains the irreversible action."
+    },
+    {
       "path": "src/editor_search.rs",
       "line": 483,
       "match": "gettext(\"No matches\")",
@@ -59,7 +73,7 @@
     },
     {
       "path": "src/editor_tab/compare.rs",
-      "line": 511,
+      "line": 543,
       "match": "let text = ngettext(\"%d changed line\", \"%d changed lines\", plural_count)",
       "kind": "i18n-short-string",
       "resolution": "This plural-sensitive compare status counts changed logical lines while hunk navigation remains visible beside it in the full-width compare toolbar."
@@ -108,38 +122,45 @@
     },
     {
       "path": "src/window.rs",
-      "line": 363,
+      "line": 428,
       "match": ".update_property(&[Property::Label(&gettext(\"New Tab\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
     },
     {
       "path": "src/window.rs",
-      "line": 366,
+      "line": 431,
       "match": ".update_property(&[Property::Label(&gettext(\"Open Text Files\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
     },
     {
       "path": "src/window.rs",
-      "line": 369,
+      "line": 434,
       "match": ".update_property(&[Property::Label(&gettext(\"Project Sidebar\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
     },
     {
       "path": "src/window.rs",
-      "line": 375,
+      "line": 440,
       "match": ".update_property(&[Property::Label(&gettext(\"Appearance\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short accessible label names the icon-only header-bar button that opens the app appearance and editor palette panel."
     },
     {
       "path": "src/window.rs",
-      "line": 378,
+      "line": 443,
       "match": ".update_property(&[Property::Label(&gettext(\"Main Menu\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
+    },
+    {
+      "path": "src/window_compare/dialog.rs",
+      "line": 424,
+      "match": "row.set_subtitle(&gettext(\"Unavailable\"));",
+      "kind": "i18n-short-string",
+      "resolution": "This short subtitle appears in the Compare dialog when the Saved Version source is not available for the current left-side selection."
     },
     {
       "path": "src/window_appearance.rs",
@@ -164,14 +185,14 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 496,
+      "line": 503,
       "match": "state.browser.set_title(&gettext(\"Project\"));",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
     },
     {
       "path": "src/window_project.rs",
-      "line": 514,
+      "line": 521,
       "match": "state.browser.set_title(&gettext(\"Project\"));",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."

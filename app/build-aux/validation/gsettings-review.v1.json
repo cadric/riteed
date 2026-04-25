@@ -3,8 +3,8 @@
   "sites": [
     {
       "path": "src/editor_tab/compare/ui.rs",
-      "line": 221,
-      "match": "target.set_value((source.value() / source_max) * target_max);",
+      "line": 282,
+      "match": "target.set_value(pending_value.get());",
       "kind": "gsettings-write",
       "key": "compare-scroll-adjustment",
       "trigger": "Compare scroll synchronization writes only to the peer GTK Adjustment during in-tab split scrolling; no preference or GSettings key is touched."
