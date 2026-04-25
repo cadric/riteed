@@ -34,7 +34,8 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Extended the embedded Riteed editor to a v5c polish layer with direct status-bar zoom controls, document format controls in Preferences, fixed-size minimap rendering during zoom, and scroll-past-end editor padding.
 - Added a folder-navigation split layout using `AdwOverlaySplitView` inside the existing toast overlay, keeping project state separate from document/tab state while preserving the lightweight editor workflow.
 - Made compare highlighting follow the effective editor palette instead of the application theme, and kept autosave saves silent so they do not reorder recent files, persist session state, or show save toasts.
-- Moved quick app appearance, editor palette, and current-line highlight controls into an icon-only header-bar Appearance panel with visual palette previews, while keeping deeper editor settings in Preferences.
+- Moved quick app appearance and editor palette controls into an icon-only header-bar Appearance panel with visual palette previews, while keeping editor view toggles such as current-line highlight in Preferences.
+- Refined the editor chrome by putting Project Sidebar first in the header bar, moving Save beside Open, moving a friendly file location into the bottom status bar, and removing the status-bar Actual Size button.
 
 ### Fixed
 - Stabilized GTK coverage runs by teaching `tools.coverage_check` to invoke `cargo llvm-cov` with a deterministic `GSK_RENDERER=cairo` environment, with unit coverage for the new tool behavior.

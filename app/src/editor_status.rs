@@ -9,20 +9,19 @@ struct StatusControls {
     zoom_box: gtk4::Box,
     zoom_percent_label: gtk4::Label,
     zoom_out_button: gtk4::Button,
-    zoom_reset_button: gtk4::Button,
     zoom_in_button: gtk4::Button,
 }
 
 pub struct EditorStatusBar {
     root: gtk4::Box,
     name_label: gtk4::Label,
+    location_label: gtk4::Label,
     modified_label: gtk4::Label,
     position_label: gtk4::Label,
     format_label: gtk4::Label,
     zoom_box: gtk4::Box,
     zoom_percent_label: gtk4::Label,
     zoom_out_button: gtk4::Button,
-    zoom_reset_button: gtk4::Button,
     zoom_in_button: gtk4::Button,
 }
 
@@ -38,12 +37,11 @@ impl EditorStatusBar {
         let root = gtk4::Box::builder()
             .orientation(gtk4::Orientation::Horizontal)
             .spacing(12)
-            .margin_bottom(6)
             .margin_end(12)
             .margin_start(12)
-            .margin_top(6)
             .build();
         root.add_css_class("toolbar");
+        root.add_css_class("riteed-status-bar");
 
         let left = gtk4::Box::builder()
             .orientation(gtk4::Orientation::Horizontal)
@@ -60,8 +58,13 @@ impl EditorStatusBar {
         let name_label = gtk4::Label::builder()
             .xalign(0.0)
             .ellipsize(gtk4::pango::EllipsizeMode::End)
+            .build();
+        let location_label = gtk4::Label::builder()
+            .xalign(0.0)
+            .ellipsize(gtk4::pango::EllipsizeMode::Middle)
             .hexpand(true)
             .build();
+        location_label.add_css_class("dim-label");
         let modified_label = gtk4::Label::builder().xalign(0.0).build();
         modified_label.add_css_class("dim-label");
 
@@ -70,7 +73,7 @@ impl EditorStatusBar {
 
         let controls = build_status_controls();
 
-        left.append(&name_label);
+        left.append(&location_label);
         left.append(&modified_label);
         right.append(&controls.format_label);
         right.append(&controls.zoom_box);
@@ -81,20 +84,20 @@ impl EditorStatusBar {
         controls
             .format_label
             .update_property(&[Property::Label(&gettext("Document Format"))]);
-        name_label.update_property(&[Property::Label(&gettext("Current Document"))]);
+        location_label.update_property(&[Property::Label(&gettext("Current Document Location"))]);
         modified_label.update_property(&[Property::Label(&gettext("Modification State"))]);
         position_label.update_property(&[Property::Label(&gettext("Cursor Position"))]);
 
         let status = Self {
             root,
             name_label,
+            location_label,
             modified_label,
             position_label,
             format_label: controls.format_label,
             zoom_box: controls.zoom_box,
             zoom_percent_label: controls.zoom_percent_label,
             zoom_out_button: controls.zoom_out_button,
-            zoom_reset_button: controls.zoom_reset_button,
             zoom_in_button: controls.zoom_in_button,
         };
         status.update(None);
@@ -108,7 +111,15 @@ impl EditorStatusBar {
 
     pub fn update(&self, tab: Option<&EditorTab>) {
         let (name, modified, position) = status_strings(tab);
+        let location = status_location(tab);
         self.name_label.set_label(&name);
+        self.location_label.set_label(&location);
+        self.location_label
+            .set_tooltip_text(if location.is_empty() {
+                None
+            } else {
+                Some(&location)
+            });
         self.modified_label.set_label(&modified);
         self.position_label.set_label(&position);
 
@@ -117,7 +128,6 @@ impl EditorStatusBar {
             self.format_label.set_sensitive(true);
             self.zoom_box.set_sensitive(true);
             self.zoom_out_button.set_sensitive(true);
-            self.zoom_reset_button.set_sensitive(true);
             self.zoom_in_button.set_sensitive(true);
         } else {
             self.format_label
@@ -125,7 +135,6 @@ impl EditorStatusBar {
             self.format_label.set_sensitive(false);
             self.zoom_box.set_sensitive(false);
             self.zoom_out_button.set_sensitive(false);
-            self.zoom_reset_button.set_sensitive(false);
             self.zoom_in_button.set_sensitive(false);
         }
     }
@@ -165,7 +174,7 @@ impl EditorStatusBar {
 
     #[cfg(test)]
     pub(crate) fn activate_zoom_reset_for_tests(&self) {
-        self.zoom_reset_button.emit_clicked();
+        let _activated = self.root.activate_action("win.zoom-reset", None);
     }
 }
 
@@ -192,11 +201,6 @@ fn build_status_controls() -> StatusControls {
         &pgettext("zoom action", "Zoom Out"),
         "win.zoom-out",
     );
-    let zoom_reset_button = zoom_button(
-        "zoom-original-symbolic",
-        &pgettext("zoom action", "Actual Size"),
-        "win.zoom-reset",
-    );
     let zoom_in_button = zoom_button(
         "zoom-in-symbolic",
         &pgettext("zoom action", "Zoom In"),
@@ -207,14 +211,12 @@ fn build_status_controls() -> StatusControls {
     zoom_box.append(&zoom_out_button);
     zoom_box.append(&zoom_percent_label);
     zoom_box.append(&zoom_in_button);
-    zoom_box.append(&zoom_reset_button);
 
     StatusControls {
         format_label,
         zoom_box,
         zoom_percent_label,
         zoom_out_button,
-        zoom_reset_button,
         zoom_in_button,
     }
 }
@@ -248,6 +250,10 @@ pub fn status_strings(tab: Option<&EditorTab>) -> (String, String, String) {
     };
     let (line, column) = tab.cursor_position();
     (name, modified, format_line_column(line, column))
+}
+
+fn status_location(tab: Option<&EditorTab>) -> String {
+    tab.and_then(EditorTab::path_display).unwrap_or_default()
 }
 
 #[must_use]

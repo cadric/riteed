@@ -66,6 +66,9 @@ fn initialize_rows(
         shell
             .line_numbers_row
             .set_active(settings.show_line_numbers());
+        shell
+            .highlight_current_line_row
+            .set_active(settings.highlight_current_line());
         shell.minimap_row.set_active(settings.show_minimap());
         shell.autosave_row.set_active(settings.autosave_enabled());
         shell
@@ -116,6 +119,14 @@ fn install_toggle_preferences(
         state,
         AppSettings::set_show_line_numbers,
         Workspace::apply_line_numbers_to_tabs,
+    );
+    install_switch_handler(
+        &shell.highlight_current_line_row,
+        settings,
+        workspace,
+        state,
+        AppSettings::set_highlight_current_line,
+        Workspace::apply_current_line_highlight_to_tabs,
     );
     install_switch_handler(
         &shell.minimap_row,

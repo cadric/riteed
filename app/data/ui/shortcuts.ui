@@ -4,6 +4,8 @@
   <object class="GtkShortcutsWindow" id="shortcuts_window">
     <property name="modal">true</property>
     <property name="title" translatable="yes">Keyboard Shortcuts</property>
+    <property name="default-width">580</property>
+    <property name="default-height">640</property>
     <child>
       <object class="GtkShortcutsSection">
         <property name="section-name">editor</property>

@@ -24,45 +24,38 @@
     },
     {
       "path": "src/editor_status.rs",
-      "line": 83,
+      "line": 86,
       "match": ".update_property(&[Property::Label(&gettext(\"Document Format\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is used only as the accessible label for the read-only format field in the status bar."
     },
     {
       "path": "src/editor_status.rs",
-      "line": 84,
-      "match": "name_label.update_property(&[Property::Label(&gettext(\"Current Document\"))]);",
-      "kind": "i18n-short-string",
-      "resolution": "This short string is used only as the accessible label for the leftmost status field that shows the current document name."
-    },
-    {
-      "path": "src/editor_status.rs",
-      "line": 85,
+      "line": 88,
       "match": "modified_label.update_property(&[Property::Label(&gettext(\"Modification State\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is used only as the accessible label for the status field that reports whether the selected document is modified."
     },
     {
       "path": "src/editor_status.rs",
-      "line": 86,
+      "line": 89,
       "match": "position_label.update_property(&[Property::Label(&gettext(\"Cursor Position\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is used only as the accessible label for the right-aligned line and column readout in the status bar."
     },
     {
       "path": "src/editor_status.rs",
-      "line": 175,
+      "line": 184,
       "match": ".tooltip_text(gettext(\"Document Format\"))",
       "kind": "i18n-short-string",
       "resolution": "This short tooltip labels the read-only document format field in the bottom status bar, where it sits directly beside zoom and cursor status."
     },
     {
       "path": "src/editor_status.rs",
-      "line": 245,
+      "line": 247,
       "match": "gettext(\"Modified\")",
       "kind": "i18n-short-string",
-      "resolution": "This short visible status tag appears immediately after the current document name in the bottom status bar, so its state meaning is explicit from placement."
+      "resolution": "This short visible status tag appears immediately after the current document location in the bottom status bar, so its state meaning is explicit from placement."
     },
     {
       "path": "src/editor_tab/compare.rs",
@@ -150,21 +143,21 @@
     },
     {
       "path": "src/window_appearance.rs",
-      "line": 384,
+      "line": 419,
       "match": "let label = gtk4::Label::new(Some(&gettext(\"Unavailable\")));",
       "kind": "i18n-short-string",
       "resolution": "This short overlay label is shown directly on palette tiles whose source style scheme is not available on the current system."
     },
     {
       "path": "src/window_appearance.rs",
-      "line": 416,
+      "line": 454,
       "match": "let label = gtk4::Label::new(Some(&gettext(\"Preview unavailable\")));",
       "kind": "i18n-short-string",
       "resolution": "This compact fallback appears inside an editor palette tile when no safe preview style scheme can be resolved."
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 388,
+      "line": 399,
       "match": "font_dialog.set_title(&gettext(\"Choose Editor Font\"));",
       "kind": "i18n-short-string",
       "resolution": "This short dialog title appears at the top of the font chooser and the accompanying copy explains that the selection affects only the editor font."

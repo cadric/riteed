@@ -256,10 +256,6 @@ msgid "Zoom"
 msgstr ""
 
 msgctxt "zoom action"
-msgid "Actual Size"
-msgstr ""
-
-msgctxt "zoom action"
 msgid "Zoom In"
 msgstr ""
 

@@ -278,6 +278,11 @@ impl EditorTab {
     }
 
     #[must_use]
+    pub fn path_display(&self) -> Option<String> {
+        self.state.borrow().document.path_display()
+    }
+
+    #[must_use]
     pub fn save_name_suggestion(&self) -> String {
         self.state
             .borrow()

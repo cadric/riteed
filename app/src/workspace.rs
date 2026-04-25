@@ -537,7 +537,7 @@ impl Workspace {
 
         if let Some(tab) = selected {
             self.title_widget.set_title(&tab.title());
-            self.title_widget.set_subtitle(&tab.subtitle());
+            self.title_widget.set_subtitle("");
             self.save_action.set_enabled(tab.is_dirty());
             self.save_as_action.set_enabled(true);
             self.close_action.set_enabled(true);

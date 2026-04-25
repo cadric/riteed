@@ -19,6 +19,7 @@ pub struct WindowShell {
     pub preferences_dialog: adw::PreferencesDialog,
     pub word_wrap_row: adw::SwitchRow,
     pub line_numbers_row: adw::SwitchRow,
+    pub highlight_current_line_row: adw::SwitchRow,
     pub minimap_row: adw::SwitchRow,
     pub editor_font_row: adw::ActionRow,
     pub autosave_row: adw::SwitchRow,
@@ -58,6 +59,8 @@ impl WindowShell {
         let word_wrap_row: adw::SwitchRow = builder_object(&preferences_builder, "word_wrap_row")?;
         let line_numbers_row: adw::SwitchRow =
             builder_object(&preferences_builder, "line_numbers_row")?;
+        let highlight_current_line_row: adw::SwitchRow =
+            builder_object(&preferences_builder, "highlight_current_line_row")?;
         let minimap_row: adw::SwitchRow = builder_object(&preferences_builder, "minimap_row")?;
         let editor_font_row: adw::ActionRow =
             builder_object(&preferences_builder, "editor_font_row")?;
@@ -95,6 +98,7 @@ impl WindowShell {
             preferences_dialog,
             word_wrap_row,
             line_numbers_row,
+            highlight_current_line_row,
             minimap_row,
             editor_font_row,
             autosave_row,

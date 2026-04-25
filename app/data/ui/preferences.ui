@@ -4,8 +4,9 @@
   <requires lib="libadwaita" version="1.5"/>
   <object class="AdwPreferencesDialog" id="preferences_dialog">
     <property name="title" translatable="yes">Preferences</property>
-    <property name="content-width">420</property>
-    <property name="content-height">460</property>
+    <property name="content-width">580</property>
+    <property name="content-height">640</property>
+    <property name="follows-content-size">false</property>
     <child>
       <object class="AdwPreferencesPage">
         <property name="title" translatable="yes">Editor</property>
@@ -22,6 +23,12 @@
               <object class="AdwSwitchRow" id="line_numbers_row">
                 <property name="title" translatable="yes">Line Numbers</property>
                 <property name="subtitle" translatable="yes">Show Line Numbers in the Editor Gutter</property>
+              </object>
+            </child>
+            <child>
+              <object class="AdwSwitchRow" id="highlight_current_line_row">
+                <property name="title" translatable="yes">Highlight Current Line</property>
+                <property name="subtitle" translatable="yes">Subtly Highlight the Line With the Text Cursor</property>
               </object>
             </child>
             <child>

@@ -120,6 +120,9 @@ msgstr ""
 msgid "Close Appearance Panel"
 msgstr ""
 
+msgid "Current Document Location"
+msgstr ""
+
 msgid "Match App Appearance"
 msgstr ""
 
@@ -129,7 +132,7 @@ msgstr ""
 msgid "Unavailable"
 msgstr ""
 
-msgid "Use the Appearance button to adjust app appearance, editor palettes, and current-line highlight. Enable line numbers and the minimap in Preferences when you want more structure while reading longer code or markdown files."
+msgid "Use the Appearance button to adjust app appearance and editor palettes. Enable current-line highlight, line numbers, and the minimap in Preferences when you want more structure while reading longer code or markdown files."
 msgstr ""
 
 msgctxt "app appearance"

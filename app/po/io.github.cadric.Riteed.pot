@@ -77,7 +77,7 @@ msgstr ""
 msgid "Controls whether the project tree shows dot-prefixed hidden files and folders."
 msgstr ""
 
-msgid "Current Document"
+msgid "Current Document Location"
 msgstr ""
 
 msgid "Cursor Position"
@@ -92,7 +92,7 @@ msgstr ""
 msgid "Editor Font"
 msgstr ""
 
-msgid "Use the Appearance button to adjust app appearance, editor palettes, and current-line highlight. Enable line numbers and the minimap in Preferences when you want more structure while reading longer code or markdown files."
+msgid "Use the Appearance button to adjust app appearance and editor palettes. Enable current-line highlight, line numbers, and the minimap in Preferences when you want more structure while reading longer code or markdown files."
 msgstr ""
 
 msgid "Indent Width"

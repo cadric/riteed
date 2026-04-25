@@ -182,8 +182,9 @@ pub fn show_about(parent: &impl IsA<gtk4::Widget>) {
 pub fn show_help(parent: &impl IsA<gtk4::Widget>) {
     let dialog = adw::PreferencesDialog::builder()
         .title(pgettext("help dialog", "Help"))
-        .content_width(560)
-        .content_height(420)
+        .content_width(580)
+        .content_height(640)
+        .follows_content_size(false)
         .build();
 
     let overview = adw::PreferencesPage::builder()
@@ -221,7 +222,7 @@ pub fn show_help(parent: &impl IsA<gtk4::Widget>) {
     editing.add(&help_row(
         &pgettext("help row", "Editor Tools"),
         &gettext(
-            "Use the Appearance button to adjust app appearance, editor palettes, and current-line highlight. Enable line numbers and the minimap in Preferences when you want more structure while reading longer code or markdown files.",
+            "Use the Appearance button to adjust app appearance and editor palettes. Enable current-line highlight, line numbers, and the minimap in Preferences when you want more structure while reading longer code or markdown files.",
         ),
     ));
     editing.add(&help_row(

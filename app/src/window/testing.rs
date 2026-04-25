@@ -143,7 +143,7 @@ impl Window {
     }
 
     pub(crate) fn set_current_line_highlight_for_tests(&self, enabled: bool) {
-        self.appearance.set_highlight_for_tests(enabled);
+        self.shell.highlight_current_line_row.set_active(enabled);
     }
 
     pub(crate) fn set_autosave_for_tests(&self, enabled: bool) {

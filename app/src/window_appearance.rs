@@ -7,7 +7,6 @@ use gtk4::accessible::{Property, State};
 use gtk4::{gdk, prelude::*};
 use libadwaita as adw;
 use libadwaita::prelude::AdwDialogExt;
-use sourceview5::prelude::*;
 
 use crate::error::AppError;
 use crate::settings::{AppSettings, EditorPalette, ThemePreference};
@@ -16,7 +15,8 @@ use crate::workspace::Workspace;
 
 const APPEARANCE_CSS_RESOURCE: &str = "/io/github/cadric/Riteed/ui/appearance.css";
 const APPEARANCE_RESOURCE: &str = "/io/github/cadric/Riteed/ui/appearance_panel.ui";
-const PALETTE_COLUMNS: i32 = 2;
+const PALETTE_TILE_WIDTH: i32 = 132;
+const PALETTE_TILE_HEIGHT: i32 = 80;
 
 static APPEARANCE_CSS_INSTALLED: OnceLock<()> = OnceLock::new();
 
@@ -31,7 +31,6 @@ struct AppearanceState {
     dialog: adw::Dialog,
     theme_buttons: RefCell<Vec<ThemeButton>>,
     palette_tiles: RefCell<Vec<PaletteTile>>,
-    highlight_row: adw::SwitchRow,
 }
 
 #[derive(Clone)]
@@ -43,7 +42,8 @@ struct ThemeButton {
 #[derive(Clone)]
 struct PaletteTile {
     palette: EditorPalette,
-    button: gtk4::ToggleButton,
+    child: gtk4::FlowBoxChild,
+    preview: Option<sourceview5::StyleSchemePreview>,
 }
 
 struct PaletteTarget {
@@ -64,9 +64,7 @@ impl WindowAppearanceController {
         let dialog: adw::Dialog = builder_object(&builder, "appearance_dialog")?;
         let close_button: gtk4::Button = builder_object(&builder, "appearance_close_button")?;
         let app_box: gtk4::Box = builder_object(&builder, "app_appearance_box")?;
-        let palette_grid: gtk4::Grid = builder_object(&builder, "palette_grid")?;
-        let highlight_row: adw::SwitchRow = builder_object(&builder, "highlight_current_line_row")?;
-
+        let palette_flow_box: gtk4::FlowBox = builder_object(&builder, "palette_flow_box")?;
         close_button.update_property(&[Property::Label(&gettext("Close Appearance Panel"))]);
         install_close_callback(&dialog, &close_button);
 
@@ -80,11 +78,10 @@ impl WindowAppearanceController {
             dialog,
             theme_buttons: RefCell::new(theme_buttons),
             palette_tiles: RefCell::new(Vec::new()),
-            highlight_row,
         });
 
-        build_palette_grid(&state, &palette_grid);
-        install_callbacks(&state);
+        build_palette_flow_box(&state, &palette_flow_box);
+        install_callbacks(&state, &palette_flow_box);
         install_button_callback(&state, &shell.appearance_button);
         state.sync_all();
         Ok(Self { state })
@@ -128,11 +125,6 @@ impl WindowAppearanceController {
     }
 
     #[cfg(test)]
-    pub(crate) fn set_highlight_for_tests(&self, enabled: bool) {
-        self.state.activate_highlight(enabled);
-    }
-
-    #[cfg(test)]
     pub(crate) fn selected_palette_for_tests(&self) -> EditorPalette {
         self.state.selected_palette_for_ui()
     }
@@ -147,9 +139,8 @@ impl AppearanceState {
             theme_button.button.set_active(selected);
             update_theme_accessibility(&theme_button.button, theme_button.theme, selected);
         }
-        self.highlight_row
-            .set_active(self.settings.highlight_current_line());
         self.refresh_palette_tiles();
+        self.queue_palette_preview_resize();
         self.syncing.set(false);
     }
 
@@ -158,19 +149,44 @@ impl AppearanceState {
         for tile in self.palette_tiles.borrow().iter() {
             let target = palette_target(tile.palette);
             let unavailable = target.as_ref().is_none_or(|target| !target.available);
-            tile.button.set_child(Some(&palette_tile_content(
-                tile.palette,
-                target.as_ref(),
-                unavailable,
-            )));
-            tile.button.set_sensitive(!unavailable);
-            tile.button.set_active(tile.palette == selected);
+            let is_selected = tile.palette == selected;
+            tile.child.set_sensitive(!unavailable);
+            if let Some(preview) = tile.preview.as_ref() {
+                preview.set_selected(is_selected);
+            }
             update_tile_accessibility(
-                &tile.button,
+                tile.child.upcast_ref::<gtk4::Widget>(),
                 tile.palette,
                 unavailable,
-                tile.palette == selected,
+                is_selected,
             );
+        }
+        if let Some(parent) = self
+            .palette_tiles
+            .borrow()
+            .first()
+            .and_then(|tile| tile.child.parent())
+            .and_then(|parent| parent.downcast::<gtk4::FlowBox>().ok())
+        {
+            if let Some(active_child) = self
+                .palette_tiles
+                .borrow()
+                .iter()
+                .find(|tile| tile.palette == selected)
+                .map(|tile| tile.child.clone())
+            {
+                parent.select_child(&active_child);
+            } else {
+                parent.unselect_all();
+            }
+        }
+    }
+
+    fn queue_palette_preview_resize(&self) {
+        for tile in self.palette_tiles.borrow().iter() {
+            if let Some(preview) = tile.preview.as_ref() {
+                preview.queue_resize();
+            }
         }
     }
 
@@ -202,17 +218,6 @@ impl AppearanceState {
         self.sync_all();
     }
 
-    fn activate_highlight(&self, enabled: bool) {
-        if self.syncing.get() {
-            return;
-        }
-        self.settings.set_highlight_current_line(enabled);
-        if let Some(workspace) = self.workspace.upgrade() {
-            workspace.apply_current_line_highlight_to_tabs();
-        }
-        self.sync_all();
-    }
-
     fn apply_source_styles(&self) {
         if let Some(workspace) = self.workspace.upgrade() {
             workspace.apply_source_style_scheme_to_tabs();
@@ -226,6 +231,7 @@ fn build_app_appearance_group() -> (gtk4::Box, Vec<ThemeButton>) {
         .hexpand(true)
         .build();
     group.add_css_class("linked");
+    group.add_css_class("riteed-app-appearance");
     group.set_accessible_role(gtk4::AccessibleRole::RadioGroup);
 
     let mut buttons = Vec::new();
@@ -235,12 +241,11 @@ fn build_app_appearance_group() -> (gtk4::Box, Vec<ThemeButton>) {
         ThemePreference::Light,
         ThemePreference::Dark,
     ] {
-        let label = theme_label(theme);
         let button = gtk4::ToggleButton::builder()
             .accessible_role(gtk4::AccessibleRole::Radio)
             .focusable(true)
             .hexpand(true)
-            .label(&label)
+            .child(&theme_button_content(theme))
             .build();
         if let Some(radio_group) = radio_group.as_ref() {
             button.set_group(Some(radio_group));
@@ -253,41 +258,76 @@ fn build_app_appearance_group() -> (gtk4::Box, Vec<ThemeButton>) {
     (group, buttons)
 }
 
-fn build_palette_grid(state: &Rc<AppearanceState>, grid: &gtk4::Grid) {
-    grid.set_accessible_role(gtk4::AccessibleRole::RadioGroup);
-    let mut group: Option<gtk4::ToggleButton> = None;
-    for (index, palette) in palette_order().iter().copied().enumerate() {
-        let button = gtk4::ToggleButton::builder()
+fn theme_button_content(theme: ThemePreference) -> gtk4::Box {
+    let content = gtk4::Box::builder()
+        .orientation(gtk4::Orientation::Horizontal)
+        .spacing(4)
+        .halign(gtk4::Align::Center)
+        .build();
+    let icon = gtk4::Image::from_icon_name(theme_icon_name(theme));
+    let label = gtk4::Label::new(Some(&theme_label(theme)));
+    content.append(&icon);
+    content.append(&label);
+    content
+}
+
+fn theme_icon_name(theme: ThemePreference) -> &'static str {
+    match theme {
+        ThemePreference::System => "display-brightness-symbolic",
+        ThemePreference::Light => "weather-clear-symbolic",
+        ThemePreference::Dark => "weather-clear-night-symbolic",
+    }
+}
+
+fn build_palette_flow_box(state: &Rc<AppearanceState>, flow_box: &gtk4::FlowBox) {
+    for palette in palette_order() {
+        let target = palette_target(palette);
+        let (content, preview) = palette_tile_content(palette, target.as_ref());
+        let child = gtk4::FlowBoxChild::builder()
             .accessible_role(gtk4::AccessibleRole::Radio)
             .focusable(true)
+            .child(&content)
             .build();
-        button.add_css_class("riteed-palette-tile");
-        if let Some(group) = group.as_ref() {
-            button.set_group(Some(group));
-        } else {
-            group = Some(button.clone());
-        }
-        let grid_index = i32::try_from(index).ok().map_or(0, |index| index);
-        let row = grid_index / PALETTE_COLUMNS;
-        let column = grid_index % PALETTE_COLUMNS;
-        grid.attach(&button, column, row, 1, 1);
+        child.add_css_class("riteed-palette-tile");
+        flow_box.append(&child);
         state.palette_tiles.borrow_mut().push(PaletteTile {
             palette,
-            button: button.clone(),
-        });
-        let weak = Rc::downgrade(state);
-        button.connect_toggled(move |button| {
-            if !button.is_active() {
-                return;
-            }
-            if let Some(state) = weak.upgrade() {
-                state.activate_palette(palette);
-            }
+            child,
+            preview,
         });
     }
 }
 
-fn install_callbacks(state: &Rc<AppearanceState>) {
+fn install_callbacks(state: &Rc<AppearanceState>, flow_box: &gtk4::FlowBox) {
+    let weak = Rc::downgrade(state);
+    flow_box.connect_child_activated(move |_, child| {
+        if let Some(state) = weak.upgrade() {
+            if state.syncing.get() {
+                return;
+            }
+            let palette = state
+                .palette_tiles
+                .borrow()
+                .iter()
+                .find(|tile| tile.child == *child)
+                .map(|tile| tile.palette);
+            if let Some(palette) = palette {
+                state.activate_palette(palette);
+            }
+        }
+    });
+
+    let weak = Rc::downgrade(state);
+    flow_box.connect_map(move |flow_box| {
+        let Some(state) = weak.upgrade() else {
+            return;
+        };
+        // GtkSourceStyleSchemePreview can adjust its preferred size on first map without
+        // queueing a resize, which makes the grid start oversized until the next interaction.
+        state.queue_palette_preview_resize();
+        flow_box.queue_resize();
+    });
+
     for theme_button in state.theme_buttons.borrow().iter() {
         let weak = Rc::downgrade(state);
         let theme = theme_button.theme;
@@ -300,13 +340,6 @@ fn install_callbacks(state: &Rc<AppearanceState>) {
             }
         });
     }
-
-    let weak = Rc::downgrade(state);
-    state.highlight_row.connect_active_notify(move |row| {
-        if let Some(state) = weak.upgrade() {
-            state.activate_highlight(row.is_active());
-        }
-    });
 
     let weak = Rc::downgrade(state);
     let _handler = adw::StyleManager::default().connect_dark_notify(move |_| {
@@ -359,27 +392,29 @@ fn update_theme_accessibility(button: &gtk4::ToggleButton, theme: ThemePreferenc
 fn palette_order() -> [EditorPalette; 8] {
     [
         EditorPalette::FollowSystem,
+        EditorPalette::Classic,
         EditorPalette::AdwaitaLight,
         EditorPalette::AdwaitaDark,
         EditorPalette::Kate,
         EditorPalette::KateDark,
         EditorPalette::SolarizedLight,
         EditorPalette::SolarizedDark,
-        EditorPalette::Classic,
     ]
 }
 
 fn palette_tile_content(
     palette: EditorPalette,
     target: Option<&PaletteTarget>,
-    unavailable: bool,
-) -> gtk4::Box {
+) -> (gtk4::Box, Option<sourceview5::StyleSchemePreview>) {
+    let unavailable = target.is_none_or(|target| !target.available);
     let content = gtk4::Box::builder()
         .orientation(gtk4::Orientation::Vertical)
-        .spacing(6)
+        .spacing(4)
+        .halign(gtk4::Align::Center)
         .build();
     let overlay = gtk4::Overlay::new();
-    overlay.set_child(Some(&palette_preview_widget(target)));
+    let (preview_widget, preview) = palette_preview_widget(target);
+    overlay.set_child(Some(&preview_widget));
     if unavailable {
         let label = gtk4::Label::new(Some(&gettext("Unavailable")));
         label.add_css_class("riteed-palette-unavailable");
@@ -387,47 +422,51 @@ fn palette_tile_content(
         label.set_valign(gtk4::Align::Center);
         overlay.add_overlay(&label);
     }
+    if palette == EditorPalette::FollowSystem {
+        let badge = gtk4::Image::from_icon_name("display-brightness-symbolic");
+        badge.add_css_class("riteed-palette-adaptive-badge");
+        badge.set_halign(gtk4::Align::End);
+        badge.set_valign(gtk4::Align::Start);
+        badge.set_pixel_size(12);
+        overlay.add_overlay(&badge);
+    }
     content.append(&overlay);
     let label = gtk4::Label::new(Some(&palette.label()));
+    label.add_css_class("caption");
     label.set_wrap(true);
+    label.set_justify(gtk4::Justification::Center);
     content.append(&label);
-    content
+    (content, preview)
 }
 
-fn palette_preview_widget(target: Option<&PaletteTarget>) -> gtk4::Widget {
+fn palette_preview_widget(
+    target: Option<&PaletteTarget>,
+) -> (gtk4::Widget, Option<sourceview5::StyleSchemePreview>) {
     if let Some(scheme) = safe_preview_scheme(target.map(|target| target.scheme_id.as_str())) {
-        let buffer = sourceview5::Buffer::builder().enable_undo(false).build();
-        buffer.set_style_scheme(Some(&scheme));
-        buffer.set_text("fn main() {\n    text();\n}");
-        let view = sourceview5::View::with_buffer(&buffer);
-        view.add_css_class("riteed-palette-preview");
-        view.set_can_focus(false);
-        view.set_cursor_visible(false);
-        view.set_editable(false);
-        view.set_focusable(false);
-        view.set_left_margin(8);
-        view.set_monospace(true);
-        view.set_right_margin(8);
-        view.set_show_line_numbers(false);
-        view.set_size_request(132, 58);
-        view.set_top_margin(6);
-        view.upcast::<gtk4::Widget>()
+        let preview = sourceview5::StyleSchemePreview::new(&scheme);
+        preview.add_css_class("riteed-palette-preview");
+        preview.set_can_focus(false);
+        preview.set_halign(gtk4::Align::Center);
+        preview.set_valign(gtk4::Align::Center);
+        preview.set_size_request(PALETTE_TILE_WIDTH, PALETTE_TILE_HEIGHT);
+        (preview.clone().upcast::<gtk4::Widget>(), Some(preview))
     } else {
         let label = gtk4::Label::new(Some(&gettext("Preview unavailable")));
-        label.set_size_request(132, 58);
-        label.upcast::<gtk4::Widget>()
+        label.set_halign(gtk4::Align::Center);
+        label.set_size_request(PALETTE_TILE_WIDTH, PALETTE_TILE_HEIGHT);
+        (label.upcast::<gtk4::Widget>(), None)
     }
 }
 
 fn update_tile_accessibility(
-    button: &gtk4::ToggleButton,
+    widget: &gtk4::Widget,
     palette: EditorPalette,
     unavailable: bool,
     selected: bool,
 ) {
     let label = palette.label();
-    button.update_property(&[Property::Label(&label)]);
-    button.update_state(&[
+    widget.update_property(&[Property::Label(&label)]);
+    widget.update_state(&[
         State::Selected(Some(selected)),
         State::Disabled(unavailable),
         State::Checked(if selected {
