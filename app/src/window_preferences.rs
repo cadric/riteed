@@ -46,6 +46,7 @@ impl WindowPreferencesController {
         install_spin_preferences(shell, settings, workspace, &state);
         install_document_format_preferences(shell, workspace, &state);
         install_font_preference(shell, settings, zoom);
+        install_git_identity_preference(shell, settings);
         Self { _state: state }
     }
 }
@@ -79,6 +80,9 @@ fn initialize_rows(
         shell
             .editor_font_row
             .set_subtitle(&font_row_subtitle(&settings.editor_font()));
+        let (name, email) = settings.git_identity();
+        shell.git_name_row.set_text(&name);
+        shell.git_email_row.set_text(&email);
     });
 }
 
@@ -435,6 +439,15 @@ fn install_font_preference(
                 }
             },
         );
+    });
+}
+
+fn install_git_identity_preference(shell: &WindowShell, settings: &AppSettings) {
+    let settings = settings.clone();
+    let name_row = shell.git_name_row.clone();
+    let email_row = shell.git_email_row.clone();
+    shell.git_identity_apply_button.connect_clicked(move |_| {
+        settings.set_git_identity(&name_row.text(), &email_row.text());
     });
 }
 

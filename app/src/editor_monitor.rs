@@ -5,7 +5,7 @@ use std::time::Duration;
 use gtk4::{gio, glib, prelude::*};
 
 const FILE_POLL_ATTRIBUTES: &str =
-    "standard::type,standard::size,time::modified,time::modified-usec,etag::value";
+    "standard::type,standard::size,time::modified,time::modified-usec";
 const FILE_POLL_INTERVAL: Duration = Duration::from_secs(1);
 const FILE_MISSING_SETTLE_DELAY: Duration = Duration::from_millis(250);
 
@@ -89,11 +89,7 @@ impl MonitorBinding {
         monitor.set_rate_limit(250);
         let on_event_for_monitor = on_event.clone();
         let use_polling = uses_document_portal(file);
-        let poll_state = Rc::new(RefCell::new(if use_polling {
-            current_file_stamp(file)
-        } else {
-            None
-        }));
+        let poll_state = Rc::new(RefCell::new(current_file_stamp(file)));
         let poll_cancellable = gio::Cancellable::new();
         let poll_cancelled = Rc::new(Cell::new(false));
         let poll_source = if use_polling {
@@ -124,9 +120,17 @@ impl MonitorBinding {
                             return;
                         }
                         let queued_change = queued_change.clone();
+                        let file = monitored_file.clone();
                         let on_event = on_event_for_monitor.clone();
+                        let poll_state = poll_state.clone();
                         glib::idle_add_local_once(move || {
                             queued_change.set(false);
+                            let next = current_file_stamp(&file);
+                            if next.is_some()
+                                && apply_file_stamp_result(&poll_state, next).is_none()
+                            {
+                                return;
+                            }
                             on_event(ExternalFileEvent::ContentPossiblyChanged);
                         });
                     }
@@ -191,7 +195,6 @@ struct FileStamp {
     size: i64,
     modified: u64,
     modified_usec: u32,
-    etag: Option<String>,
 }
 
 impl FileStamp {
@@ -201,9 +204,6 @@ impl FileStamp {
             size: info.size(),
             modified: info.attribute_uint64("time::modified"),
             modified_usec: info.attribute_uint32("time::modified-usec"),
-            etag: info
-                .attribute_string("etag::value")
-                .map(|etag| etag.to_string()),
         }
     }
 }
@@ -419,6 +419,14 @@ mod tests {
     }
 
     #[test]
+    fn polling_ignores_unchanged_file_stamp() {
+        let state = Rc::new(RefCell::new(Some(file_stamp(1, 12))));
+        let event = apply_file_stamp_result(&state, Some(file_stamp(1, 12)));
+        assert!(event.is_none());
+        assert_eq!(*state.borrow(), Some(file_stamp(1, 12)));
+    }
+
+    #[test]
     fn polling_detects_missing_file() {
         let state = Rc::new(RefCell::new(Some(file_stamp(1, 12))));
         let event = apply_file_stamp_result(&state, None);
@@ -473,7 +481,6 @@ mod tests {
             size,
             modified,
             modified_usec: 0,
-            etag: None,
         }
     }
 }

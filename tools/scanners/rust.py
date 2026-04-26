@@ -33,13 +33,13 @@ def _context_window(lines: list[str], line_no: int, size: int = 8) -> str:
     return "\n".join(lines[start:end])
 
 
-def runtime_review_hits(root: Path, patterns: list[dict[str, str]]) -> list[ScanHit]:
+def runtime_review_hits(root: Path, patterns: list[dict[str, object]]) -> list[ScanHit]:
     hits: list[ScanHit] = []
     for item in patterns:
-        regex = re.compile(item["pattern"])
-        kind = item["kind"]
-        message = item["message"]
-        for path in rust_files(root):
+        regex = re.compile(str(item["pattern"]))
+        kind = str(item["kind"])
+        message = str(item["message"])
+        for path in scoped_files(root, item.get("paths", RUST_GLOBS)):
             lines = read_text(path).splitlines()
             for index, line in enumerate(lines, start=1):
                 if regex.search(line):

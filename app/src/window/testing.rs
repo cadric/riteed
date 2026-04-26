@@ -225,6 +225,25 @@ impl Window {
         self.workspace.request_selected_autosave_for_tests();
     }
 
+    pub(crate) fn source_control_status_for_tests(&self) -> String {
+        self.source_control.status_label_for_tests()
+    }
+
+    pub(crate) fn source_control_row_count_for_tests(&self) -> usize {
+        self.source_control.row_count_for_tests()
+    }
+
+    pub(crate) fn source_control_activate_path_for_tests(&self, path: &str) -> bool {
+        self.source_control.activate_path_for_tests(path)
+    }
+
+    pub(crate) fn source_control_row_state_for_tests(
+        &self,
+        path: &str,
+    ) -> Option<(String, bool, bool)> {
+        self.source_control.row_state_for_tests(path)
+    }
+
     pub(crate) fn inject_external_event_for_tests(
         self: &Rc<Self>,
         uri: &str,

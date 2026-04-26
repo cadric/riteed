@@ -68,7 +68,7 @@ Direct fallback commands:
 
 ## Hard Limits
 - No source or enforced metadata file may exceed `600` total lines.
-- No runtime Rust path may use `unsafe`, `unwrap`, `expect`, `panic!`, `todo!`, `unimplemented!`, `dbg!`, or external command spawning.
+- No runtime Rust path may use `unsafe`, `unwrap`, `expect`, `panic!`, `todo!`, `unimplemented!`, `dbg!`, or external command spawning, except the reviewed typed `/app/bin/git` Gio subprocess boundary in `src/git_process.rs`.
 - No broad Flatpak permissions.
 - No non-GNOME UI framework.
 - No gettext bypass for user-visible strings.
@@ -115,7 +115,7 @@ The application ID is authoritative and must stay consistent across:
 - A change introduces non-localizable user-visible strings.
 - A change replaces `GSettings` with custom config persistence.
 - A change breaks application ID consistency across metadata surfaces.
-- A change requires runtime downloads, shell execution, or external helpers.
+- A change requires runtime downloads, shell execution, host helpers, or external helpers outside the reviewed typed `/app/bin/git` boundary.
 
 ## Guardrails
 - Do not overwrite unrelated local user changes.

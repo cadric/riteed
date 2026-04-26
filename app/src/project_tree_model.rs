@@ -17,6 +17,7 @@ pub(crate) struct ProjectTreeEntry {
     pub(crate) name: String,
     pub(crate) display_name: String,
     pub(crate) file_type: gio::FileType,
+    pub(crate) git_badge: Option<String>,
     sort_key: String,
 }
 
@@ -34,6 +35,7 @@ struct ModelState {
     root_store: gio::ListStore,
     active_cancellables: Vec<gio::Cancellable>,
     directory_monitors: HashMap<String, ProjectDirectoryMonitor>,
+    git_statuses: HashMap<String, String>,
     on_structural_change: Option<Rc<dyn Fn()>>,
 }
 
@@ -53,6 +55,7 @@ impl ProjectTreeModel {
             root_store: root_store.clone(),
             active_cancellables: Vec::new(),
             directory_monitors: HashMap::new(),
+            git_statuses: HashMap::new(),
             on_structural_change: None,
         }));
 
@@ -92,6 +95,11 @@ impl ProjectTreeModel {
 
     pub(crate) fn set_auto_refresh_handler(&self, handler: Rc<dyn Fn()>) {
         self.state.borrow_mut().on_structural_change = Some(handler);
+    }
+
+    pub(crate) fn set_git_statuses(&self, statuses: Vec<(String, String)>) {
+        self.state.borrow_mut().git_statuses = statuses.into_iter().collect();
+        self.refresh();
     }
 
     pub(crate) fn set_show_hidden(&self, show_hidden: bool) {
@@ -358,6 +366,7 @@ fn collect_enumerator_batch(load: &DirectoryLoad, mut collected: Vec<gio::FileIn
 
 fn finish_directory_load(load: &DirectoryLoad, infos: &[gio::FileInfo]) {
     let mut entries = Vec::new();
+    let git_statuses = load.state.borrow().git_statuses.clone();
     for info in infos {
         let file_type = info.file_type();
         if !matches!(
@@ -375,12 +384,14 @@ fn finish_directory_load(load: &DirectoryLoad, infos: &[gio::FileInfo]) {
         let file = load.directory.child(info.name());
         let uri = file.uri().to_string();
         let display_name = info.display_name().to_string();
+        let git_badge = git_statuses.get(&uri).cloned();
         entries.push(ProjectTreeEntry {
             file,
-            uri,
+            uri: uri.clone(),
             name: name.clone(),
             display_name,
             file_type,
+            git_badge,
             sort_key: name.to_lowercase(),
         });
     }

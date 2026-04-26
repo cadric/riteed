@@ -16,6 +16,8 @@ const KEY_WINDOW_HEIGHT: &str = "window-height";
 const KEY_RECENT_FILES: &str = "recent-files";
 const KEY_SESSION_FILES: &str = "session-files";
 const KEY_SESSION_SELECTED_FILE: &str = "session-selected-file";
+const KEY_GIT_USER_NAME: &str = "git-user-name";
+const KEY_GIT_USER_EMAIL: &str = "git-user-email";
 const SOURCE_STYLE_SCHEME_LIGHT: &str = "Adwaita";
 const SOURCE_STYLE_SCHEME_DARK: &str = "Adwaita-dark";
 
@@ -87,6 +89,8 @@ struct MemorySettings {
     recent_files: Vec<String>,
     session_files: Vec<String>,
     session_selected_file: String,
+    git_user_name: String,
+    git_user_email: String,
     project: MemoryProjectSettings,
     #[cfg(test)]
     write_log: Vec<String>,
@@ -161,6 +165,8 @@ impl AppSettings {
                 recent_files: Vec::new(),
                 session_files: Vec::new(),
                 session_selected_file: String::new(),
+                git_user_name: String::new(),
+                git_user_email: String::new(),
                 project: MemoryProjectSettings {
                     folder_uri: String::new(),
                     folder_display_name: String::new(),
@@ -404,6 +410,7 @@ fn record_memory_write(_state: &mut MemorySettings, _key: &str) {}
 mod tests;
 
 mod display;
+mod git;
 mod indentation;
 mod presentation;
 mod project;

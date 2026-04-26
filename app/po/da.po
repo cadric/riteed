@@ -150,3 +150,175 @@ msgstr ""
 msgctxt "editor palette"
 msgid "Kate Light"
 msgstr ""
+
+msgid "Changed files"
+msgstr ""
+
+msgid "Diff unavailable for this Git state."
+msgstr ""
+
+msgid "Enter a commit message first."
+msgstr ""
+
+msgid "Git User Email"
+msgstr ""
+
+msgid "Git User Name"
+msgstr ""
+
+msgid "Git content filters or EOL conversion are configured for this file."
+msgstr ""
+
+msgid "Git output was too large to process safely."
+msgstr ""
+
+msgid "No Git repository is active."
+msgstr ""
+
+msgid "No changes."
+msgstr ""
+
+msgid "Only local Git folders are supported."
+msgstr ""
+
+msgid "Open a folder to see Git status."
+msgstr ""
+
+msgid "Open the file before comparing it."
+msgstr ""
+
+msgid "Pre-commit hooks are not run from Riteed."
+msgstr ""
+
+msgid "Refresh Source Control"
+msgstr ""
+
+msgid "Refreshing Git status..."
+msgstr ""
+
+msgid "Save the open document before using Git actions."
+msgstr ""
+
+msgid "Set a Git identity in Preferences before committing."
+msgstr ""
+
+msgid "Source Control"
+msgstr ""
+
+msgid "Stores the Git author email Riteed passes to sandboxed Git commits after explicit user action."
+msgstr ""
+
+msgid "Stores the Git author name Riteed passes to sandboxed Git commits after explicit user action."
+msgstr ""
+
+msgid "Symlinks and unsupported file modes are visible only."
+msgstr ""
+
+msgid "The Git identity is not valid."
+msgstr ""
+
+msgid "The Git operation failed."
+msgstr ""
+
+msgid "This Git repository uses unsupported object or EOL settings."
+msgstr ""
+
+msgid "This Git state is visible but not editable in Riteed."
+msgstr ""
+
+msgid "This file type cannot be staged from Riteed."
+msgstr ""
+
+msgid "This folder is not a Git repository."
+msgstr ""
+
+msgid "This path uses an unsupported encoding."
+msgstr ""
+
+msgid "Unable to read Git repository capabilities."
+msgstr ""
+
+msgid "Unable to refresh Git status."
+msgstr ""
+
+msgid "Unable to open file for compare."
+msgstr ""
+
+msgid "Unable to start Git compare."
+msgstr ""
+
+msgctxt "compare source"
+msgid "Git Version"
+msgstr ""
+
+msgctxt "git action tooltip"
+msgid "Stage File"
+msgstr ""
+
+msgctxt "git action tooltip"
+msgid "Unstage File"
+msgstr ""
+
+msgctxt "git action disabled"
+msgid "No staged change"
+msgstr ""
+
+msgctxt "git action disabled"
+msgid "No unstaged change"
+msgstr ""
+
+msgctxt "git action disabled"
+msgid "Refresh required"
+msgstr ""
+
+msgctxt "git branch"
+msgid "Detached"
+msgstr ""
+
+msgctxt "git commit"
+msgid "Commit"
+msgstr ""
+
+msgctxt "git commit"
+msgid "Commit Message"
+msgstr ""
+
+msgctxt "git path fallback"
+msgid "Invalid path encoding"
+msgstr ""
+
+msgctxt "git status"
+msgid "Added"
+msgstr ""
+
+msgctxt "git status"
+msgid "Conflict"
+msgstr ""
+
+msgctxt "git status"
+msgid "Deleted"
+msgstr ""
+
+msgctxt "git status"
+msgid "Modified"
+msgstr ""
+
+msgctxt "git status"
+msgid "Staged"
+msgstr ""
+
+msgctxt "git status"
+msgid "Unsupported"
+msgstr ""
+
+msgctxt "git status"
+msgid "Untracked"
+msgstr ""
+
+msgctxt "sidebar mode"
+msgid "Files"
+msgstr ""
+
+msgctxt "sidebar mode"
+msgid "Source Control"
+msgstr ""

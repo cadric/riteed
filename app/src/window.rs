@@ -12,6 +12,8 @@ use crate::dialogs;
 use crate::editor_zoom::EditorZoomController;
 use crate::error::AppError;
 use crate::settings::AppSettings;
+use crate::sidebar_host::SidebarHost;
+use crate::source_control::SourceControlController;
 use crate::window_appearance::WindowAppearanceController;
 use crate::window_compare::WindowCompareController;
 use crate::window_preferences::WindowPreferencesController;
@@ -64,6 +66,8 @@ pub struct Window {
     _preferences: WindowPreferencesController,
     compare: Rc<WindowCompareController>,
     project: WindowProjectController,
+    _sidebar_host: SidebarHost,
+    source_control: SourceControlController,
     zoom: Rc<EditorZoomController>,
     last_non_fullscreen_size: Cell<(i32, i32)>,
 }
@@ -160,6 +164,13 @@ impl Window {
         let compare = WindowCompareController::new(&shell.window, &workspace);
         let project =
             WindowProjectController::new(&shell, &settings, &workspace, init.restore_project);
+        let source_control = SourceControlController::new(&shell.window, &settings, &workspace);
+        let sidebar_host = SidebarHost::new(&project.sidebar_widget(), &source_control.widget());
+        shell
+            .project_split_view
+            .set_sidebar(Some(sidebar_host.widget()));
+        project.set_root_change_handler(source_control.root_change_handler());
+        source_control.set_status_handler(project.git_status_handler());
 
         let window = Rc::new(Self {
             shell,
@@ -179,9 +190,14 @@ impl Window {
             _preferences: preferences,
             compare,
             project,
+            _sidebar_host: sidebar_host,
+            source_control,
             zoom,
             last_non_fullscreen_size: Cell::new((width, height)),
         });
+        window
+            .source_control
+            .set_project_root(window.project.current_root_file());
         window.zoom.set_editor_font(&window.settings.editor_font());
         window.install_accessible_labels();
         window.appearance.sync();

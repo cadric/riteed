@@ -82,6 +82,10 @@ impl ProjectTree {
         self.clear_selection();
     }
 
+    pub(crate) fn set_git_statuses(&self, statuses: Vec<(String, String)>) {
+        self.model.set_git_statuses(statuses);
+    }
+
     #[cfg(test)]
     pub(crate) fn expand_entry_for_tests(&self, name: &str) -> bool {
         self.model.expand_entry_for_tests(name)
@@ -138,9 +142,14 @@ fn setup_project_tree_row(_: &gtk4::SignalListItemFactory, object: &glib::Object
     label.set_hexpand(true);
     label.set_ellipsize(pango::EllipsizeMode::End);
 
+    let badge = gtk4::Label::new(None);
+    badge.add_css_class("caption");
+    badge.set_visible(false);
+
     row_box.append(&icon);
     row_box.append(&spinner);
     row_box.append(&label);
+    row_box.append(&badge);
 
     expander.set_child(Some(&row_box));
     list_item.set_child(Some(&expander));
@@ -164,7 +173,7 @@ fn bind_project_tree_row(_: &gtk4::SignalListItemFactory, object: &glib::Object)
     };
     expander.set_list_row(Some(&row));
 
-    let Some((icon, spinner, label)) = row_widgets(&expander) else {
+    let Some((icon, spinner, label, badge)) = row_widgets(&expander) else {
         return;
     };
     let Some(row_item) = row.item() else {
@@ -178,6 +187,7 @@ fn bind_project_tree_row(_: &gtk4::SignalListItemFactory, object: &glib::Object)
     };
 
     spinner.set_visible(false);
+    badge.set_visible(false);
     match &*borrowed {
         ProjectTreeItem::Loading => {
             icon.set_icon_name(Some("folder-symbolic"));
@@ -195,16 +205,23 @@ fn bind_project_tree_row(_: &gtk4::SignalListItemFactory, object: &glib::Object)
             };
             icon.set_icon_name(Some(icon_name));
             label.set_label(&entry.display_name);
+            if let Some(git_badge) = &entry.git_badge {
+                badge.set_label(git_badge);
+                badge.set_visible(true);
+            }
         }
     }
 }
 
-fn row_widgets(expander: &gtk4::TreeExpander) -> Option<(gtk4::Image, gtk4::Spinner, gtk4::Label)> {
+fn row_widgets(
+    expander: &gtk4::TreeExpander,
+) -> Option<(gtk4::Image, gtk4::Spinner, gtk4::Label, gtk4::Label)> {
     let row_box = expander.child()?.downcast::<gtk4::Box>().ok()?;
     let icon = row_box.first_child()?.downcast::<gtk4::Image>().ok()?;
     let spinner = icon.next_sibling()?.downcast::<gtk4::Spinner>().ok()?;
     let label = spinner.next_sibling()?.downcast::<gtk4::Label>().ok()?;
-    Some((icon, spinner, label))
+    let badge = label.next_sibling()?.downcast::<gtk4::Label>().ok()?;
+    Some((icon, spinner, label, badge))
 }
 
 fn unbind_project_tree_row(_: &gtk4::SignalListItemFactory, object: &glib::Object) {

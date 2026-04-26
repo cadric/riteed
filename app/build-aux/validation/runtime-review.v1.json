@@ -163,7 +163,7 @@
     },
     {
       "path": "src/project_tree_model.rs",
-      "line": 41,
+      "line": 43,
       "match": "state: Rc<RefCell<ModelState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The project tree model owns shared lazy-loading state.",
@@ -171,7 +171,7 @@
     },
     {
       "path": "src/project_tree_model.rs",
-      "line": 266,
+      "line": 274,
       "match": "state: Rc<RefCell<ModelState>>,",
       "kind": "runtime-shared-state",
       "ownership": "Enumerator batching carries shared tree state across async callbacks.",
@@ -179,7 +179,7 @@
     },
     {
       "path": "src/project_tree_model.rs",
-      "line": 276,
+      "line": 284,
       "match": "state: &Rc<RefCell<ModelState>>,",
       "kind": "runtime-shared-state",
       "ownership": "Directory-load helpers borrow shared tree model state.",
@@ -187,7 +187,7 @@
     },
     {
       "path": "src/project_tree_model.rs",
-      "line": 415,
+      "line": 426,
       "match": "state: &Rc<RefCell<ModelState>>,",
       "kind": "runtime-shared-state",
       "ownership": "Enumeration error handling uses shared tree state.",
@@ -291,7 +291,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 56,
+      "line": 57,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The preferences controller borrows the shared staged preferences state.",
@@ -299,7 +299,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 105,
+      "line": 109,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The preferences controller borrows the shared staged preferences state.",
@@ -307,7 +307,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 161,
+      "line": 165,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The preferences controller borrows the shared staged preferences state.",
@@ -315,7 +315,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 183,
+      "line": 187,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The preferences controller borrows the shared staged preferences state.",
@@ -323,7 +323,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 223,
+      "line": 227,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The preferences controller borrows the shared staged preferences state.",
@@ -331,7 +331,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 278,
+      "line": 282,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The preferences controller borrows the shared staged preferences state.",
@@ -339,7 +339,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 297,
+      "line": 301,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The preferences controller borrows the shared staged preferences state.",
@@ -347,7 +347,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 341,
+      "line": 345,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The preferences controller borrows the shared staged preferences state.",
@@ -355,7 +355,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 471,
+      "line": 484,
       "match": "fn with_syncing(state: &Rc<RefCell<PreferencesState>>, operation: impl FnOnce()) {",
       "kind": "runtime-shared-state",
       "ownership": "The dialog-scoped syncing helper mutates the shared preferences state.",
@@ -363,7 +363,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 477,
+      "line": 490,
       "match": "fn spin_dirty(state: &Rc<RefCell<PreferencesState>>, dirty_spin: DirtySpin) -> bool {",
       "kind": "runtime-shared-state",
       "ownership": "The staged SpinRow read helper borrows the shared preferences state.",
@@ -371,7 +371,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 485,
+      "line": 498,
       "match": "fn set_spin_dirty(state: &Rc<RefCell<PreferencesState>>, dirty_spin: DirtySpin, value: bool) {",
       "kind": "runtime-shared-state",
       "ownership": "The staged SpinRow write helper mutates the shared preferences state.",
@@ -379,7 +379,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 65,
+      "line": 69,
       "match": "state: Rc<RefCell<ProjectState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The window project controller owns shared project sidebar state.",
@@ -387,7 +387,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 91,
+      "line": 95,
       "match": "let tree_activation_handler: Rc<RefCell<Option<TreeActivationHandler>>> =",
       "kind": "runtime-shared-state",
       "ownership": "Tree activation wiring stores one late-bound handler closure.",
@@ -395,7 +395,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 329,
+      "line": 362,
       "match": "fn sync_actions_for_root(state: &Rc<RefCell<ProjectState>>) {",
       "kind": "runtime-shared-state",
       "ownership": "Root-action synchronization borrows shared project state.",
@@ -403,7 +403,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 342,
+      "line": 375,
       "match": "fn open_file_from_tree(state: &Rc<RefCell<ProjectState>>, file: gio::File) {",
       "kind": "runtime-shared-state",
       "ownership": "Tree activation routing borrows shared project state.",
@@ -411,7 +411,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 350,
+      "line": 383,
       "match": "state: &Rc<RefCell<ProjectState>>,",
       "kind": "runtime-shared-state",
       "ownership": "Project root transition helpers borrow shared project state.",
@@ -419,7 +419,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 466,
+      "line": 502,
       "match": "fn set_sidebar_visible_for_root(state: &Rc<RefCell<ProjectState>>, visible: bool) {",
       "kind": "runtime-shared-state",
       "ownership": "Root-change sidebar visibility borrows shared project state after mutation is complete.",
@@ -427,7 +427,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 486,
+      "line": 522,
       "match": "fn close_root(state: &Rc<RefCell<ProjectState>>) {",
       "kind": "runtime-shared-state",
       "ownership": "Close-folder handling mutates shared project state.",
@@ -435,7 +435,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 510,
+      "line": 549,
       "match": "fn sync_root_none(state: &Rc<RefCell<ProjectState>>, clear_settings: bool) {",
       "kind": "runtime-shared-state",
       "ownership": "No-root synchronization mutates shared project state.",
@@ -539,7 +539,7 @@
     },
     {
       "path": "src/workspace.rs",
-      "line": 58,
+      "line": 59,
       "match": "pub(crate) state: RefCell<WorkspaceState>,",
       "kind": "runtime-shared-state",
       "ownership": "The workspace owns tab collection, recent/session caches, restore gating, and active close flow.",
@@ -547,7 +547,7 @@
     },
     {
       "path": "src/workspace_open.rs",
-      "line": 77,
+      "line": 134,
       "match": "fn process_open_request(workspace: &Rc<Workspace>, request: Rc<RefCell<OpenRequest>>) {",
       "kind": "runtime-shared-state",
       "ownership": "The shared open-request state tracks a multi-file open batch.",
@@ -555,7 +555,7 @@
     },
     {
       "path": "src/workspace_open.rs",
-      "line": 157,
+      "line": 214,
       "match": "fn finish_open_request(workspace: &Rc<Workspace>, request: &Rc<RefCell<OpenRequest>>) {",
       "kind": "runtime-shared-state",
       "ownership": "The open-request finisher reads shared batch state.",

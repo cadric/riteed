@@ -35,6 +35,8 @@ enum RootChangeOrigin {
 }
 
 type TreeActivationHandler = Rc<dyn Fn(ProjectTreeActivation)>;
+type RootChangeHandler = Rc<dyn Fn(Option<gio::File>)>;
+type GitStatusHandler = Rc<dyn Fn(Vec<(String, String)>)>;
 
 struct ProjectState {
     window: adw::ApplicationWindow,
@@ -59,8 +61,10 @@ struct ProjectState {
     symlink_generation: u64,
     symlink_cancellable: Option<gio::Cancellable>,
     toast_keys: HashSet<String>,
+    root_change_handler: Option<RootChangeHandler>,
 }
 
+#[derive(Clone)]
 pub struct WindowProjectController {
     state: Rc<RefCell<ProjectState>>,
 }
@@ -102,8 +106,6 @@ impl WindowProjectController {
                 handler(activation);
             }
         }));
-        shell.project_split_view.set_sidebar(Some(browser.widget()));
-
         let state = Rc::new(RefCell::new(ProjectState {
             window: shell.window.clone(),
             toast_overlay,
@@ -123,6 +125,7 @@ impl WindowProjectController {
             symlink_generation: 0,
             symlink_cancellable: None,
             toast_keys: HashSet::new(),
+            root_change_handler: None,
         }));
         let state_weak = Rc::downgrade(&state);
         let handler: TreeActivationHandler = Rc::new(move |activation| {
@@ -211,6 +214,36 @@ impl WindowProjectController {
         state.split_view.set_show_sidebar(true);
         state.sidebar_visible_action.set_state(&true.to_variant());
         state.browser.focus_tree_after_reveal();
+    }
+
+    #[must_use]
+    pub(crate) fn sidebar_widget(&self) -> adw::ToolbarView {
+        self.state.borrow().browser.widget().clone()
+    }
+
+    pub(crate) fn set_root_change_handler(&self, handler: RootChangeHandler) {
+        self.state.borrow_mut().root_change_handler = Some(handler);
+    }
+
+    pub(crate) fn git_status_handler(&self) -> GitStatusHandler {
+        let weak = Rc::downgrade(&self.state);
+        Rc::new(move |statuses| {
+            let Some(state) = weak.upgrade() else {
+                return;
+            };
+            if let Ok(state) = state.try_borrow() {
+                state.browser.set_git_statuses(statuses);
+            }
+        })
+    }
+
+    #[must_use]
+    pub(crate) fn current_root_file(&self) -> Option<gio::File> {
+        self.state
+            .borrow()
+            .root
+            .as_ref()
+            .map(|root| root.file.clone())
     }
 
     fn restore_from_settings(&self) {
@@ -441,6 +474,9 @@ fn apply_root_change(
     });
     state.browser.set_title(&display_name);
     state.browser.tree().set_root(Some(folder.clone()));
+    if let Some(handler) = state.root_change_handler.as_ref() {
+        handler(Some(folder.clone()));
+    }
 
     state.settings.set_project_folder_uri(&uri);
     state
@@ -503,6 +539,9 @@ fn close_root(state: &Rc<RefCell<ProjectState>>) {
         state.browser.set_title(&gettext("Project"));
         state.browser.tree().set_root(None);
         state.toast_keys.clear();
+        if let Some(handler) = state.root_change_handler.as_ref() {
+            handler(None);
+        }
     }
     sync_actions_for_root(state);
 }
@@ -520,6 +559,9 @@ fn sync_root_none(state: &Rc<RefCell<ProjectState>>, clear_settings: bool) {
         state.root = None;
         state.browser.set_title(&gettext("Project"));
         state.browser.tree().set_root(None);
+        if let Some(handler) = state.root_change_handler.as_ref() {
+            handler(None);
+        }
         if clear_settings {
             state.settings.set_project_folder_uri("");
             state.settings.set_project_folder_display_name("");

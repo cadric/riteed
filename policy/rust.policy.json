@@ -238,6 +238,14 @@
           "src/**/*.rs",
           "crates/**/*.rs"
         ]
+      },
+      {
+        "kind": "runtime-git-subprocess",
+        "message": "Sandbox Git subprocess launch sites require path-scoped review coverage.",
+        "pattern": "\\bgio::Subprocess\\b|\\bgio::SubprocessLauncher\\b|\\bgio::SubprocessFlags\\b",
+        "paths": [
+          "src/git_process.rs"
+        ]
       }
     ]
   },
@@ -269,6 +277,10 @@
       "\\bprintln!\\s*\\(",
       "\\beprintln!\\s*\\(",
       "\\bstd::process::Command\\b",
+      "\\bgio::Subprocess\\b",
+      "\\bgio::SubprocessLauncher\\b",
+      "\\bgio::SubprocessFlags\\b",
+      "flatpak-spawn",
       "\\bgtk::init\\s*\\(",
       "\\bgtk::main\\s*\\("
     ],

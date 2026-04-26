@@ -93,6 +93,16 @@
       <summary>Selected Session File</summary>
       <description>Stores the URI of the selected saved tab. An empty string means no saved tab is selected.</description>
     </key>
+    <key name="git-user-name" type="s">
+      <default>''</default>
+      <summary>Git User Name</summary>
+      <description>Stores the Git author name Riteed passes to sandboxed Git commits after explicit user action.</description>
+    </key>
+    <key name="git-user-email" type="s">
+      <default>''</default>
+      <summary>Git User Email</summary>
+      <description>Stores the Git author email Riteed passes to sandboxed Git commits after explicit user action.</description>
+    </key>
     <key name="project-folder-uri" type="s">
       <default>''</default>
       <summary>Project Folder URI</summary>

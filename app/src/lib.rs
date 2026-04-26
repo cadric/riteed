@@ -15,12 +15,16 @@ pub mod editor_tab;
 mod editor_view;
 mod editor_zoom;
 pub mod error;
+mod git_process;
+mod git_status;
 mod project_browser;
 mod project_tree;
 mod project_tree_model;
 mod project_tree_monitor;
 pub mod session;
 pub mod settings;
+mod sidebar_host;
+mod source_control;
 pub mod window;
 mod window_appearance;
 mod window_compare;
@@ -47,6 +51,8 @@ mod gtk_tests_v6;
 mod gtk_tests_v7;
 #[cfg(test)]
 mod gtk_tests_v8;
+#[cfg(test)]
+mod gtk_tests_v9;
 
 use std::sync::OnceLock;
 

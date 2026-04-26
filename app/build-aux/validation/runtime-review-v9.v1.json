@@ -1,0 +1,85 @@
+{
+  "version": 1,
+  "sites": [
+    {
+      "path": "src/source_control.rs",
+      "line": 17,
+      "match": "pub(super) type SourceStateRef = Rc<RefCell<SourceControlState>>;",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control controller owns the sidebar state behind one Rc<RefCell>.",
+      "justification": "Refresh, commit, stage, unstage, and diff callbacks all complete asynchronously on the main loop and need one cancellable, generation-aware UI state owner."
+    },
+    {
+      "path": "src/source_control.rs",
+      "line": 42,
+      "match": "pub(super) self_weak: Weak<RefCell<SourceControlState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control state owns a weak self handle for row action callbacks.",
+      "justification": "List rows are rebuilt frequently; weak callbacks prevent buttons from keeping the sidebar state alive after window teardown."
+    },
+    {
+      "path": "src/source_control/actions.rs",
+      "line": 71,
+      "match": "weak: &Weak<RefCell<SourceControlState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Source Control row rendering borrows the weak sidebar state handle.",
+      "justification": "Per-row buttons must call back into the current sidebar state without cloning or owning the controller from every rebuilt row."
+    },
+    {
+      "path": "src/source_control/actions.rs",
+      "line": 136,
+      "match": "weak: &Weak<RefCell<SourceControlState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Source Control action buttons borrow the weak sidebar state handle.",
+      "justification": "Stage, unstage, and diff button callbacks need to start cancellable Git operations only if the sidebar state is still alive."
+    },
+    {
+      "path": "src/git_process.rs",
+      "line": 503,
+      "match": "let flags = gio::SubprocessFlags::STDIN_PIPE",
+      "kind": "runtime-git-subprocess",
+      "ownership": "The typed Git process boundary owns the Gio subprocess pipe flags.",
+      "justification": "V9 allows subprocess use only here to run bundled /app/bin/git with typed operations, no shell, bounded output, fixed env, and reviewable argv construction."
+    },
+    {
+      "path": "src/git_process.rs",
+      "line": 504,
+      "match": "| gio::SubprocessFlags::STDOUT_PIPE",
+      "kind": "runtime-git-subprocess",
+      "ownership": "The typed Git process boundary owns stdout capture for sandbox Git.",
+      "justification": "Git status, attributes, blob reads, and commit responses are bounded and parsed only through this reviewed runner."
+    },
+    {
+      "path": "src/git_process.rs",
+      "line": 505,
+      "match": "| gio::SubprocessFlags::STDERR_PIPE;",
+      "kind": "runtime-git-subprocess",
+      "ownership": "The typed Git process boundary owns stderr capture for sandbox Git.",
+      "justification": "Captured stderr is size-capped and mapped to user-facing errors without exposing a generic command runner."
+    },
+    {
+      "path": "src/git_process.rs",
+      "line": 506,
+      "match": "let launcher = gio::SubprocessLauncher::new(flags);",
+      "kind": "runtime-git-subprocess",
+      "ownership": "The typed Git process boundary owns subprocess creation.",
+      "justification": "All Git subprocess invocations go through the allowlisted operation methods in this file and use bundled /app/bin/git, no host PATH lookup, no shell, and deterministic environment overrides."
+    },
+    {
+      "path": "src/git_process/tests.rs",
+      "line": 131,
+      "match": "let slot: Rc<RefCell<Option<Result<T, GitProcessError>>>> = Rc::new(RefCell::new(None));",
+      "kind": "runtime-shared-state",
+      "ownership": "The Git process tests own a one-shot callback result slot.",
+      "justification": "Typed Git operations report through Rc callbacks; the test slot captures immediate callback results without sharing state outside the test."
+    },
+    {
+      "path": "src/git_process/tests.rs",
+      "line": 142,
+      "match": "let slot: Rc<RefCell<Option<Result<T, GitProcessError>>>> = Rc::new(RefCell::new(None));",
+      "kind": "runtime-shared-state",
+      "ownership": "The Git process async tests own a one-shot callback result slot.",
+      "justification": "The helper pumps the GLib main context until the typed Git callback completes and removes pending timeout sources before leaving the test."
+    }
+  ]
+}

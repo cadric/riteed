@@ -424,6 +424,23 @@
       ]
     },
     {
+      "message": "Runtime Rust source must not use Gio subprocess outside the reviewed Git process boundary.",
+      "pattern": "\\bgio::Subprocess\\b|\\bgio::SubprocessLauncher\\b|\\bgio::SubprocessFlags\\b",
+      "paths": ["src/**/*.rs", "crates/**/*.rs"],
+      "exceptions": ["src/git_process.rs"]
+    },
+    {
+      "message": "Runtime Rust source must not invoke flatpak-spawn.",
+      "pattern": "flatpak-spawn",
+      "paths": [
+        "src/**/*.rs",
+        "crates/**/*.rs",
+        "tests/**/*.rs",
+        "benches/**/*.rs",
+        "examples/**/*.rs"
+      ]
+    },
+    {
       "message": "GTK application code must not call gtk::init().",
       "pattern": "\\bgtk::init\\s*\\(",
       "paths": [

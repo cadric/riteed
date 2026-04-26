@@ -11,7 +11,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 189,
+      "line": 195,
       "match": "let _changed = settings.set_string(KEY_THEME, preference.stored());",
       "kind": "gsettings-write",
       "key": "theme",
@@ -19,7 +19,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 231,
+      "line": 237,
       "match": "let _changed = settings.set_string(KEY_EDITOR_FONT, font);",
       "kind": "gsettings-write",
       "key": "editor-font",
@@ -27,7 +27,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 261,
+      "line": 267,
       "match": "let _changed_width = settings.set_int(KEY_WINDOW_WIDTH, width);",
       "kind": "gsettings-write",
       "key": "window-width",
@@ -35,7 +35,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 262,
+      "line": 268,
       "match": "let _changed_height = settings.set_int(KEY_WINDOW_HEIGHT, height);",
       "kind": "gsettings-write",
       "key": "window-height",
@@ -43,7 +43,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 292,
+      "line": 298,
       "match": "let _changed = settings.set_strv(KEY_RECENT_FILES, files);",
       "kind": "gsettings-write",
       "key": "recent-files",
@@ -51,7 +51,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 320,
+      "line": 326,
       "match": "let _changed = settings.set_strv(KEY_SESSION_FILES, files);",
       "kind": "gsettings-write",
       "key": "session-files",
@@ -59,7 +59,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 346,
+      "line": 352,
       "match": "let _changed = settings.set_string(KEY_SESSION_SELECTED_FILE, uri);",
       "kind": "gsettings-write",
       "key": "session-selected-file",
@@ -171,7 +171,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 98,
+      "line": 102,
       "match": "row.set_value(f64::from(value));",
       "kind": "gsettings-write",
       "key": "tab-width-or-indent-width",
@@ -179,11 +179,27 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 289,
+      "line": 293,
       "match": "row.set_value(f64::from(applied));",
       "kind": "gsettings-write",
       "key": "tab-width-or-indent-width",
       "trigger": "Post-commit SpinRow normalization writes the applied sanitized value back into the widget only. The syncing guard prevents this local update from becoming a per-keystroke GSettings write."
+    },
+    {
+      "path": "src/settings/git.rs",
+      "line": 24,
+      "match": "let _changed_name = settings.set_string(KEY_GIT_USER_NAME, name);",
+      "kind": "gsettings-write",
+      "key": "git-user-name",
+      "trigger": "Explicit Apply in the Git Identity preferences group; text entry changes are staged in the row until the user clicks Apply."
+    },
+    {
+      "path": "src/settings/git.rs",
+      "line": 25,
+      "match": "let _changed_email = settings.set_string(KEY_GIT_USER_EMAIL, email);",
+      "kind": "gsettings-write",
+      "key": "git-user-email",
+      "trigger": "Explicit Apply in the Git Identity preferences group; text entry changes are staged in the row until the user clicks Apply."
     }
   ]
 }

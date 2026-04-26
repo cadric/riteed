@@ -1,6 +1,6 @@
 ---
 created: 2026-04-19
-updated: 2026-04-25
+updated: 2026-04-26
 status: current
 priority: high
 type: release
@@ -22,6 +22,9 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Extended the embedded Riteed app to a v6 lightweight workspace with Open Folder, Close Folder, an adaptive project sidebar, lazy file-tree browsing, manual refresh, hidden-file toggling, and tab/tree synchronization.
 - Extended the embedded Riteed app to a v7 compare workflow with in-tab split diffs, compare-with-disk, compare-with-file, compare-two-files, manual reference refresh, and F8/Shift+F8 diff navigation.
 - Extended the embedded Riteed app to a v8 polish layer with editor palette selection, current-line highlight preferences, fullscreen support, F9 project-sidebar focus, and conservative autosave for already-saved writable files.
+- Extended the embedded Riteed app to a v9 lightweight source-control workflow with a Git sidebar, project-tree file status badges, per-file Git compare, stage/unstage actions, and local commits.
+- Added a sandbox-bundled `/app/bin/git` Flatpak module with source checksum and maintainer-signature verification, avoiding host Git and `flatpak-spawn`.
+- Added Git identity preferences backed by GSettings and applied only on explicit user action for local commit support.
 - Added a real New Window action that opens a fresh editor window without copying tabs, compare state, or project folders.
 - Vendored the pinned `similar` crate for deterministic offline Flatpak-oriented compare/diff builds.
 
@@ -41,6 +44,10 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Reworked Compare into a single-entry flow: Compare... opens a dedicated compare dialog where the user chooses sources (current document, saved version, file, or pasted text), with left as the editable side and right as the reference.
 - Moved compare-session actions (refresh reference, exit compare, next/previous diff) out of the main menu and into the compare view/toolbar.
 - Switched Recent Files to a lightweight dialog listing recent documents (most recent first) instead of nested menu flows.
+- Split the left sidebar into Files and Source Control modes with a libadwaita view stack while preserving project-tree state.
+- Reworked the Source Control changed-file list into compact single-line rows with row-activated Git compare, hover/focus Stage and Unstage icons, and consistent `U` badges for untracked files.
+- Refactored compare controller plumbing into smaller modules so Git-backed compare could reuse the existing split-diff engine without growing the compare file past policy limits.
+- Revised the runtime policy to allow only typed Gio subprocess Git operations in `src/git_process.rs`; `std::process::Command` and `flatpak-spawn` remain forbidden.
 
 ### Fixed
 - Stabilized GTK coverage runs by teaching `tools.coverage_check` to invoke `cargo llvm-cov` with a deterministic `GSK_RENDERER=cairo` environment, with unit coverage for the new tool behavior.
@@ -66,6 +73,9 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Fixed follow-up regressions in the menu/compare pass: editor zoom and font changes now style the GtkSourceView text node, compare mode restores normal editor scrolling, Recent Files uses a wider dialog, and Saved Version is suppressed while autosave is enabled.
 - Displayed document-portal files with host/home-relative paths in the title/status, Recent Files, and Compare source UI while preserving portal access paths for sandbox-safe I/O.
 - Removed invalid Appearance CSS size properties and added deterministic indentation coverage for tabs, spaces, indent width, and unindent behavior.
+- Guarded Git stage/compare actions for unsupported repository states such as SHA-256 object format, configured EOL conversion, content filters, working-tree encodings, submodules, binary blobs, large blobs, dirty open tabs, and non-UTF-8 paths.
+- Fixed Flatpak Git status refresh for document-portal project folders by running bundled Git from a stable sandbox cwd with explicit `GIT_DIR` and `GIT_WORK_TREE`.
+- Trimmed the bundled Flatpak Git module to local plumbing only and explicitly stripped `/app/bin/git`, reducing the installed app size baseline to 7,617,536 bytes while preserving V9 status, stage, unstage, compare, and commit flows.
 
 ## 1.0.1 — 2026-04-19
 

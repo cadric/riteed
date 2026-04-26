@@ -28,6 +28,9 @@ pub struct WindowShell {
     pub indent_width_row: adw::SpinRow,
     pub encoding_row: adw::ActionRow,
     pub line_ending_row: adw::ComboRow,
+    pub git_name_row: adw::EntryRow,
+    pub git_email_row: adw::EntryRow,
+    pub git_identity_apply_button: gtk4::Button,
 }
 
 impl WindowShell {
@@ -73,6 +76,10 @@ impl WindowShell {
         let encoding_row: adw::ActionRow = builder_object(&preferences_builder, "encoding_row")?;
         let line_ending_row: adw::ComboRow =
             builder_object(&preferences_builder, "line_ending_row")?;
+        let git_name_row: adw::EntryRow = builder_object(&preferences_builder, "git_name_row")?;
+        let git_email_row: adw::EntryRow = builder_object(&preferences_builder, "git_email_row")?;
+        let git_identity_apply_button: gtk4::Button =
+            builder_object(&preferences_builder, "git_identity_apply_button")?;
 
         let shortcuts_builder =
             gtk4::Builder::from_resource("/io/github/cadric/Riteed/ui/shortcuts.ui");
@@ -107,6 +114,9 @@ impl WindowShell {
             indent_width_row,
             encoding_row,
             line_ending_row,
+            git_name_row,
+            git_email_row,
+            git_identity_apply_button,
         })
     }
 }

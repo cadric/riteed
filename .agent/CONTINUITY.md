@@ -11,8 +11,13 @@
 - Added an explicit visible close button to the Appearance panel because Escape-only dismissal was not discoverable enough.
 - Added document-portal host-path display resolution so status/title surfaces, Recent Files, and Compare show user-facing paths while keeping portal paths for actual I/O.
 - Added deterministic indentation behavior coverage for tab insertion, space indentation, indent width, and unindent behavior.
-- Built and installed the local user Flatpak for testing; current installed user commit is `6ac168d07aa88bd2deaf6cc0be04b4131d607b66a3ca4bd4599e1ed83b7cec3b`.
-- Final validation passed before commit preparation: `python3 -m tools.policy_check --root app --strict` and `python3 -m tools.coverage_check --root app`.
+- Implemented V9 lightweight Git source control: Files/Source Control sidebar modes, project-tree status badges, typed `/app/bin/git` Gio subprocess operations, porcelain-v2 status parsing, Git-backed compare, stage/unstage, commit UI, and GSettings-backed Git identity.
+- Added the Flatpak Git source module with Kernel.org checksum-autosigner verification so Riteed uses sandbox-bundled Git instead of host Git.
+- Built and installed the local user Flatpak from the V9 files; current installed user commit is `175319ecc8242771471db7445d121514f2ab70661480027e1d01e97d0674c58a`, and `/app/bin/git` reports `git version 2.54.0`.
+- Fixed V9 Git refresh inside Flatpak document-portal project folders by running Git from `/` with explicit `GIT_DIR` and `GIT_WORK_TREE`, avoiding portal cwd failures.
+- Trimmed the bundled Git Flatpak payload to local plumbing only and stripped `/app/bin/git`; the post-trim installed size baseline is 7,617,536 bytes with a +10% review ceiling of 8,379,290 bytes.
+- Reworked V9 Source Control rows to a compact one-line list: row activation starts Git compare, hover/focus icons handle Stage/Unstage, and untracked files now use the shared `U` badge.
+- Final validation passed before commit preparation: `python3 -m tools.policy_check --root app --strict`, `python3 -m tools.coverage_check --root app`, and `python3 -m unittest tools.tests.test_policy_check -v`.
 
 ## DECISIONS
 - v6 split layout is sidebar/editor navigation via `AdwOverlaySplitView`, not an editor/editor split-pane feature.
@@ -22,6 +27,10 @@
 - v8 deliberately does not add recovery snapshots; autosave is limited to saved writable files with idle external state and never writes recents/session/GSettings or shows dialogs/toasts.
 - Editor palettes are independent of the application theme; compare diff colors follow the effective editor palette dark/light classification.
 - The quick appearance UI keeps deliberate app/editor light-dark mismatch support; only the `Match App Appearance` palette follows the app appearance.
+- V9 source control deliberately uses a typed operation allowlist in `src/git_process.rs`; no generic Git runner is exposed, and host Git/`flatpak-spawn` remain forbidden.
+- V9 stages raw editor/on-disk bytes only when Git filters, working-tree encoding, EOL attrs, and repo EOL conversion are absent; unsupported states stay visible with unsafe actions disabled.
+- Source Control uses `U` rather than Git porcelain's `?` for untracked files across both the Source Control list and project tree badges.
+- Lightweight recent commit history and discard-file-changes were deferred from the first V9 delivery.
 - `.agent/CONTINUITY.md` is local continuity state and is ignored by Git unless explicitly force-added.
 
 ## DISCOVERIES
@@ -30,7 +39,10 @@
 - The line-diff UI should distinguish changed-line count from hunk count; users read "differences" as changed lines in this surface.
 - Compare highlights must be treated as transient compare state, not as post-compare document annotations.
 - Document Portal `GetHostPaths` can map `/run/user/$UID/doc/...` mounts back to host paths for display, but Riteed must keep the portal path as the authoritative access path.
+- Git can read document-portal project trees through `GIT_DIR`/`GIT_WORK_TREE`, but `git status` fails if the subprocess current directory itself is inside the portal mount.
+- Local-plumbing Git packaging keeps `/app/bin/git` only, leaves `/app/libexec/git-core` present but empty, and disables/removes network and scripting helpers until a future Git feature re-justifies them.
 
 ## PROGRESS
 - `CHANGELOG.md`, validation review artifacts, tests, and local Flatpak build are updated for the portal path display and indentation coverage pass.
-- Latest validation passed: `python3 -m tools.policy_check --root app --strict` and `python3 -m tools.coverage_check --root app`.
+- V9 validation passed: `python3 -m tools.policy_check --root app --strict`, `python3 -m tools.coverage_check --root app` (80.0% line coverage), and `python3 -m unittest tools.tests.test_policy_check -v`.
+- V9 Flatpak build passed: `flatpak-builder --user --install --force-clean app/build-dir app/build-aux/io.github.cadric.Riteed.yml`; smoke checked with `flatpak info --user io.github.cadric.Riteed`, `flatpak run --user --command=/app/bin/git io.github.cadric.Riteed --version`, local Git plumbing commands with an empty `GIT_TEMPLATE_DIR`, and a document-portal Git status command using `GIT_DIR`/`GIT_WORK_TREE`.

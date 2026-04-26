@@ -1,11 +1,11 @@
 ---
 created: 2026-04-19
-updated: 2026-04-24
+updated: 2026-04-25
 status: active
 priority: high
 type: roadmap
-completed_through: v7
-next_version: v8
+completed_through: v9
+next_version: v10
 ---
 
 # Complete Roadmap: Mini GNOME Text Editor in Rust
@@ -750,6 +750,7 @@ Implement a working v7 of the app with diff support, side-by-side compare views,
 > status: complete
 > priority: high
 > type: roadmap-milestone
+> implementation: `e8f4b0c`, `0abb36a`, `095191f`, `657d1e5`, `0a43d75` — V8 polish, accessibility, appearance, compare, and editing-safety work
 
 ## Purpose
 
@@ -858,10 +859,11 @@ Implement a working v8 of the app with editor palette selection, fullscreen supp
 # V9 — Lightweight Git source control sidebar
 
 > created: 2026-04-24
-> updated: 2026-04-24
-> status: planned
+> updated: 2026-04-25
+> status: complete
 > priority: high
 > type: roadmap-milestone
+> implementation: pending commit — V9 lightweight Git source control sidebar
 
 ## Purpose
 
@@ -878,7 +880,7 @@ The goal is to support repository state, changed files, per-file diffs, and loca
 * Stage and unstage actions
 * Commit workflow
 * Refreshable repository state
-* Optional lightweight recent-commit history
+* Explicit deferral of lightweight recent-commit history and discard-file-changes
 
 ## Why this version matters
 
@@ -927,10 +929,9 @@ Scope for v9:
 - Add refresh state support
   - Allow manual refresh of repository status
   - Keep repository state synchronized with editor saves where practical
-- Add lightweight recent commit history if practical
-  - Show a small read-only list of recent commits
-  - Allow commit selection for inspection
-  - Keep history browsing simple and avoid turning it into a full log browser
+- Defer lightweight recent commit history to a follow-up
+  - Do not ship a log browser in the first V9 delivery
+  - Keep the source control sidebar focused on status, diff, staging, and commit
 
 Behavior expectations:
 - The app should remain a lightweight GNOME editor, not a full source control client
@@ -940,11 +941,11 @@ Behavior expectations:
 - Commit actions should be simple, safe, and understandable
 
 Technical expectations:
-- Use the installed Git CLI rather than embedding a full Git implementation
+- Use the bundled sandbox Git CLI at `/app/bin/git`; never use host Git or `flatpak-spawn`
 - Execute Git commands safely via subprocess calls without shell-string shortcuts
 - Run Git operations off the main UI thread
 - Parse stable machine-friendly Git output where practical
-- Handle missing Git installations and non-repository folders gracefully
+- Handle unavailable bundled Git and non-repository folders gracefully
 - Keep Git logic centralized in a dedicated service layer
 - Reuse the existing workspace, diff, and document architecture wherever possible
 - Keep all user-facing strings ready for gettext localization
@@ -959,9 +960,9 @@ Recommended UI shape:
 
 Nice-to-have for v9:
 - Current branch display
-- Discard file changes
+- Discard file changes (deferred)
 - A filter or quick view for changed files only
-- A lightweight recent commits list
+- A lightweight recent commits list (deferred)
 
 Non-goals for v9:
 - No branch switching UI
@@ -982,14 +983,14 @@ Implementation guidance:
 - Preserve GNOME-native patterns and avoid turning the side panel into a complex dashboard
 
 Deliverable:
-Implement a working v9 of the app with Git repository detection, a lightweight source control side panel, project-tree file status indicators, per-file diff, stage/unstage actions, commit support, refreshable repository state, and optional recent commit history, while preserving the app’s identity as a lightweight GNOME-native editor.
+Implement a working v9 of the app with Git repository detection, a lightweight source control side panel, project-tree file status indicators, per-file diff, stage/unstage actions, commit support, and refreshable repository state, while preserving the app’s identity as a lightweight GNOME-native editor. Lightweight recent history and discard-file-changes are deferred to follow-up work.
 ```
 
 ---
 
 # Summary of the full progression
 
-V1–V8 are complete as of 2026-04-24. V9 remains a planned roadmap milestone.
+V1–V9 are complete as of 2026-04-25. V9 ships the source-control core; lightweight recent history and discard-file-changes are deferred.
 
 ## V1
 

@@ -11,6 +11,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from tools.checks import foundation, hig, libadwaita, runtime
+from tools.scanners.rust import runtime_review_hits
 from tools.scanners.sites import ReviewEntry, ScanHit, validate_review_links
 from tools.validation_tooling import contract_root, repo_root
 
@@ -141,6 +142,48 @@ class PolicyCheckTests(unittest.TestCase):
             errors: list[str] = []
             runtime.check_runtime(root, errors)
             self.assertTrue(any("owned or supervised" in item for item in errors))
+
+    def test_git_subprocess_exception_is_path_scoped(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            shutil.copytree(REPO_ROOT / "policy", root / "policy")
+            _write(root / "src" / "git_process.rs", "fn ok() { let _flags = gio::SubprocessFlags::STDOUT_PIPE; }\n")
+            _write(root / "src" / "other.rs", "fn bad() { let _flags = gio::SubprocessFlags::STDOUT_PIPE; }\n")
+            errors: list[str] = []
+            foundation.check_forbidden_patterns(root, errors)
+            self.assertTrue(any("Gio subprocess outside" in item and "src/other.rs" in item for item in errors))
+            self.assertFalse(any("src/git_process.rs" in item for item in errors))
+
+    def test_flatpak_spawn_and_std_command_have_no_git_process_exception(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            shutil.copytree(REPO_ROOT / "policy", root / "policy")
+            _write(
+                root / "src" / "git_process.rs",
+                "fn bad() {\n    let _cmd = std::process::Command::new(\"git\");\n    let _name = \"flatpak-spawn\";\n}\n",
+            )
+            errors: list[str] = []
+            foundation.check_forbidden_patterns(root, errors)
+            self.assertTrue(any("external commands" in item for item in errors))
+            self.assertTrue(any("flatpak-spawn" in item for item in errors))
+
+    def test_runtime_review_patterns_respect_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            _write(root / "src" / "git_process.rs", "fn ok() { let _flags = gio::SubprocessFlags::STDOUT_PIPE; }\n")
+            _write(root / "src" / "other.rs", "fn ignored() { let _flags = gio::SubprocessFlags::STDOUT_PIPE; }\n")
+            hits = runtime_review_hits(
+                root,
+                [
+                    {
+                        "kind": "runtime-git-subprocess",
+                        "message": "review",
+                        "pattern": r"\bgio::SubprocessFlags\b",
+                        "paths": ["src/git_process.rs"],
+                    }
+                ],
+            )
+            self.assertEqual([hit.path for hit in hits], ["src/git_process.rs"])
 
     def test_artifact_index_message_includes_remediation(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

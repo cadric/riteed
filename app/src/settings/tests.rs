@@ -69,6 +69,7 @@ fn memory_backend_roundtrips_values() {
     ]);
     settings.set_session_files(&[String::from("file:///tmp/session.txt")]);
     settings.set_session_selected_file("file:///tmp/session.txt");
+    settings.set_git_identity("Ada Lovelace", "ada@example.test");
     settings.set_project_folder_uri("file:///tmp/project");
     settings.set_project_folder_display_name("Project");
     settings.set_project_sidebar_visible(true);
@@ -98,6 +99,13 @@ fn memory_backend_roundtrips_values() {
         vec![String::from("file:///tmp/session.txt")]
     );
     assert_eq!(settings.session_selected_file(), "file:///tmp/session.txt");
+    assert_eq!(
+        settings.git_identity(),
+        (
+            String::from("Ada Lovelace"),
+            String::from("ada@example.test")
+        )
+    );
     assert_eq!(settings.project_folder_uri(), "file:///tmp/project");
     assert_eq!(settings.project_folder_display_name(), "Project");
     assert!(settings.project_sidebar_visible());
@@ -112,6 +120,7 @@ fn memory_backend_records_writes_for_tests() {
     settings.set_project_show_hidden(true);
     settings.set_editor_font("Monospace 11");
     settings.set_autosave_enabled(true);
+    settings.set_git_identity("Ada", "ada@example.test");
     assert_eq!(
         settings.write_log_for_tests(),
         vec![
@@ -119,6 +128,8 @@ fn memory_backend_records_writes_for_tests() {
             String::from("project-show-hidden"),
             String::from("editor-font"),
             String::from("autosave-enabled"),
+            String::from("git-user-name"),
+            String::from("git-user-email"),
         ]
     );
 }

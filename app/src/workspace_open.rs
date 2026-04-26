@@ -74,6 +74,63 @@ pub(crate) fn open_files_internal(
     process_open_request(workspace, request);
 }
 
+pub(crate) fn request_open_file_then(
+    workspace: &Rc<Workspace>,
+    file: &gio::File,
+    source: OpenSource,
+    callback: Rc<dyn Fn(Result<Rc<crate::editor_tab::EditorTab>, AppError>)>,
+) {
+    if workspace.tab_view.n_pages() == 0 {
+        let _tab = workspace.add_empty_tab(true);
+    }
+    if let Some(existing) = find_tab_by_file(workspace, file) {
+        if source != OpenSource::SessionRestore {
+            workspace
+                .remember_recent_uri(&existing.uri().unwrap_or_else(|| file.uri().to_string()));
+        }
+        if let Some(page) = existing.page() {
+            workspace.tab_view.set_selected_page(&page);
+        }
+        workspace.refresh_selected_state();
+        callback(Ok(existing));
+        return;
+    }
+    let (tab, remove_on_failure) = acquire_open_target(workspace);
+    if let Some(page) = tab.page() {
+        workspace.tab_view.set_selected_page(&page);
+    }
+    let weak = Rc::downgrade(workspace);
+    let opened_file = file.clone();
+    let tab_for_result = tab.clone();
+    tab.clone().load_file(
+        &workspace.shell,
+        file,
+        Rc::new(move |result| {
+            if let Some(workspace) = weak.upgrade() {
+                match result {
+                    Ok(uri) => {
+                        if source != OpenSource::SessionRestore {
+                            workspace.remember_recent_uri(&uri);
+                        }
+                        workspace.persist_session_state_if_needed();
+                        workspace.refresh_selected_state();
+                        callback(Ok(tab_for_result.clone()));
+                    }
+                    Err(error) => {
+                        if remove_on_failure {
+                            workspace.close_tab_if_clean(&tab_for_result);
+                        }
+                        if source != OpenSource::SourceControl {
+                            handle_open_failure(&workspace, source, &opened_file, &error);
+                        }
+                        callback(Err(error));
+                    }
+                }
+            }
+        }),
+    );
+}
+
 fn process_open_request(workspace: &Rc<Workspace>, request: Rc<RefCell<OpenRequest>>) {
     let next_open = {
         let mut state = request.borrow_mut();
@@ -175,8 +232,11 @@ fn finish_open_request(workspace: &Rc<Workspace>, request: &Rc<RefCell<OpenReque
                 request.restored_selected_page.clone(),
             );
         }
-        OpenSource::Dialog | OpenSource::AppOpen | OpenSource::Recent | OpenSource::ProjectTree => {
-        }
+        OpenSource::Dialog
+        | OpenSource::AppOpen
+        | OpenSource::Recent
+        | OpenSource::ProjectTree
+        | OpenSource::SourceControl => {}
     }
 }
 
@@ -235,7 +295,7 @@ fn handle_open_failure(
         OpenSource::Dialog | OpenSource::AppOpen | OpenSource::ProjectTree => {
             dialogs::present_error(&workspace.shell, error);
         }
-        OpenSource::SessionRestore | OpenSource::Drop => {}
+        OpenSource::SourceControl | OpenSource::SessionRestore | OpenSource::Drop => {}
     }
 }
 

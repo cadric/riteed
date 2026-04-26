@@ -75,6 +75,10 @@ impl ProjectBrowser {
         self.title.set_subtitle("");
     }
 
+    pub(crate) fn set_git_statuses(&self, statuses: Vec<(String, String)>) {
+        self.tree.set_git_statuses(statuses);
+    }
+
     pub(crate) fn focus_tree_after_reveal(&self) {
         self.tree.focus_after_map_or_idle();
     }

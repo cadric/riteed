@@ -11,6 +11,28 @@ finish-args:
   - --socket=wayland
   - --socket=fallback-x11
 modules:
+  - name: git
+    buildsystem: simple
+    build-options:
+      no-debuginfo: true
+    build-commands:
+      - command -v gpg >/dev/null
+      - export GNUPGHOME="$PWD/gnupg" && mkdir -m 700 "$GNUPGHOME" && gpg --batch --import kernelorg-checksum-autosigner.asc && gpg --batch --verify sha256sums.asc && awk '/  git-2.54.0.tar.xz$/ { print }' sha256sums.asc | sha256sum -c - && rm -rf "$GNUPGHOME"
+      - tar -xf git-2.54.0.tar.xz
+      - make -C git-2.54.0 prefix=/app NO_TCLTK=YesPlease NO_GETTEXT=YesPlease NO_PERL=YesPlease NO_PYTHON=YesPlease NO_CURL=YesPlease NO_EXPAT=YesPlease NO_OPENSSL=YesPlease BLK_SHA1=YesPlease INSTALL_SYMLINKS=YesPlease SKIP_DASHED_BUILT_INS=YesPlease all
+      - make -C git-2.54.0 prefix=/app NO_TCLTK=YesPlease NO_GETTEXT=YesPlease NO_PERL=YesPlease NO_PYTHON=YesPlease NO_CURL=YesPlease NO_EXPAT=YesPlease NO_OPENSSL=YesPlease BLK_SHA1=YesPlease INSTALL_SYMLINKS=YesPlease SKIP_DASHED_BUILT_INS=YesPlease install
+      - rm -f /app/bin/scalar /app/bin/git-shell /app/bin/git-cvsserver /app/bin/git-receive-pack /app/bin/git-upload-pack /app/bin/git-upload-archive /app/libexec/git-core/git /app/libexec/git-core/git-* /app/libexec/git-core/scalar
+      - rm -rf /app/libexec/git-core/mergetools /app/share/git-core /app/share/bash-completion /app/share/man /app/share/doc/git*
+      - strip --strip-unneeded /app/bin/git
+    sources:
+      - type: file
+        url: https://www.kernel.org/pub/software/scm/git/git-2.54.0.tar.xz
+        sha256: f689162364c10de79ef89aa8dbf48731eb057e34edbbd20aca510ce0154681a3
+      - type: file
+        url: https://www.kernel.org/pub/software/scm/git/sha256sums.asc
+        sha256: 9dcbf55ba682be7be6458f7ddca7e96bf42952a91b060db05d6a3ec3cb3585a6
+      - type: file
+        path: git/kernelorg-checksum-autosigner.asc
   - name: riteed
     buildsystem: simple
     build-commands:

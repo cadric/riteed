@@ -27,6 +27,7 @@ pub enum OpenSource {
     Recent,
     SessionRestore,
     ProjectTree,
+    SourceControl,
     Drop,
 }
 
@@ -151,6 +152,15 @@ impl Workspace {
 
     pub fn request_open_files(self: &Rc<Self>, files: Vec<gio::File>, source: OpenSource) {
         crate::workspace_open::open_files_internal(self, files, source, None);
+    }
+
+    pub(crate) fn request_open_file_then(
+        self: &Rc<Self>,
+        file: &gio::File,
+        source: OpenSource,
+        callback: Rc<dyn Fn(Result<Rc<EditorTab>, crate::error::AppError>)>,
+    ) {
+        crate::workspace_open::request_open_file_then(self, file, source, callback);
     }
 
     pub fn restore_session(self: &Rc<Self>) {

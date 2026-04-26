@@ -2,7 +2,7 @@
   "$id": "policy/gnome_rust_app.bundle.v3.json",
   "title": "GNOME Rust Application Policy Bundle (Rust 1.95 / GNOME 50)",
   "package_id": "gnome_rust_app_policy_pack.v1",
-  "package_version": "1.0.1",
+  "package_version": "1.1.0",
   "machine_readable_for": [
     "llm_agent",
     "codex",
@@ -311,8 +311,8 @@
   "artifact_index": [
     {
       "file": "rust.policy.json",
-      "sha256": "6dc2ac33bb52a70c9788220586ebedf3ae3210514b60e75183ba420d0492db1b",
-      "bytes": 11264
+      "sha256": "19d6cc71a69689ab2b4d610a5d3ae8efd5db17fe1f3d6cf355e1c8b4ce3ff8e5",
+      "bytes": 11708
     },
     {
       "file": "gtk4-rs.policy.json",
@@ -346,8 +346,8 @@
     },
     {
       "file": "validation-tooling.policy.json",
-      "sha256": "12beb0bcfefe351d3ab8e4c36b8d46559881c93265dcbd2049cb855d6063df29",
-      "bytes": 13954
+      "sha256": "dfda5d18ecf52b274467705697a0207f8a0084aa4659141b4c3dd2fa2106c49c",
+      "bytes": 14541
     }
   ]
 }
