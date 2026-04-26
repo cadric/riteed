@@ -37,6 +37,7 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Extended the embedded Riteed editor to a v5b controls layer with staged indentation preferences, monospace-only editor font selection, window-scoped zoom controls, and updated status/menu/shortcuts surfaces.
 - Extended the embedded Riteed editor to a v5c polish layer with direct status-bar zoom controls, document format controls in Preferences, fixed-size minimap rendering during zoom, and scroll-past-end editor padding.
 - Added a folder-navigation split layout using `AdwOverlaySplitView` inside the existing toast overlay, keeping project state separate from document/tab state while preserving the lightweight editor workflow.
+- Switched the project sidebar container from `AdwOverlaySplitView` to `GtkPaned`, keeping the Files/Source Control modes but making sidebar width adjustable through a drag handle.
 - Made compare highlighting follow the effective editor palette instead of the application theme, and kept autosave saves silent so they do not reorder recent files, persist session state, or show save toasts.
 - Moved quick app appearance and editor palette controls into an icon-only header-bar Appearance panel with visual palette previews, while keeping editor view toggles such as current-line highlight in Preferences.
 - Refined the editor chrome by putting Project Sidebar first in the header bar, moving Save beside Open, moving a friendly file location into the bottom status bar, and removing the status-bar Actual Size button.
@@ -45,7 +46,7 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Moved compare-session actions (refresh reference, exit compare, next/previous diff) out of the main menu and into the compare view/toolbar.
 - Switched Recent Files to a lightweight dialog listing recent documents (most recent first) instead of nested menu flows.
 - Split the left sidebar into Files and Source Control modes with a libadwaita view stack while preserving project-tree state.
-- Reworked the Source Control changed-file list into compact single-line rows with row-activated Git compare, hover/focus Stage and Unstage icons, and consistent `U` badges for untracked files.
+- Reworked the Source Control changed-file view into a virtual folder tree with compact file rows, click-to-compare activation, hover/focus Stage and Unstage icons, and consistent `U` badges for untracked files.
 - Refactored compare controller plumbing into smaller modules so Git-backed compare could reuse the existing split-diff engine without growing the compare file past policy limits.
 - Revised the runtime policy to allow only typed Gio subprocess Git operations in `src/git_process.rs`; `std::process::Command` and `flatpak-spawn` remain forbidden.
 
@@ -76,6 +77,7 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Guarded Git stage/compare actions for unsupported repository states such as SHA-256 object format, configured EOL conversion, content filters, working-tree encodings, submodules, binary blobs, large blobs, dirty open tabs, and non-UTF-8 paths.
 - Fixed Flatpak Git status refresh for document-portal project folders by running bundled Git from a stable sandbox cwd with explicit `GIT_DIR` and `GIT_WORK_TREE`.
 - Trimmed the bundled Flatpak Git module to local plumbing only and explicitly stripped `/app/bin/git`, reducing the installed app size baseline to 7,617,536 bytes while preserving V9 status, stage, unstage, compare, and commit flows.
+- Restored the resizable sidebar to the left side, kept Files and Source Control inside one switchable sidebar, and clamped drag resizing so the sidebar cannot be hidden permanently by the handle.
 
 ## 1.0.1 — 2026-04-19
 

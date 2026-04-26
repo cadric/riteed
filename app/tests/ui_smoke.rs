@@ -9,6 +9,9 @@ fn constructs_main_surfaces() {
     riteed::bootstrap_runtime();
     let _gtk = gtk::init();
     let _adw = adw::init();
+    if gtk::gdk::Display::default().is_none() {
+        return;
+    }
 
     let window_builder = gtk::Builder::from_resource("/io/github/cadric/Riteed/ui/window.ui");
     let window: Option<adw::ApplicationWindow> = window_builder.object("window");

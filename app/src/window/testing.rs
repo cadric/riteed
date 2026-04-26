@@ -321,7 +321,32 @@ impl Window {
     }
 
     pub(crate) fn project_sidebar_visible_for_tests(&self) -> bool {
-        self.shell.project_split_view.shows_sidebar()
+        self.shell.project_split_view.position() > 0
+    }
+
+    pub(crate) fn project_sidebar_position_for_tests(&self) -> i32 {
+        self.shell.project_split_view.position()
+    }
+
+    pub(crate) fn set_project_sidebar_position_for_tests(&self, position: i32) {
+        self.shell.project_split_view.set_position(position);
+    }
+
+    pub(crate) fn project_sidebar_left_layout_for_tests(&self) -> bool {
+        let start_is_sidebar = self
+            .shell
+            .project_split_view
+            .start_child()
+            .and_then(|child| child.downcast::<libadwaita::ToolbarView>().ok())
+            .is_some();
+        let end_is_workspace = self
+            .shell
+            .project_split_view
+            .end_child()
+            .is_some_and(|child| {
+                child == self.shell.workspace_box.clone().upcast::<gtk4::Widget>()
+            });
+        start_is_sidebar && end_is_workspace
     }
 
     pub(crate) fn project_action_states_for_tests(&self) -> (bool, bool, bool, bool) {

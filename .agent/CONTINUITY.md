@@ -13,10 +13,12 @@
 - Added deterministic indentation behavior coverage for tab insertion, space indentation, indent width, and unindent behavior.
 - Implemented V9 lightweight Git source control: Files/Source Control sidebar modes, project-tree status badges, typed `/app/bin/git` Gio subprocess operations, porcelain-v2 status parsing, Git-backed compare, stage/unstage, commit UI, and GSettings-backed Git identity.
 - Added the Flatpak Git source module with Kernel.org checksum-autosigner verification so Riteed uses sandbox-bundled Git instead of host Git.
-- Built and installed the local user Flatpak from the V9 files; current installed user commit is `175319ecc8242771471db7445d121514f2ab70661480027e1d01e97d0674c58a`, and `/app/bin/git` reports `git version 2.54.0`.
+- Built and installed the local user Flatpak from the V9 files; current installed user commit is `aaf46011e751d64dfd7fd0cb448fef9bcc29693ae9a05c77bf4ba417001c6917`, and `/app/bin/git` reports `git version 2.54.0`.
 - Fixed V9 Git refresh inside Flatpak document-portal project folders by running Git from `/` with explicit `GIT_DIR` and `GIT_WORK_TREE`, avoiding portal cwd failures.
 - Trimmed the bundled Git Flatpak payload to local plumbing only and stripped `/app/bin/git`; the post-trim installed size baseline is 7,617,536 bytes with a +10% review ceiling of 8,379,290 bytes.
 - Reworked V9 Source Control rows to a compact one-line list: row activation starts Git compare, hover/focus icons handle Stage/Unstage, and untracked files now use the shared `U` badge.
+- Replaced the V9 Source Control flat changed-file list with a virtual Git path tree that preserves expanded folders and selected rows across refresh.
+- Restored the resizable V9 sidebar layout so Files and Source Control share the left sidebar again, while drag resizing is clamped and no longer persists a fully hidden sidebar by accident.
 - Final validation passed before commit preparation: `python3 -m tools.policy_check --root app --strict`, `python3 -m tools.coverage_check --root app`, and `python3 -m unittest tools.tests.test_policy_check -v`.
 
 ## DECISIONS
@@ -30,6 +32,7 @@
 - V9 source control deliberately uses a typed operation allowlist in `src/git_process.rs`; no generic Git runner is exposed, and host Git/`flatpak-spawn` remain forbidden.
 - V9 stages raw editor/on-disk bytes only when Git filters, working-tree encoding, EOL attrs, and repo EOL conversion are absent; unsupported states stay visible with unsafe actions disabled.
 - Source Control uses `U` rather than Git porcelain's `?` for untracked files across both the Source Control list and project tree badges.
+- Source Control tree rows resolve actions by raw Git path against the current status snapshot, not by visible row index.
 - Lightweight recent commit history and discard-file-changes were deferred from the first V9 delivery.
 - `.agent/CONTINUITY.md` is local continuity state and is ignored by Git unless explicitly force-added.
 
@@ -43,6 +46,9 @@
 - Local-plumbing Git packaging keeps `/app/bin/git` only, leaves `/app/libexec/git-core` present but empty, and disables/removes network and scripting helpers until a future Git feature re-justifies them.
 
 ## PROGRESS
+- Source Control virtual tree refactor validation passed: `cargo test --workspace --all-targets --all-features -- --nocapture`, `python3 -m tools.policy_check --root app --strict`, and `python3 -m tools.coverage_check --root app` (80.3% line coverage).
+- Local user Flatpak rebuild/install passed with commit `aaf46011e751d64dfd7fd0cb448fef9bcc29693ae9a05c77bf4ba417001c6917`; `flatpak info --user io.github.cadric.Riteed` reports 7.7 MB installed size and `/app/bin/git` reports `git version 2.54.0`.
+- Sidebar layout fix validation passed: `GTK_A11Y=none GSK_RENDERER=cairo cargo test --workspace --all-targets --all-features`, `python3 -m tools.policy_check --root app --strict`, `python3 -m tools.coverage_check --root app`, and `python3 -m unittest tools.tests.test_policy_check -v`.
 - `CHANGELOG.md`, validation review artifacts, tests, and local Flatpak build are updated for the portal path display and indentation coverage pass.
 - V9 validation passed: `python3 -m tools.policy_check --root app --strict`, `python3 -m tools.coverage_check --root app` (80.0% line coverage), and `python3 -m unittest tools.tests.test_policy_check -v`.
 - V9 Flatpak build passed: `flatpak-builder --user --install --force-clean app/build-dir app/build-aux/io.github.cadric.Riteed.yml`; smoke checked with `flatpak info --user io.github.cadric.Riteed`, `flatpak run --user --command=/app/bin/git io.github.cadric.Riteed --version`, local Git plumbing commands with an empty `GIT_TEMPLATE_DIR`, and a document-portal Git status command using `GIT_DIR`/`GIT_WORK_TREE`.

@@ -8,7 +8,7 @@ pub struct WindowShell {
     pub toolbar_view: adw::ToolbarView,
     pub title_widget: adw::WindowTitle,
     pub toast_overlay: adw::ToastOverlay,
-    pub project_split_view: adw::OverlaySplitView,
+    pub project_split_view: gtk4::Paned,
     pub workspace_box: gtk4::Box,
     pub new_button: gtk4::Button,
     pub open_button: gtk4::Button,
@@ -43,8 +43,7 @@ impl WindowShell {
         let toolbar_view: adw::ToolbarView = builder_object(&builder, "toolbar_view")?;
         let title_widget: adw::WindowTitle = builder_object(&builder, "window_title")?;
         let toast_overlay: adw::ToastOverlay = builder_object(&builder, "toast_overlay")?;
-        let project_split_view: adw::OverlaySplitView =
-            builder_object(&builder, "project_split_view")?;
+        let project_split_view: gtk4::Paned = builder_object(&builder, "project_split_view")?;
         let workspace_box: gtk4::Box = builder_object(&builder, "workspace_box")?;
         let new_button: gtk4::Button = builder_object(&builder, "new_button")?;
         let open_button: gtk4::Button = builder_object(&builder, "open_button")?;

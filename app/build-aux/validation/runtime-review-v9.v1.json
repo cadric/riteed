@@ -3,35 +3,91 @@
   "sites": [
     {
       "path": "src/source_control.rs",
-      "line": 17,
+      "line": 21,
       "match": "pub(super) type SourceStateRef = Rc<RefCell<SourceControlState>>;",
       "kind": "runtime-shared-state",
       "ownership": "The Source Control controller owns the sidebar state behind one Rc<RefCell>.",
       "justification": "Refresh, commit, stage, unstage, and diff callbacks all complete asynchronously on the main loop and need one cancellable, generation-aware UI state owner."
     },
     {
-      "path": "src/source_control.rs",
-      "line": 42,
-      "match": "pub(super) self_weak: Weak<RefCell<SourceControlState>>,",
+      "path": "src/source_control/tree_view.rs",
+      "line": 22,
+      "match": "state_weak: Rc<RefCell<Weak<RefCell<SourceControlState>>>>,",
       "kind": "runtime-shared-state",
-      "ownership": "The Source Control state owns a weak self handle for row action callbacks.",
-      "justification": "List rows are rebuilt frequently; weak callbacks prevent buttons from keeping the sidebar state alive after window teardown."
+      "ownership": "The Source Control tree owns a replaceable weak handle to the sidebar state.",
+      "justification": "The virtual ListView factory is created before the controller Rc exists; row action buttons need a weak state handle once construction finishes without keeping the window alive."
     },
     {
-      "path": "src/source_control/actions.rs",
-      "line": 71,
-      "match": "weak: &Weak<RefCell<SourceControlState>>,",
+      "path": "src/source_control/tree_view.rs",
+      "line": 69,
+      "match": "pub(super) fn connect_activation(&self, weak: Weak<RefCell<SourceControlState>>) {",
       "kind": "runtime-shared-state",
-      "ownership": "Source Control row rendering borrows the weak sidebar state handle.",
-      "justification": "Per-row buttons must call back into the current sidebar state without cloning or owning the controller from every rebuilt row."
+      "ownership": "The Source Control tree activation hook borrows the controller weak state handle.",
+      "justification": "ListView activation resolves the current raw Git path and dispatches to the live sidebar state only if the controller still exists."
     },
     {
-      "path": "src/source_control/actions.rs",
-      "line": 136,
+      "path": "src/source_control/tree_view.rs",
+      "line": 21,
+      "match": "activation_guard: Rc<Cell<bool>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control tree tracks a per-widget activation re-entrancy guard.",
+      "justification": "Stage/unstage click handlers and list activation share one guard so row buttons do not trigger a duplicate file-open action."
+    },
+    {
+      "path": "src/source_control/tree_view.rs",
+      "line": 128,
+      "match": "state_weak: &Rc<RefCell<Weak<RefCell<SourceControlState>>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control tree factory shares the replaceable weak state handle with row setup and bind callbacks.",
+      "justification": "Recycled virtual rows need current sidebar state access for button sensitivity and tooltips without rebuilding the factory on every refresh."
+    },
+    {
+      "path": "src/source_control/tree_view.rs",
+      "line": 129,
+      "match": "activation_guard: &Rc<Cell<bool>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Row factory setup passes the activation guard to action buttons.",
+      "justification": "Row button callbacks and list activation share the same guard to prevent duplicated activations."
+    },
+    {
+      "path": "src/source_control/tree_view.rs",
+      "line": 144,
+      "match": "state_weak: &Rc<RefCell<Weak<RefCell<SourceControlState>>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Source Control row setup borrows the shared weak state slot for per-row action buttons.",
+      "justification": "Buttons are connected once per recycled row and look up the current TreeListRow path at click time, avoiding stale entry captures."
+    },
+    {
+      "path": "src/source_control/tree_view.rs",
+      "line": 145,
+      "match": "activation_guard: &Rc<Cell<bool>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Row setup carries the activation guard into each action row.",
+      "justification": "Row setup wires button callbacks to the shared guard state so list activations can be suppressed while row actions run."
+    },
+    {
+      "path": "src/source_control/tree_view.rs",
+      "line": 205,
+      "match": "state_weak: &Rc<RefCell<Weak<RefCell<SourceControlState>>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Source Control action buttons borrow the shared weak state slot.",
+      "justification": "Stage and unstage clicks must dispatch to the live sidebar state without owning it or using row indexes."
+    },
+    {
+      "path": "src/source_control/tree_view.rs",
+      "line": 206,
+      "match": "activation_guard: &Rc<Cell<bool>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Row action buttons toggle a guard before running sidebar actions.",
+      "justification": "The shared guard is shared across all action buttons so list row activation and button activation cannot double-trigger."
+    },
+    {
+      "path": "src/source_control/tree_view.rs",
+      "line": 391,
       "match": "weak: &Weak<RefCell<SourceControlState>>,",
       "kind": "runtime-shared-state",
-      "ownership": "Source Control action buttons borrow the weak sidebar state handle.",
-      "justification": "Stage, unstage, and diff button callbacks need to start cancellable Git operations only if the sidebar state is still alive."
+      "ownership": "Source Control activation dispatch borrows the controller weak state handle.",
+      "justification": "File and folder activation must avoid keeping the sidebar alive after teardown while still resolving actions against the current snapshot."
     },
     {
       "path": "src/git_process.rs",

@@ -61,17 +61,17 @@
         <property name="content">
           <object class="AdwToastOverlay" id="toast_overlay">
             <property name="child">
-              <object class="AdwOverlaySplitView" id="project_split_view">
-                <property name="content">
-                  <object class="GtkBox" id="workspace_box">
-                    <property name="orientation">vertical</property>
-                  </object>
-                </property>
+              <object class="GtkPaned" id="project_split_view">
+                <property name="orientation">horizontal</property>
+                <property name="position">320</property>
               </object>
             </property>
           </object>
         </property>
       </object>
     </property>
+  </object>
+  <object class="GtkBox" id="workspace_box">
+    <property name="orientation">vertical</property>
   </object>
 </interface>

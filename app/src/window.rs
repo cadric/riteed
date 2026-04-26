@@ -168,7 +168,10 @@ impl Window {
         let sidebar_host = SidebarHost::new(&project.sidebar_widget(), &source_control.widget());
         shell
             .project_split_view
-            .set_sidebar(Some(sidebar_host.widget()));
+            .set_start_child(Some(sidebar_host.widget()));
+        shell
+            .project_split_view
+            .set_end_child(Some(&shell.workspace_box));
         project.set_root_change_handler(source_control.root_change_handler());
         source_control.set_status_handler(project.git_status_handler());
 

@@ -219,6 +219,14 @@ msgctxt "save safety banner"
 msgid "This File Is Read-Only."
 msgstr ""
 
+msgctxt "sidebar mode"
+msgid "Files"
+msgstr ""
+
+msgctxt "sidebar mode"
+msgid "Source Control"
+msgstr ""
+
 msgid "Changed files"
 msgstr ""
 
@@ -381,14 +389,6 @@ msgstr ""
 
 msgctxt "git status"
 msgid "Untracked"
-msgstr ""
-
-msgctxt "sidebar mode"
-msgid "Files"
-msgstr ""
-
-msgctxt "sidebar mode"
-msgid "Source Control"
 msgstr ""
 
 msgctxt "search action"

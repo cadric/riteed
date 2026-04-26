@@ -1,10 +1,8 @@
-use std::cell::RefCell;
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
-use std::rc::{Rc, Weak};
+use std::rc::Rc;
 
 use gettextrs::{gettext, pgettext};
-use gtk4::accessible::Property;
 use gtk4::{gio, prelude::*};
 
 use crate::editor_tab::EditorTab;
@@ -16,7 +14,7 @@ use crate::source_control::{
 use crate::workspace::{OpenSource, Workspace};
 
 #[derive(Clone, Copy)]
-enum GitRowAction {
+pub(super) enum GitRowAction {
     Diff,
     Stage,
     Unstage,
@@ -55,128 +53,23 @@ pub(super) fn apply_entry_actions(state: &mut SourceControlState) {
         .set_sensitive(can_commit && !state.status_stale);
 }
 
-pub(super) fn rebuild_rows(state: &mut SourceControlState) {
-    while let Some(row) = state.list.first_child() {
-        state.list.remove(&row);
-    }
-    let weak = state.self_weak.clone();
-    // Row indexes mirror snapshot order; revisit activation if filtering or sorting is added.
-    for entry in state.snapshot.entries.clone() {
-        state.list.append(&entry_row(state, &weak, &entry));
-    }
-}
-
-fn entry_row(
-    state: &SourceControlState,
-    weak: &Weak<RefCell<SourceControlState>>,
-    entry: &GitStatusEntry,
-) -> gtk4::ListBoxRow {
-    let row = gtk4::ListBoxRow::new();
-    row.add_css_class("riteed-git-row");
-    row.set_activatable(true);
-
-    let box_ = gtk4::Box::new(gtk4::Orientation::Horizontal, 6);
-    box_.set_margin_top(5);
-    box_.set_margin_bottom(5);
-    box_.set_margin_start(8);
-    box_.set_margin_end(8);
-
-    let title = gtk4::Label::new(Some(entry.path.display()));
-    title.set_xalign(0.0);
-    title.set_ellipsize(gtk4::pango::EllipsizeMode::End);
-    title.set_hexpand(true);
-    box_.append(&title);
-
-    let staged_label = pgettext("git status", "Staged");
-    let staged = gtk4::Label::new(Some("S"));
-    staged.add_css_class("caption");
-    staged.add_css_class("riteed-git-staged");
-    staged.set_tooltip_text(Some(&staged_label));
-    staged.update_property(&[Property::Label(&staged_label)]);
-    staged.set_visible(entry.staged);
-    box_.append(&staged);
-
-    let actions = gtk4::Box::new(gtk4::Orientation::Horizontal, 2);
-    actions.add_css_class("riteed-git-row-actions");
-    actions.append(&action_button(
-        "list-add-symbolic",
-        &pgettext("git action tooltip", "Stage File"),
-        entry.stage_action.clone(),
-        weak,
-        entry,
-        GitRowAction::Stage,
-    ));
-    actions.append(&action_button(
-        "list-remove-symbolic",
-        &pgettext("git action tooltip", "Unstage File"),
-        entry.unstage_action.clone(),
-        weak,
-        entry,
-        GitRowAction::Unstage,
-    ));
-    box_.append(&actions);
-
-    let status_label = entry.status.label();
-    let status = gtk4::Label::new(Some(entry.status.badge()));
-    status.add_css_class("caption");
-    status.add_css_class("riteed-git-status-badge");
-    status.set_tooltip_text(Some(&status_label));
-    status.update_property(&[Property::Label(&status_label)]);
-    box_.append(&status);
-
-    row.set_child(Some(&box_));
-    row.set_tooltip_text(Some(&entry_tooltip(state, entry)));
-    row
-}
-
-fn action_button(
-    icon_name: &str,
-    label: &str,
-    action_state: GitActionState,
-    weak: &Weak<RefCell<SourceControlState>>,
-    entry: &GitStatusEntry,
-    action: GitRowAction,
-) -> gtk4::Button {
-    let button = gtk4::Button::builder()
-        .icon_name(icon_name)
-        .tooltip_text(label)
-        .build();
-    button.add_css_class("flat");
-    button.update_property(&[Property::Label(label)]);
-    match action_state {
-        GitActionState::Enabled => {
-            let weak = weak.clone();
-            let entry = entry.clone();
-            button.connect_clicked(move |_| {
-                if let Some(state) = weak.upgrade() {
-                    run_row_action(&state, entry.clone(), action);
-                }
-            });
-        }
-        GitActionState::Disabled(reason) => {
-            button.set_sensitive(false);
-            button.set_tooltip_text(Some(&reason));
-        }
-    }
-    button
-}
-
-pub(super) fn activate_row(state: &SourceStateRef, row_index: i32) {
-    let Ok(row_index) = usize::try_from(row_index) else {
-        return;
-    };
-    let entry = state.borrow().snapshot.entries.get(row_index).cloned();
+pub(super) fn run_path_action(state: &SourceStateRef, path: &[u8], action: GitRowAction) {
+    let entry = state
+        .borrow()
+        .snapshot
+        .entries
+        .iter()
+        .find(|entry| entry.path.raw() == path)
+        .cloned();
     let Some(entry) = entry else {
         return;
     };
-    if let GitActionState::Disabled(reason) = &entry.diff_action {
+    if matches!(action, GitRowAction::Diff)
+        && let GitActionState::Disabled(reason) = &entry.diff_action
+    {
         state.borrow().status_label.set_label(reason);
         return;
     }
-    run_row_action(state, entry, GitRowAction::Diff);
-}
-
-fn run_row_action(state: &SourceStateRef, entry: GitStatusEntry, action: GitRowAction) {
     match action {
         GitRowAction::Diff => diff_entry(state, entry),
         GitRowAction::Stage => stage_entry(state, &entry),
@@ -410,16 +303,6 @@ fn entry_matches_snapshot(state: &SourceControlState, entry: &GitStatusEntry) ->
             && current.staged == entry.staged
             && current.unstaged == entry.unstaged
     })
-}
-
-fn entry_tooltip(state: &SourceControlState, entry: &GitStatusEntry) -> String {
-    entry_disabled_reason(
-        state.repo.as_deref(),
-        entry,
-        &state.attrs,
-        &dirty_open_uris(state),
-    )
-    .unwrap_or_else(|| entry.status.label())
 }
 
 fn entry_disabled_reason(

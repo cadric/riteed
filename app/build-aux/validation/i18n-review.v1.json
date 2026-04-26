@@ -122,35 +122,35 @@
     },
     {
       "path": "src/window.rs",
-      "line": 444,
+      "line": 447,
       "match": ".update_property(&[Property::Label(&gettext(\"New Tab\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
     },
     {
       "path": "src/window.rs",
-      "line": 447,
+      "line": 450,
       "match": ".update_property(&[Property::Label(&gettext(\"Open Text Files\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
     },
     {
       "path": "src/window.rs",
-      "line": 450,
+      "line": 453,
       "match": ".update_property(&[Property::Label(&gettext(\"Project Sidebar\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
     },
     {
       "path": "src/window.rs",
-      "line": 456,
+      "line": 459,
       "match": ".update_property(&[Property::Label(&gettext(\"Appearance\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short accessible label names the icon-only header-bar button that opens the app appearance and editor palette panel."
     },
     {
       "path": "src/window.rs",
-      "line": 459,
+      "line": 462,
       "match": ".update_property(&[Property::Label(&gettext(\"Main Menu\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
@@ -185,38 +185,38 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 539,
+      "line": 519,
       "match": "state.browser.set_title(&gettext(\"Project\"));",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
     },
     {
       "path": "src/window_project.rs",
-      "line": 560,
+      "line": 540,
       "match": "state.browser.set_title(&gettext(\"Project\"));",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
     },
     {
       "path": "src/source_control.rs",
-      "line": 60,
+      "line": 63,
       "match": "let title = adw::WindowTitle::new(&gettext(\"Source Control\"), \"\");",
       "kind": "i18n-short-string",
-      "resolution": "This short title labels the Source Control sidebar header above the changed-file list and commit controls."
+      "resolution": "This short title labels the Source Control sidebar header above the changed-file tree and commit controls."
     },
     {
       "path": "src/source_control.rs",
-      "line": 371,
+      "line": 349,
       "match": "state.status_label.set_label(&gettext(\"No changes.\"));",
       "kind": "i18n-short-string",
       "resolution": "This compact status appears in the Source Control panel when the repository has no changed files."
     },
     {
       "path": "src/source_control.rs",
-      "line": 407,
+      "line": 385,
       "match": "state.status_label.set_label(&gettext(\"Changed files\"));",
       "kind": "i18n-short-string",
-      "resolution": "This compact status appears immediately above the Source Control changed-file list."
+      "resolution": "This compact status appears immediately above the Source Control changed-file tree."
     }
   ]
 }

@@ -14,10 +14,14 @@ use crate::window_shell::WindowShell;
 use crate::workspace::{OpenSource, Workspace};
 
 const ROOT_QUERY_ATTRIBUTES: &str = "standard::type,standard::display-name";
+pub(super) const DEFAULT_PROJECT_SIDEBAR_WIDTH: i32 = 320;
+pub(super) const MAX_PROJECT_SIDEBAR_WIDTH: i32 = 520;
+pub(super) const MIN_PROJECT_SIDEBAR_WIDTH: i32 = 220;
 
 mod app_open;
 mod auto_refresh;
 mod reveal;
+mod sidebar_state;
 mod symlink;
 #[cfg(test)]
 mod testing;
@@ -41,7 +45,7 @@ type GitStatusHandler = Rc<dyn Fn(Vec<(String, String)>)>;
 struct ProjectState {
     window: adw::ApplicationWindow,
     toast_overlay: adw::ToastOverlay,
-    split_view: adw::OverlaySplitView,
+    split_view: gtk4::Paned,
     settings: AppSettings,
     workspace: Weak<Workspace>,
     browser: ProjectBrowser,
@@ -54,6 +58,8 @@ struct ProjectState {
 
     root_generation: u64,
     root_cancellable: Option<gio::Cancellable>,
+    sidebar_width: i32,
+    sidebar_position_guard: bool,
 
     reveal_generation: u64,
     pending_reveal: Option<reveal::PendingReveal>,
@@ -123,6 +129,8 @@ impl WindowProjectController {
             reveal_generation: 0,
             pending_reveal: None,
             symlink_generation: 0,
+            sidebar_width: DEFAULT_PROJECT_SIDEBAR_WIDTH,
+            sidebar_position_guard: false,
             symlink_cancellable: None,
             toast_keys: HashSet::new(),
             root_change_handler: None,
@@ -207,13 +215,8 @@ impl WindowProjectController {
     }
 
     pub(crate) fn focus_sidebar(&self) {
-        let state = self.state.borrow();
-        if state.root.is_none() {
-            return;
-        }
-        state.split_view.set_show_sidebar(true);
-        state.sidebar_visible_action.set_state(&true.to_variant());
-        state.browser.focus_tree_after_reveal();
+        sidebar_state::focus_sidebar(&self.state);
+        self.state.borrow().browser.focus_tree_after_reveal();
     }
 
     #[must_use]
@@ -269,12 +272,13 @@ impl WindowProjectController {
                     return;
                 };
                 action.set_state(&value.to_variant());
-                let state = state.borrow();
+                let Ok(mut state) = state.try_borrow_mut() else {
+                    return;
+                };
                 if state.root.is_none() {
                     return;
                 }
-                state.split_view.set_show_sidebar(value);
-                state.settings.set_project_sidebar_visible(value);
+                sidebar_state::set_sidebar_visibility(&mut state, value);
             });
 
         let state = Rc::downgrade(&self.state);
@@ -330,20 +334,14 @@ impl WindowProjectController {
         self.state
             .borrow()
             .split_view
-            .connect_show_sidebar_notify(move |split_view| {
+            .connect_position_notify(move |split_view| {
                 let Some(state) = state.upgrade() else {
                     return;
                 };
-                let state = state.borrow();
-                if state.root.is_none() {
-                    if split_view.shows_sidebar() {
-                        split_view.set_show_sidebar(false);
-                    }
+                let Ok(mut state) = state.try_borrow_mut() else {
                     return;
-                }
-                let value = split_view.shows_sidebar();
-                state.settings.set_project_sidebar_visible(value);
-                state.sidebar_visible_action.set_state(&value.to_variant());
+                };
+                sidebar_state::set_sidebar_position_from_move(&mut state, split_view);
             });
 
         let state = Rc::downgrade(&self.state);
@@ -355,20 +353,7 @@ impl WindowProjectController {
             });
         }
 
-        sync_actions_for_root(&self.state);
-    }
-}
-
-fn sync_actions_for_root(state: &Rc<RefCell<ProjectState>>) {
-    let state = state.borrow();
-    let has_root = state.root.is_some();
-    state.sidebar_visible_action.set_enabled(has_root);
-    state.show_hidden_action.set_enabled(has_root);
-    state.refresh_action.set_enabled(has_root);
-    state.close_action.set_enabled(has_root);
-    if !has_root {
-        state.sidebar_visible_action.set_state(&false.to_variant());
-        state.split_view.set_show_sidebar(false);
+        sidebar_state::sync_actions_for_root(&self.state);
     }
 }
 
@@ -436,8 +421,11 @@ fn begin_root_change(
                     let sidebar_visible =
                         apply_root_change(&mut state_mut, &folder_for_callback, &info, origin);
                     drop(state_mut);
-                    set_sidebar_visible_for_root(&state_for_callback, sidebar_visible);
-                    sync_actions_for_root(&state_for_callback);
+                    sidebar_state::set_sidebar_visible_for_root(
+                        &state_for_callback,
+                        sidebar_visible,
+                    );
+                    sidebar_state::sync_actions_for_root(&state_for_callback);
                     reveal::sync_reveal_for_selection(&state_for_callback);
                 }
                 Err(error) => {
@@ -499,14 +487,6 @@ fn apply_root_change(
     sidebar_visible
 }
 
-fn set_sidebar_visible_for_root(state: &Rc<RefCell<ProjectState>>, visible: bool) {
-    let state = state.borrow();
-    state.split_view.set_show_sidebar(visible);
-    state
-        .sidebar_visible_action
-        .set_state(&visible.to_variant());
-}
-
 fn resolve_display_name(folder: &gio::File, info: &gio::FileInfo) -> String {
     let display_name = info.display_name().to_string();
     if !display_name.is_empty() {
@@ -543,7 +523,7 @@ fn close_root(state: &Rc<RefCell<ProjectState>>) {
             handler(None);
         }
     }
-    sync_actions_for_root(state);
+    sidebar_state::sync_actions_for_root(state);
 }
 
 fn sync_root_none(state: &Rc<RefCell<ProjectState>>, clear_settings: bool) {
@@ -568,5 +548,5 @@ fn sync_root_none(state: &Rc<RefCell<ProjectState>>, clear_settings: bool) {
             state.settings.set_project_sidebar_visible(false);
         }
     }
-    sync_actions_for_root(state);
+    sidebar_state::sync_actions_for_root(state);
 }

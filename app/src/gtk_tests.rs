@@ -534,8 +534,12 @@ fn exercise_search_and_status(test_app: &adw::Application) {
 #[test]
 fn gtk_surfaces_and_editor_flow_work() {
     let _guard = crate::test_support::init_gtk_for_tests();
+    if gtk::gdk::Display::default().is_none() {
+        return;
+    }
     assert_settings_apply();
     assert_app_actions_exist();
+    crate::source_control::tree_model::exercise_state_restore_for_tests();
 
     let test_app = adw::Application::builder()
         .application_id("io.github.cadric.Riteed.WindowTabTests")

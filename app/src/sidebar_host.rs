@@ -18,6 +18,7 @@ impl SidebarHost {
 
         let files_page = stack.add_titled(files, Some("files"), &pgettext("sidebar mode", "Files"));
         files_page.set_icon_name(Some("folder-symbolic"));
+
         let git_page = stack.add_titled(
             source_control,
             Some("source-control"),

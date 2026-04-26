@@ -379,7 +379,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 69,
+      "line": 75,
       "match": "state: Rc<RefCell<ProjectState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The window project controller owns shared project sidebar state.",
@@ -387,23 +387,31 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 95,
+      "line": 101,
       "match": "let tree_activation_handler: Rc<RefCell<Option<TreeActivationHandler>>> =",
       "kind": "runtime-shared-state",
       "ownership": "Tree activation wiring stores one late-bound handler closure.",
       "justification": "Activation callbacks need the project state Rc after construction without creating a reference cycle between the tree and controller."
     },
     {
-      "path": "src/window_project.rs",
-      "line": 362,
+      "path": "src/window_project/sidebar_state.rs",
+      "line": 24,
       "match": "fn sync_actions_for_root(state: &Rc<RefCell<ProjectState>>) {",
       "kind": "runtime-shared-state",
       "ownership": "Root-action synchronization borrows shared project state.",
       "justification": "Root transitions must consistently enable/disable window actions and sidebar visibility from one state source of truth."
     },
     {
+      "path": "src/window_project/sidebar_state.rs",
+      "line": 11,
+      "match": "pub(super) fn focus_sidebar(state: &Rc<RefCell<ProjectState>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "Sidebar focus helpers borrow and conditionally mutate split-view position.",
+      "justification": "The focus request needs shared project state to avoid toggling the split view when no root is active."
+    },
+    {
       "path": "src/window_project.rs",
-      "line": 375,
+      "line": 360,
       "match": "fn open_file_from_tree(state: &Rc<RefCell<ProjectState>>, file: gio::File) {",
       "kind": "runtime-shared-state",
       "ownership": "Tree activation routing borrows shared project state.",
@@ -411,15 +419,15 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 383,
+      "line": 368,
       "match": "state: &Rc<RefCell<ProjectState>>,",
       "kind": "runtime-shared-state",
       "ownership": "Project root transition helpers borrow shared project state.",
       "justification": "Opening, restoring, replacing, and revealing project roots must coordinate cancellables, sidebar state, and tree synchronization from one state source."
     },
     {
-      "path": "src/window_project.rs",
-      "line": 502,
+      "path": "src/window_project/sidebar_state.rs",
+      "line": 37,
       "match": "fn set_sidebar_visible_for_root(state: &Rc<RefCell<ProjectState>>, visible: bool) {",
       "kind": "runtime-shared-state",
       "ownership": "Root-change sidebar visibility borrows shared project state after mutation is complete.",
@@ -427,7 +435,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 522,
+      "line": 502,
       "match": "fn close_root(state: &Rc<RefCell<ProjectState>>) {",
       "kind": "runtime-shared-state",
       "ownership": "Close-folder handling mutates shared project state.",
@@ -435,7 +443,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 549,
+      "line": 529,
       "match": "fn sync_root_none(state: &Rc<RefCell<ProjectState>>, clear_settings: bool) {",
       "kind": "runtime-shared-state",
       "ownership": "No-root synchronization mutates shared project state.",
