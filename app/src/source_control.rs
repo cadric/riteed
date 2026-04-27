@@ -8,15 +8,32 @@ use gtk4::{gio, prelude::*};
 use libadwaita as adw;
 
 use crate::git_process::{GitIdentity, GitProcess, GitProcessError};
-use crate::git_status::{GitAttrs, GitCapabilities, GitPath, GitStatusSnapshot};
+use crate::git_status::{GitAttrs, GitCapabilities, GitStatusSnapshot};
 use crate::settings::AppSettings;
+#[cfg(test)]
+use crate::settings::SourceControlViewMode;
 use crate::workspace::Workspace;
 
 mod actions;
+mod history;
+mod list_view;
+mod live;
+mod refresh;
+mod row_overlay;
+mod status_style;
+#[cfg(test)]
+mod tests;
 pub(crate) mod tree_model;
 mod tree_view;
+mod view_mode;
 
-use tree_view::SourceControlTree;
+use history::SourceControlHistory;
+use live::SourceControlLiveRefresh;
+use refresh::{
+    RefreshOrigin, emit_project_statuses, finish_error, rebuild_views, refresh_status,
+    refresh_status_with_origin,
+};
+use view_mode::SourceControlViews;
 
 pub(super) type SourceStateRef = Rc<RefCell<SourceControlState>>;
 type GitStatusHandler = Rc<dyn Fn(Vec<(String, String)>)>;
@@ -30,7 +47,8 @@ pub(super) struct SourceControlState {
     pub(super) root: adw::ToolbarView,
     pub(super) title: adw::WindowTitle,
     pub(super) status_label: gtk4::Label,
-    tree: SourceControlTree,
+    views: SourceControlViews,
+    history: SourceControlHistory,
     pub(super) commit_entry: gtk4::Entry,
     pub(super) commit_button: gtk4::Button,
     pub(super) settings: AppSettings,
@@ -41,6 +59,7 @@ pub(super) struct SourceControlState {
     pub(super) attrs: GitAttrs,
     pub(super) snapshot: GitStatusSnapshot,
     pub(super) cancellable: Option<gio::Cancellable>,
+    pub(super) live_refresh: Option<SourceControlLiveRefresh>,
     pub(super) status_stale: bool,
     pub(super) action_generation: u64,
     status_handler: Option<GitStatusHandler>,
@@ -84,8 +103,11 @@ impl SourceControlController {
         status_label.set_wrap(true);
         content.append(&status_label);
 
-        let tree = SourceControlTree::new();
-        content.append(&tree.widget());
+        let views = SourceControlViews::new(settings);
+        content.append(&views.widget());
+
+        let history = SourceControlHistory::new();
+        content.append(&history.widget());
 
         let commit_entry = gtk4::Entry::builder()
             .placeholder_text(pgettext("git commit", "Commit Message"))
@@ -114,7 +136,8 @@ impl SourceControlController {
             root,
             title,
             status_label,
-            tree,
+            views,
+            history,
             commit_entry,
             commit_button,
             settings: settings.clone(),
@@ -125,19 +148,20 @@ impl SourceControlController {
             attrs: GitAttrs::default(),
             snapshot: GitStatusSnapshot::default(),
             cancellable: None,
+            live_refresh: None,
             status_stale: true,
             action_generation: 0,
             status_handler: None,
         }));
         state
             .borrow()
-            .tree
+            .views
             .connect_activation(Rc::downgrade(&state));
 
         let weak = Rc::downgrade(&state);
         refresh.connect_activate(move |_, _| {
             if let Some(state) = weak.upgrade() {
-                refresh_status(&state);
+                refresh_status_with_origin(&state, RefreshOrigin::Manual);
             }
         });
 
@@ -173,6 +197,18 @@ impl SourceControlController {
         self.state.borrow_mut().status_handler = Some(handler);
     }
 
+    pub(crate) fn save_notification_handler(&self) -> Rc<dyn Fn(gio::File)> {
+        let weak = Rc::downgrade(&self.state);
+        Rc::new(move |file| {
+            let Some(state) = weak.upgrade() else {
+                return;
+            };
+            if saved_file_in_repo(&state.borrow(), &file) {
+                live::schedule(&state);
+            }
+        })
+    }
+
     #[cfg(test)]
     pub(crate) fn status_label_for_tests(&self) -> String {
         self.state.borrow().status_label.label().to_string()
@@ -180,12 +216,12 @@ impl SourceControlController {
 
     #[cfg(test)]
     pub(crate) fn row_count_for_tests(&self) -> usize {
-        self.state.borrow().tree.row_count_for_tests()
+        self.state.borrow().views.row_count_for_tests()
     }
 
     #[cfg(test)]
     pub(crate) fn activate_path_for_tests(&self, path: &str) -> bool {
-        let activation = self.state.borrow().tree.activation_for_path_for_tests(path);
+        let activation = self.state.borrow().views.activate_path_for_tests(path);
         let Some((list_view, position)) = activation else {
             return false;
         };
@@ -209,10 +245,21 @@ impl SourceControlController {
                 )
             })
     }
+
+    #[cfg(test)]
+    pub(crate) fn set_view_mode_for_tests(&self, mode: SourceControlViewMode) {
+        SourceControlViews::set_mode_for_tests(&self.state, mode);
+    }
+
+    #[cfg(test)]
+    pub(crate) fn recent_commit_count_for_tests(&self) -> usize {
+        self.state.borrow().history.row_count_for_tests()
+    }
 }
 
 fn set_project_root(state: &SourceStateRef, folder: Option<gio::File>) {
     cancel_refresh(state);
+    live::cancel(state);
     let Some(folder) = folder else {
         let mut state = state.borrow_mut();
         state.repo = None;
@@ -222,7 +269,8 @@ fn set_project_root(state: &SourceStateRef, folder: Option<gio::File>) {
             .status_label
             .set_label(&gettext("Open a folder to see Git status."));
         emit_project_statuses(&state);
-        rebuild_tree(&state);
+        state.history.clear();
+        rebuild_views(&state);
         return;
     };
     let Some(path) = folder.path() else {
@@ -233,7 +281,8 @@ fn set_project_root(state: &SourceStateRef, folder: Option<gio::File>) {
             .status_label
             .set_label(&gettext("Only local Git folders are supported."));
         emit_project_statuses(&state);
-        rebuild_tree(&state);
+        state.history.clear();
+        rebuild_views(&state);
         return;
     };
     if !has_git_metadata_candidate(&path) {
@@ -244,7 +293,8 @@ fn set_project_root(state: &SourceStateRef, folder: Option<gio::File>) {
             .status_label
             .set_label(&gettext("This folder is not a Git repository."));
         emit_project_statuses(&state);
-        rebuild_tree(&state);
+        state.history.clear();
+        rebuild_views(&state);
         return;
     }
     let cancellable = gio::Cancellable::new();
@@ -264,7 +314,8 @@ fn set_project_root(state: &SourceStateRef, folder: Option<gio::File>) {
                     state.process = Some(GitProcess::new(repo));
                     state.status_stale = true;
                 }
-                refresh_status(&state);
+                live::install(&state);
+                refresh_status_with_origin(&state, RefreshOrigin::Initial);
             } else {
                 let mut state = state.borrow_mut();
                 state.repo = None;
@@ -273,7 +324,8 @@ fn set_project_root(state: &SourceStateRef, folder: Option<gio::File>) {
                     .status_label
                     .set_label(&gettext("This folder is not a Git repository."));
                 emit_project_statuses(&state);
-                rebuild_tree(&state);
+                state.history.clear();
+                rebuild_views(&state);
             }
         }),
     );
@@ -282,157 +334,6 @@ fn set_project_root(state: &SourceStateRef, folder: Option<gio::File>) {
 fn has_git_metadata_candidate(path: &Path) -> bool {
     path.ancestors()
         .any(|ancestor| ancestor.join(".git").exists())
-}
-
-pub(super) fn refresh_status(state: &SourceStateRef) {
-    cancel_refresh(state);
-    let Some(process) = state.borrow().process.clone() else {
-        return;
-    };
-    let cancellable = gio::Cancellable::new();
-    {
-        let mut state = state.borrow_mut();
-        state.cancellable = Some(cancellable.clone());
-        state.status_stale = true;
-        state
-            .status_label
-            .set_label(&gettext("Refreshing Git status..."));
-    }
-    let weak = Rc::downgrade(state);
-    process.check_repo_capabilities(
-        &cancellable,
-        Rc::new(move |capabilities| {
-            let Some(state) = weak.upgrade() else {
-                return;
-            };
-            let Ok(capabilities) = capabilities else {
-                finish_error(
-                    &state,
-                    &gettext("Unable to read Git repository capabilities."),
-                );
-                return;
-            };
-            state.borrow_mut().capabilities = capabilities;
-            if !capabilities.object_format_supported || !capabilities.eol_supported {
-                finish_unsupported_repo(&state);
-                return;
-            }
-            refresh_status_entries(&state);
-        }),
-    );
-}
-
-fn refresh_status_entries(state: &SourceStateRef) {
-    let Some(process) = state.borrow().process.clone() else {
-        return;
-    };
-    let Some(cancellable) = state.borrow().cancellable.clone() else {
-        return;
-    };
-    let weak = Rc::downgrade(state);
-    process.status(
-        &cancellable,
-        Rc::new(move |result| {
-            let Some(state) = weak.upgrade() else {
-                return;
-            };
-            let Ok(snapshot) = result else {
-                finish_error(&state, &gettext("Unable to refresh Git status."));
-                return;
-            };
-            let paths = snapshot.changed_paths();
-            if paths.is_empty() {
-                let mut state = state.borrow_mut();
-                state.snapshot = snapshot;
-                state.attrs = GitAttrs::default();
-                state.status_stale = false;
-                state.status_label.set_label(&gettext("No changes."));
-                emit_project_statuses(&state);
-                rebuild_tree(&state);
-                return;
-            }
-            refresh_attrs(&state, snapshot, &paths);
-        }),
-    );
-}
-
-fn refresh_attrs(state: &SourceStateRef, snapshot: GitStatusSnapshot, paths: &[GitPath]) {
-    let Some(process) = state.borrow().process.clone() else {
-        return;
-    };
-    let Some(cancellable) = state.borrow().cancellable.clone() else {
-        return;
-    };
-    let weak = Rc::downgrade(state);
-    process.check_attrs(
-        paths,
-        &cancellable,
-        Rc::new(move |result| {
-            let Some(state) = weak.upgrade() else {
-                return;
-            };
-            let attrs = result.unwrap_or_default();
-            let mut state = state.borrow_mut();
-            state.snapshot = snapshot.clone();
-            state.attrs = attrs;
-            state.status_stale = false;
-            let branch = state
-                .snapshot
-                .branch
-                .clone()
-                .unwrap_or_else(|| pgettext("git branch", "Detached"));
-            state.title.set_subtitle(&branch);
-            state.status_label.set_label(&gettext("Changed files"));
-            actions::apply_entry_actions(&mut state);
-            emit_project_statuses(&state);
-            rebuild_tree(&state);
-        }),
-    );
-}
-
-pub(super) fn finish_error(state: &SourceStateRef, message: &str) {
-    let mut state = state.borrow_mut();
-    state.status_stale = true;
-    state.status_label.set_label(message);
-    state.commit_button.set_sensitive(false);
-    emit_project_statuses(&state);
-    rebuild_tree(&state);
-}
-
-fn finish_unsupported_repo(state: &SourceStateRef) {
-    let mut state = state.borrow_mut();
-    state.status_stale = false;
-    state.commit_button.set_sensitive(false);
-    state.status_label.set_label(&gettext(
-        "This Git repository uses unsupported object or EOL settings.",
-    ));
-    emit_project_statuses(&state);
-    rebuild_tree(&state);
-}
-
-fn rebuild_tree(state: &SourceControlState) {
-    state.tree.rebuild(&state.snapshot.entries);
-}
-
-fn emit_project_statuses(state: &SourceControlState) {
-    let Some(handler) = state.status_handler.as_ref() else {
-        return;
-    };
-    let Some(repo) = state.repo.as_ref() else {
-        handler(Vec::new());
-        return;
-    };
-    let statuses = state
-        .snapshot
-        .entries
-        .iter()
-        .filter_map(|entry| {
-            let path = entry.path.as_utf8()?;
-            let uri = gio::File::for_path(repo.join(path)).uri().to_string();
-            Some((uri, String::from(entry.status.badge())))
-        })
-        .collect();
-    handler(statuses);
 }
 
 fn commit(state: &SourceStateRef) {
@@ -509,41 +410,6 @@ fn cancel_refresh(state: &SourceStateRef) {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::{GitProcessError, git_error_text};
-
-    #[test]
-    fn git_errors_map_to_user_copy() {
-        assert_eq!(
-            git_error_text(&GitProcessError::InvalidIdentity),
-            "The Git identity is not valid."
-        );
-        assert_eq!(
-            git_error_text(&GitProcessError::OutputTooLarge),
-            "Git output was too large to process safely."
-        );
-        assert_eq!(
-            git_error_text(&GitProcessError::ParseFailed),
-            "The Git operation failed."
-        );
-    }
-
-    #[test]
-    fn source_control_legacy_list_patterns_stay_removed() {
-        let controller = include_str!("source_control.rs");
-        let actions = include_str!("source_control/actions.rs");
-        let css = include_str!("../data/ui/appearance.css");
-        let patterns = [
-            concat!("gtk4::List", "Box"),
-            concat!("rebuild", "_rows"),
-            concat!("row", "-activated"),
-            concat!("row", "_at_index"),
-        ];
-        for source in [controller, actions, css] {
-            for pattern in patterns {
-                assert!(!source.contains(pattern));
-            }
-        }
-    }
+fn saved_file_in_repo(state: &SourceControlState, file: &gio::File) -> bool {
+    live::saved_file_in_repo(state, file)
 }

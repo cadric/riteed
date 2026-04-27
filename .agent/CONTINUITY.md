@@ -19,6 +19,8 @@
 - Reworked V9 Source Control rows to a compact one-line list: row activation starts Git compare, hover/focus icons handle Stage/Unstage, and untracked files now use the shared `U` badge.
 - Replaced the V9 Source Control flat changed-file list with a virtual Git path tree that preserves expanded folders and selected rows across refresh.
 - Restored the resizable V9 sidebar layout so Files and Source Control share the left sidebar again, while drag resizing is clamped and no longer persists a fully hidden sidebar by accident.
+- Implemented V10 source-control completion and UX regression fixes: tree/list view mode, recent commit history, safe tracked-file discard, live Git refresh, Source Control icon packaging, Appearance menu action, Recent Files bottom action layout, status separators, sidebar animation, and anchor-based compare scroll sync with reference syntax highlighting.
+- Fixed V10 follow-up regressions: sidebar animations now reach fully hidden/restored positions, automatic Git refreshes skip no-op Source Control/Files rebuilds and history refetches, and compare/Git diff panes scroll in sync again.
 - Final validation passed before commit preparation: `python3 -m tools.policy_check --root app --strict`, `python3 -m tools.coverage_check --root app`, and `python3 -m unittest tools.tests.test_policy_check -v`.
 
 ## DECISIONS
@@ -33,7 +35,7 @@
 - V9 stages raw editor/on-disk bytes only when Git filters, working-tree encoding, EOL attrs, and repo EOL conversion are absent; unsupported states stay visible with unsafe actions disabled.
 - Source Control uses `U` rather than Git porcelain's `?` for untracked files across both the Source Control list and project tree badges.
 - Source Control tree rows resolve actions by raw Git path against the current status snapshot, not by visible row index.
-- Lightweight recent commit history and discard-file-changes were deferred from the first V9 delivery.
+- V10 keeps Source Control local-only: no push, pull, branch UI, remotes, full log browser, merge conflict editor, Markdown preview, or new language catalogs.
 - `.agent/CONTINUITY.md` is local continuity state and is ignored by Git unless explicitly force-added.
 
 ## DISCOVERIES
@@ -52,3 +54,7 @@
 - `CHANGELOG.md`, validation review artifacts, tests, and local Flatpak build are updated for the portal path display and indentation coverage pass.
 - V9 validation passed: `python3 -m tools.policy_check --root app --strict`, `python3 -m tools.coverage_check --root app` (80.0% line coverage), and `python3 -m unittest tools.tests.test_policy_check -v`.
 - V9 Flatpak build passed: `flatpak-builder --user --install --force-clean app/build-dir app/build-aux/io.github.cadric.Riteed.yml`; smoke checked with `flatpak info --user io.github.cadric.Riteed`, `flatpak run --user --command=/app/bin/git io.github.cadric.Riteed --version`, local Git plumbing commands with an empty `GIT_TEMPLATE_DIR`, and a document-portal Git status command using `GIT_DIR`/`GIT_WORK_TREE`.
+- V10 validation passed: `python3 -m tools.policy_check --root app --strict`, `python3 -m tools.coverage_check --root app` (80.1% line coverage), and focused `GTK_A11Y=none GSK_RENDERER=cairo cargo test --workspace --all-targets --all-features`.
+- V10 local user Flatpak rebuild/install passed with app commit `2ede5d441cffb4db3114bbaf5a11e60d27c01a582c7d26386a7b0639c8c80085`; `flatpak info --user io.github.cadric.Riteed` reports 7.8 MB installed size and `/app/bin/git` reports `git version 2.54.0`.
+- V10 regression follow-up validation passed: `python3 -m tools.policy_check --root app --strict`, `python3 -m tools.coverage_check --root app` (80.5% line coverage), `GTK_A11Y=none GSK_RENDERER=cairo cargo test --workspace --all-targets --all-features`, `glib-compile-schemas --strict --dry-run app/data/schemas`, and `msgfmt --check-format --check-header -o /dev/null app/po/da.po`.
+- V10 regression follow-up local user Flatpak rebuild/install passed with app commit `dee6a3bbe83dee41c214e9a2d15d2e9cd2d51147211879bb3234e17c1e8df274`; `flatpak info --user io.github.cadric.Riteed` reports 7.8 MB installed size and `/app/bin/git` reports `git version 2.54.0`.

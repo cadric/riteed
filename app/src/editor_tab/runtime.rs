@@ -180,6 +180,7 @@ impl EditorTab {
         };
         if should_apply {
             editor_language::apply_detection(&self.text_buffer, detection);
+            self.apply_compare_style();
             self.sync_presentation();
         }
     }

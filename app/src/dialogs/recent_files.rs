@@ -16,7 +16,7 @@ pub fn show_recent_files_dialog(
     let dialog = adw::Dialog::builder()
         .title(pgettext("recent files dialog title", "Recent Files"))
         .content_width(620)
-        .content_height(520)
+        .content_height(420)
         .follows_content_size(false)
         .can_close(true)
         .build();
@@ -30,8 +30,8 @@ pub fn show_recent_files_dialog(
         .child(&list_box)
         .hscrollbar_policy(gtk4::PolicyType::Never)
         .vscrollbar_policy(gtk4::PolicyType::Automatic)
-        .min_content_height(360)
         .build();
+    list_holder.set_vexpand(true);
 
     let empty_page = adw::StatusPage::builder()
         .icon_name("document-open-symbolic")
@@ -40,6 +40,7 @@ pub fn show_recent_files_dialog(
         .build();
 
     let stack = gtk4::Stack::builder().build();
+    stack.set_vexpand(true);
     stack.add_named(&list_holder, Some("list"));
     stack.add_named(&empty_page, Some("empty"));
 
@@ -51,11 +52,13 @@ pub fn show_recent_files_dialog(
         .margin_start(18)
         .margin_end(18)
         .build();
+    content.set_vexpand(true);
     content.append(&stack);
 
     let button_box = gtk4::Box::builder()
         .orientation(gtk4::Orientation::Horizontal)
         .halign(gtk4::Align::End)
+        .valign(gtk4::Align::End)
         .spacing(12)
         .build();
     let clear_all_button = gtk4::Button::with_label(&pgettext("dialog button", "Clear All"));
@@ -178,4 +181,27 @@ fn recent_labels(uri: &str) -> (String, String) {
         .parent()
         .map_or_else(String::new, document::display_path);
     (title, subtitle)
+}
+
+#[cfg(test)]
+mod tests {
+    use gtk4::prelude::FileExt;
+
+    use super::recent_labels;
+
+    #[test]
+    fn recent_labels_use_filename_and_parent_for_local_files() {
+        let file = gtk4::gio::File::for_path("/tmp/riteed-recent-label.txt");
+        let (title, subtitle) = recent_labels(file.uri().as_str());
+        assert_eq!(title, "riteed-recent-label.txt");
+        assert!(subtitle.ends_with("/tmp"));
+    }
+
+    #[test]
+    fn recent_labels_keep_non_file_uris_visible() {
+        let uri = "trash:///example.txt";
+        let (title, subtitle) = recent_labels(uri);
+        assert_eq!(title, uri);
+        assert_eq!(subtitle, "");
+    }
 }

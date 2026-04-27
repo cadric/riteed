@@ -8,6 +8,8 @@ use gtk4::{gio, glib, pango, prelude::*};
 use crate::git_status::{GitActionState, GitStatusEntry};
 use crate::source_control::SourceControlState;
 use crate::source_control::actions::{self, GitRowAction};
+use crate::source_control::row_overlay::setup_action_overlay;
+use crate::source_control::status_style;
 use crate::source_control::tree_model::{
     SourceControlNode, build_root_store, file_basename, node_for_position, restore_expanded_paths,
     restore_selected_node, snapshot_expanded_paths, snapshot_selected_node,
@@ -151,7 +153,7 @@ fn setup_row(
     expander.set_indent_for_depth(true);
 
     let row_box = gtk4::Box::new(gtk4::Orientation::Horizontal, 6);
-    row_box.add_css_class("riteed-git-row");
+    row_box.set_hexpand(true);
     row_box.set_margin_top(3);
     row_box.set_margin_bottom(3);
     row_box.set_margin_start(6);
@@ -161,19 +163,27 @@ fn setup_row(
     icon.set_pixel_size(16);
     row_box.append(&icon);
 
-    let label = gtk4::Label::new(None);
-    label.set_xalign(0.0);
-    label.set_hexpand(true);
-    label.set_ellipsize(pango::EllipsizeMode::End);
-    row_box.append(&label);
+    let status = gtk4::Label::new(None);
+    status.add_css_class("caption");
+    status.add_css_class("riteed-git-status-badge");
+    row_box.append(&status);
 
     let staged = gtk4::Label::new(Some("S"));
     staged.add_css_class("caption");
     staged.add_css_class("riteed-git-staged");
     row_box.append(&staged);
 
+    let label = gtk4::Label::new(None);
+    label.set_xalign(0.0);
+    label.set_hexpand(true);
+    label.set_ellipsize(pango::EllipsizeMode::End);
+    row_box.append(&label);
+
     let actions_box = gtk4::Box::new(gtk4::Orientation::Horizontal, 2);
     actions_box.add_css_class("riteed-git-row-actions");
+    actions_box.set_halign(gtk4::Align::End);
+    actions_box.set_valign(gtk4::Align::Center);
+    actions_box.set_can_target(false);
     actions_box.append(&action_button(
         "list-add-symbolic",
         &pgettext("git action tooltip", "Stage File"),
@@ -188,14 +198,23 @@ fn setup_row(
         activation_guard,
         GitRowAction::Unstage,
     ));
-    row_box.append(&actions_box);
+    actions_box.append(&action_button(
+        "edit-delete-symbolic",
+        &pgettext("git action tooltip", "Discard Changes"),
+        state_weak,
+        activation_guard,
+        GitRowAction::Discard,
+    ));
 
-    let status = gtk4::Label::new(None);
-    status.add_css_class("caption");
-    status.add_css_class("riteed-git-status-badge");
-    row_box.append(&status);
+    let overlay = gtk4::Overlay::new();
+    overlay.add_css_class("riteed-git-row");
+    overlay.set_hexpand(true);
+    overlay.set_child(Some(&row_box));
+    overlay.add_overlay(&actions_box);
+    overlay.set_measure_overlay(&actions_box, false);
+    setup_action_overlay(&overlay, &actions_box);
 
-    expander.set_child(Some(&row_box));
+    expander.set_child(Some(&overlay));
     list_item.set_child(Some(&expander));
 }
 
@@ -297,6 +316,11 @@ fn bind_node(widgets: &RowWidgets, node: SourceControlNode) {
                 &entry.unstage_action,
                 &pgettext("git action tooltip", "Unstage File"),
             );
+            bind_action_state(
+                &widgets.discard_button,
+                &entry.discard_action,
+                &pgettext("git action tooltip", "Discard Changes"),
+            );
             bind_status_badge(&widgets.status, &entry);
         }
     }
@@ -323,20 +347,32 @@ fn bind_status_badge(status: &gtk4::Label, entry: &GitStatusEntry) {
     status.set_tooltip_text(Some(&status_label));
     status.update_property(&[Property::Label(&status_label)]);
     status.set_visible(true);
+    for class in status_style::STATUS_CLASSES {
+        status.remove_css_class(class);
+    }
+    status.add_css_class(status_style::status_class_for(entry.status));
+    if status_style::status_is_dim(entry.status) {
+        status.add_css_class("dim-label");
+    }
 }
 
 fn row_widgets(expander: &gtk4::TreeExpander) -> Option<RowWidgets> {
-    let row_box = expander.child()?.downcast::<gtk4::Box>().ok()?;
+    let overlay = expander.child()?.downcast::<gtk4::Overlay>().ok()?;
+    let row_box = overlay.child()?.downcast::<gtk4::Box>().ok()?;
     let icon = row_box.first_child()?.downcast::<gtk4::Image>().ok()?;
-    let label = icon.next_sibling()?.downcast::<gtk4::Label>().ok()?;
-    let staged = label.next_sibling()?.downcast::<gtk4::Label>().ok()?;
-    let actions_box = staged.next_sibling()?.downcast::<gtk4::Box>().ok()?;
+    let status = icon.next_sibling()?.downcast::<gtk4::Label>().ok()?;
+    let staged = status.next_sibling()?.downcast::<gtk4::Label>().ok()?;
+    let label = staged.next_sibling()?.downcast::<gtk4::Label>().ok()?;
+    let actions_box = row_box.next_sibling()?.downcast::<gtk4::Box>().ok()?;
     let stage_button = actions_box.first_child()?.downcast::<gtk4::Button>().ok()?;
     let unstage_button = stage_button
         .next_sibling()?
         .downcast::<gtk4::Button>()
         .ok()?;
-    let status = actions_box.next_sibling()?.downcast::<gtk4::Label>().ok()?;
+    let discard_button = unstage_button
+        .next_sibling()?
+        .downcast::<gtk4::Button>()
+        .ok()?;
     Some(RowWidgets {
         row_box,
         icon,
@@ -345,6 +381,7 @@ fn row_widgets(expander: &gtk4::TreeExpander) -> Option<RowWidgets> {
         actions_box,
         stage_button,
         unstage_button,
+        discard_button,
         status,
     })
 }
@@ -357,13 +394,14 @@ struct RowWidgets {
     actions_box: gtk4::Box,
     stage_button: gtk4::Button,
     unstage_button: gtk4::Button,
+    discard_button: gtk4::Button,
     status: gtk4::Label,
 }
 
 fn path_for_button(button: &gtk4::Button) -> Option<Vec<u8>> {
     let actions_box = button.parent()?;
-    let row_box = actions_box.parent()?;
-    let expander = row_box.parent()?.downcast::<gtk4::TreeExpander>().ok()?;
+    let overlay = actions_box.parent()?;
+    let expander = overlay.parent()?.downcast::<gtk4::TreeExpander>().ok()?;
     let row = expander.list_row()?;
     let SourceControlNode::File { entry } = crate::source_control::tree_model::node_for_row(&row)?
     else {

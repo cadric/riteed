@@ -5,19 +5,21 @@ use std::rc::Rc;
 use gettextrs::{gettext, pgettext};
 use gtk4::{gio, prelude::*};
 
+use crate::dialogs::{self, GitDiscardResponse};
 use crate::editor_tab::EditorTab;
 use crate::git_process::GitProcessError;
 use crate::git_status::{GitActionState, GitAttrs, GitFileStatus, GitPath, GitStatusEntry};
-use crate::source_control::{
-    SourceControlState, SourceStateRef, finish_error, git_error_text, refresh_status,
-};
+use crate::source_control::{SourceControlState, SourceStateRef, git_error_text};
 use crate::workspace::{OpenSource, Workspace};
+
+use super::refresh::{finish_error, refresh_status};
 
 #[derive(Clone, Copy)]
 pub(super) enum GitRowAction {
     Diff,
     Stage,
     Unstage,
+    Discard,
 }
 
 pub(super) fn apply_entry_actions(state: &mut SourceControlState) {
@@ -28,6 +30,7 @@ pub(super) fn apply_entry_actions(state: &mut SourceControlState) {
         if let Some(reason) = disabled {
             entry.stage_action = GitActionState::Disabled(reason.clone());
             entry.unstage_action = GitActionState::Disabled(reason.clone());
+            entry.discard_action = GitActionState::Disabled(reason.clone());
             entry.diff_action = GitActionState::Disabled(reason);
             continue;
         }
@@ -41,6 +44,7 @@ pub(super) fn apply_entry_actions(state: &mut SourceControlState) {
         } else {
             GitActionState::Disabled(pgettext("git action disabled", "No staged change"))
         };
+        entry.discard_action = discard_state(entry);
         entry.diff_action = GitActionState::Enabled;
     }
     let can_commit = state
@@ -64,9 +68,7 @@ pub(super) fn run_path_action(state: &SourceStateRef, path: &[u8], action: GitRo
     let Some(entry) = entry else {
         return;
     };
-    if matches!(action, GitRowAction::Diff)
-        && let GitActionState::Disabled(reason) = &entry.diff_action
-    {
+    if let Some(reason) = action_disabled_reason(&entry, action) {
         state.borrow().status_label.set_label(reason);
         return;
     }
@@ -74,6 +76,30 @@ pub(super) fn run_path_action(state: &SourceStateRef, path: &[u8], action: GitRo
         GitRowAction::Diff => diff_entry(state, entry),
         GitRowAction::Stage => stage_entry(state, &entry),
         GitRowAction::Unstage => unstage_entry(state, &entry),
+        GitRowAction::Discard => confirm_discard_entry(state, entry),
+    }
+}
+
+fn discard_state(entry: &GitStatusEntry) -> GitActionState {
+    if entry.status == GitFileStatus::Untracked {
+        GitActionState::Disabled(pgettext("git action disabled", "Untracked file"))
+    } else if !entry.unstaged {
+        GitActionState::Disabled(pgettext("git action disabled", "No unstaged change"))
+    } else {
+        GitActionState::Enabled
+    }
+}
+
+fn action_disabled_reason(entry: &GitStatusEntry, action: GitRowAction) -> Option<&str> {
+    let state = match action {
+        GitRowAction::Diff => &entry.diff_action,
+        GitRowAction::Stage => &entry.stage_action,
+        GitRowAction::Unstage => &entry.unstage_action,
+        GitRowAction::Discard => &entry.discard_action,
+    };
+    match state {
+        GitActionState::Enabled => None,
+        GitActionState::Disabled(reason) => Some(reason),
     }
 }
 
@@ -127,6 +153,28 @@ fn unstage_entry(state: &SourceStateRef, entry: &GitStatusEntry) {
         return;
     };
     process.unstage_path(&entry.path, &cancellable, action_callback(state));
+}
+
+fn confirm_discard_entry(state: &SourceStateRef, entry: GitStatusEntry) {
+    let parent = state.borrow().root.clone();
+    let name = entry.path.display().to_string();
+    let weak = Rc::downgrade(state);
+    dialogs::confirm_git_discard(&parent, &name, move |response| {
+        let Some(state) = weak.upgrade() else {
+            return;
+        };
+        if response == GitDiscardResponse::Discard {
+            discard_entry(&state, &entry);
+        }
+    });
+}
+
+fn discard_entry(state: &SourceStateRef, entry: &GitStatusEntry) {
+    let (process, _repo, cancellable, _generation) = begin_action(state);
+    let Some(process) = process else {
+        return;
+    };
+    process.restore_worktree_path(&entry.path, &cancellable, action_callback(state));
 }
 
 fn diff_entry(state: &SourceStateRef, entry: GitStatusEntry) {

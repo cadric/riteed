@@ -13,6 +13,7 @@ mod diff;
 mod target;
 mod ui;
 
+use controller::sync_reference_language;
 use diff::DiffPlan;
 use target::{CompareTarget, CompareTargetKind};
 use ui::{CompareTags, clear_tags};
@@ -30,6 +31,7 @@ pub(crate) struct CompareController {
     cancellable: Option<gio::Cancellable>,
     left_adjustment: gtk4::Adjustment,
     right_adjustment: gtk4::Adjustment,
+    scroll_anchors: Rc<std::cell::RefCell<Vec<diff::CompareLineAnchor>>>,
     left_handler: Option<glib::SignalHandlerId>,
     right_handler: Option<glib::SignalHandlerId>,
     style_manager: adw::StyleManager,
@@ -163,6 +165,7 @@ impl EditorTab {
         if let Some(compare) = compare_state.as_ref() {
             self.settings
                 .apply_source_style_scheme(&compare.reference_buffer);
+            sync_reference_language(&self.text_buffer, &compare.reference_buffer);
             compare.apply_tag_colors(self.settings.editor_palette_is_dark());
             compare.apply_current_hunk(&self.text_buffer);
         }

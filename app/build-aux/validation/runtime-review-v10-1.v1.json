@@ -1,0 +1,181 @@
+{
+  "version": 1,
+  "sites": [
+    {
+      "path": "src/editor_tab/compare.rs",
+      "line": 34,
+      "match": "scroll_anchors: Rc<std::cell::RefCell<Vec<diff::CompareLineAnchor>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The compare controller owns tab-local anchor and scroll synchronization state.",
+      "justification": "Anchor-based split scrolling needs shared guards and pending values to avoid recursive Adjustment updates while preserving line mapping."
+    },
+    {
+      "path": "src/editor_tab/compare/ui.rs",
+      "line": 127,
+      "match": "anchors: &Rc<RefCell<Vec<CompareLineAnchor>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The compare controller owns tab-local anchor and scroll synchronization state.",
+      "justification": "Anchor-based split scrolling needs shared guards and pending values to avoid recursive Adjustment updates while preserving line mapping."
+    },
+    {
+      "path": "src/editor_tab/compare/ui.rs",
+      "line": 248,
+      "match": "anchors: Rc<RefCell<Vec<CompareLineAnchor>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The compare controller owns tab-local anchor and scroll synchronization state.",
+      "justification": "Anchor-based split scrolling needs shared guards to avoid recursive Adjustment updates while preserving line mapping."
+    },
+    {
+      "path": "src/editor_tab/compare/ui.rs",
+      "line": 250,
+      "match": "syncing: Rc<Cell<bool>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The compare controller owns tab-local anchor and scroll synchronization state.",
+      "justification": "Anchor-based split scrolling needs shared guards to avoid recursive Adjustment updates while preserving line mapping."
+    },
+    {
+      "path": "src/source_control/list_view.rs",
+      "line": 18,
+      "match": "activation_guard: Rc<Cell<bool>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control list view owns recycled-row action state and a weak controller handle.",
+      "justification": "The flat ListView factory is created before controller Rc wiring and must dispatch row actions against the current snapshot without retaining the window."
+    },
+    {
+      "path": "src/source_control/list_view.rs",
+      "line": 19,
+      "match": "state_weak: Rc<RefCell<Weak<RefCell<SourceControlState>>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control list view owns recycled-row action state and a weak controller handle.",
+      "justification": "The flat ListView factory is created before controller Rc wiring and must dispatch row actions against the current snapshot without retaining the window."
+    },
+    {
+      "path": "src/source_control/list_view.rs",
+      "line": 50,
+      "match": "pub(super) fn connect_activation(&self, weak: Weak<RefCell<SourceControlState>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control list view owns recycled-row action state and a weak controller handle.",
+      "justification": "The flat ListView factory is created before controller Rc wiring and must dispatch row actions against the current snapshot without retaining the window."
+    },
+    {
+      "path": "src/source_control/list_view.rs",
+      "line": 93,
+      "match": "state_weak: &Rc<RefCell<Weak<RefCell<SourceControlState>>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control list view owns recycled-row action state and a weak controller handle.",
+      "justification": "The flat ListView factory is created before controller Rc wiring and must dispatch row actions against the current snapshot without retaining the window."
+    },
+    {
+      "path": "src/source_control/list_view.rs",
+      "line": 94,
+      "match": "activation_guard: &Rc<Cell<bool>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control list view owns recycled-row action state and a weak controller handle.",
+      "justification": "The flat ListView factory is created before controller Rc wiring and must dispatch row actions against the current snapshot without retaining the window."
+    },
+    {
+      "path": "src/source_control/list_view.rs",
+      "line": 106,
+      "match": "state_weak: &Rc<RefCell<Weak<RefCell<SourceControlState>>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control list view owns recycled-row action state and a weak controller handle.",
+      "justification": "The flat ListView factory is created before controller Rc wiring and must dispatch row actions against the current snapshot without retaining the window."
+    },
+    {
+      "path": "src/source_control/list_view.rs",
+      "line": 107,
+      "match": "activation_guard: &Rc<Cell<bool>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control list view owns recycled-row action state and a weak controller handle.",
+      "justification": "The flat ListView factory is created before controller Rc wiring and must dispatch row actions against the current snapshot without retaining the window."
+    },
+    {
+      "path": "src/source_control/list_view.rs",
+      "line": 215,
+      "match": "state_weak: &Rc<RefCell<Weak<RefCell<SourceControlState>>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control list view owns recycled-row action state and a weak controller handle.",
+      "justification": "The flat ListView factory is created before controller Rc wiring and must dispatch row actions against the current snapshot without retaining the window."
+    },
+    {
+      "path": "src/source_control/list_view.rs",
+      "line": 216,
+      "match": "activation_guard: &Rc<Cell<bool>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control list view owns recycled-row action state and a weak controller handle.",
+      "justification": "The flat ListView factory is created before controller Rc wiring and must dispatch row actions against the current snapshot without retaining the window."
+    },
+    {
+      "path": "src/source_control/list_view.rs",
+      "line": 320,
+      "match": "weak: &Weak<RefCell<SourceControlState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control list view owns recycled-row action state and a weak controller handle.",
+      "justification": "The flat ListView factory is created before controller Rc wiring and must dispatch row actions against the current snapshot without retaining the window."
+    },
+    {
+      "path": "src/source_control/live.rs",
+      "line": 119,
+      "match": "pending: Rc<Cell<bool>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control live-refresh scheduler owns debounce and last-refresh state.",
+      "justification": "Git metadata monitor and polling callbacks need coalesced refresh timing and index-lock deferral without blocking the main loop."
+    },
+    {
+      "path": "src/source_control/live.rs",
+      "line": 120,
+      "match": "last_refresh: Rc<RefCell<Option<Instant>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control live-refresh scheduler owns debounce and last-refresh state.",
+      "justification": "Git metadata monitor and polling callbacks need coalesced refresh timing and index-lock deferral without blocking the main loop."
+    },
+    {
+      "path": "src/source_control/view_mode.rs",
+      "line": 23,
+      "match": "syncing: Rc<Cell<bool>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control view switcher owns its programmatic-toggle guard.",
+      "justification": "Tree/list mode synchronization must update buttons and stack visibility without recursively writing GSettings."
+    },
+    {
+      "path": "src/source_control/view_mode.rs",
+      "line": 24,
+      "match": "last_entries: RefCell<Vec<GitStatusEntry>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control view switcher owns its last rendered snapshot.",
+      "justification": "Tree/list no-op refreshes compare against the last prepared entries so automatic Git polling does not rebuild rows or reset selection."
+    },
+    {
+      "path": "src/source_control/view_mode.rs",
+      "line": 68,
+      "match": "pub(super) fn connect_activation(&self, weak: Weak<RefCell<SourceControlState>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control view switcher owns its programmatic-toggle guard.",
+      "justification": "Tree/list mode synchronization must update buttons and stack visibility without recursively writing GSettings."
+    },
+    {
+      "path": "src/source_control/history.rs",
+      "line": 17,
+      "match": "loaded_head_oid: RefCell<Option<String>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control history widget owns the last successfully loaded HEAD.",
+      "justification": "Recent commits are refetched only when HEAD changes or a previous history read failed, preventing index-only refresh flicker."
+    },
+    {
+      "path": "src/source_control/history.rs",
+      "line": 18,
+      "match": "needs_refresh: Cell<bool>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control history widget owns its transient retry flag.",
+      "justification": "A failed recent-commits read must self-heal on the next successful status refresh without refetching on every index-only update."
+    },
+    {
+      "path": "src/window_project.rs",
+      "line": 62,
+      "match": "sidebar_position_guard: Rc<Cell<bool>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The project sidebar owns a shared programmatic-position guard.",
+      "justification": "Animated GtkPaned position updates must bypass drag clamping in both directions while user drag input can still cancel the animation."
+    }
+  ]
+}

@@ -20,6 +20,7 @@ impl CompareController {
             .implicit_trailing_newline(false)
             .build();
         tab.settings.apply_source_style_scheme(&reference_buffer);
+        sync_reference_language(&tab.text_buffer, &reference_buffer);
         let reference_view = sourceview5::View::with_buffer(&reference_buffer);
         configure_reference_view(tab, &reference_view);
         let reference_scrolled = gtk4::ScrolledWindow::builder()
@@ -47,11 +48,13 @@ impl CompareController {
 
         let left_adjustment = tab.scrolled.vadjustment();
         let right_adjustment = reference_scrolled.vadjustment();
+        let scroll_anchors = Rc::new(std::cell::RefCell::new(Vec::new()));
         let (left_handler, right_handler) = install_scroll_sync(
             &left_adjustment,
             &right_adjustment,
             &tab.text_view,
             &reference_view,
+            &scroll_anchors,
         );
         let style_manager = adw::StyleManager::default();
         let weak = Rc::downgrade(tab);
@@ -77,6 +80,7 @@ impl CompareController {
             cancellable: None,
             left_adjustment,
             right_adjustment,
+            scroll_anchors,
             left_handler: Some(left_handler),
             right_handler: Some(right_handler),
             style_manager,
@@ -120,6 +124,9 @@ impl CompareController {
         let reference_text = buffer_text(&self.reference_buffer);
         let previous = self.current_hunk;
         self.diff_plan = compute_diff_plan(editable_text, &reference_text);
+        self.scroll_anchors
+            .borrow_mut()
+            .clone_from(&self.diff_plan.anchors);
         self.current_hunk = if self.diff_plan.hunks.is_empty() || self.diff_plan.too_large {
             None
         } else {
@@ -222,6 +229,15 @@ impl CompareController {
             self.status_label.set_label(&text);
         }
     }
+}
+
+pub(super) fn sync_reference_language(
+    editable_buffer: &sourceview5::Buffer,
+    reference_buffer: &sourceview5::Buffer,
+) {
+    let language = editable_buffer.language();
+    reference_buffer.set_language(language.as_ref());
+    reference_buffer.set_highlight_syntax(language.is_some());
 }
 
 impl Drop for CompareController {

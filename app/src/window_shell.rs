@@ -14,7 +14,6 @@ pub struct WindowShell {
     pub open_button: gtk4::Button,
     pub project_sidebar_button: gtk4::ToggleButton,
     pub save_button: gtk4::Button,
-    pub appearance_button: gtk4::Button,
     pub primary_menu_button: gtk4::MenuButton,
     pub preferences_dialog: adw::PreferencesDialog,
     pub word_wrap_row: adw::SwitchRow,
@@ -50,7 +49,6 @@ impl WindowShell {
         let project_sidebar_button: gtk4::ToggleButton =
             builder_object(&builder, "project_sidebar_button")?;
         let save_button: gtk4::Button = builder_object(&builder, "save_button")?;
-        let appearance_button: gtk4::Button = builder_object(&builder, "appearance_button")?;
         let primary_menu_button: gtk4::MenuButton =
             builder_object(&builder, "primary_menu_button")?;
 
@@ -99,7 +97,6 @@ impl WindowShell {
             open_button,
             project_sidebar_button,
             save_button,
-            appearance_button,
             primary_menu_button,
             preferences_dialog,
             word_wrap_row,

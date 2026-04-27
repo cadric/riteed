@@ -1,4 +1,4 @@
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 use gettextrs::pgettext;
@@ -6,7 +6,7 @@ use gtk4::accessible::Property;
 use gtk4::{gdk, glib, prelude::*};
 use sourceview5::prelude::*;
 
-use super::diff::DiffPlan;
+use super::diff::{CompareLineAnchor, DiffPlan, map_line_with_anchors};
 use crate::editor_tab::EditorTab;
 use crate::editor_zoom::{EDITOR_VIEW_CSS_CLASS, resolve_scroll_past_end_padding};
 
@@ -124,6 +124,7 @@ pub(super) fn install_scroll_sync(
     right: &gtk4::Adjustment,
     left_view: &sourceview5::View,
     right_view: &sourceview5::View,
+    anchors: &Rc<RefCell<Vec<CompareLineAnchor>>>,
 ) -> (glib::SignalHandlerId, glib::SignalHandlerId) {
     let syncing = Rc::new(Cell::new(false));
     let idle_redraw_pending = Rc::new(Cell::new(false));
@@ -132,48 +133,42 @@ pub(super) fn install_scroll_sync(
     let right_view = right_view.downgrade();
 
     let right_for_left = right.downgrade();
-    let right_pending = Rc::new(Cell::new(false));
-    let right_pending_value = Rc::new(Cell::new(0.0));
-    let syncing_for_left = Rc::clone(&syncing);
     let idle_for_left = Rc::clone(&idle_redraw_pending);
     let left_view_for_left = left_view.clone();
     let right_view_for_left = right_view.clone();
-    let right_pending_for_left = Rc::clone(&right_pending);
-    let right_pending_value_for_left = Rc::clone(&right_pending_value);
+    let left_sync = AnchorSync {
+        target: right_for_left,
+        source_view: left_view_for_left.clone(),
+        target_view: right_view_for_left.clone(),
+        anchors: Rc::clone(anchors),
+        from_editable: true,
+        syncing: Rc::clone(&syncing),
+    };
     let left_handler = left.connect_value_changed(move |left| {
-        if syncing_for_left.get() {
+        if left_sync.syncing.get() {
             return;
         }
-        schedule_adjustment_sync(
-            left,
-            &right_for_left,
-            &syncing_for_left,
-            &right_pending_for_left,
-            &right_pending_value_for_left,
-        );
+        left_sync.sync(left);
         queue_compare_redraw(&left_view_for_left, &right_view_for_left, &idle_for_left);
     });
 
     let left_for_right = left.downgrade();
-    let left_pending = Rc::new(Cell::new(false));
-    let left_pending_value = Rc::new(Cell::new(0.0));
-    let syncing_for_right = Rc::clone(&syncing);
     let idle_for_right = Rc::clone(&idle_redraw_pending);
     let left_view_for_right = left_view.clone();
     let right_view_for_right = right_view.clone();
-    let left_pending_for_right = Rc::clone(&left_pending);
-    let left_pending_value_for_right = Rc::clone(&left_pending_value);
+    let right_sync = AnchorSync {
+        target: left_for_right,
+        source_view: right_view_for_right.clone(),
+        target_view: left_view_for_right.clone(),
+        anchors: Rc::clone(anchors),
+        from_editable: false,
+        syncing,
+    };
     let right_handler = right.connect_value_changed(move |right| {
-        if syncing_for_right.get() {
+        if right_sync.syncing.get() {
             return;
         }
-        schedule_adjustment_sync(
-            right,
-            &left_for_right,
-            &syncing_for_right,
-            &left_pending_for_right,
-            &left_pending_value_for_right,
-        );
+        right_sync.sync(right);
         queue_compare_redraw(&left_view_for_right, &right_view_for_right, &idle_for_right);
     });
     (left_handler, right_handler)
@@ -246,61 +241,94 @@ fn toolbar_button(icon_name: &str, tooltip: &str, action_name: &str) -> gtk4::Bu
     button
 }
 
-fn schedule_adjustment_sync(
-    source: &gtk4::Adjustment,
-    target: &glib::WeakRef<gtk4::Adjustment>,
-    syncing: &Rc<Cell<bool>>,
-    pending: &Rc<Cell<bool>>,
-    pending_value: &Rc<Cell<f64>>,
-) {
-    let target_weak = target.clone();
-    let Some(target) = target_weak.upgrade() else {
-        return;
-    };
-    let Some(value) = sync_adjustment_ratio_value(source, &target) else {
-        return;
-    };
-    if (target.value() - value).abs() < 0.5 {
-        return;
-    }
-    pending_value.set(value);
-    if pending.replace(true) {
-        return;
-    }
-    let syncing = Rc::clone(syncing);
-    let pending = Rc::clone(pending);
-    let pending_value = Rc::clone(pending_value);
-    glib::idle_add_local_once(move || {
-        pending.set(false);
-        if syncing.get() {
-            return;
-        }
-        let Some(target) = target_weak.upgrade() else {
-            return;
-        };
-        syncing.set(true);
-        target.set_value(pending_value.get());
-        syncing.set(false);
-    });
+struct AnchorSync {
+    target: glib::WeakRef<gtk4::Adjustment>,
+    source_view: glib::WeakRef<sourceview5::View>,
+    target_view: glib::WeakRef<sourceview5::View>,
+    anchors: Rc<RefCell<Vec<CompareLineAnchor>>>,
+    from_editable: bool,
+    syncing: Rc<Cell<bool>>,
 }
 
-fn sync_adjustment_ratio_value(
-    source: &gtk4::Adjustment,
-    target: &gtk4::Adjustment,
-) -> Option<f64> {
-    let source_lower = source.lower();
-    let source_upper = (source.upper() - source.page_size()).max(source_lower);
-    let source_max = (source_upper - source_lower).max(0.0);
-    let target_lower = target.lower();
-    let target_upper = (target.upper() - target.page_size()).max(target_lower);
-    let target_max = (target_upper - target_lower).max(0.0);
-
-    if source_max <= f64::EPSILON || target_max <= f64::EPSILON {
-        return None;
+impl AnchorSync {
+    fn sync(&self, source: &gtk4::Adjustment) {
+        let Some(target) = self.target.upgrade() else {
+            return;
+        };
+        let value = anchor_adjustment_value(
+            source,
+            &target,
+            &self.source_view,
+            &self.target_view,
+            &self.anchors.borrow(),
+            self.from_editable,
+        )
+        .unwrap_or_else(|| proportional_adjustment_value(source, &target));
+        if (target.value() - value).abs() < 0.5 {
+            return;
+        }
+        self.syncing.set(true);
+        target.set_value(value);
+        self.syncing.set(false);
     }
+}
 
-    let ratio = ((source.value() - source_lower) / source_max).clamp(0.0, 1.0);
-    Some((target_lower + (ratio * target_max)).round())
+fn anchor_adjustment_value(
+    _source: &gtk4::Adjustment,
+    target: &gtk4::Adjustment,
+    source_view: &glib::WeakRef<sourceview5::View>,
+    target_view: &glib::WeakRef<sourceview5::View>,
+    anchors: &[CompareLineAnchor],
+    from_editable: bool,
+) -> Option<f64> {
+    let source_view = source_view.upgrade()?;
+    let target_view = target_view.upgrade()?;
+    let (source_line, line_offset) = first_visible_line_offset(&source_view)?;
+    let target_buffer = target_view.buffer();
+    let target_line_count = usize::try_from(target_buffer.line_count()).ok()?;
+    let target_line = map_line_with_anchors(source_line, anchors, from_editable, target_line_count);
+    let iter = target_buffer.iter_at_line(i32::try_from(target_line).ok()?)?;
+    let (line_y, _height) = target_view.line_yrange(&iter);
+    let target_upper = adjustment_upper(target);
+    let value = (f64::from(line_y) + f64::from(line_offset)).clamp(target.lower(), target_upper);
+    Some(value.round())
+}
+
+fn first_visible_line_offset(view: &sourceview5::View) -> Option<(usize, i32)> {
+    let visible = view.visible_rect();
+    let iter = view.iter_at_location(0, visible.y())?;
+    let (line_y, _height) = view.line_yrange(&iter);
+    let offset = visible.y().saturating_sub(line_y).max(0);
+    Some((usize::try_from(iter.line()).ok()?, offset))
+}
+
+fn proportional_adjustment_value(source: &gtk4::Adjustment, target: &gtk4::Adjustment) -> f64 {
+    proportional_value(
+        source.value(),
+        source.lower(),
+        adjustment_upper(source),
+        target.lower(),
+        adjustment_upper(target),
+    )
+}
+
+fn proportional_value(
+    source_value: f64,
+    source_lower: f64,
+    source_upper: f64,
+    target_lower: f64,
+    target_upper: f64,
+) -> f64 {
+    let source_range = source_upper - source_lower;
+    if source_range <= f64::EPSILON {
+        return target_lower;
+    }
+    let ratio = ((source_value - source_lower) / source_range).clamp(0.0, 1.0);
+    (target_lower + ((target_upper - target_lower) * ratio)).round()
+}
+
+fn adjustment_upper(adjustment: &gtk4::Adjustment) -> f64 {
+    (adjustment.upper() - adjustment.page_size()).max(adjustment.lower())
 }
 
 fn queue_compare_redraw(
@@ -370,5 +398,22 @@ fn compare_color(dark: bool, color: CompareColor) -> gdk::RGBA {
         (true, CompareColor::Editable) => gdk::RGBA::new(0.12, 0.34, 0.20, 1.0),
         (true, CompareColor::Reference) => gdk::RGBA::new(0.42, 0.16, 0.14, 1.0),
         (true, CompareColor::Current) => gdk::RGBA::new(0.16, 0.24, 0.40, 1.0),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::proportional_value;
+
+    #[test]
+    fn proportional_fallback_preserves_scroll_region() {
+        let value = proportional_value(50.0, 0.0, 100.0, 0.0, 400.0);
+        assert!((value - 200.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn proportional_fallback_handles_empty_source_range() {
+        let value = proportional_value(0.0, 0.0, 0.0, 20.0, 400.0);
+        assert!((value - 20.0).abs() < f64::EPSILON);
     }
 }

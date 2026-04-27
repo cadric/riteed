@@ -23,8 +23,10 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Extended the embedded Riteed app to a v7 compare workflow with in-tab split diffs, compare-with-disk, compare-with-file, compare-two-files, manual reference refresh, and F8/Shift+F8 diff navigation.
 - Extended the embedded Riteed app to a v8 polish layer with editor palette selection, current-line highlight preferences, fullscreen support, F9 project-sidebar focus, and conservative autosave for already-saved writable files.
 - Extended the embedded Riteed app to a v9 lightweight source-control workflow with a Git sidebar, project-tree file status badges, per-file Git compare, stage/unstage actions, and local commits.
+- Extended the embedded Riteed app to a v10 source-control completion pass with tree/list view modes, recent commit history, per-file discard for safe unstaged tracked changes, and coalesced live Git refresh.
 - Added a sandbox-bundled `/app/bin/git` Flatpak module with source checksum and maintainer-signature verification, avoiding host Git and `flatpak-spawn`.
 - Added Git identity preferences backed by GSettings and applied only on explicit user action for local commit support.
+- Added a GSettings-backed Source Control view-mode preference and a packaged Source Control symbolic icon.
 - Added a real New Window action that opens a fresh editor window without copying tabs, compare state, or project folders.
 - Vendored the pinned `similar` crate for deterministic offline Flatpak-oriented compare/diff builds.
 
@@ -47,6 +49,8 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Switched Recent Files to a lightweight dialog listing recent documents (most recent first) instead of nested menu flows.
 - Split the left sidebar into Files and Source Control modes with a libadwaita view stack while preserving project-tree state.
 - Reworked the Source Control changed-file view into a virtual folder tree with compact file rows, click-to-compare activation, hover/focus Stage and Unstage icons, and consistent `U` badges for untracked files.
+- Moved Appearance from a header-bar button into the main menu, kept the existing visual Appearance dialog, and refreshed Help copy for the new location.
+- Reworked compare scroll synchronization to use diff anchors instead of normalized ratios, and applied active document language highlighting to reference buffers.
 - Refactored compare controller plumbing into smaller modules so Git-backed compare could reuse the existing split-diff engine without growing the compare file past policy limits.
 - Revised the runtime policy to allow only typed Gio subprocess Git operations in `src/git_process.rs`; `std::process::Command` and `flatpak-spawn` remain forbidden.
 
@@ -78,6 +82,9 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Fixed Flatpak Git status refresh for document-portal project folders by running bundled Git from a stable sandbox cwd with explicit `GIT_DIR` and `GIT_WORK_TREE`.
 - Trimmed the bundled Flatpak Git module to local plumbing only and explicitly stripped `/app/bin/git`, reducing the installed app size baseline to 7,617,536 bytes while preserving V9 status, stage, unstage, compare, and commit flows.
 - Restored the resizable sidebar to the left side, kept Files and Source Control inside one switchable sidebar, and clamped drag resizing so the sidebar cannot be hidden permanently by the handle.
+- Fixed V10 polish regressions: Source Control icon registration, first-open Appearance tile sizing, Recent Files bottom actions, animated sidebar show/hide, and status-bar segment dividers.
+- Fixed V10 follow-up regressions where sidebar animation prevented full hiding, automatic Git refreshes repeatedly rebuilt Source Control and Files UI, and compare/Git diff panes drifted out of scroll sync.
+- Source Control: action buttons no longer reserve inline space; status badges color-coded by Git state.
 
 ## 1.0.1 — 2026-04-19
 

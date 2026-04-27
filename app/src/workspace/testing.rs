@@ -157,11 +157,6 @@ impl Workspace {
         self.selected_tab().map(|tab| tab.writability())
     }
 
-    pub(crate) fn selected_autosave_eligible(&self) -> bool {
-        self.selected_tab()
-            .is_some_and(|tab| tab.is_autosave_eligible())
-    }
-
     pub(crate) fn sync_selected_banner_for_tests(&self, window_active: bool) {
         if let Some(tab) = self.selected_tab() {
             tab.sync_banner_for_tests(true, window_active);

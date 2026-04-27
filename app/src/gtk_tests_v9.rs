@@ -5,6 +5,8 @@ use gtk4::prelude::*;
 use libadwaita as adw;
 
 use crate::gtk_tests::{build_window, drain_events, spin_until};
+use crate::settings::SourceControlViewMode;
+use crate::sidebar_host::SOURCE_CONTROL_ICON;
 
 pub(crate) fn exercise_v9_source_control(test_app: &adw::Application) {
     exercise_non_git_folder(test_app);
@@ -19,6 +21,10 @@ pub(crate) fn exercise_v9_source_control(test_app: &adw::Application) {
         let _removed = fs::remove_file(&marker);
         return;
     };
+    assert_eq!(
+        window.source_control_icon_for_tests().as_deref(),
+        Some(SOURCE_CONTROL_ICON)
+    );
     window.handle_application_open(vec![gio::File::for_path(&repo)]);
     let repo_uri = gio::File::for_path(&repo).uri().to_string();
     spin_until("v9 project root opens", || {
@@ -32,6 +38,13 @@ pub(crate) fn exercise_v9_source_control(test_app: &adw::Application) {
         window.source_control_row_state_for_tests(marker_name),
         Some((String::from("U"), true, false))
     );
+    spin_until("v10 source control recent commits load", || {
+        window.source_control_recent_commit_count_for_tests() > 0
+    });
+    window.set_source_control_view_mode_for_tests(SourceControlViewMode::List);
+    spin_until("v10 source control list view lists changed files", || {
+        window.source_control_row_count_for_tests() > 0
+    });
     assert!(window.source_control_activate_path_for_tests(marker_name));
     let marker_uri = gio::File::for_path(&marker).uri().to_string();
     spin_until("v9 source control row activation opens compare", || {

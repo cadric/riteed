@@ -8,6 +8,7 @@ use sourceview5::prelude::*;
 use crate::APP_ID;
 
 pub use presentation::EditorPalette;
+pub use source_control::SourceControlViewMode;
 
 const KEY_THEME: &str = "theme";
 const KEY_EDITOR_FONT: &str = "editor-font";
@@ -18,6 +19,7 @@ const KEY_SESSION_FILES: &str = "session-files";
 const KEY_SESSION_SELECTED_FILE: &str = "session-selected-file";
 const KEY_GIT_USER_NAME: &str = "git-user-name";
 const KEY_GIT_USER_EMAIL: &str = "git-user-email";
+const KEY_SOURCE_CONTROL_VIEW_MODE: &str = "source-control-view-mode";
 const SOURCE_STYLE_SCHEME_LIGHT: &str = "Adwaita";
 const SOURCE_STYLE_SCHEME_DARK: &str = "Adwaita-dark";
 
@@ -91,6 +93,7 @@ struct MemorySettings {
     session_selected_file: String,
     git_user_name: String,
     git_user_email: String,
+    source_control_view_mode: SourceControlViewMode,
     project: MemoryProjectSettings,
     #[cfg(test)]
     write_log: Vec<String>,
@@ -167,6 +170,7 @@ impl AppSettings {
                 session_selected_file: String::new(),
                 git_user_name: String::new(),
                 git_user_email: String::new(),
+                source_control_view_mode: SourceControlViewMode::Tree,
                 project: MemoryProjectSettings {
                     folder_uri: String::new(),
                     folder_display_name: String::new(),
@@ -414,3 +418,4 @@ mod git;
 mod indentation;
 mod presentation;
 mod project;
+mod source_control;

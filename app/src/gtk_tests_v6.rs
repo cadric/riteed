@@ -58,6 +58,12 @@ fn exercise_tree_model_expansion(root: &std::path::Path) {
             .contains(&String::from("nested.txt"))
     });
     assert_eq!(model.snapshot_expanded_uris().len(), 1);
+    let generation = model.generation_for_tests();
+    let uri = gio::File::for_path(root.join("A.txt")).uri().to_string();
+    model.set_git_statuses(vec![(uri.clone(), String::from("M"))]);
+    assert_eq!(model.generation_for_tests(), generation);
+    model.set_git_statuses(vec![(uri, String::from("M"))]);
+    assert_eq!(model.generation_for_tests(), generation);
     model.set_show_hidden(true);
     spin_until("tree model show-hidden refreshes entries", || {
         model
@@ -148,6 +154,7 @@ pub(crate) fn exercise_v6_project_navigation(test_app: &adw::Application) {
     spin_until("project sidebar drag clamps to maximum", || {
         window.project_sidebar_position_for_tests() <= 520
     });
+    exercise_sidebar_toggle_animation(&window);
     assert_eq!(
         window.project_action_states_for_tests(),
         (true, true, true, true)
@@ -225,6 +232,18 @@ pub(crate) fn exercise_v6_project_navigation(test_app: &adw::Application) {
     let _removed = fs::remove_dir_all(root);
     let _removed = fs::remove_dir_all(extra);
     let _removed = fs::remove_file(open_file);
+}
+
+fn exercise_sidebar_toggle_animation(window: &Window) {
+    window.set_project_sidebar_visible_for_tests(false);
+    spin_until("project sidebar toggle hides fully", || {
+        !window.project_sidebar_visible_for_tests()
+            && window.project_sidebar_position_for_tests() == 0
+    });
+    window.set_project_sidebar_visible_for_tests(true);
+    spin_until("project sidebar toggle restores visible width", || {
+        window.project_sidebar_position_for_tests() >= 220
+    });
 }
 
 pub(crate) fn exercise_v6_project_restore(test_app: &adw::Application) {

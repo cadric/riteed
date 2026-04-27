@@ -173,8 +173,7 @@ impl Window {
     }
 
     pub(crate) fn present_appearance_for_tests(&self) {
-        self.appearance
-            .present_for_tests(&self.shell.appearance_button);
+        self.appearance.present_for_tests(&self.shell.window);
     }
 
     pub(crate) fn selected_appearance_palette_for_tests(&self) -> crate::settings::EditorPalette {
@@ -203,10 +202,6 @@ impl Window {
 
     pub(crate) fn selected_writability_for_tests(&self) -> Option<crate::editor_tab::Writability> {
         self.workspace.selected_writability()
-    }
-
-    pub(crate) fn selected_autosave_eligible_for_tests(&self) -> bool {
-        self.workspace.selected_autosave_eligible()
     }
 
     pub(crate) fn sync_selected_banner_for_tests(&self, window_active: bool) {
@@ -242,6 +237,17 @@ impl Window {
         path: &str,
     ) -> Option<(String, bool, bool)> {
         self.source_control.row_state_for_tests(path)
+    }
+
+    pub(crate) fn set_source_control_view_mode_for_tests(
+        &self,
+        mode: crate::settings::SourceControlViewMode,
+    ) {
+        self.source_control.set_view_mode_for_tests(mode);
+    }
+
+    pub(crate) fn source_control_recent_commit_count_for_tests(&self) -> usize {
+        self.source_control.recent_commit_count_for_tests()
     }
 
     pub(crate) fn inject_external_event_for_tests(
@@ -332,6 +338,10 @@ impl Window {
         self.shell.project_split_view.set_position(position);
     }
 
+    pub(crate) fn set_project_sidebar_visible_for_tests(&self, visible: bool) {
+        self.project.set_sidebar_visible_for_tests(visible);
+    }
+
     pub(crate) fn project_sidebar_left_layout_for_tests(&self) -> bool {
         let start_is_sidebar = self
             .shell
@@ -347,6 +357,10 @@ impl Window {
                 child == self.shell.workspace_box.clone().upcast::<gtk4::Widget>()
             });
         start_is_sidebar && end_is_workspace
+    }
+
+    pub(crate) fn source_control_icon_for_tests(&self) -> Option<String> {
+        self.sidebar_host.source_control_icon_for_tests()
     }
 
     pub(crate) fn project_action_states_for_tests(&self) -> (bool, bool, bool, bool) {

@@ -1,4 +1,4 @@
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::HashSet;
 use std::rc::{Rc, Weak};
 
@@ -59,7 +59,8 @@ struct ProjectState {
     root_generation: u64,
     root_cancellable: Option<gio::Cancellable>,
     sidebar_width: i32,
-    sidebar_position_guard: bool,
+    sidebar_position_guard: Rc<Cell<bool>>,
+    sidebar_animation: Option<adw::TimedAnimation>,
 
     reveal_generation: u64,
     pending_reveal: Option<reveal::PendingReveal>,
@@ -130,7 +131,8 @@ impl WindowProjectController {
             pending_reveal: None,
             symlink_generation: 0,
             sidebar_width: DEFAULT_PROJECT_SIDEBAR_WIDTH,
-            sidebar_position_guard: false,
+            sidebar_position_guard: Rc::new(Cell::new(false)),
+            sidebar_animation: None,
             symlink_cancellable: None,
             toast_keys: HashSet::new(),
             root_change_handler: None,

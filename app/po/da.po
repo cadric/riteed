@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: io.github.cadric.Riteed 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-20 19:00+0200\n"
+"POT-Creation-Date: 2026-04-26 00:00+0200\n"
 "PO-Revision-Date: 2026-04-19 00:00+0000\n"
 "Last-Translator: cadric\n"
 "Language-Team: Danish\n"
@@ -130,9 +130,6 @@ msgid "Preview unavailable"
 msgstr ""
 
 msgid "Unavailable"
-msgstr ""
-
-msgid "Use the Appearance button to adjust app appearance and editor palettes. Enable current-line highlight, line numbers, and the minimap in Preferences when you want more structure while reading longer code or markdown files."
 msgstr ""
 
 msgctxt "app appearance"
@@ -321,4 +318,73 @@ msgstr ""
 
 msgctxt "sidebar mode"
 msgid "Source Control"
+msgstr ""
+
+msgid "Discard File Changes?"
+msgstr ""
+
+msgid "This will restore the file to the Git index version."
+msgstr ""
+
+msgid "Loading recent commits..."
+msgstr ""
+
+msgid "No commits yet."
+msgstr ""
+
+msgid "Open Appearance from the main menu to adjust app appearance and editor palettes. Enable current-line highlight, line numbers, and the minimap in Preferences when you want more structure while reading longer code or markdown files."
+msgstr ""
+
+msgid "Recent commits appear below changed files. Tracked unstaged files can be discarded after confirmation when open tabs, Git filters, encodings, and line-ending conversion do not make restore unsafe."
+msgstr ""
+
+msgid "Riteed refreshes Git status after saves and local Git metadata changes. Document-portal folders use periodic polling when native file monitoring is unavailable."
+msgstr ""
+
+msgid "Source Control View Mode"
+msgstr ""
+
+msgid "Controls whether the source control changes view uses a folder tree or a flat list."
+msgstr ""
+
+msgid "Unable to read recent commits."
+msgstr ""
+
+msgid "Open a Git folder to review changed files in the Source Control sidebar, then switch between tree and list views while keeping each view's selection and tree expansion state."
+msgstr ""
+
+msgctxt "help row"
+msgid "Tree and List Views"
+msgstr ""
+
+msgctxt "help row"
+msgid "History and Discard"
+msgstr ""
+
+msgctxt "help row"
+msgid "Live Refresh"
+msgstr ""
+
+msgctxt "help section"
+msgid "Source Control"
+msgstr ""
+
+msgctxt "git action tooltip"
+msgid "Discard Changes"
+msgstr ""
+
+msgctxt "git action disabled"
+msgid "Untracked file"
+msgstr ""
+
+msgctxt "git history"
+msgid "Recent Commits"
+msgstr ""
+
+msgctxt "source control view"
+msgid "Tree"
+msgstr ""
+
+msgctxt "source control view"
+msgid "List"
 msgstr ""

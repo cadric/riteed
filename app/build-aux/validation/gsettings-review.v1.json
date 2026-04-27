@@ -3,15 +3,15 @@
   "sites": [
     {
       "path": "src/editor_tab/compare/ui.rs",
-      "line": 282,
-      "match": "target.set_value(pending_value.get());",
+      "line": 271,
+      "match": "target.set_value(value);",
       "kind": "gsettings-write",
       "key": "compare-scroll-adjustment",
       "trigger": "Compare scroll synchronization writes only to the peer GTK Adjustment during in-tab split scrolling; no preference or GSettings key is touched."
     },
     {
       "path": "src/settings.rs",
-      "line": 195,
+      "line": 199,
       "match": "let _changed = settings.set_string(KEY_THEME, preference.stored());",
       "kind": "gsettings-write",
       "key": "theme",
@@ -19,7 +19,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 237,
+      "line": 241,
       "match": "let _changed = settings.set_string(KEY_EDITOR_FONT, font);",
       "kind": "gsettings-write",
       "key": "editor-font",
@@ -27,7 +27,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 267,
+      "line": 271,
       "match": "let _changed_width = settings.set_int(KEY_WINDOW_WIDTH, width);",
       "kind": "gsettings-write",
       "key": "window-width",
@@ -35,7 +35,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 268,
+      "line": 272,
       "match": "let _changed_height = settings.set_int(KEY_WINDOW_HEIGHT, height);",
       "kind": "gsettings-write",
       "key": "window-height",
@@ -43,7 +43,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 298,
+      "line": 302,
       "match": "let _changed = settings.set_strv(KEY_RECENT_FILES, files);",
       "kind": "gsettings-write",
       "key": "recent-files",
@@ -51,7 +51,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 326,
+      "line": 330,
       "match": "let _changed = settings.set_strv(KEY_SESSION_FILES, files);",
       "kind": "gsettings-write",
       "key": "session-files",
@@ -59,7 +59,7 @@
     },
     {
       "path": "src/settings.rs",
-      "line": 352,
+      "line": 356,
       "match": "let _changed = settings.set_string(KEY_SESSION_SELECTED_FILE, uri);",
       "kind": "gsettings-write",
       "key": "session-selected-file",
@@ -88,6 +88,22 @@
       "kind": "gsettings-write",
       "key": "show-minimap",
       "trigger": "Explicit minimap toggle in the preferences dialog."
+    },
+    {
+      "path": "src/settings/git.rs",
+      "line": 24,
+      "match": "let _changed_name = settings.set_string(KEY_GIT_USER_NAME, name);",
+      "kind": "gsettings-write",
+      "key": "git-user-name",
+      "trigger": "Explicit Apply in the Git Identity preferences group; text entry changes are staged in the row until the user clicks Apply."
+    },
+    {
+      "path": "src/settings/git.rs",
+      "line": 25,
+      "match": "let _changed_email = settings.set_string(KEY_GIT_USER_EMAIL, email);",
+      "kind": "gsettings-write",
+      "key": "git-user-email",
+      "trigger": "Explicit Apply in the Git Identity preferences group; text entry changes are staged in the row until the user clicks Apply."
     },
     {
       "path": "src/settings/indentation.rs",
@@ -170,6 +186,14 @@
       "trigger": "Toggling Show Hidden Files in the project sidebar updates the stored hidden-files preference."
     },
     {
+      "path": "src/settings/source_control.rs",
+      "line": 48,
+      "match": "let _changed = settings.set_string(KEY_SOURCE_CONTROL_VIEW_MODE, mode.stored());",
+      "kind": "gsettings-write",
+      "key": "source-control-view-mode",
+      "trigger": "Explicit Source Control tree/list segmented-control toggle."
+    },
+    {
       "path": "src/window_preferences.rs",
       "line": 102,
       "match": "row.set_value(f64::from(value));",
@@ -184,22 +208,6 @@
       "kind": "gsettings-write",
       "key": "tab-width-or-indent-width",
       "trigger": "Post-commit SpinRow normalization writes the applied sanitized value back into the widget only. The syncing guard prevents this local update from becoming a per-keystroke GSettings write."
-    },
-    {
-      "path": "src/settings/git.rs",
-      "line": 24,
-      "match": "let _changed_name = settings.set_string(KEY_GIT_USER_NAME, name);",
-      "kind": "gsettings-write",
-      "key": "git-user-name",
-      "trigger": "Explicit Apply in the Git Identity preferences group; text entry changes are staged in the row until the user clicks Apply."
-    },
-    {
-      "path": "src/settings/git.rs",
-      "line": 25,
-      "match": "let _changed_email = settings.set_string(KEY_GIT_USER_EMAIL, email);",
-      "kind": "gsettings-write",
-      "key": "git-user-email",
-      "trigger": "Explicit Apply in the Git Identity preferences group; text entry changes are staged in the row until the user clicks Apply."
     }
   ]
 }

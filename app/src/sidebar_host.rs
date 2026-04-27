@@ -2,8 +2,12 @@ use gettextrs::pgettext;
 use gtk4::prelude::*;
 use libadwaita as adw;
 
+pub(crate) const SOURCE_CONTROL_ICON: &str = "io.github.cadric.Riteed-source-control-symbolic";
+
 pub(crate) struct SidebarHost {
     root: adw::ToolbarView,
+    #[cfg(test)]
+    source_control_page: adw::ViewStackPage,
 }
 
 impl SidebarHost {
@@ -24,7 +28,7 @@ impl SidebarHost {
             Some("source-control"),
             &pgettext("sidebar mode", "Source Control"),
         );
-        git_page.set_icon_name(Some("folder-vcs-symbolic"));
+        git_page.set_icon_name(Some(SOURCE_CONTROL_ICON));
 
         let switcher = adw::ViewSwitcher::new();
         switcher.set_policy(adw::ViewSwitcherPolicy::Narrow);
@@ -39,11 +43,22 @@ impl SidebarHost {
         root.add_top_bar(&header);
         root.set_content(Some(&stack));
 
-        Self { root }
+        Self {
+            root,
+            #[cfg(test)]
+            source_control_page: git_page,
+        }
     }
 
     #[must_use]
     pub(crate) fn widget(&self) -> &adw::ToolbarView {
         &self.root
+    }
+
+    #[cfg(test)]
+    pub(crate) fn source_control_icon_for_tests(&self) -> Option<String> {
+        self.source_control_page
+            .icon_name()
+            .map(|name| name.to_string())
     }
 }

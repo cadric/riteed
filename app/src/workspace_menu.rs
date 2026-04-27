@@ -35,6 +35,10 @@ pub(crate) fn build_primary_menu() -> gio::Menu {
         Some(&pgettext("menu item", "Preferences")),
         Some("app.preferences"),
     );
+    menu.append(
+        Some(&pgettext("menu item", "Appearance")),
+        Some("win.appearance"),
+    );
     menu.append(Some(&pgettext("menu item", "Help")), Some("app.help"));
     menu.append(
         Some(&pgettext("menu item", "About Riteed")),

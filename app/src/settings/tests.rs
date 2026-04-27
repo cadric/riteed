@@ -1,5 +1,6 @@
 use super::{
-    AppSettings, EditorPalette, ThemePreference, sanitize_dimension, sanitize_editor_width,
+    AppSettings, EditorPalette, SourceControlViewMode, ThemePreference, sanitize_dimension,
+    sanitize_editor_width,
 };
 #[test]
 fn theme_preference_roundtrips_indices() {
@@ -32,6 +33,19 @@ fn editor_palette_roundtrips_enum_values() {
             palette.nick()
         );
     }
+}
+
+#[test]
+fn source_control_view_mode_parses_stored_values() {
+    assert_eq!(
+        SourceControlViewMode::from_stored("list"),
+        SourceControlViewMode::List
+    );
+    assert_eq!(
+        SourceControlViewMode::from_stored("tree"),
+        SourceControlViewMode::Tree
+    );
+    assert_eq!(SourceControlViewMode::Tree.stored(), "tree");
 }
 
 #[test]
@@ -70,6 +84,7 @@ fn memory_backend_roundtrips_values() {
     settings.set_session_files(&[String::from("file:///tmp/session.txt")]);
     settings.set_session_selected_file("file:///tmp/session.txt");
     settings.set_git_identity("Ada Lovelace", "ada@example.test");
+    settings.set_source_control_view_mode(SourceControlViewMode::List);
     settings.set_project_folder_uri("file:///tmp/project");
     settings.set_project_folder_display_name("Project");
     settings.set_project_sidebar_visible(true);
@@ -106,6 +121,10 @@ fn memory_backend_roundtrips_values() {
             String::from("ada@example.test")
         )
     );
+    assert_eq!(
+        settings.source_control_view_mode(),
+        SourceControlViewMode::List
+    );
     assert_eq!(settings.project_folder_uri(), "file:///tmp/project");
     assert_eq!(settings.project_folder_display_name(), "Project");
     assert!(settings.project_sidebar_visible());
@@ -121,6 +140,7 @@ fn memory_backend_records_writes_for_tests() {
     settings.set_editor_font("Monospace 11");
     settings.set_autosave_enabled(true);
     settings.set_git_identity("Ada", "ada@example.test");
+    settings.set_source_control_view_mode(SourceControlViewMode::List);
     assert_eq!(
         settings.write_log_for_tests(),
         vec![
@@ -130,6 +150,7 @@ fn memory_backend_records_writes_for_tests() {
             String::from("autosave-enabled"),
             String::from("git-user-name"),
             String::from("git-user-email"),
+            String::from("source-control-view-mode"),
         ]
     );
 }

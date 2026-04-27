@@ -89,6 +89,10 @@ fn read_only_git_ops_work_against_current_repo() {
     let identity =
         wait_git(|cancellable, callback| process.read_git_identity(cancellable, callback));
     assert!(identity.is_ok());
+
+    let commits =
+        wait_git(|cancellable, callback| process.recent_commits(25, cancellable, callback));
+    assert!(commits.is_ok());
 }
 
 #[test]
@@ -111,6 +115,11 @@ fn typed_ops_reject_invalid_inputs_before_spawning() {
         process.remove_from_index(&bad_path, &cancellable, callback);
     });
     assert!(matches!(remove, Some(Err(GitProcessError::InvalidPath))));
+
+    let restore = immediate_result(|callback| {
+        process.restore_worktree_path(&bad_path, &cancellable, callback);
+    });
+    assert!(matches!(restore, Some(Err(GitProcessError::InvalidPath))));
 
     let invalid_identity = GitIdentity {
         name: String::from("Ada\nBad"),

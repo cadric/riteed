@@ -115,35 +115,11 @@
     },
     {
       "path": "src/editor_tab/compare/ui.rs",
-      "line": 252,
-      "match": "syncing: &Rc<Cell<bool>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "Compare scroll synchronization borrows a tab-local reentrancy guard.",
-      "justification": "Ratio-based split-view scrolling needs one shared boolean so left and right adjustment callbacks cannot trigger each other recursively."
-    },
-    {
-      "path": "src/editor_tab/compare/ui.rs",
-      "line": 253,
-      "match": "pending: &Rc<Cell<bool>>,",
+      "line": 337,
+      "match": "idle_pending: &Rc<Cell<bool>>,",
       "kind": "runtime-shared-state",
       "ownership": "Compare scroll synchronization owns its per-direction idle-sync guard.",
       "justification": "Scroll updates can arrive in bursts, and setting a peer Adjustment inside the value-changed handler can trigger rendering glitches. The pending flag coalesces updates so the peer scroll is applied once per main-loop idle."
-    },
-    {
-      "path": "src/editor_tab/compare/ui.rs",
-      "line": 254,
-      "match": "pending_value: &Rc<Cell<f64>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "Compare scroll synchronization owns its pending peer-scroll value.",
-      "justification": "Coalesced peer scrolling needs to remember the most recent target Adjustment value until the idle callback runs."
-    },
-    {
-      "path": "src/editor_tab/compare/ui.rs",
-      "line": 309,
-      "match": "idle_pending: &Rc<Cell<bool>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "Compare scroll synchronization owns its coalesced idle-redraw guard.",
-      "justification": "Scroll synchronization can emit bursts of adjustment updates. A single shared pending flag ensures redraw scheduling is coalesced without creating feedback loops or leaking state outside compare mode."
     },
     {
       "path": "src/editor_zoom.rs",
@@ -171,7 +147,7 @@
     },
     {
       "path": "src/project_tree_model.rs",
-      "line": 274,
+      "line": 286,
       "match": "state: Rc<RefCell<ModelState>>,",
       "kind": "runtime-shared-state",
       "ownership": "Enumerator batching carries shared tree state across async callbacks.",
@@ -179,7 +155,7 @@
     },
     {
       "path": "src/project_tree_model.rs",
-      "line": 284,
+      "line": 296,
       "match": "state: &Rc<RefCell<ModelState>>,",
       "kind": "runtime-shared-state",
       "ownership": "Directory-load helpers borrow shared tree model state.",
@@ -187,7 +163,7 @@
     },
     {
       "path": "src/project_tree_model.rs",
-      "line": 426,
+      "line": 470,
       "match": "state: &Rc<RefCell<ModelState>>,",
       "kind": "runtime-shared-state",
       "ownership": "Enumeration error handling uses shared tree state.",
@@ -379,7 +355,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 75,
+      "line": 76,
       "match": "state: Rc<RefCell<ProjectState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The window project controller owns shared project sidebar state.",
@@ -387,7 +363,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 101,
+      "line": 102,
       "match": "let tree_activation_handler: Rc<RefCell<Option<TreeActivationHandler>>> =",
       "kind": "runtime-shared-state",
       "ownership": "Tree activation wiring stores one late-bound handler closure.",
@@ -395,15 +371,15 @@
     },
     {
       "path": "src/window_project/sidebar_state.rs",
-      "line": 24,
-      "match": "fn sync_actions_for_root(state: &Rc<RefCell<ProjectState>>) {",
+      "line": 26,
+      "match": "pub(super) fn sync_actions_for_root(state: &Rc<RefCell<ProjectState>>) {",
       "kind": "runtime-shared-state",
       "ownership": "Root-action synchronization borrows shared project state.",
       "justification": "Root transitions must consistently enable/disable window actions and sidebar visibility from one state source of truth."
     },
     {
       "path": "src/window_project/sidebar_state.rs",
-      "line": 11,
+      "line": 13,
       "match": "pub(super) fn focus_sidebar(state: &Rc<RefCell<ProjectState>>) {",
       "kind": "runtime-shared-state",
       "ownership": "Sidebar focus helpers borrow and conditionally mutate split-view position.",
@@ -411,7 +387,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 360,
+      "line": 362,
       "match": "fn open_file_from_tree(state: &Rc<RefCell<ProjectState>>, file: gio::File) {",
       "kind": "runtime-shared-state",
       "ownership": "Tree activation routing borrows shared project state.",
@@ -419,7 +395,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 368,
+      "line": 370,
       "match": "state: &Rc<RefCell<ProjectState>>,",
       "kind": "runtime-shared-state",
       "ownership": "Project root transition helpers borrow shared project state.",
@@ -427,15 +403,15 @@
     },
     {
       "path": "src/window_project/sidebar_state.rs",
-      "line": 37,
-      "match": "fn set_sidebar_visible_for_root(state: &Rc<RefCell<ProjectState>>, visible: bool) {",
+      "line": 39,
+      "match": "pub(super) fn set_sidebar_visible_for_root(state: &Rc<RefCell<ProjectState>>, visible: bool) {",
       "kind": "runtime-shared-state",
       "ownership": "Root-change sidebar visibility borrows shared project state after mutation is complete.",
       "justification": "Split-view notify handlers can re-enter project state, so visibility changes run after root mutation releases its mutable borrow."
     },
     {
       "path": "src/window_project.rs",
-      "line": 502,
+      "line": 504,
       "match": "fn close_root(state: &Rc<RefCell<ProjectState>>) {",
       "kind": "runtime-shared-state",
       "ownership": "Close-folder handling mutates shared project state.",
@@ -443,7 +419,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 529,
+      "line": 531,
       "match": "fn sync_root_none(state: &Rc<RefCell<ProjectState>>, clear_settings: bool) {",
       "kind": "runtime-shared-state",
       "ownership": "No-root synchronization mutates shared project state.",
@@ -547,7 +523,7 @@
     },
     {
       "path": "src/workspace.rs",
-      "line": 59,
+      "line": 60,
       "match": "pub(crate) state: RefCell<WorkspaceState>,",
       "kind": "runtime-shared-state",
       "ownership": "The workspace owns tab collection, recent/session caches, restore gating, and active close flow.",

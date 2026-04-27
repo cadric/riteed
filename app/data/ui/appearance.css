@@ -69,7 +69,10 @@
 
 .riteed-git-row .riteed-git-row-actions {
   opacity: 0;
-  transition: opacity 100ms ease;
+  transition: opacity 120ms ease;
+  padding: 0 6px 0 24px;
+  background: linear-gradient(to right, transparent, @view_bg_color 24px);
+  border-radius: 6px;
 }
 
 .riteed-git-row:hover .riteed-git-row-actions,
@@ -86,6 +89,27 @@
 .riteed-git-status-badge,
 .riteed-git-staged {
   min-width: 16px;
+}
+
+.riteed-git-status-badge {
+  font-weight: bold;
+}
+
+.riteed-git-status-badge.riteed-git-status-modified {
+  color: @warning_color;
+}
+
+.riteed-git-status-badge.riteed-git-status-added {
+  color: @success_color;
+}
+
+.riteed-git-status-badge.riteed-git-status-deleted {
+  color: @error_color;
+}
+
+.riteed-git-status-badge.riteed-git-status-conflicted {
+  color: @error_color;
+  font-weight: 800;
 }
 
 .riteed-git-staged {

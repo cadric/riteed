@@ -101,6 +101,7 @@ pub(crate) struct GitStatusEntry {
     pub(crate) unstaged: bool,
     pub(crate) stage_action: GitActionState,
     pub(crate) unstage_action: GitActionState,
+    pub(crate) discard_action: GitActionState,
     pub(crate) diff_action: GitActionState,
 }
 
@@ -124,6 +125,7 @@ impl GitStatusEntry {
             unstaged,
             stage_action: GitActionState::Disabled(disabled.clone()),
             unstage_action: GitActionState::Disabled(disabled.clone()),
+            discard_action: GitActionState::Disabled(disabled.clone()),
             diff_action: GitActionState::Disabled(disabled),
         }
     }
@@ -132,6 +134,7 @@ impl GitStatusEntry {
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub(crate) struct GitStatusSnapshot {
     pub(crate) branch: Option<String>,
+    pub(crate) head_oid: Option<String>,
     pub(crate) detached: bool,
     pub(crate) unborn: bool,
     pub(crate) entries: Vec<GitStatusEntry>,
@@ -274,6 +277,11 @@ fn parse_branch_line(record: &[u8], snapshot: &mut GitStatusSnapshot) {
         snapshot.branch = head;
     } else if let Some(value) = record.strip_prefix(b"# branch.oid ") {
         snapshot.unborn = value == b"(initial)";
+        snapshot.head_oid = if snapshot.unborn {
+            None
+        } else {
+            bytes_to_string(value)
+        };
     }
 }
 
@@ -403,10 +411,18 @@ mod tests {
 1 .M N... 100644 100644 100644 abc def src/lib.rs\0? new.txt\0";
         let snapshot = parse_status(input);
         assert_eq!(snapshot.branch.as_deref(), Some("main"));
+        assert_eq!(snapshot.head_oid.as_deref(), Some("abc"));
         assert_eq!(snapshot.entries.len(), 2);
         assert_eq!(snapshot.entries[0].path.display(), "src/lib.rs");
         assert!(snapshot.entries[0].unstaged);
         assert_eq!(snapshot.entries[1].path.display(), "new.txt");
+    }
+
+    #[test]
+    fn status_parser_keeps_unborn_history_without_head_oid() {
+        let snapshot = parse_status(b"# branch.oid (initial)\0# branch.head main\0");
+        assert!(snapshot.unborn);
+        assert_eq!(snapshot.head_oid, None);
     }
 
     #[test]

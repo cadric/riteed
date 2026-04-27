@@ -4,13 +4,12 @@ use std::sync::OnceLock;
 
 use gettextrs::{gettext, pgettext};
 use gtk4::accessible::{Property, State};
-use gtk4::{gdk, prelude::*};
+use gtk4::{gdk, glib, prelude::*};
 use libadwaita as adw;
 use libadwaita::prelude::AdwDialogExt;
 
 use crate::error::AppError;
 use crate::settings::{AppSettings, EditorPalette, ThemePreference};
-use crate::window_shell::WindowShell;
 use crate::workspace::Workspace;
 
 const APPEARANCE_CSS_RESOURCE: &str = "/io/github/cadric/Riteed/ui/appearance.css";
@@ -29,6 +28,8 @@ struct AppearanceState {
     workspace: Weak<Workspace>,
     syncing: Cell<bool>,
     dialog: adw::Dialog,
+    dialog_child: gtk4::Widget,
+    palette_flow_box: gtk4::FlowBox,
     theme_buttons: RefCell<Vec<ThemeButton>>,
     palette_tiles: RefCell<Vec<PaletteTile>>,
 }
@@ -55,13 +56,12 @@ impl WindowAppearanceController {
     /// # Errors
     ///
     /// Returns an error when the resource-backed appearance panel cannot be loaded.
-    pub fn new(
-        shell: &WindowShell,
-        settings: &AppSettings,
-        workspace: &Rc<Workspace>,
-    ) -> Result<Self, AppError> {
+    pub fn new(settings: &AppSettings, workspace: &Rc<Workspace>) -> Result<Self, AppError> {
         let builder = gtk4::Builder::from_resource(APPEARANCE_RESOURCE);
         let dialog: adw::Dialog = builder_object(&builder, "appearance_dialog")?;
+        let dialog_child = dialog
+            .child()
+            .ok_or_else(|| AppError::Internal(String::from("Missing appearance dialog child.")))?;
         let close_button: gtk4::Button = builder_object(&builder, "appearance_close_button")?;
         let app_box: gtk4::Box = builder_object(&builder, "app_appearance_box")?;
         let palette_flow_box: gtk4::FlowBox = builder_object(&builder, "palette_flow_box")?;
@@ -76,13 +76,14 @@ impl WindowAppearanceController {
             workspace: Rc::downgrade(workspace),
             syncing: Cell::new(false),
             dialog,
+            dialog_child,
+            palette_flow_box: palette_flow_box.clone(),
             theme_buttons: RefCell::new(theme_buttons),
             palette_tiles: RefCell::new(Vec::new()),
         });
 
         build_palette_flow_box(&state, &palette_flow_box);
         install_callbacks(&state, &palette_flow_box);
-        install_button_callback(&state, &shell.appearance_button);
         state.sync_all();
         Ok(Self { state })
     }
@@ -91,10 +92,13 @@ impl WindowAppearanceController {
         self.state.sync_all();
     }
 
+    pub fn present(&self, parent: &impl IsA<gtk4::Widget>) {
+        self.state.present(parent);
+    }
+
     #[cfg(test)]
     pub(crate) fn present_for_tests(&self, parent: &impl IsA<gtk4::Widget>) {
-        self.state.sync_all();
-        self.state.dialog.present(Some(parent));
+        self.state.present(parent);
     }
 
     pub fn install_css(display: &gdk::Display) {
@@ -223,6 +227,28 @@ impl AppearanceState {
             workspace.apply_source_style_scheme_to_tabs();
         }
     }
+
+    fn present(&self, parent: &impl IsA<gtk4::Widget>) {
+        self.sync_all();
+        self.dialog.present(Some(parent));
+        self.queue_first_open_resize();
+    }
+
+    fn queue_first_open_resize(&self) {
+        let dialog_child = self.dialog_child.clone();
+        let palette_flow_box = self.palette_flow_box.clone();
+        let tiles = self.palette_tiles.borrow().clone();
+        glib::idle_add_local_once(move || {
+            dialog_child.queue_resize();
+            palette_flow_box.queue_resize();
+            for tile in &tiles {
+                tile.child.queue_resize();
+                if let Some(preview) = tile.preview.as_ref() {
+                    preview.queue_resize();
+                }
+            }
+        });
+    }
 }
 
 fn build_app_appearance_group() -> (gtk4::Box, Vec<ThemeButton>) {
@@ -347,16 +373,6 @@ fn install_callbacks(state: &Rc<AppearanceState>, flow_box: &gtk4::FlowBox) {
             state.syncing.set(true);
             state.refresh_palette_tiles();
             state.syncing.set(false);
-        }
-    });
-}
-
-fn install_button_callback(state: &Rc<AppearanceState>, button: &gtk4::Button) {
-    let weak = Rc::downgrade(state);
-    button.connect_clicked(move |button| {
-        if let Some(state) = weak.upgrade() {
-            state.sync_all();
-            state.dialog.present(Some(button));
         }
     });
 }

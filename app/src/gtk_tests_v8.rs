@@ -67,9 +67,6 @@ fn exercise_autosave_is_silent_and_gsettings_clean(test_app: &adw::Application) 
     window.resolve_selected_external_for_tests();
     window.set_selected_text_for_tests("after autosave");
     window.resolve_selected_external_for_tests();
-    spin_until("v8 autosave is eligible", || {
-        window.selected_autosave_eligible_for_tests()
-    });
     window.request_selected_autosave_for_tests();
     spin_until("v8 autosave writes without manual save", || {
         fs::read_to_string(&path).ok().as_deref() == Some("after autosave")

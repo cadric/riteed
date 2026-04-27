@@ -69,6 +69,11 @@ impl WindowProjectController {
         action.change_state(&show_hidden.to_variant());
     }
 
+    pub(crate) fn set_sidebar_visible_for_tests(&self, visible: bool) {
+        let action = self.state.borrow().sidebar_visible_action.clone();
+        action.change_state(&visible.to_variant());
+    }
+
     pub(crate) fn resolve_symlink_for_tests(&self, file: &gio::File) {
         symlink::handle_symlink_activation(&self.state, file);
     }

@@ -8,7 +8,9 @@ use crate::git_status::{
     parse_ls_tree_entry, parse_status, resolve_capabilities,
 };
 
+mod log;
 mod support;
+pub(crate) use log::{GitCommitSummary, GitLogState};
 use support::{
     base_args, git_env, identity_part_is_valid, optional_text, redact_git_argv, stderr_text,
 };
@@ -337,6 +339,26 @@ impl GitProcess {
         };
         self.run(
             ["update-index", "--force-remove", "--", path],
+            None,
+            4096,
+            false,
+            cancellable,
+            Rc::new(move |result| callback(result.map(|_output| ()))),
+        );
+    }
+
+    pub(crate) fn restore_worktree_path(
+        &self,
+        path: &GitPath,
+        cancellable: &gio::Cancellable,
+        callback: GitCallback<()>,
+    ) {
+        let Some(path) = path.as_utf8() else {
+            callback(Err(GitProcessError::InvalidPath));
+            return;
+        };
+        self.run(
+            ["restore", "--worktree", "--", path],
             None,
             4096,
             false,

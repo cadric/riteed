@@ -103,6 +103,11 @@
       <summary>Git User Email</summary>
       <description>Stores the Git author email Riteed passes to sandboxed Git commits after explicit user action.</description>
     </key>
+    <key name="source-control-view-mode" type="s">
+      <default>'tree'</default>
+      <summary>Source Control View Mode</summary>
+      <description>Controls whether the source control changes view uses a folder tree or a flat list.</description>
+    </key>
     <key name="project-folder-uri" type="s">
       <default>''</default>
       <summary>Project Folder URI</summary>

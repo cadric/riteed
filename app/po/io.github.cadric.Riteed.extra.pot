@@ -1,70 +1,5 @@
-msgid "Appearance"
-msgstr ""
-
-msgid "Autosave"
-msgstr ""
-
-msgid "Autosave is available for already-saved writable files, while read-only and externally changed files stay guarded by explicit user choices."
-msgstr ""
-
-msgid "Autosave paused because the document contains characters that cannot be saved with the selected encoding."
-msgstr ""
-
-msgid "Autosave paused because the file changed on disk."
-msgstr ""
-
-msgid "Autosave paused because the file could not be written."
-msgstr ""
-
-msgid "Close Appearance Panel"
-msgstr ""
-
-msgid "Controls the color palette used for editor buffers."
-msgstr ""
-
-msgid "Controls whether Riteed automatically saves already-saved writable files after edits."
-msgstr ""
-
-msgid "Controls whether Riteed highlights the active line in editable documents."
-msgstr ""
-
-msgid "Editor Palette"
-msgstr ""
-
-msgid "Highlight Current Line"
-msgstr ""
-
-msgid "It provides tabs, search and replace, syntax highlighting, optional line numbers and minimap, format controls for text encoding and line endings, curated editor palettes, and conservative reload prompts when files change on disk."
-msgstr ""
-
-msgid "Main Menu"
-msgstr ""
-
-msgid "Match App Appearance"
-msgstr ""
-
-msgid "New Tab"
-msgstr ""
-
-msgid "Open Text Files"
-msgstr ""
-
-msgid "Preview unavailable"
-msgstr ""
-
-msgid "Project Sidebar"
-msgstr ""
-
-msgid "Save the Selected Document"
-msgstr ""
-
-msgid "The document contains characters that cannot be saved with the selected encoding."
-msgstr ""
-
-msgid "The file changed on disk."
-msgstr ""
-
-msgid "Unavailable"
+msgctxt "alert response"
+msgid "Save Anyway"
 msgstr ""
 
 msgctxt "app appearance"
@@ -77,6 +12,22 @@ msgstr ""
 
 msgctxt "app appearance"
 msgid "Light"
+msgstr ""
+
+msgctxt "compare action"
+msgid "Exit Compare"
+msgstr ""
+
+msgctxt "compare action"
+msgid "Next Difference"
+msgstr ""
+
+msgctxt "compare action"
+msgid "Previous Difference"
+msgstr ""
+
+msgctxt "compare action"
+msgid "Refresh Reference"
 msgstr ""
 
 msgctxt "compare dialog action"
@@ -116,6 +67,10 @@ msgid "File"
 msgstr ""
 
 msgctxt "compare source"
+msgid "Git Version"
+msgstr ""
+
+msgctxt "compare source"
 msgid "Not Set"
 msgstr ""
 
@@ -125,6 +80,62 @@ msgstr ""
 
 msgctxt "compare source"
 msgid "Saved Version"
+msgstr ""
+
+msgctxt "compare status"
+msgid "Loading Reference..."
+msgstr ""
+
+msgctxt "compare toolbar"
+msgid "Compare"
+msgstr ""
+
+msgctxt "dialog button"
+msgid "Apply"
+msgstr ""
+
+msgctxt "dialog button"
+msgid "Cancel"
+msgstr ""
+
+msgctxt "dialog button"
+msgid "Clear All"
+msgstr ""
+
+msgctxt "dialog button"
+msgid "Close"
+msgstr ""
+
+msgctxt "dialog button"
+msgid "Compare"
+msgstr ""
+
+msgctxt "dialog button"
+msgid "Open"
+msgstr ""
+
+msgctxt "dialog button"
+msgid "Reopen"
+msgstr ""
+
+msgctxt "dialog button"
+msgid "Save"
+msgstr ""
+
+msgctxt "dialog button"
+msgid "Use Text"
+msgstr ""
+
+msgctxt "document format"
+msgid "No Document"
+msgstr ""
+
+msgctxt "document subtitle"
+msgid "Plain Text Document"
+msgstr ""
+
+msgctxt "document title"
+msgid "Untitled"
 msgstr ""
 
 msgctxt "editor palette"
@@ -155,16 +166,224 @@ msgctxt "editor palette"
 msgid "Solarized Light"
 msgstr ""
 
+msgctxt "error title"
+msgid "Action Cancelled"
+msgstr ""
+
+msgctxt "error title"
+msgid "Unable to Open Help"
+msgstr ""
+
+msgctxt "external action"
+msgid "Reload"
+msgstr ""
+
+msgctxt "external action"
+msgid "Save"
+msgstr ""
+
+msgctxt "external banner"
+msgid "This File Changed on Disk."
+msgstr ""
+
+msgctxt "external banner"
+msgid "This File Is Missing on Disk."
+msgstr ""
+
+msgctxt "file dialog action"
+msgid "Choose"
+msgstr ""
+
+msgctxt "file dialog action"
+msgid "Open"
+msgstr ""
+
+msgctxt "file dialog action"
+msgid "Save"
+msgstr ""
+
 msgctxt "file dialog title"
 msgid "Choose a File"
+msgstr ""
+
+msgctxt "file dialog title"
+msgid "Open Folder"
 msgstr ""
 
 msgctxt "file dialog title"
 msgid "Open Text Files"
 msgstr ""
 
+msgctxt "file dialog title"
+msgid "Save the Document"
+msgstr ""
+
+msgctxt "file filter"
+msgid "All Files"
+msgstr ""
+
+msgctxt "file filter"
+msgid "Plain Text Files"
+msgstr ""
+
+msgctxt "git action disabled"
+msgid "No staged change"
+msgstr ""
+
+msgctxt "git action disabled"
+msgid "No unstaged change"
+msgstr ""
+
+msgctxt "git action disabled"
+msgid "Refresh required"
+msgstr ""
+
+msgctxt "git action disabled"
+msgid "Untracked file"
+msgstr ""
+
+msgctxt "git action tooltip"
+msgid "Discard Changes"
+msgstr ""
+
+msgctxt "git action tooltip"
+msgid "Stage File"
+msgstr ""
+
+msgctxt "git action tooltip"
+msgid "Unstage File"
+msgstr ""
+
+msgctxt "git branch"
+msgid "Detached"
+msgstr ""
+
+msgctxt "git commit"
+msgid "Commit"
+msgstr ""
+
+msgctxt "git commit"
+msgid "Commit Message"
+msgstr ""
+
+msgctxt "git history"
+msgid "Recent Commits"
+msgstr ""
+
+msgctxt "git path fallback"
+msgid "Invalid path encoding"
+msgstr ""
+
+msgctxt "git status"
+msgid "Added"
+msgstr ""
+
+msgctxt "git status"
+msgid "Conflict"
+msgstr ""
+
+msgctxt "git status"
+msgid "Deleted"
+msgstr ""
+
+msgctxt "git status"
+msgid "Modified"
+msgstr ""
+
+msgctxt "git status"
+msgid "Staged"
+msgstr ""
+
+msgctxt "git status"
+msgid "Unsupported"
+msgstr ""
+
+msgctxt "git status"
+msgid "Untracked"
+msgstr ""
+
+msgctxt "help dialog"
+msgid "Help"
+msgstr ""
+
+msgctxt "help page"
+msgid "Overview"
+msgstr ""
+
+msgctxt "help row"
+msgid "Editor Tools"
+msgstr ""
+
+msgctxt "help row"
+msgid "History and Discard"
+msgstr ""
+
+msgctxt "help row"
+msgid "Live Refresh"
+msgstr ""
+
+msgctxt "help row"
+msgid "More Shortcuts"
+msgstr ""
+
+msgctxt "help row"
+msgid "Saving Work"
+msgstr ""
+
+msgctxt "help row"
+msgid "Search and Replace"
+msgstr ""
+
+msgctxt "help row"
+msgid "Tabs and Files"
+msgstr ""
+
+msgctxt "help row"
+msgid "Tree and List Views"
+msgstr ""
+
+msgctxt "help section"
+msgid "Everyday Editing"
+msgstr ""
+
+msgctxt "help section"
+msgid "Getting Started"
+msgstr ""
+
+msgctxt "help section"
+msgid "Source Control"
+msgstr ""
+
+msgctxt "line ending"
+msgid "CR"
+msgstr ""
+
+msgctxt "line ending"
+msgid "CRLF"
+msgstr ""
+
+msgctxt "line ending"
+msgid "LF"
+msgstr ""
+
+msgctxt "line ending menu"
+msgid "Classic Mac (CR)"
+msgstr ""
+
+msgctxt "line ending menu"
+msgid "Unix (LF)"
+msgstr ""
+
+msgctxt "line ending menu"
+msgid "Windows (CRLF)"
+msgstr ""
+
 msgctxt "menu item"
 msgid "About Riteed"
+msgstr ""
+
+msgctxt "menu item"
+msgid "Appearance"
 msgstr ""
 
 msgctxt "menu item"
@@ -203,6 +422,14 @@ msgctxt "menu item"
 msgid "Search"
 msgstr ""
 
+msgctxt "paste dialog title"
+msgid "Paste Text"
+msgstr ""
+
+msgctxt "recent files dialog title"
+msgid "Recent Files"
+msgstr ""
+
 msgctxt "save file name"
 msgid "Untitled.txt"
 msgstr ""
@@ -217,178 +444,6 @@ msgstr ""
 
 msgctxt "save safety banner"
 msgid "This File Is Read-Only."
-msgstr ""
-
-msgctxt "sidebar mode"
-msgid "Files"
-msgstr ""
-
-msgctxt "sidebar mode"
-msgid "Source Control"
-msgstr ""
-
-msgid "Changed files"
-msgstr ""
-
-msgid "Diff unavailable for this Git state."
-msgstr ""
-
-msgid "Enter a commit message first."
-msgstr ""
-
-msgid "Git User Email"
-msgstr ""
-
-msgid "Git User Name"
-msgstr ""
-
-msgid "Git content filters or EOL conversion are configured for this file."
-msgstr ""
-
-msgid "Git output was too large to process safely."
-msgstr ""
-
-msgid "No Git repository is active."
-msgstr ""
-
-msgid "No changes."
-msgstr ""
-
-msgid "Only local Git folders are supported."
-msgstr ""
-
-msgid "Open a folder to see Git status."
-msgstr ""
-
-msgid "Open the file before comparing it."
-msgstr ""
-
-msgid "Pre-commit hooks are not run from Riteed."
-msgstr ""
-
-msgid "Refresh Source Control"
-msgstr ""
-
-msgid "Refreshing Git status..."
-msgstr ""
-
-msgid "Save the open document before using Git actions."
-msgstr ""
-
-msgid "Set a Git identity in Preferences before committing."
-msgstr ""
-
-msgid "Source Control"
-msgstr ""
-
-msgid "Stores the Git author email Riteed passes to sandboxed Git commits after explicit user action."
-msgstr ""
-
-msgid "Stores the Git author name Riteed passes to sandboxed Git commits after explicit user action."
-msgstr ""
-
-msgid "Symlinks and unsupported file modes are visible only."
-msgstr ""
-
-msgid "The Git identity is not valid."
-msgstr ""
-
-msgid "The Git operation failed."
-msgstr ""
-
-msgid "This Git repository uses unsupported object or EOL settings."
-msgstr ""
-
-msgid "This Git state is visible but not editable in Riteed."
-msgstr ""
-
-msgid "This file type cannot be staged from Riteed."
-msgstr ""
-
-msgid "This folder is not a Git repository."
-msgstr ""
-
-msgid "This path uses an unsupported encoding."
-msgstr ""
-
-msgid "Unable to read Git repository capabilities."
-msgstr ""
-
-msgid "Unable to refresh Git status."
-msgstr ""
-
-msgid "Unable to open file for compare."
-msgstr ""
-
-msgid "Unable to start Git compare."
-msgstr ""
-
-msgctxt "compare source"
-msgid "Git Version"
-msgstr ""
-
-msgctxt "git action tooltip"
-msgid "Stage File"
-msgstr ""
-
-msgctxt "git action tooltip"
-msgid "Unstage File"
-msgstr ""
-
-msgctxt "git action disabled"
-msgid "No staged change"
-msgstr ""
-
-msgctxt "git action disabled"
-msgid "No unstaged change"
-msgstr ""
-
-msgctxt "git action disabled"
-msgid "Refresh required"
-msgstr ""
-
-msgctxt "git branch"
-msgid "Detached"
-msgstr ""
-
-msgctxt "git commit"
-msgid "Commit"
-msgstr ""
-
-msgctxt "git commit"
-msgid "Commit Message"
-msgstr ""
-
-msgctxt "git path fallback"
-msgid "Invalid path encoding"
-msgstr ""
-
-msgctxt "git status"
-msgid "Added"
-msgstr ""
-
-msgctxt "git status"
-msgid "Conflict"
-msgstr ""
-
-msgctxt "git status"
-msgid "Deleted"
-msgstr ""
-
-msgctxt "git status"
-msgid "Modified"
-msgstr ""
-
-msgctxt "git status"
-msgid "Staged"
-msgstr ""
-
-msgctxt "git status"
-msgid "Unsupported"
-msgstr ""
-
-msgctxt "git status"
-msgid "Untracked"
 msgstr ""
 
 msgctxt "search action"
@@ -417,6 +472,22 @@ msgstr ""
 
 msgctxt "search option"
 msgid "Match Case"
+msgstr ""
+
+msgctxt "sidebar mode"
+msgid "Files"
+msgstr ""
+
+msgctxt "sidebar mode"
+msgid "Source Control"
+msgstr ""
+
+msgctxt "source control view"
+msgid "List"
+msgstr ""
+
+msgctxt "source control view"
+msgid "Tree"
 msgstr ""
 
 msgctxt "status format"

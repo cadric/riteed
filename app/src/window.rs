@@ -58,6 +58,7 @@ pub struct Window {
     replace_action: gio::SimpleAction,
     find_next_action: gio::SimpleAction,
     find_prev_action: gio::SimpleAction,
+    appearance_action: gio::SimpleAction,
     fullscreen_action: gio::SimpleAction,
     focus_project_action: gio::SimpleAction,
     settings: AppSettings,
@@ -66,6 +67,9 @@ pub struct Window {
     _preferences: WindowPreferencesController,
     compare: Rc<WindowCompareController>,
     project: WindowProjectController,
+    #[cfg(test)]
+    sidebar_host: SidebarHost,
+    #[cfg(not(test))]
     _sidebar_host: SidebarHost,
     source_control: SourceControlController,
     zoom: Rc<EditorZoomController>,
@@ -126,6 +130,7 @@ impl Window {
         let replace_action = gio::SimpleAction::new("replace", None);
         let find_next_action = gio::SimpleAction::new("find-next", None);
         let find_prev_action = gio::SimpleAction::new("find-prev", None);
+        let appearance_action = gio::SimpleAction::new("appearance", None);
         let fullscreen_action =
             gio::SimpleAction::new_stateful("fullscreen", None, &false.to_variant());
         let focus_project_action = gio::SimpleAction::new("focus-project-sidebar", None);
@@ -137,6 +142,7 @@ impl Window {
         shell.window.add_action(&replace_action);
         shell.window.add_action(&find_next_action);
         shell.window.add_action(&find_prev_action);
+        shell.window.add_action(&appearance_action);
         shell.window.add_action(&fullscreen_action);
         shell.window.add_action(&focus_project_action);
 
@@ -159,7 +165,7 @@ impl Window {
             persist_session: init.persist_session,
         });
         let zoom = EditorZoomController::new(&shell.window, &workspace, &settings);
-        let appearance = WindowAppearanceController::new(&shell, &settings, &workspace)?;
+        let appearance = WindowAppearanceController::new(&settings, &workspace)?;
         let preferences = WindowPreferencesController::new(&shell, &settings, &workspace, &zoom);
         let compare = WindowCompareController::new(&shell.window, &workspace);
         let project =
@@ -174,6 +180,7 @@ impl Window {
             .set_end_child(Some(&shell.workspace_box));
         project.set_root_change_handler(source_control.root_change_handler());
         source_control.set_status_handler(project.git_status_handler());
+        workspace.set_save_notification_handler(source_control.save_notification_handler());
 
         let window = Rc::new(Self {
             shell,
@@ -185,6 +192,7 @@ impl Window {
             replace_action,
             find_next_action,
             find_prev_action,
+            appearance_action,
             fullscreen_action,
             focus_project_action,
             settings,
@@ -193,6 +201,9 @@ impl Window {
             _preferences: preferences,
             compare,
             project,
+            #[cfg(test)]
+            sidebar_host,
+            #[cfg(not(test))]
             _sidebar_host: sidebar_host,
             source_control,
             zoom,
@@ -282,6 +293,10 @@ impl Window {
             .present(Some(&self.shell.window));
     }
 
+    pub fn show_appearance(&self) {
+        self.appearance.present(&self.shell.window);
+    }
+
     pub fn show_about(&self) {
         dialogs::show_about(&self.shell.window);
     }
@@ -366,6 +381,13 @@ impl Window {
         self.find_prev_action.connect_activate(move |_, _| {
             if let Some(window) = weak.upgrade() {
                 window.find_previous();
+            }
+        });
+
+        let weak = Rc::downgrade(self);
+        self.appearance_action.connect_activate(move |_, _| {
+            if let Some(window) = weak.upgrade() {
+                window.show_appearance();
             }
         });
     }
@@ -455,9 +477,6 @@ impl Window {
             .save_button
             .update_property(&[Property::Label(&gettext("Save the Selected Document"))]);
         self.shell
-            .appearance_button
-            .update_property(&[Property::Label(&gettext("Appearance"))]);
-        self.shell
             .primary_menu_button
             .update_property(&[Property::Label(&gettext("Main Menu"))]);
     }
@@ -504,6 +523,7 @@ impl Window {
 fn configure_runtime_icon_support(window: &adw::ApplicationWindow) {
     if let Some(display) = gtk4::gdk::Display::default() {
         let icon_theme = gtk4::IconTheme::for_display(&display);
+        icon_theme.add_resource_path("/io/github/cadric/Riteed/icons");
         if let Ok(path) = std::env::var("RITEED_DEV_ICON_DIR") {
             let icon_dir = std::path::PathBuf::from(path);
             if icon_dir.is_dir() {

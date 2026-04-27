@@ -56,6 +56,7 @@ pub struct Workspace {
     pub(crate) status_bar: EditorStatusBar,
     format_preferences_handler: OnceCell<FormatPreferencesHandler>,
     compare_action_sync_handler: OnceCell<CompareActionSyncHandler>,
+    save_notification_handler: OnceCell<Rc<dyn Fn(gio::File)>>,
     pub(crate) state: RefCell<WorkspaceState>,
 }
 
@@ -110,6 +111,7 @@ impl Workspace {
             status_bar,
             format_preferences_handler: OnceCell::new(),
             compare_action_sync_handler: OnceCell::new(),
+            save_notification_handler: OnceCell::new(),
             state: RefCell::new(WorkspaceState {
                 tabs: Vec::new(),
                 recent_files: parts.settings.recent_files(),
@@ -385,6 +387,11 @@ impl Workspace {
             save_kind,
             Rc::new(move |result| {
                 if let Some(workspace) = weak.upgrade() {
+                    if let SaveResult::Saved(outcome) = &result
+                        && let Some(callback) = workspace.save_notification_handler.get()
+                    {
+                        callback(gio::File::for_uri(&outcome.new_uri));
+                    }
                     if save_kind == SaveKind::Manual {
                         match &result {
                             SaveResult::Saved(outcome) => {
@@ -449,6 +456,10 @@ impl Workspace {
 
     pub(crate) fn set_compare_action_sync_handler(&self, callback: CompareActionSyncHandler) {
         let _set_callback = self.compare_action_sync_handler.set(callback);
+    }
+
+    pub(crate) fn set_save_notification_handler(&self, callback: Rc<dyn Fn(gio::File)>) {
+        let _set_callback = self.save_notification_handler.set(callback);
     }
 
     pub(crate) fn set_selected_line_ending_mode(&self, line_ending_mode: LineEndingMode) {

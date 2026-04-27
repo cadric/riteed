@@ -1,7 +1,9 @@
 use std::fs;
 use std::path::PathBuf;
 
-use super::{entry_disabled_reason, mode_for_path, reference_oid, reference_text};
+use gtk4::prelude::FileExt;
+
+use super::{discard_state, entry_disabled_reason, mode_for_path, reference_oid, reference_text};
 use crate::git_process::GitProcessError;
 use crate::git_status::{GitAttrs, GitFileStatus, GitPath, GitStatusEntry};
 
@@ -38,6 +40,19 @@ fn disabled_reasons_cover_unsupported_paths_and_modes() {
         )
         .as_deref(),
         Some("No Git repository is active.")
+    );
+    let dirty_uri = gtk4::gio::File::for_path(repo.join("tracked.txt"))
+        .uri()
+        .to_string();
+    assert_eq!(
+        entry_disabled_reason(
+            Some(&repo),
+            &entry("tracked.txt", GitFileStatus::Modified, true, true),
+            &GitAttrs::default(),
+            &[dirty_uri],
+        )
+        .as_deref(),
+        Some("Save the open document before using Git actions.")
     );
 
     #[cfg(unix)]
@@ -106,6 +121,18 @@ fn reference_oid_prefers_the_expected_side() {
     assert_eq!(reference_oid(&staged).as_deref(), Some("head"));
     let unstaged = entry("tracked.txt", GitFileStatus::Modified, false, true);
     assert_eq!(reference_oid(&unstaged).as_deref(), Some("index"));
+}
+
+#[test]
+fn discard_only_enables_tracked_unstaged_worktree_changes() {
+    let tracked = entry("tracked.txt", GitFileStatus::Modified, false, true);
+    assert!(discard_state(&tracked).enabled());
+
+    let staged_only = entry("tracked.txt", GitFileStatus::Modified, true, false);
+    assert!(!discard_state(&staged_only).enabled());
+
+    let untracked = entry("new.txt", GitFileStatus::Untracked, false, true);
+    assert!(!discard_state(&untracked).enabled());
 }
 
 fn entry(path: &str, status: GitFileStatus, staged: bool, unstaged: bool) -> GitStatusEntry {

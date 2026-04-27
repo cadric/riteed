@@ -36,6 +36,12 @@ pub enum StaleSaveResponse {
     SaveAnyway,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum GitDiscardResponse {
+    Cancel,
+    Discard,
+}
+
 pub fn present_error(parent: &impl IsA<gtk4::Widget>, error: &AppError) {
     if matches!(error, AppError::Cancelled) {
         return;
@@ -166,6 +172,42 @@ pub fn confirm_stale_save(
     });
 }
 
+pub fn confirm_git_discard(
+    parent: &impl IsA<gtk4::Widget>,
+    file_name: &str,
+    on_response: impl Fn(GitDiscardResponse) + 'static,
+) {
+    #[cfg(test)]
+    if let Some(response) = take_git_discard_response_for_tests() {
+        on_response(response);
+        return;
+    }
+
+    let dialog = adw::AlertDialog::builder()
+        .heading(gettext("Discard File Changes?"))
+        .body(format!(
+            "{}\n\n{}",
+            gettext("This will restore the file to the Git index version."),
+            file_name
+        ))
+        .build();
+    dialog.add_responses(&[
+        ("cancel", &pgettext("alert response", "Cancel")),
+        ("discard", &pgettext("alert response", "Discard")),
+    ]);
+    dialog.set_response_appearance("discard", adw::ResponseAppearance::Destructive);
+    dialog.set_default_response(Some("cancel"));
+    dialog.set_close_response("cancel");
+    dialog.choose(Some(parent), None::<&gio::Cancellable>, move |response| {
+        let outcome = if response == "discard" {
+            GitDiscardResponse::Discard
+        } else {
+            GitDiscardResponse::Cancel
+        };
+        on_response(outcome);
+    });
+}
+
 pub fn show_about(parent: &impl IsA<gtk4::Widget>) {
     let dialog = adw::AboutDialog::from_appdata(
         "/io/github/cadric/Riteed/io.github.cadric.Riteed.metainfo.xml",
@@ -224,7 +266,7 @@ pub fn show_help(parent: &impl IsA<gtk4::Widget>) {
     editing.add(&help_row(
         &pgettext("help row", "Editor Tools"),
         &gettext(
-            "Use the Appearance button to adjust app appearance and editor palettes. Enable current-line highlight, line numbers, and the minimap in Preferences when you want more structure while reading longer code or markdown files.",
+            "Open Appearance from the main menu to adjust app appearance and editor palettes. Enable current-line highlight, line numbers, and the minimap in Preferences when you want more structure while reading longer code or markdown files.",
         ),
     ));
     editing.add(&help_row(
@@ -234,8 +276,31 @@ pub fn show_help(parent: &impl IsA<gtk4::Widget>) {
         ),
     ));
 
+    let source_control = adw::PreferencesGroup::builder()
+        .title(pgettext("help section", "Source Control"))
+        .build();
+    source_control.add(&help_row(
+        &pgettext("help row", "Tree and List Views"),
+        &gettext(
+            "Open a Git folder to review changed files in the Source Control sidebar, then switch between tree and list views while keeping each view's selection and tree expansion state.",
+        ),
+    ));
+    source_control.add(&help_row(
+        &pgettext("help row", "History and Discard"),
+        &gettext(
+            "Recent commits appear below changed files. Tracked unstaged files can be discarded after confirmation when open tabs, Git filters, encodings, and line-ending conversion do not make restore unsafe.",
+        ),
+    ));
+    source_control.add(&help_row(
+        &pgettext("help row", "Live Refresh"),
+        &gettext(
+            "Riteed refreshes Git status after saves and local Git metadata changes. Document-portal folders use periodic polling when native file monitoring is unavailable.",
+        ),
+    ));
+
     overview.add(&getting_started);
     overview.add(&editing);
+    overview.add(&source_control);
     dialog.add(&overview);
     dialog.present(Some(parent));
 }
@@ -304,6 +369,24 @@ fn take_stale_save_response_for_tests() -> Option<StaleSaveResponse> {
 }
 
 #[cfg(test)]
+fn git_discard_response_queue()
+-> &'static std::sync::Mutex<std::collections::VecDeque<GitDiscardResponse>> {
+    use std::collections::VecDeque;
+    use std::sync::{Mutex, OnceLock};
+
+    static RESPONSES: OnceLock<Mutex<VecDeque<GitDiscardResponse>>> = OnceLock::new();
+    RESPONSES.get_or_init(|| Mutex::new(VecDeque::new()))
+}
+
+#[cfg(test)]
+fn take_git_discard_response_for_tests() -> Option<GitDiscardResponse> {
+    match git_discard_response_queue().lock() {
+        Ok(mut guard) => guard.pop_front(),
+        Err(poisoned) => poisoned.into_inner().pop_front(),
+    }
+}
+
+#[cfg(test)]
 pub(crate) fn queue_unsaved_responses_for_tests(responses: &[UnsavedResponse]) {
     match unsaved_response_queue().lock() {
         Ok(mut guard) => {
@@ -345,5 +428,87 @@ pub(crate) fn queue_stale_save_responses_for_tests(responses: &[StaleSaveRespons
             guard.clear();
             guard.extend(responses.iter().copied());
         }
+    }
+}
+
+#[cfg(test)]
+pub(crate) fn queue_git_discard_responses_for_tests(responses: &[GitDiscardResponse]) {
+    match git_discard_response_queue().lock() {
+        Ok(mut guard) => {
+            guard.clear();
+            guard.extend(responses.iter().copied());
+        }
+        Err(poisoned) => {
+            let mut guard = poisoned.into_inner();
+            guard.clear();
+            guard.extend(responses.iter().copied());
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        ExternalReloadResponse, GitDiscardResponse, StaleSaveResponse, UnsavedResponse,
+        queue_external_reload_responses_for_tests, queue_git_discard_responses_for_tests,
+        queue_stale_save_responses_for_tests, queue_unsaved_responses_for_tests,
+        take_external_reload_response_for_tests, take_git_discard_response_for_tests,
+        take_stale_save_response_for_tests, take_unsaved_response_for_tests,
+    };
+
+    #[test]
+    fn git_discard_response_queue_preserves_order() {
+        queue_git_discard_responses_for_tests(&[
+            GitDiscardResponse::Cancel,
+            GitDiscardResponse::Discard,
+        ]);
+        assert_eq!(
+            take_git_discard_response_for_tests(),
+            Some(GitDiscardResponse::Cancel)
+        );
+        assert_eq!(
+            take_git_discard_response_for_tests(),
+            Some(GitDiscardResponse::Discard)
+        );
+        assert_eq!(take_git_discard_response_for_tests(), None);
+    }
+
+    #[test]
+    fn dialog_response_queues_preserve_order() {
+        queue_unsaved_responses_for_tests(&[UnsavedResponse::Save, UnsavedResponse::Discard]);
+        assert_eq!(
+            take_unsaved_response_for_tests(),
+            Some(UnsavedResponse::Save)
+        );
+        assert_eq!(
+            take_unsaved_response_for_tests(),
+            Some(UnsavedResponse::Discard)
+        );
+
+        queue_external_reload_responses_for_tests(&[
+            ExternalReloadResponse::Compare,
+            ExternalReloadResponse::Reload,
+        ]);
+        assert_eq!(
+            take_external_reload_response_for_tests(),
+            Some(ExternalReloadResponse::Compare)
+        );
+        assert_eq!(
+            take_external_reload_response_for_tests(),
+            Some(ExternalReloadResponse::Reload)
+        );
+
+        queue_stale_save_responses_for_tests(&[
+            StaleSaveResponse::Compare,
+            StaleSaveResponse::SaveAnyway,
+        ]);
+        assert_eq!(
+            take_stale_save_response_for_tests(),
+            Some(StaleSaveResponse::Compare)
+        );
+        assert_eq!(
+            take_stale_save_response_for_tests(),
+            Some(StaleSaveResponse::SaveAnyway)
+        );
     }
 }

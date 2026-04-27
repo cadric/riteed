@@ -3,7 +3,7 @@
   "sites": [
     {
       "path": "src/window_appearance.rs",
-      "line": 30,
+      "line": 29,
       "match": "syncing: Cell<bool>,",
       "kind": "runtime-shared-state",
       "ownership": "The appearance panel controller owns its programmatic-sync guard.",
@@ -11,7 +11,7 @@
     },
     {
       "path": "src/window_appearance.rs",
-      "line": 32,
+      "line": 33,
       "match": "theme_buttons: RefCell<Vec<ThemeButton>>,",
       "kind": "runtime-shared-state",
       "ownership": "The appearance panel controller owns the app-appearance button set.",
@@ -19,7 +19,7 @@
     },
     {
       "path": "src/window_appearance.rs",
-      "line": 33,
+      "line": 34,
       "match": "palette_tiles: RefCell<Vec<PaletteTile>>,",
       "kind": "runtime-shared-state",
       "ownership": "The appearance panel controller owns the editor palette tile set.",

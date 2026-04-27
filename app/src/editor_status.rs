@@ -75,8 +75,11 @@ impl EditorStatusBar {
 
         left.append(&location_label);
         left.append(&modified_label);
+        right.append(&status_separator());
         right.append(&controls.format_label);
+        right.append(&status_separator());
         right.append(&controls.zoom_box);
+        right.append(&status_separator());
         right.append(&position_label);
         root.append(&left);
         root.append(&right);
@@ -219,6 +222,12 @@ fn build_status_controls() -> StatusControls {
         zoom_out_button,
         zoom_in_button,
     }
+}
+
+fn status_separator() -> gtk4::Separator {
+    let separator = gtk4::Separator::new(gtk4::Orientation::Vertical);
+    separator.set_valign(gtk4::Align::Center);
+    separator
 }
 
 fn zoom_button(icon_name: &str, label: &str, action_name: &str) -> gtk4::Button {
