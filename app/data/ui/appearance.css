@@ -29,7 +29,7 @@
 .riteed-palette-preview {
   border-radius: 9px;
   min-width: 132px;
-  min-height: 80px;
+  min-height: 92px;
 }
 
 .riteed-palette-preview:not(.selected) {

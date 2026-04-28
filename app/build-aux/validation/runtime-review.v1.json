@@ -3,7 +3,7 @@
   "sites": [
     {
       "path": "src/close_flow.rs",
-      "line": 21,
+      "line": 22,
       "match": "state: RefCell<CloseState>,",
       "kind": "runtime-shared-state",
       "ownership": "The close coordinator owns the active sequential close queue.",
@@ -83,7 +83,7 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 133,
+      "line": 136,
       "match": "state: RefCell<EditorTabState>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns its mutable document format, live source file, file-monitor, deferred external-change state, and in-flight IO state.",
@@ -91,7 +91,7 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 134,
+      "line": 137,
       "match": "compare: RefCell<Option<compare::CompareController>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns its ephemeral compare-mode controller.",
@@ -99,7 +99,7 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 135,
+      "line": 138,
       "match": "compare_request_generation: Cell<u64>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns the compare reference-load generation token.",
@@ -107,15 +107,47 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 136,
+      "line": 139,
       "match": "autosave_generation: Cell<u64>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns its autosave debounce generation token.",
       "justification": "Autosave timers must ignore stale callbacks after later edits, tab closure, or compare/save state changes without global state."
     },
     {
+      "path": "src/editor_tab.rs",
+      "line": 141,
+      "match": "on_file_drop: RefCell<Option<FileDropHandler>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Each editor tab owns its current workspace file-drop callback.",
+      "justification": "Tabs can move between windows, so file-drop routing must be replaceable without rebuilding the editor widget."
+    },
+    {
+      "path": "src/editor_tab.rs",
+      "line": 142,
+      "match": "on_visual_change: RefCell<Option<TabCallback>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Each editor tab owns its current workspace visual-state callback.",
+      "justification": "Cursor, dirty, and title updates must rebind to the destination workspace when a tab is transferred to another window."
+    },
+    {
+      "path": "src/editor_tab.rs",
+      "line": 143,
+      "match": "on_external_state_change: RefCell<Option<TabCallback>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Each editor tab owns its current external-state callback.",
+      "justification": "External file-change banners must update the workspace that currently owns the tab after window transfer."
+    },
+    {
+      "path": "src/editor_tab.rs",
+      "line": 144,
+      "match": "on_external_action: RefCell<Option<TabCallback>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Each editor tab owns its current external-action callback.",
+      "justification": "Reload, save, and compare banner actions must route to the workspace that currently owns the tab."
+    },
+    {
       "path": "src/editor_tab/compare/ui.rs",
-      "line": 337,
+      "line": 340,
       "match": "idle_pending: &Rc<Cell<bool>>,",
       "kind": "runtime-shared-state",
       "ownership": "Compare scroll synchronization owns its per-direction idle-sync guard.",
@@ -123,7 +155,7 @@
     },
     {
       "path": "src/editor_zoom.rs",
-      "line": 29,
+      "line": 34,
       "match": "base_font: RefCell<pango::FontDescription>,",
       "kind": "runtime-shared-state",
       "ownership": "The window-owned zoom controller owns the resolved base editor font description.",
@@ -131,7 +163,7 @@
     },
     {
       "path": "src/editor_zoom.rs",
-      "line": 30,
+      "line": 35,
       "match": "zoom_percent: Cell<i32>,",
       "kind": "runtime-shared-state",
       "ownership": "The window-owned zoom controller owns the current zoom percentage for the whole workspace window.",
@@ -243,7 +275,7 @@
     },
     {
       "path": "src/window_compare/dialog.rs",
-      "line": 363,
+      "line": 346,
       "match": "left: RefCell<CompareSlot>,",
       "kind": "runtime-shared-state",
       "ownership": "The compare dialog owns the mutable left-side source selection.",
@@ -251,7 +283,7 @@
     },
     {
       "path": "src/window_compare/dialog.rs",
-      "line": 364,
+      "line": 347,
       "match": "right: RefCell<CompareSlot>,",
       "kind": "runtime-shared-state",
       "ownership": "The compare dialog owns the mutable right-side source selection.",
@@ -371,23 +403,15 @@
     },
     {
       "path": "src/window_project/sidebar_state.rs",
-      "line": 26,
+      "line": 13,
       "match": "pub(super) fn sync_actions_for_root(state: &Rc<RefCell<ProjectState>>) {",
       "kind": "runtime-shared-state",
       "ownership": "Root-action synchronization borrows shared project state.",
       "justification": "Root transitions must consistently enable/disable window actions and sidebar visibility from one state source of truth."
     },
     {
-      "path": "src/window_project/sidebar_state.rs",
-      "line": 13,
-      "match": "pub(super) fn focus_sidebar(state: &Rc<RefCell<ProjectState>>) {",
-      "kind": "runtime-shared-state",
-      "ownership": "Sidebar focus helpers borrow and conditionally mutate split-view position.",
-      "justification": "The focus request needs shared project state to avoid toggling the split view when no root is active."
-    },
-    {
       "path": "src/window_project.rs",
-      "line": 362,
+      "line": 369,
       "match": "fn open_file_from_tree(state: &Rc<RefCell<ProjectState>>, file: gio::File) {",
       "kind": "runtime-shared-state",
       "ownership": "Tree activation routing borrows shared project state.",
@@ -395,7 +419,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 370,
+      "line": 377,
       "match": "state: &Rc<RefCell<ProjectState>>,",
       "kind": "runtime-shared-state",
       "ownership": "Project root transition helpers borrow shared project state.",
@@ -403,7 +427,7 @@
     },
     {
       "path": "src/window_project/sidebar_state.rs",
-      "line": 39,
+      "line": 26,
       "match": "pub(super) fn set_sidebar_visible_for_root(state: &Rc<RefCell<ProjectState>>, visible: bool) {",
       "kind": "runtime-shared-state",
       "ownership": "Root-change sidebar visibility borrows shared project state after mutation is complete.",
@@ -411,7 +435,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 504,
+      "line": 511,
       "match": "fn close_root(state: &Rc<RefCell<ProjectState>>) {",
       "kind": "runtime-shared-state",
       "ownership": "Close-folder handling mutates shared project state.",
@@ -419,7 +443,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 531,
+      "line": 538,
       "match": "fn sync_root_none(state: &Rc<RefCell<ProjectState>>, clear_settings: bool) {",
       "kind": "runtime-shared-state",
       "ownership": "No-root synchronization mutates shared project state.",
@@ -523,11 +547,27 @@
     },
     {
       "path": "src/workspace.rs",
-      "line": 60,
+      "line": 62,
       "match": "pub(crate) state: RefCell<WorkspaceState>,",
       "kind": "runtime-shared-state",
       "ownership": "The workspace owns tab collection, recent/session caches, restore gating, and active close flow.",
       "justification": "Tabbed document coordination requires shared mutable state across menu rebuilds, session persistence, search/status rebinding, selection changes, and drag-and-drop."
+    },
+    {
+      "path": "src/workspace/tabs.rs",
+      "line": 19,
+      "match": "transfer_window_handler: RefCell<Option<TransferWindowHandler>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Each workspace owns the callback that creates registered destination windows for tab transfer.",
+      "justification": "The tab menu needs to create a secondary window through the app registry while avoiding a strong AppState cycle in workspace state."
+    },
+    {
+      "path": "src/workspace/tabs.rs",
+      "line": 20,
+      "match": "transferring_page: RefCell<Option<adw::TabPage>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Each workspace owns the page currently being transferred out or in.",
+      "justification": "The detach handler must distinguish transfer from real close so file monitors and zoom styling are not cleared for moved tabs."
     },
     {
       "path": "src/workspace_open.rs",

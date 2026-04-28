@@ -10,6 +10,7 @@ use crate::editor_tab::EditorTab;
 pub enum CloseMode {
     Tab(adw::TabPage),
     Window,
+    OtherTabs,
 }
 
 struct CloseState {
@@ -43,6 +44,16 @@ impl CloseCoordinator {
     }
 
     #[must_use]
+    pub fn for_other_tabs(queue: Vec<Rc<EditorTab>>) -> Rc<Self> {
+        Rc::new(Self {
+            state: RefCell::new(CloseState {
+                mode: CloseMode::OtherTabs,
+                queue: VecDeque::from(queue),
+            }),
+        })
+    }
+
+    #[must_use]
     pub fn current_tab(&self) -> Option<Rc<EditorTab>> {
         self.state.borrow().queue.front().cloned()
     }
@@ -58,8 +69,9 @@ impl CloseCoordinator {
 
     #[must_use]
     pub fn pending_page(&self) -> Option<adw::TabPage> {
-        match &self.state.borrow().mode {
-            CloseMode::Tab(page) => Some(page.clone()),
+        match self.state.borrow().mode.clone() {
+            CloseMode::Tab(page) => Some(page),
+            CloseMode::OtherTabs => self.current_tab().and_then(|tab| tab.page()),
             CloseMode::Window => None,
         }
     }
@@ -74,6 +86,11 @@ impl CloseCoordinator {
     #[must_use]
     pub fn is_tab_close(&self) -> bool {
         matches!(self.state.borrow().mode, CloseMode::Tab(_))
+    }
+
+    #[must_use]
+    pub fn is_other_tabs_close(&self) -> bool {
+        matches!(self.state.borrow().mode, CloseMode::OtherTabs)
     }
 }
 

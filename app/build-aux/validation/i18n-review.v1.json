@@ -3,14 +3,14 @@
   "strings": [
     {
       "path": "src/dialogs/recent_files.rs",
-      "line": 38,
+      "line": 39,
       "match": ".title(gettext(\"No Recent Files\"))",
       "kind": "i18n-short-string",
       "resolution": "This short empty-state title appears in the Recent Files dialog directly above the explanatory body text."
     },
     {
       "path": "src/dialogs/recent_files.rs",
-      "line": 89,
+      "line": 72,
       "match": ".heading(gettext(\"Clear Recent Files?\"))",
       "kind": "i18n-short-string",
       "resolution": "This short confirmation heading is shown in the Clear All confirmation dialog, where the body text explains the irreversible action."
@@ -73,7 +73,7 @@
     },
     {
       "path": "src/editor_tab/compare/controller.rs",
-      "line": 223,
+      "line": 232,
       "match": "let text = ngettext(\"%d changed line\", \"%d changed lines\", plural_count)",
       "kind": "i18n-short-string",
       "resolution": "This plural-sensitive compare status counts changed logical lines while hunk navigation remains visible beside it in the full-width compare toolbar."
@@ -108,7 +108,7 @@
     },
     {
       "path": "src/project_tree.rs",
-      "line": 194,
+      "line": 172,
       "match": "label.set_label(&gettext(\"Loading...\"));",
       "kind": "i18n-short-string",
       "resolution": "This short inline row label is shown beside a spinner while the project tree enumerates a directory."
@@ -150,28 +150,35 @@
     },
     {
       "path": "src/window.rs",
-      "line": 469,
+      "line": 477,
       "match": ".update_property(&[Property::Label(&gettext(\"New Tab\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
     },
     {
       "path": "src/window.rs",
-      "line": 472,
-      "match": ".update_property(&[Property::Label(&gettext(\"Open Text Files\"))]);",
+      "line": 480,
+      "match": ".update_property(&[Property::Label(&gettext(\"Open Files\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
     },
     {
       "path": "src/window.rs",
-      "line": 475,
+      "line": 483,
       "match": ".update_property(&[Property::Label(&gettext(\"Project Sidebar\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
     },
     {
       "path": "src/window.rs",
-      "line": 481,
+      "line": 486,
+      "match": ".update_property(&[Property::Label(&gettext(\"Save Current File\"))]);",
+      "kind": "i18n-short-string",
+      "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
+    },
+    {
+      "path": "src/window.rs",
+      "line": 489,
       "match": ".update_property(&[Property::Label(&gettext(\"Main Menu\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
@@ -192,7 +199,7 @@
     },
     {
       "path": "src/window_compare/dialog.rs",
-      "line": 424,
+      "line": 407,
       "match": "row.set_subtitle(&gettext(\"Unavailable\"));",
       "kind": "i18n-short-string",
       "resolution": "This short subtitle appears in the Compare dialog when the Saved Version source is not available for the current left-side selection."
@@ -206,14 +213,14 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 521,
+      "line": 528,
       "match": "state.browser.set_title(&gettext(\"Project\"));",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
     },
     {
       "path": "src/window_project.rs",
-      "line": 542,
+      "line": 549,
       "match": "state.browser.set_title(&gettext(\"Project\"));",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."

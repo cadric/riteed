@@ -30,10 +30,38 @@ pub(crate) fn on_close_page(
     workspace: &Rc<Workspace>,
     page: &libadwaita::TabPage,
 ) -> gtk4::glib::Propagation {
-    if workspace.state.borrow().close_flow.is_some() {
-        return gtk4::glib::Propagation::Stop;
+    if let Some(coordinator) = workspace.state.borrow().close_flow.clone() {
+        if !coordinator.is_other_tabs_close() || !coordinator.matches_page(page) {
+            return gtk4::glib::Propagation::Stop;
+        }
+        return handle_expected_page_close(workspace, page);
     }
 
+    handle_single_page_close(workspace, page)
+}
+
+pub(crate) fn request_close_other_tabs(workspace: &Rc<Workspace>, keep_page: &libadwaita::TabPage) {
+    if workspace.state.borrow().close_flow.is_some() {
+        return;
+    }
+    let queue = workspace
+        .ordered_tabs()
+        .into_iter()
+        .filter(|tab| tab.page().as_ref().is_some_and(|page| page != keep_page))
+        .collect::<Vec<_>>();
+    if queue.is_empty() {
+        return;
+    }
+    workspace.state.borrow_mut().close_flow =
+        Some(crate::close_flow::CloseCoordinator::for_other_tabs(queue));
+    workspace.sync_tab_action_state();
+    close_next_other_tab(workspace);
+}
+
+fn handle_single_page_close(
+    workspace: &Rc<Workspace>,
+    page: &libadwaita::TabPage,
+) -> gtk4::glib::Propagation {
     let Some(tab) = workspace.find_tab_by_page(page) else {
         return gtk4::glib::Propagation::Proceed;
     };
@@ -49,7 +77,25 @@ pub(crate) fn on_close_page(
     gtk4::glib::Propagation::Stop
 }
 
+fn handle_expected_page_close(
+    workspace: &Rc<Workspace>,
+    page: &libadwaita::TabPage,
+) -> gtk4::glib::Propagation {
+    let Some(tab) = workspace.find_tab_by_page(page) else {
+        return gtk4::glib::Propagation::Stop;
+    };
+
+    if !tab.is_dirty() {
+        workspace.tab_view.close_page_finish(page, true);
+        return gtk4::glib::Propagation::Stop;
+    }
+
+    present_close_dialog(workspace);
+    gtk4::glib::Propagation::Stop
+}
+
 pub(crate) fn on_page_detached(workspace: &Rc<Workspace>, page: &libadwaita::TabPage) {
+    let should_continue_other_tabs;
     {
         let Ok(mut state) = workspace.state.try_borrow_mut() else {
             let weak = Rc::downgrade(workspace);
@@ -61,8 +107,9 @@ pub(crate) fn on_page_detached(workspace: &Rc<Workspace>, page: &libadwaita::Tab
             });
             return;
         };
+        let is_transfer = workspace.is_transferring_page(page);
         for tab in &state.tabs {
-            if tab.page().as_ref().is_some_and(|item| item == page) {
+            if !is_transfer && tab.page().as_ref().is_some_and(|item| item == page) {
                 tab.clear_zoom_style();
                 tab.clear_monitor();
             }
@@ -70,16 +117,33 @@ pub(crate) fn on_page_detached(workspace: &Rc<Workspace>, page: &libadwaita::Tab
         state
             .tabs
             .retain(|tab| tab.page().as_ref().is_none_or(|item| item != page));
-        if state
+        let close_flow = state.close_flow.clone();
+        should_continue_other_tabs = close_flow.as_ref().is_some_and(|coordinator| {
+            coordinator.is_other_tabs_close() && coordinator.matches_page(page)
+        });
+        if should_continue_other_tabs {
+            if let Some(coordinator) = close_flow {
+                coordinator.advance();
+                if coordinator.is_complete() {
+                    state.close_flow = None;
+                }
+            }
+        } else if state
             .close_flow
             .as_ref()
-            .is_some_and(|coordinator| coordinator.matches_page(page))
+            .is_some_and(|coordinator| coordinator.is_tab_close() && coordinator.matches_page(page))
         {
             state.close_flow = None;
         }
     }
+    workspace.clear_transfer_guard(page);
     workspace.handle_selected_tab_changed();
     workspace.persist_session_state_if_needed();
+    if should_continue_other_tabs {
+        close_next_other_tab(workspace);
+    } else {
+        workspace.sync_tab_action_state();
+    }
     if workspace.tab_view.n_pages() == 0 {
         workspace.shell.close();
     }
@@ -114,11 +178,13 @@ fn handle_close_response(workspace: &Rc<Workspace>, response: UnsavedResponse) {
                 workspace.tab_view.close_page_finish(&page, false);
             }
             workspace.state.borrow_mut().close_flow = None;
+            workspace.sync_tab_action_state();
         }
         UnsavedResponse::Discard => advance_close_flow(workspace, &coordinator),
         UnsavedResponse::Save => {
             let Some(tab) = coordinator.current_tab() else {
                 workspace.state.borrow_mut().close_flow = None;
+                workspace.sync_tab_action_state();
                 return;
             };
             let weak = Rc::downgrade(workspace);
@@ -149,6 +215,7 @@ fn handle_close_save_result(workspace: &Rc<Workspace>, result: &SaveResult) {
                 workspace.tab_view.close_page_finish(&page, false);
             }
             workspace.state.borrow_mut().close_flow = None;
+            workspace.sync_tab_action_state();
         }
     }
 }
@@ -164,13 +231,45 @@ fn advance_close_flow(
         }
         return;
     }
+    if coordinator.is_other_tabs_close() {
+        if let Some(page) = coordinator.pending_page() {
+            workspace.tab_view.close_page_finish(&page, true);
+        }
+        return;
+    }
 
     coordinator.advance();
     if coordinator.is_complete() {
         workspace.state.borrow_mut().close_flow = None;
+        workspace.sync_tab_action_state();
         finish_window_close(workspace);
     } else {
         present_close_dialog(workspace);
+    }
+}
+
+fn close_next_other_tab(workspace: &Rc<Workspace>) {
+    loop {
+        let coordinator = workspace.state.borrow().close_flow.clone();
+        let Some(coordinator) = coordinator.filter(|coordinator| coordinator.is_other_tabs_close())
+        else {
+            workspace.sync_tab_action_state();
+            return;
+        };
+        let Some(tab) = coordinator.current_tab() else {
+            workspace.state.borrow_mut().close_flow = None;
+            workspace.sync_tab_action_state();
+            return;
+        };
+        let Some(page) = tab.page() else {
+            coordinator.advance();
+            continue;
+        };
+        if workspace.find_tab_by_page(&page).is_some() {
+            workspace.tab_view.close_page(&page);
+            return;
+        }
+        coordinator.advance();
     }
 }
 

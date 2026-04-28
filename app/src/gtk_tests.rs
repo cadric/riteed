@@ -18,7 +18,8 @@ use crate::window::Window;
 use crate::workspace::OpenSource;
 
 pub(crate) fn spin_until(label: &str, done: impl Fn() -> bool) {
-    for _ in 0..600 {
+    let deadline = std::time::Instant::now() + Duration::from_secs(10);
+    while std::time::Instant::now() < deadline {
         while glib::MainContext::default().iteration(false) {}
         if done() {
             return;
@@ -105,6 +106,7 @@ fn assert_app_actions_exist() {
     let riteed_app = RiteedApp::new();
     let app = riteed_app.application();
     assert!(app.lookup_action("new").is_some());
+    assert!(app.lookup_action("new-window").is_some());
     assert!(app.lookup_action("open").is_some());
     assert!(app.lookup_action("open-recent").is_some());
     assert!(app.lookup_action("preferences").is_some());
@@ -553,6 +555,7 @@ fn gtk_surfaces_and_editor_flow_work() {
     exercise_app_open_actions();
     exercise_app_actions_more();
     exercise_search_and_status(&test_app);
+    crate::gtk_tests_tabs::exercise_tab_context_actions();
     crate::gtk_tests_v4::exercise_v4_editor_features(&test_app);
     crate::gtk_tests_v5::exercise_v5_format_io(&test_app);
     crate::gtk_tests_v5b::exercise_v5b_editor_controls(&test_app);

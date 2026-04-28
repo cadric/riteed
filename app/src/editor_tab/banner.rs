@@ -118,7 +118,8 @@ impl EditorTab {
 
     #[cfg(test)]
     pub(crate) fn trigger_external_action_for_tests(&self) {
-        if let Some(callback) = self.on_external_action.get() {
+        let callback = self.on_external_action.borrow().clone();
+        if let Some(callback) = callback {
             callback();
         }
     }

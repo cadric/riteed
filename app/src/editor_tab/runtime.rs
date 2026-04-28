@@ -386,7 +386,8 @@ impl EditorTab {
     }
 
     pub(super) fn notify_external_state_change(&self) {
-        if let Some(callback) = self.on_external_state_change.get() {
+        let callback = self.on_external_state_change.borrow().clone();
+        if let Some(callback) = callback {
             callback();
         }
     }

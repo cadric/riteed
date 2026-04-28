@@ -46,7 +46,7 @@
       "line": 4,
       "match": "<object class=\"GtkShortcutsWindow\" id=\"shortcuts_window\">",
       "smallest_width": 360,
-      "adaptive_pattern": "Standard shortcuts window grouped into file, tab, search, view, project, and app actions (including Open Folder and Refresh Project Tree).",
+      "adaptive_pattern": "Standard shortcuts window grouped into app, file, project, tabs, search, view, and compare actions, including Open Folder, Refresh Project Tree, and GNOME tab navigation shortcuts.",
       "collapse_behavior": "Shortcut groups continue stacking in reading order as width tightens.",
       "copy_reviewed": true,
       "a11y_reviewed": true

@@ -12,10 +12,45 @@
         <property name="title" translatable="yes">Editor</property>
         <child>
           <object class="GtkShortcutsGroup">
+            <property name="title" translatable="yes">App</property>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="accelerator">&lt;Ctrl&gt;comma</property>
+                <property name="title" translatable="yes">Preferences</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="accelerator">F1</property>
+                <property name="title" translatable="yes">Help</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="accelerator">&lt;Ctrl&gt;question</property>
+                <property name="title" translatable="yes">Keyboard Shortcuts</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="accelerator">&lt;Ctrl&gt;q</property>
+                <property name="title" translatable="yes">Quit</property>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="GtkShortcutsGroup">
             <property name="title" translatable="yes">File</property>
             <child>
               <object class="GtkShortcutsShortcut">
                 <property name="accelerator">&lt;Ctrl&gt;n</property>
+                <property name="title" translatable="yes">New Window</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="accelerator">&lt;Ctrl&gt;t</property>
                 <property name="title" translatable="yes">New Tab</property>
               </object>
             </child>
@@ -34,25 +69,36 @@
             <child>
               <object class="GtkShortcutsShortcut">
                 <property name="accelerator">&lt;Ctrl&gt;s</property>
-                <property name="title" translatable="yes">Save Selected Tab</property>
+                <property name="title" translatable="yes">Save Current File</property>
               </object>
             </child>
             <child>
               <object class="GtkShortcutsShortcut">
                 <property name="accelerator">&lt;Ctrl&gt;&lt;Shift&gt;s</property>
-                <property name="title" translatable="yes">Save Selected Tab As</property>
+                <property name="title" translatable="yes">Save Current File As</property>
               </object>
             </child>
             <child>
               <object class="GtkShortcutsShortcut">
                 <property name="accelerator">&lt;Ctrl&gt;w</property>
-                <property name="title" translatable="yes">Close Selected Tab</property>
+                <property name="title" translatable="yes">Close Current Tab</property>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="GtkShortcutsGroup">
+            <property name="title" translatable="yes">Project</property>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="accelerator">&lt;Ctrl&gt;r</property>
+                <property name="title" translatable="yes">Refresh Project Tree</property>
               </object>
             </child>
             <child>
               <object class="GtkShortcutsShortcut">
-                <property name="accelerator">&lt;Ctrl&gt;q</property>
-                <property name="title" translatable="yes">Quit</property>
+                <property name="accelerator">F9</property>
+                <property name="title" translatable="yes">Toggle Project Sidebar</property>
               </object>
             </child>
           </object>
@@ -74,8 +120,56 @@
             </child>
             <child>
               <object class="GtkShortcutsShortcut">
+                <property name="accelerator">&lt;Ctrl&gt;Page_Down</property>
+                <property name="title" translatable="yes">Next Tab</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="accelerator">&lt;Ctrl&gt;Page_Up</property>
+                <property name="title" translatable="yes">Previous Tab</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="accelerator">&lt;Ctrl&gt;Home</property>
+                <property name="title" translatable="yes">First Tab</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="accelerator">&lt;Ctrl&gt;End</property>
+                <property name="title" translatable="yes">Last Tab</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
                 <property name="accelerator">&lt;Alt&gt;1</property>
                 <property name="title" translatable="yes">Jump to a Tab by Number</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="accelerator">&lt;Alt&gt;0</property>
+                <property name="title" translatable="yes">Jump to Tab 10</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="accelerator">&lt;Ctrl&gt;&lt;Shift&gt;Page_Up</property>
+                <property name="title" translatable="yes">Move Tab Backward</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="accelerator">&lt;Ctrl&gt;&lt;Shift&gt;Page_Down</property>
+                <property name="title" translatable="yes">Move Tab Forward</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="accelerator">&lt;Ctrl&gt;&lt;Shift&gt;n</property>
+                <property name="title" translatable="yes">Move Tab to New Window</property>
               </object>
             </child>
           </object>
@@ -86,24 +180,24 @@
             <child>
               <object class="GtkShortcutsShortcut">
                 <property name="accelerator">&lt;Ctrl&gt;f</property>
-                <property name="title" translatable="yes">Search in the Selected Document</property>
+                <property name="title" translatable="yes">Find in Current Document</property>
               </object>
             </child>
             <child>
               <object class="GtkShortcutsShortcut">
                 <property name="accelerator">&lt;Ctrl&gt;h</property>
-                <property name="title" translatable="yes">Show Replace</property>
+                <property name="title" translatable="yes">Find and Replace</property>
               </object>
             </child>
             <child>
               <object class="GtkShortcutsShortcut">
-                <property name="accelerator">F3</property>
+                <property name="accelerator">&lt;Ctrl&gt;g</property>
                 <property name="title" translatable="yes">Find Next Match</property>
               </object>
             </child>
             <child>
               <object class="GtkShortcutsShortcut">
-                <property name="accelerator">&lt;Shift&gt;F3</property>
+                <property name="accelerator">&lt;Ctrl&gt;&lt;Shift&gt;g</property>
                 <property name="title" translatable="yes">Find Previous Match</property>
               </object>
             </child>
@@ -114,7 +208,7 @@
             <property name="title" translatable="yes">View</property>
             <child>
               <object class="GtkShortcutsShortcut">
-                <property name="accelerator">&lt;Ctrl&gt;equal</property>
+                <property name="accelerator">&lt;Ctrl&gt;plus</property>
                 <property name="title" translatable="yes">Zoom In</property>
               </object>
             </child>
@@ -127,7 +221,7 @@
             <child>
               <object class="GtkShortcutsShortcut">
                 <property name="accelerator">&lt;Ctrl&gt;0</property>
-                <property name="title" translatable="yes">Reset Zoom</property>
+                <property name="title" translatable="yes">Normal Size</property>
               </object>
             </child>
             <child>
@@ -151,46 +245,6 @@
               <object class="GtkShortcutsShortcut">
                 <property name="accelerator">&lt;Shift&gt;F8</property>
                 <property name="title" translatable="yes">Previous Difference</property>
-              </object>
-            </child>
-          </object>
-        </child>
-        <child>
-          <object class="GtkShortcutsGroup">
-            <property name="title" translatable="yes">Project</property>
-            <child>
-              <object class="GtkShortcutsShortcut">
-                <property name="accelerator">F5</property>
-                <property name="title" translatable="yes">Refresh Project Tree</property>
-              </object>
-            </child>
-            <child>
-              <object class="GtkShortcutsShortcut">
-                <property name="accelerator">F9</property>
-                <property name="title" translatable="yes">Focus Project Sidebar</property>
-              </object>
-            </child>
-          </object>
-        </child>
-        <child>
-          <object class="GtkShortcutsGroup">
-            <property name="title" translatable="yes">App</property>
-            <child>
-              <object class="GtkShortcutsShortcut">
-                <property name="accelerator">&lt;Ctrl&gt;comma</property>
-                <property name="title" translatable="yes">Preferences</property>
-              </object>
-            </child>
-            <child>
-              <object class="GtkShortcutsShortcut">
-                <property name="accelerator">F1</property>
-                <property name="title" translatable="yes">Open Help</property>
-              </object>
-            </child>
-            <child>
-              <object class="GtkShortcutsShortcut">
-                <property name="accelerator">&lt;Ctrl&gt;question</property>
-                <property name="title" translatable="yes">Show Shortcuts</property>
               </object>
             </child>
           </object>

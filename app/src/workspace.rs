@@ -1,7 +1,7 @@
 use std::cell::{OnceCell, RefCell};
 use std::rc::Rc;
 
-use gettextrs::pgettext;
+use gettextrs::{gettext, pgettext};
 use gtk4::{gdk, gio, glib, prelude::*};
 use libadwaita as adw;
 
@@ -14,6 +14,7 @@ use crate::settings::AppSettings;
 
 mod autosave;
 mod recent;
+pub(crate) mod tabs;
 #[cfg(test)]
 mod testing;
 
@@ -52,6 +53,7 @@ pub struct Workspace {
     pub(crate) close_action: gio::SimpleAction,
     pub(crate) settings: AppSettings,
     pub(crate) tab_view: adw::TabView,
+    pub(crate) tab_controls: tabs::TabControls,
     pub(crate) search: Rc<EditorSearch>,
     pub(crate) status_bar: EditorStatusBar,
     format_preferences_handler: OnceCell<FormatPreferencesHandler>,
@@ -107,6 +109,7 @@ impl Workspace {
             close_action: parts.close_action.clone(),
             settings: parts.settings.clone(),
             tab_view,
+            tab_controls: tabs::TabControls::new(),
             search,
             status_bar,
             format_preferences_handler: OnceCell::new(),
@@ -123,6 +126,7 @@ impl Workspace {
                 allow_window_close: false,
             }),
         });
+        tabs::install(&workspace);
         workspace.install_callbacks(parts.workspace_box);
         workspace.rebuild_primary_menu();
         workspace.refresh_selected_state();
@@ -215,14 +219,6 @@ impl Workspace {
 
     pub fn find_previous(self: &Rc<Self>) {
         self.search.find_previous();
-    }
-
-    pub fn request_close_selected_tab(&self) {
-        if let Some(page) = self.tab_view.selected_page() {
-            self.tab_view.close_page(&page);
-        } else {
-            self.shell.close();
-        }
     }
 
     pub fn handle_window_close_request(self: &Rc<Self>) -> glib::Propagation {
@@ -336,34 +332,6 @@ impl Workspace {
         workspace_box.add_controller(drop_target);
     }
 
-    pub(crate) fn add_empty_tab(self: &Rc<Self>, select: bool) -> Rc<EditorTab> {
-        let tab = EditorTab::new(&self.settings);
-        let weak = Rc::downgrade(self);
-        tab.set_visual_change_handler(Rc::new(move || {
-            if let Some(workspace) = weak.upgrade() {
-                workspace.refresh_selected_state();
-            }
-        }));
-        let weak = Rc::downgrade(self);
-        tab.set_file_drop_handler(Rc::new(move |files| {
-            if let Some(workspace) = weak.upgrade() {
-                workspace.request_open_files(files, OpenSource::Drop);
-            }
-        }));
-        crate::workspace_monitor::install_tab_hooks(self, &tab);
-        autosave::install_tab_autosave(self, &tab);
-        let page = tab.attach(&self.tab_view);
-        self.state.borrow_mut().tabs.push(tab.clone());
-        if select {
-            self.tab_view.set_selected_page(&page);
-        }
-        tab.apply_line_numbers();
-        tab.apply_minimap_visibility();
-        tab.apply_current_line_highlight();
-        tab.apply_indentation();
-        tab
-    }
-
     pub(crate) fn request_save_tab(
         self: &Rc<Self>,
         tab: &Rc<EditorTab>,
@@ -398,8 +366,7 @@ impl Workspace {
                                 workspace.remember_recent_uri(&outcome.new_uri);
                                 workspace.persist_session_state_if_needed();
                                 workspace.refresh_selected_state();
-                                workspace
-                                    .show_toast(&gettextrs::gettext("The Document Was Saved."));
+                                workspace.show_toast(&gettext("The Document Was Saved."));
                             }
                             SaveResult::CancelledByUser => {}
                             SaveResult::Failed(error) => {
@@ -483,7 +450,7 @@ impl Workspace {
                         match result {
                             Ok(()) => {
                                 workspace.refresh_selected_state();
-                                workspace.show_toast(&gettextrs::gettext("The File Was Reloaded."));
+                                workspace.show_toast(&gettext("The File Was Reloaded."));
                             }
                             Err(crate::error::AppError::Cancelled) => {}
                             Err(error) => crate::dialogs::present_error(&workspace.shell, &error),
@@ -499,8 +466,8 @@ impl Workspace {
         let weak = Rc::downgrade(self);
         crate::dialogs::choose_encoding(
             &self.shell,
-            &gettextrs::gettext("Choose a Text Encoding"),
-            &gettextrs::gettext("Choose the encoding to use for the next save."),
+            &gettext("Choose a Text Encoding"),
+            &gettext("Choose the encoding to use for the next save."),
             &candidates,
             current.as_ref(),
             &pgettext("dialog button", "Apply"),
@@ -549,45 +516,6 @@ impl Workspace {
         self.save_action.set_enabled(false);
         self.save_as_action.set_enabled(false);
         self.close_action.set_enabled(false);
-    }
-
-    pub(crate) fn close_tab_if_clean(&self, tab: &EditorTab) {
-        if tab.is_clean_untitled()
-            && let Some(page) = tab.page()
-        {
-            self.tab_view.close_page(&page);
-        }
-    }
-
-    pub(crate) fn selected_tab(&self) -> Option<Rc<EditorTab>> {
-        self.tab_view
-            .selected_page()
-            .and_then(|page| self.find_tab_by_page(&page))
-    }
-
-    pub(crate) fn ordered_tabs(&self) -> Vec<Rc<EditorTab>> {
-        (0..self.tab_view.n_pages())
-            .filter_map(|position| self.find_tab_by_page(&self.tab_view.nth_page(position)))
-            .collect()
-    }
-
-    pub(crate) fn find_tab_by_page(&self, page: &adw::TabPage) -> Option<Rc<EditorTab>> {
-        self.state
-            .borrow()
-            .tabs
-            .iter()
-            .find(|tab| tab.page().as_ref().is_some_and(|item| item == page))
-            .cloned()
-    }
-
-    #[cfg(test)]
-    pub(crate) fn find_tab_by_uri(&self, uri: &str) -> Option<Rc<EditorTab>> {
-        self.state
-            .borrow()
-            .tabs
-            .iter()
-            .find(|tab| tab.uri().as_deref().is_some_and(|item| item == uri))
-            .cloned()
     }
 
     pub(crate) fn show_toast(&self, message: &str) {

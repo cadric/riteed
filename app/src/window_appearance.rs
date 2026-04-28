@@ -15,7 +15,7 @@ use crate::workspace::Workspace;
 const APPEARANCE_CSS_RESOURCE: &str = "/io/github/cadric/Riteed/ui/appearance.css";
 const APPEARANCE_RESOURCE: &str = "/io/github/cadric/Riteed/ui/appearance_panel.ui";
 const PALETTE_TILE_WIDTH: i32 = 132;
-const PALETTE_TILE_HEIGHT: i32 = 80;
+const PALETTE_TILE_HEIGHT: i32 = 92;
 
 static APPEARANCE_CSS_INSTALLED: OnceLock<()> = OnceLock::new();
 

@@ -6,6 +6,7 @@ use gtk4::{gio, prelude::*};
 use libadwaita as adw;
 use libadwaita::prelude::*;
 
+use crate::dialog_shell::build_dialog_shell;
 use crate::dialogs;
 use crate::editor_tab::EditorTab;
 use crate::error::AppError;
@@ -59,7 +60,6 @@ struct CompareDialogUi {
     dialog: adw::Dialog,
     left_row: adw::ActionRow,
     right_row: adw::ActionRow,
-    cancel_button: gtk4::Button,
     compare_button: gtk4::Button,
     swap_button: gtk4::Button,
     left_current_button: gtk4::Button,
@@ -93,12 +93,13 @@ fn initial_compare_slots(
 }
 
 fn build_compare_dialog_ui(show_current_document_button: bool) -> CompareDialogUi {
-    let dialog = adw::Dialog::builder()
-        .title(pgettext("compare dialog title", "Compare"))
-        .content_width(620)
-        .follows_content_size(true)
-        .can_close(true)
-        .build();
+    let shell = build_dialog_shell(
+        &pgettext("compare dialog title", "Compare"),
+        620,
+        None,
+        true,
+    );
+    let dialog = shell.dialog;
     let description = gtk4::Label::builder()
         .wrap(true)
         .xalign(0.0)
@@ -147,19 +148,11 @@ fn build_compare_dialog_ui(show_current_document_button: bool) -> CompareDialogU
         .halign(gtk4::Align::End)
         .spacing(12)
         .build();
-    let cancel_button = gtk4::Button::with_label(&pgettext("dialog button", "Cancel"));
     let compare_button = gtk4::Button::with_label(&pgettext("dialog button", "Compare"));
     compare_button.add_css_class("suggested-action");
-    button_box.append(&cancel_button);
     button_box.append(&compare_button);
-    let content = gtk4::Box::builder()
-        .orientation(gtk4::Orientation::Vertical)
-        .spacing(18)
-        .margin_top(18)
-        .margin_bottom(18)
-        .margin_start(18)
-        .margin_end(18)
-        .build();
+    dialog.set_default_widget(Some(&compare_button));
+    let content = shell.content;
     content.append(&description);
     content.append(&left_group);
     content.append(&left_buttons);
@@ -167,12 +160,10 @@ fn build_compare_dialog_ui(show_current_document_button: bool) -> CompareDialogU
     content.append(&right_group);
     content.append(&right_buttons);
     content.append(&button_box);
-    dialog.set_child(Some(&content));
     CompareDialogUi {
         dialog,
         left_row,
         right_row,
-        cancel_button,
         compare_button,
         swap_button,
         left_current_button,
@@ -191,18 +182,10 @@ fn wire_compare_dialog(
     state: &Rc<CompareDialogState>,
     ui: &CompareDialogUi,
 ) {
-    wire_cancel_action(&ui.dialog, &ui.cancel_button);
     wire_left_actions(controller, state, ui);
     wire_right_actions(controller, state, ui);
     wire_swap_action(state, &ui.swap_button);
     wire_compare_action(state, &ui.compare_button);
-}
-
-fn wire_cancel_action(dialog: &adw::Dialog, button: &gtk4::Button) {
-    let dialog = dialog.clone();
-    button.connect_clicked(move |_| {
-        let _closed = dialog.close();
-    });
 }
 
 fn wire_left_actions(

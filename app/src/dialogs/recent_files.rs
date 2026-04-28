@@ -5,6 +5,7 @@ use gtk4::{gio, prelude::*};
 use libadwaita as adw;
 use libadwaita::prelude::*;
 
+use crate::dialog_shell::build_dialog_shell;
 use crate::document;
 use crate::settings::AppSettings;
 
@@ -13,13 +14,13 @@ pub fn show_recent_files_dialog(
     settings: &AppSettings,
     on_open_uri: &Rc<dyn Fn(String)>,
 ) {
-    let dialog = adw::Dialog::builder()
-        .title(pgettext("recent files dialog title", "Recent Files"))
-        .content_width(620)
-        .content_height(420)
-        .follows_content_size(false)
-        .can_close(true)
-        .build();
+    let shell = build_dialog_shell(
+        &pgettext("recent files dialog title", "Recent Files"),
+        620,
+        Some(420),
+        false,
+    );
+    let dialog = shell.dialog;
 
     let list_box = gtk4::ListBox::builder()
         .selection_mode(gtk4::SelectionMode::None)
@@ -44,14 +45,7 @@ pub fn show_recent_files_dialog(
     stack.add_named(&list_holder, Some("list"));
     stack.add_named(&empty_page, Some("empty"));
 
-    let content = gtk4::Box::builder()
-        .orientation(gtk4::Orientation::Vertical)
-        .spacing(18)
-        .margin_top(18)
-        .margin_bottom(18)
-        .margin_start(18)
-        .margin_end(18)
-        .build();
+    let content = shell.content;
     content.set_vexpand(true);
     content.append(&stack);
 
@@ -62,19 +56,8 @@ pub fn show_recent_files_dialog(
         .spacing(12)
         .build();
     let clear_all_button = gtk4::Button::with_label(&pgettext("dialog button", "Clear All"));
-    let close_button = gtk4::Button::with_label(&pgettext("dialog button", "Close"));
     button_box.append(&clear_all_button);
-    button_box.append(&close_button);
     content.append(&button_box);
-
-    dialog.set_child(Some(&content));
-
-    {
-        let dialog = dialog.clone();
-        close_button.connect_clicked(move |_| {
-            let _closed = dialog.close();
-        });
-    }
 
     {
         let dialog = dialog.clone();

@@ -103,10 +103,6 @@ msgid "Clear All"
 msgstr ""
 
 msgctxt "dialog button"
-msgid "Close"
-msgstr ""
-
-msgctxt "dialog button"
 msgid "Compare"
 msgstr ""
 
@@ -211,7 +207,7 @@ msgid "Open Folder"
 msgstr ""
 
 msgctxt "file dialog title"
-msgid "Open Text Files"
+msgid "Open Files"
 msgstr ""
 
 msgctxt "file dialog title"
@@ -220,6 +216,10 @@ msgstr ""
 
 msgctxt "file filter"
 msgid "All Files"
+msgstr ""
+
+msgctxt "file filter"
+msgid "Folders"
 msgstr ""
 
 msgctxt "file filter"
@@ -331,7 +331,7 @@ msgid "Saving Work"
 msgstr ""
 
 msgctxt "help row"
-msgid "Search and Replace"
+msgid "Find and Replace"
 msgstr ""
 
 msgctxt "help row"
@@ -387,7 +387,7 @@ msgid "Appearance"
 msgstr ""
 
 msgctxt "menu item"
-msgid "Compare..."
+msgid "Compare"
 msgstr ""
 
 msgctxt "menu item"
@@ -403,11 +403,11 @@ msgid "New Window"
 msgstr ""
 
 msgctxt "menu item"
-msgid "Open Folder..."
+msgid "Open Folder"
 msgstr ""
 
 msgctxt "menu item"
-msgid "Open..."
+msgid "Open Files"
 msgstr ""
 
 msgctxt "menu item"
@@ -415,11 +415,35 @@ msgid "Preferences"
 msgstr ""
 
 msgctxt "menu item"
-msgid "Recent Files..."
+msgid "Recent Files"
+msgstr ""
+
+msgctxt "open menu tooltip"
+msgid "Open Choices"
 msgstr ""
 
 msgctxt "menu item"
-msgid "Search"
+msgid "Find"
+msgstr ""
+
+msgctxt "tab menu item"
+msgid "Close"
+msgstr ""
+
+msgctxt "tab menu item"
+msgid "Close Other Tabs"
+msgstr ""
+
+msgctxt "tab menu item"
+msgid "Move Tab Backward"
+msgstr ""
+
+msgctxt "tab menu item"
+msgid "Move Tab Forward"
+msgstr ""
+
+msgctxt "tab menu item"
+msgid "Move to New Window"
 msgstr ""
 
 msgctxt "paste dialog title"
@@ -447,7 +471,7 @@ msgid "This File Is Read-Only."
 msgstr ""
 
 msgctxt "search action"
-msgid "Close Search"
+msgid "Close Find"
 msgstr ""
 
 msgctxt "search action"

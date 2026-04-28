@@ -1,5 +1,6 @@
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use gettextrs::gettext;
 use gtk4::glib::translate::IntoGlib;
@@ -11,6 +12,7 @@ use crate::settings::AppSettings;
 use crate::workspace::Workspace;
 
 pub const EDITOR_VIEW_CSS_CLASS: &str = "riteed-editor-view";
+pub(crate) const EDITOR_ZOOM_CSS_CLASS_PREFIX: &str = "riteed-editor-view-zoom-";
 
 const DEFAULT_FONT_FAMILY: &str = "Monospace";
 const DEFAULT_FONT_SIZE_PT: i32 = 11;
@@ -22,10 +24,13 @@ const MIN_ZOOM_PERCENT: i32 = 50;
 const MAX_ZOOM_PERCENT: i32 = 200;
 const ZOOM_STEP_PERCENT: i32 = 10;
 
+static NEXT_ZOOM_CLASS_ID: AtomicU64 = AtomicU64::new(1);
+
 pub struct EditorZoomController {
     workspace: Rc<Workspace>,
     display: Option<gdk::Display>,
     provider: gtk4::CssProvider,
+    css_class: String,
     base_font: RefCell<pango::FontDescription>,
     zoom_percent: Cell<i32>,
 }
@@ -47,6 +52,7 @@ impl EditorZoomController {
             workspace: Rc::clone(workspace),
             display: gdk::Display::default(),
             provider: gtk4::CssProvider::new(),
+            css_class: next_zoom_css_class(),
             base_font: RefCell::new(resolve_editor_font_description(&settings.editor_font())),
             zoom_percent: Cell::new(DEFAULT_ZOOM_PERCENT),
         });
@@ -120,10 +126,11 @@ impl EditorZoomController {
         self.workspace
             .tab_view
             .connect_page_detached(move |_, page, _position| {
-                if let Some(controller) = weak.upgrade()
-                    && let Some(tab) = controller.workspace.find_tab_by_page(page)
-                {
-                    tab.clear_zoom_style();
+                if let Some(controller) = weak.upgrade() {
+                    if let Some(tab) = controller.workspace.find_tab_by_page(page) {
+                        tab.clear_zoom_style();
+                    }
+                    controller.apply_to_workspace();
                 }
             });
     }
@@ -152,24 +159,24 @@ impl EditorZoomController {
         let context = self.apply_context();
         self.update_provider_css(&context);
         for tab in self.workspace.ordered_tabs() {
-            Self::apply_to_tab_with(&tab, &context);
+            Self::apply_to_tab_with(&tab, &context, &self.css_class);
         }
     }
 
     fn apply_to_tab(&self, tab: &EditorTab) {
         let context = self.apply_context();
-        Self::apply_to_tab_with(tab, &context);
+        Self::apply_to_tab_with(tab, &context, &self.css_class);
     }
 
-    fn apply_to_tab_with(tab: &EditorTab, context: &ZoomApplyContext) {
-        tab.restore_zoom_style();
+    fn apply_to_tab_with(tab: &EditorTab, context: &ZoomApplyContext, css_class: &str) {
+        tab.restore_zoom_style(css_class);
         tab.apply_scroll_past_end_padding(context.scroll_past_end_padding);
         tab.apply_minimap_font_desc(Some(&context.minimap_font));
     }
 
     fn update_provider_css(&self, context: &ZoomApplyContext) {
         self.provider
-            .load_from_data(&editor_view_css(&context.editor_font));
+            .load_from_data(&editor_view_css(&self.css_class, &context.editor_font));
     }
 
     fn apply_context(&self) -> ZoomApplyContext {
@@ -254,6 +261,37 @@ pub fn resolve_font_family(
     resolve_font_family_in_map(&font_map, desc)
 }
 
+pub(crate) fn restore_zoom_css_class(widget: &impl IsA<gtk4::Widget>, css_class: &str) {
+    clear_zoom_css_classes(widget);
+    let widget = widget.as_ref();
+    widget.add_css_class(EDITOR_VIEW_CSS_CLASS);
+    widget.add_css_class(css_class);
+}
+
+pub(crate) fn clear_zoom_css_classes(widget: &impl IsA<gtk4::Widget>) {
+    let widget = widget.as_ref();
+    for css_class in widget.css_classes() {
+        let class_name = css_class.as_str();
+        if class_name.starts_with(EDITOR_ZOOM_CSS_CLASS_PREFIX) {
+            widget.remove_css_class(class_name);
+        }
+    }
+}
+
+pub(crate) fn copy_zoom_css_classes(
+    source: &impl IsA<gtk4::Widget>,
+    target: &impl IsA<gtk4::Widget>,
+) {
+    let source = source.as_ref();
+    let target = target.as_ref();
+    for css_class in source.css_classes() {
+        let class_name = css_class.as_str();
+        if class_name.starts_with(EDITOR_ZOOM_CSS_CLASS_PREFIX) {
+            target.add_css_class(class_name);
+        }
+    }
+}
+
 #[must_use]
 pub(crate) fn resolve_font_family_in_map(
     font_map: &pango::FontMap,
@@ -315,7 +353,13 @@ fn scroll_past_end_bottom_margin(desc: &pango::FontDescription) -> i32 {
 }
 
 #[must_use]
-fn editor_view_css(desc: &pango::FontDescription) -> String {
+fn next_zoom_css_class() -> String {
+    let id = NEXT_ZOOM_CLASS_ID.fetch_add(1, Ordering::Relaxed);
+    format!("{EDITOR_ZOOM_CSS_CLASS_PREFIX}{id}")
+}
+
+#[must_use]
+fn editor_view_css(css_class: &str, desc: &pango::FontDescription) -> String {
     let family = css_escape(desc.family().as_deref().unwrap_or(DEFAULT_FONT_FAMILY));
     let size_points = f64::from(desc.size()) / f64::from(pango::SCALE);
     let style = match desc.style() {
@@ -325,7 +369,7 @@ fn editor_view_css(desc: &pango::FontDescription) -> String {
     };
     let weight = desc.weight().into_glib();
     format!(
-        ".{EDITOR_VIEW_CSS_CLASS}, .{EDITOR_VIEW_CSS_CLASS} text {{ font-family: \"{family}\"; font-size: {size_points:.2}pt; font-style: {style}; font-weight: {weight}; }}"
+        ".{css_class}, .{css_class} text {{ font-family: \"{family}\"; font-size: {size_points:.2}pt; font-style: {style}; font-weight: {weight}; }}"
     )
 }
 
@@ -337,9 +381,9 @@ fn css_escape(value: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::{
-        DEFAULT_FONT_SIZE_PT, clamp_zoom_percent, editor_view_css, font_family_name_matches,
-        font_row_subtitle, resolve_editor_font_description, resolve_minimap_font_description,
-        resolve_scroll_past_end_padding, scale_font_size,
+        DEFAULT_FONT_SIZE_PT, EDITOR_ZOOM_CSS_CLASS_PREFIX, clamp_zoom_percent, editor_view_css,
+        font_family_name_matches, font_row_subtitle, resolve_editor_font_description,
+        resolve_minimap_font_description, resolve_scroll_past_end_padding, scale_font_size,
     };
 
     #[test]
@@ -403,9 +447,10 @@ mod tests {
     #[test]
     fn editor_css_escapes_font_family() {
         let desc = resolve_editor_font_description("JetBrains Mono");
-        let css = editor_view_css(&desc);
-        assert!(css.contains(".riteed-editor-view"));
-        assert!(css.contains(".riteed-editor-view text"));
+        let css_class = format!("{EDITOR_ZOOM_CSS_CLASS_PREFIX}test");
+        let css = editor_view_css(&css_class, &desc);
+        assert!(css.contains(".riteed-editor-view-zoom-test"));
+        assert!(css.contains(".riteed-editor-view-zoom-test text"));
         assert!(css.contains("font-family: \"JetBrains Mono\""));
     }
 

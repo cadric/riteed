@@ -5,7 +5,7 @@
   <object class="AdwDialog" id="appearance_dialog">
     <property name="title" translatable="yes">Appearance</property>
     <property name="content-width">580</property>
-    <property name="content-height">640</property>
+    <property name="content-height">560</property>
     <property name="follows-content-size">false</property>
     <property name="child">
       <object class="AdwToolbarView">
@@ -79,7 +79,7 @@
                     <property name="min-children-per-line">2</property>
                     <property name="max-children-per-line">4</property>
                     <property name="column-spacing">12</property>
-                    <property name="row-spacing">12</property>
+                    <property name="row-spacing">16</property>
                     <property name="halign">center</property>
                   </object>
                 </child>

@@ -11,7 +11,7 @@ pub struct WindowShell {
     pub project_split_view: gtk4::Paned,
     pub workspace_box: gtk4::Box,
     pub new_button: gtk4::Button,
-    pub open_button: gtk4::Button,
+    pub open_button: adw::SplitButton,
     pub project_sidebar_button: gtk4::ToggleButton,
     pub save_button: gtk4::Button,
     pub primary_menu_button: gtk4::MenuButton,
@@ -45,7 +45,7 @@ impl WindowShell {
         let project_split_view: gtk4::Paned = builder_object(&builder, "project_split_view")?;
         let workspace_box: gtk4::Box = builder_object(&builder, "workspace_box")?;
         let new_button: gtk4::Button = builder_object(&builder, "new_button")?;
-        let open_button: gtk4::Button = builder_object(&builder, "open_button")?;
+        let open_button: adw::SplitButton = builder_object(&builder, "open_button")?;
         let project_sidebar_button: gtk4::ToggleButton =
             builder_object(&builder, "project_sidebar_button")?;
         let save_button: gtk4::Button = builder_object(&builder, "save_button")?;

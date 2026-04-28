@@ -3,6 +3,7 @@
 
 pub mod app;
 pub mod close_flow;
+mod dialog_shell;
 pub mod dialogs;
 pub mod document;
 pub mod editor_format;
@@ -39,6 +40,8 @@ mod workspace_open;
 
 #[cfg(test)]
 mod gtk_tests;
+#[cfg(test)]
+mod gtk_tests_tabs;
 #[cfg(test)]
 mod gtk_tests_v4;
 #[cfg(test)]

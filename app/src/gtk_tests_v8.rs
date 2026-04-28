@@ -14,6 +14,44 @@ pub(crate) fn exercise_v8_polish_and_safety(test_app: &adw::Application) {
     exercise_autosave_is_silent_and_gsettings_clean(test_app);
 }
 
+fn collect_buttons(root: &gtk4::Widget, label: &str) -> Vec<gtk4::Button> {
+    let mut stack = vec![root.clone()];
+    let mut matches = Vec::new();
+    while let Some(widget) = stack.pop() {
+        if let Ok(button) = widget.clone().downcast::<gtk4::Button>()
+            && button.label().as_deref() == Some(label)
+        {
+            matches.push(button);
+        }
+
+        let mut child = widget.first_child();
+        while let Some(next) = child {
+            child = next.next_sibling();
+            stack.push(next);
+        }
+    }
+    matches
+}
+
+fn collect_window_titles(root: &gtk4::Widget, title: &str) -> Vec<adw::WindowTitle> {
+    let mut stack = vec![root.clone()];
+    let mut matches = Vec::new();
+    while let Some(widget) = stack.pop() {
+        if let Ok(window_title) = widget.clone().downcast::<adw::WindowTitle>()
+            && window_title.title().as_str() == title
+        {
+            matches.push(window_title);
+        }
+
+        let mut child = widget.first_child();
+        while let Some(next) = child {
+            child = next.next_sibling();
+            stack.push(next);
+        }
+    }
+    matches
+}
+
 fn exercise_presentation_preferences(test_app: &adw::Application) {
     let settings = AppSettings::new_for_tests();
     let Some(window) = build_window_with_settings(test_app, settings) else {
@@ -94,6 +132,11 @@ fn exercise_recent_files_dialog(test_app: &adw::Application) {
             .is_ok()
     );
     drain_events(16);
+    let root_widget = window.widget().clone().upcast::<gtk4::Widget>();
+    crate::gtk_tests::spin_until("v8 recent files dialog title shown", || {
+        !collect_window_titles(&root_widget, "Recent Files").is_empty()
+    });
+    assert!(collect_buttons(&root_widget, "Close").is_empty());
 
     let _removed = fs::remove_file(first);
     let _removed = fs::remove_file(second);

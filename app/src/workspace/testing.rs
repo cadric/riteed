@@ -139,6 +139,11 @@ impl Workspace {
             .is_some_and(|tab| tab.view_has_zoom_class_for_tests())
     }
 
+    pub(crate) fn selected_zoom_css_classes_for_tests(&self) -> Vec<String> {
+        self.selected_tab()
+            .map_or_else(Vec::new, |tab| tab.zoom_css_classes_for_tests())
+    }
+
     pub(crate) fn selected_scroll_past_end_padding_for_tests(&self) -> Option<(i32, i32)> {
         self.selected_tab()
             .map(|tab| tab.scroll_past_end_padding_for_tests())

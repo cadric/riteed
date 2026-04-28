@@ -8,7 +8,9 @@ use sourceview5::prelude::*;
 
 use super::diff::{CompareLineAnchor, DiffPlan, map_line_with_anchors};
 use crate::editor_tab::EditorTab;
-use crate::editor_zoom::{EDITOR_VIEW_CSS_CLASS, resolve_scroll_past_end_padding};
+use crate::editor_zoom::{
+    EDITOR_VIEW_CSS_CLASS, copy_zoom_css_classes, resolve_scroll_past_end_padding,
+};
 
 pub(super) struct CompareTags {
     pub(super) editable_changed: gtk4::TextTag,
@@ -64,6 +66,7 @@ pub(super) fn configure_reference_view(tab: &EditorTab, view: &sourceview5::View
     view.set_top_margin(12);
     view.set_vexpand(true);
     view.add_css_class(EDITOR_VIEW_CSS_CLASS);
+    copy_zoom_css_classes(&tab.text_view, view);
     tab.settings.apply_word_wrap(view);
     tab.settings.apply_indentation(view);
 }

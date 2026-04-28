@@ -97,21 +97,22 @@ pub(crate) fn ensure_window_for_tests(
 }
 
 fn install_accels(app: &adw::Application) {
-    app.set_accels_for_action("app.new", &["<Ctrl>n"]);
+    app.set_accels_for_action("app.new-window", &["<Ctrl>n"]);
+    app.set_accels_for_action("app.new", &["<Ctrl>t"]);
+    app.set_accels_for_action("win.tab-move-to-new-window", &["<Ctrl><Shift>n"]);
     app.set_accels_for_action("app.open", &["<Ctrl>o"]);
     app.set_accels_for_action("app.open-folder", &["<Ctrl><Shift>o"]);
-    app.set_accels_for_action("app.open-recent", &[]);
     app.set_accels_for_action("win.save", &["<Ctrl>s"]);
     app.set_accels_for_action("win.save-as", &["<Ctrl><Shift>s"]);
     app.set_accels_for_action("win.close", &["<Ctrl>w"]);
     app.set_accels_for_action("win.search", &["<Ctrl>f"]);
     app.set_accels_for_action("win.replace", &["<Ctrl>h"]);
-    app.set_accels_for_action("win.find-next", &["F3"]);
-    app.set_accels_for_action("win.find-prev", &["<Shift>F3"]);
+    app.set_accels_for_action("win.find-next", &["<Ctrl>g", "F3"]);
+    app.set_accels_for_action("win.find-prev", &["<Ctrl><Shift>g", "<Shift>F3"]);
     app.set_accels_for_action("win.diff-next", &["F8"]);
     app.set_accels_for_action("win.diff-prev", &["<Shift>F8"]);
-    app.set_accels_for_action("win.refresh-project-tree", &["F5"]);
-    app.set_accels_for_action("win.focus-project-sidebar", &["F9"]);
+    app.set_accels_for_action("win.refresh-project-tree", &["<Ctrl>r", "F5"]);
+    app.set_accels_for_action("win.project-sidebar-visible", &["F9"]);
     app.set_accels_for_action("win.fullscreen", &["F11"]);
     app.set_accels_for_action(
         "win.zoom-in",
@@ -158,7 +159,9 @@ fn install_file_actions(
     let app_clone = app.clone();
     let state_clone = Rc::clone(state);
     new_window_action.connect_activate(move |_, _| {
-        if let Some(window) = create_window(&app_clone, &state_clone, factories.secondary) {
+        if let Some(window) =
+            create_window(&app_clone, &state_clone, factories.secondary, factories)
+        {
             window.ensure_default_tab();
             window.present();
         }
@@ -326,7 +329,7 @@ fn ensure_window(
         return Some((window, false));
     }
 
-    create_window(app, state, factories.primary).map(|window| (window, true))
+    create_window(app, state, factories.primary, factories).map(|window| (window, true))
 }
 
 fn resolve_window(state: &Rc<RefCell<AppState>>) -> Option<Rc<Window>> {
@@ -345,10 +348,12 @@ fn create_window(
     app: &adw::Application,
     state: &Rc<RefCell<AppState>>,
     factory: WindowFactory,
+    factories: WindowFactories,
 ) -> Option<Rc<Window>> {
     match factory(app) {
         Ok(window) => {
             register_window(state, &window);
+            install_transfer_window_handler(app, state, factories, &window);
             Some(window)
         }
         Err(error) => {
@@ -369,6 +374,22 @@ fn create_window(
             None
         }
     }
+}
+
+fn install_transfer_window_handler(
+    app: &adw::Application,
+    state: &Rc<RefCell<AppState>>,
+    factories: WindowFactories,
+    window: &Rc<Window>,
+) {
+    let app = app.clone();
+    let state = Rc::downgrade(state);
+    window.set_tab_transfer_window_handler(Rc::new(move || {
+        let state = state.upgrade()?;
+        let window = create_window(&app, &state, factories.secondary, factories)?;
+        window.present();
+        Some(window.workspace())
+    }));
 }
 
 fn register_window(state: &Rc<RefCell<AppState>>, window: &Rc<Window>) {
@@ -408,4 +429,47 @@ fn register_window(state: &Rc<RefCell<AppState>>, window: &Rc<Window>) {
     let mut app_state = state.borrow_mut();
     app_state.last_focused_window = Some(Rc::downgrade(window));
     app_state.windows.push(Rc::clone(window));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn accelerators_match_hig_primary_order() {
+        let riteed_app = RiteedApp::new();
+        let app = riteed_app.application();
+        assert_accels(app, "app.new-window", &["<Ctrl>n"]);
+        assert_accels(app, "app.new", &["<Ctrl>t"]);
+        assert_accels(app, "win.tab-move-to-new-window", &["<Ctrl><Shift>n"]);
+        assert_accels(app, "win.find-next", &["<Ctrl>g", "F3"]);
+        assert_accels(app, "win.find-prev", &["<Ctrl><Shift>g", "<Shift>F3"]);
+        assert_accels(app, "win.refresh-project-tree", &["<Ctrl>r", "F5"]);
+        assert_accels(
+            app,
+            "win.zoom-in",
+            &["<Ctrl>plus", "<Ctrl>equal", "<Ctrl>KP_Add"],
+        );
+        assert_accels(app, "win.project-sidebar-visible", &["F9"]);
+        assert!(accel_strings(app, "app.open-recent").is_empty());
+        assert!(accel_strings(app, "win.focus-project-sidebar").is_empty());
+    }
+
+    fn assert_accels(app: &adw::Application, action: &str, expected: &[&str]) {
+        let expected: Vec<String> = expected.iter().map(|accel| String::from(*accel)).collect();
+        assert_eq!(accel_strings(app, action), expected);
+    }
+
+    fn accel_strings(app: &adw::Application, action: &str) -> Vec<String> {
+        app.accels_for_action(action)
+            .into_iter()
+            .map(|accel| normalize_accel(&accel))
+            .collect()
+    }
+
+    fn normalize_accel(accel: &str) -> String {
+        accel
+            .replace("<Control>", "<Ctrl>")
+            .replace("<Shift><Ctrl>", "<Ctrl><Shift>")
+    }
 }

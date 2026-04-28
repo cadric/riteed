@@ -1,11 +1,12 @@
 ---
 created: 2026-04-19
-updated: 2026-04-26
+updated: 2026-04-27
 status: active
 priority: high
 type: roadmap
 completed_through: v10
 next_version: v11
+final_scheduled_version: v11
 ---
 
 # Complete Roadmap: Mini GNOME Text Editor in Rust
@@ -1001,7 +1002,7 @@ Implement a working v9 of the app with Git repository detection, a lightweight s
 
 V10 finishes the local source control work started in V9 and clears the polish regressions that have accumulated since V8.
 
-The goal is to make local Git workflows feel complete enough for daily use while restoring the visual and interaction polish the app expects. Network-bound source control (push) is intentionally split out into V12 so the security-sensitive bundled Git rebuild can be reviewed on its own.
+The goal is to make local Git workflows feel complete enough for daily use while restoring the visual and interaction polish the app expects. Network-bound source control (push) is intentionally held out of V10 so the security-sensitive bundled Git rebuild can be reviewed on its own; it now lives in the Post-V11 unscheduled candidates and is not part of the current roadmap.
 
 ## What V10 adds
 
@@ -1021,7 +1022,7 @@ The goal is to make local Git workflows feel complete enough for daily use while
 
 ## Why this version matters
 
-V10 turns V9's local source-control core into a complete local workflow. The deferred history and discard items finish the local loop, while the polish work removes the lingering regressions that signal "still in motion". Push is intentionally held for V12 so its security-sensitive bundled Git rebuild can be reviewed on its own. After V10 the app should feel like the V9 plan was always going to land here, with one remaining network-bound capability waiting in V12.
+V10 turns V9's local source-control core into a complete local workflow. The deferred history and discard items finish the local loop, while the polish work removes the lingering regressions that signal "still in motion". Push is intentionally held back so its security-sensitive bundled Git rebuild can be reviewed on its own; it sits in the Post-V11 unscheduled backlog and is not part of the active roadmap. After V10 the app should feel like the V9 plan was always going to land here.
 
 ## Prompt for V10
 
@@ -1092,7 +1093,7 @@ Behavior expectations:
 Technical expectations:
 - Continue to use only the bundled `/app/bin/git` boundary in `app/src/git_process.rs`
 - Add only these new Git verbs to the typed Git boundary as required: `log` and `checkout`/`restore` for discard. Update `app/src/git_process.rs` and `app/build-aux/git/README.md` together; the README is the source of truth for the bundled Git surface
-- Do not expand the bundled Git build flags in v10; network transport stays disabled until v12 reviews it explicitly
+- Do not expand the bundled Git build flags in v10; network transport stays disabled and any future re-enable belongs to its own dedicated milestone (currently in the Post-V11 unscheduled backlog)
 - Keep all source control UI changes inside the existing source control panel architecture
 - Reuse the file-monitoring infrastructure from v4 for the live refresh
 - Keep all user-facing strings ready for gettext localization
@@ -1103,7 +1104,7 @@ Non-goals for v10:
 - No branch management UI
 - No pull, fetch, or merge UI
 - No remote configuration UI
-- No git push (deferred to v12, where the bundled Git build expansion can be reviewed on its own)
+- No git push (held back so the bundled Git build expansion can be reviewed on its own; currently sits in the Post-V11 unscheduled backlog and is not part of the active roadmap)
 - No stash, rebase, or cherry-pick tooling
 - No conflict resolution UI
 - No GitHub or GitLab integration
@@ -1115,7 +1116,7 @@ Implementation guidance:
 - Refresh translations only after all user-visible strings are stable
 
 Deliverable:
-Implement a working v10 of the app with the local source control workflows completed (recent commit history, discard, list view, live monitoring), the polish regressions fixed, and updated help and translations, while preserving the app's identity as a lightweight GNOME editor with a source control side panel. Push is intentionally deferred to v12.
+Implement a working v10 of the app with the local source control workflows completed (recent commit history, discard, list view, live monitoring), the polish regressions fixed, and updated help and translations, while preserving the app's identity as a lightweight GNOME editor with a source control side panel. Push is intentionally held back and is not in scope for v10.
 ```
 
 ---
@@ -1141,27 +1142,23 @@ This is a writing-and-editing release: it makes the editor self-sufficient for s
 * Find in Files across the open workspace
 * Document statistics (word, line, character counts)
 * Print support
-* Optional GTK native spell check
-* Lightweight Markdown preview for `.md` files
 
 ## Why this version matters
 
-V11 closes practical gaps that have shown up in real use: replace was implied by V3's search but never fully landed, find-in-files leverages the V6 workspace model, statistics and printing make the app appropriate for documents that leave the editor, and spell check is the single most-requested writing feature compatible with our scope.
+V11 closes practical gaps that have shown up in real use: replace was implied by V3's search but never fully landed, find-in-files leverages the V6 workspace model, and statistics and printing make the app appropriate for documents that leave the editor. V11 is the final scheduled milestone on the roadmap; remaining ideas (spell check, Markdown preview, git push) are collected as unscheduled candidates and only promoted to a real version once one of them earns it.
 
 ## Prompt for V11
 
 ```text
-Build v11 of the GNOME desktop application in Rust by extending everyday editing capabilities with replace, project-wide search, document statistics, printing, and optional spell check.
+Build v11 of the GNOME desktop application in Rust by extending everyday editing capabilities with replace, project-wide search, document statistics, and printing.
 
-The goal of v11 is to make the editor genuinely capable for serious text and writing work, while keeping the app lightweight and GNOME-native. This version should round out features that complement the existing search and workspace model rather than introduce new architectural pieces.
+The goal of v11 is to make the editor genuinely capable for serious text work, while keeping the app lightweight and GNOME-native. This version should round out features that complement the existing search and workspace model rather than introduce new architectural pieces.
 
 What v11 adds:
 - Replace and Replace All in the search bar
 - Find in Files across the open workspace
 - Document statistics (word count, line count, character counts with and without spaces)
 - Print support via the portal
-- Optional GTK native spell check
-- Lightweight read-only Markdown preview for `.md` files
 
 Scope for v11:
 - Add Replace and Replace All
@@ -1181,18 +1178,6 @@ Scope for v11:
   - Use the portal-based print flow
   - Print the editor buffer with current font and basic page layout
   - Keep options minimal and predictable
-- Optionally add spell check
-  - Use GtkSourceView native spelling support if available on the bundled platform
-  - Allow per-document toggle and a default in preferences
-  - Skip cleanly if the native support has unresolved sandbox or runtime gaps
-- Add lightweight Markdown preview
-  - Provide a read-only rendered view of `.md` files in a side-by-side panel
-  - Reuse the v6/v7 split-pane infrastructure rather than introducing a new view axis
-  - Render inside the app via GTK text tags only; no embedded browser, no HTML, no JavaScript
-  - Default off per tab; provide a one-click toggle when the active document is Markdown
-  - Support headings (h1–h6), bold, italic, inline code, fenced code blocks, blockquotes (including nested), horizontal rules, lists, and links
-  - Render images by alt-text only in the first iteration; do not fetch HTTP-hosted images
-  - Preserve preview scroll position across re-renders; debounce re-rendering adaptively based on document size
 
 Behavior expectations:
 - The app should remain a lightweight GNOME editor
@@ -1206,7 +1191,6 @@ Technical expectations:
 - Reuse the v3 search controller for replace
 - Reuse the v6 workspace traversal for find-in-files
 - Use the print portal rather than direct printer access
-- Use pulldown-cmark with default features for the Markdown event stream; render events into a separate read-only GtkTextBuffer with GtkTextTags
 - Keep all user-facing strings ready for gettext localization
 - Preserve hard limits: 600-line files, no `unsafe`/`unwrap`/`expect`, no broad permissions
 
@@ -1214,120 +1198,66 @@ Non-goals for v11:
 - No regex-based find and replace if it requires non-trivial UI scope (defer if it grows)
 - No find-in-files indexing layer; use a streaming scan
 - No advanced print preview beyond what the portal provides
-- No grammar checking, only spell checking
 - No multi-file replace driven from find-in-files results in this version
-- No HTML, JavaScript, or browser-engine rendering of Markdown
-- No HTTP image fetching in the Markdown preview
-- No WYSIWYG Markdown editing — the preview is strictly read-only
-- No editor↔preview scroll synchronization in this version
 
 Implementation guidance:
 - Treat replace as a small extension of the search bar, not a new mode
 - Keep find-in-files modest: one workspace, one query, clear results
 - Make statistics a single dialog action available from the menu
-- Make spell check optional and disable cleanly if the platform support is missing
 - Refresh help and translations as part of the same change
 
 Deliverable:
-Implement a working v11 of the app with replace and replace-all, find in files across the workspace, document statistics, print support, optional spell check, and a lightweight read-only Markdown preview for `.md` files, while preserving the app's identity as a lightweight GNOME editor.
+Implement a working v11 of the app with replace and replace-all, find in files across the workspace, document statistics, and print support, while preserving the app's identity as a lightweight GNOME editor.
 ```
 
 ---
 
-# V12 — Remote source control (git push)
+# Post-V11 — Unscheduled candidates
 
-> created: 2026-04-26
-> updated: 2026-04-26
-> status: planned
-> priority: medium
-> type: roadmap-milestone
-> implementation: pending
+> created: 2026-04-27
+> updated: 2026-04-27
+> status: deferred
+> priority: low
+> type: roadmap-backlog
+> implementation: not scheduled
 
 ## Purpose
 
-V12 closes the lightweight source control workflow by adding the one network-bound capability the editor needs: push.
+This section collects ideas that are explicitly **not** part of the current roadmap. They have not earned a version number and may never. They live here so they are not silently forgotten and so future scoping has a single place to look. None of these items should be planned, prompted, or started without first being promoted into a numbered version.
 
-This is intentionally the final source-control milestone and the closing release of the lightweight-editor roadmap. It opens the bundled Git network boundary safely, designs the authentication path, and ships push for the current branch — and stops there. Pull, fetch, branch management, and remote configuration remain explicit non-goals.
+The rule for promotion is unchanged from the rest of the roadmap: a candidate becomes a version only when there is a concrete reason it must ship next, and only when it can fit a single coherent release without dragging in the others.
 
-## What V12 adds
+## Candidate items
 
+* Optional GTK native spell check
+* Lightweight Markdown preview for `.md` files
 * Git push for the current branch and configured remote
 * Bundled Git build expanded to support network transport (re-enabling curl/openssl/expat with documented justification)
 * Authentication path for push using GNOME-appropriate credential storage
 * Clear surfacing of authentication, network, and rejection errors in the source control side panel
 
-## Why this version matters
+## Why each candidate is deferred
 
-Push is the one remaining capability that completes the round-trip from "edit → stage → commit" to "edit → stage → commit → publish" without leaving the editor. Splitting it out of V10 means the security-sensitive bundled Git rebuild gets its own milestone with proper review headroom, instead of riding alongside polish work.
+**Spell check** — depends on whether GtkSourceView's native spelling support is available on the bundled platform without sandbox or runtime gaps. Worth holding until there is a forcing reason.
 
-V12 is also a deliberate stopping point. After V12, the lightweight Git surface in Riteed is intentionally complete — anything more (branch UI, conflict resolution, log browser, hosted-service integration) would push the app into Git client territory and is explicitly out of scope. Framed correctly, V12 is less "add a button" and more "open the network boundary safely" — that is what justifies it as its own release.
+**Markdown preview** — useful but distinct from the editor's identity as a plain-text/code editor; the existing diff/compare infrastructure already provides side-by-side viewing for the cases that matter most today.
 
-## Prompt for V12
+**Git push (and the three items it requires)** — push is treated as a single coupled bundle: it cannot ship without re-enabling network transport in the bundled Git build (re-justifying NO_CURL/NO_OPENSSL/NO_EXPAT), without a credential storage path, and without explicit error surfacing. The bundled Git network expansion is security-sensitive enough that it should only be opened when push itself is the next thing to ship — not preemptively.
 
-```text
-Build v12 of the GNOME desktop application in Rust by adding git push to the lightweight source control workflow established in v9 and completed in v10.
+## Promotion rules
 
-The goal of v12 is to close the lightweight source control loop by allowing the user to publish their commits to a configured remote, without expanding the app into a full Git client. This version requires re-enabling network transport in the bundled Git build, which is a security-sensitive change and must be justified in the same change that ships push.
+If any of these items is promoted to a real version later, the promoting change must:
 
-What v12 adds:
-- Git push action for the current branch and configured remote
-- Bundled Git build expanded to support network transport
-- Authentication path for push, with credentials handled through GNOME-appropriate storage
-- Clear surfacing of authentication, network, and rejection errors in the source control side panel
-
-Scope for v12:
-- Add git push
-  - Provide a simple push action for the current branch and configured remote
-  - Surface authentication and network errors clearly
-  - Limit scope to push; do not add pull, fetch, branch management, or remote configuration UI
-  - Bundled Git build must be revisited: push requires network transport, which the v9 manifest intentionally disabled (NO_CURL, NO_OPENSSL, NO_EXPAT). Re-enabling these is a security-sensitive decision and must be justified in the same change that ships push, with the bundled Git README and Flatpak manifest updated together
-- Design the authentication path
-  - Choose between HTTPS push with portal-backed credential storage and SSH push via available sandbox transport, and document the chosen path in the bundled Git README
-  - Never store credentials in GSettings; never spawn host helpers outside the typed Git boundary
-  - Document any new finish-args additions to the Flatpak manifest with explicit justification
-- Surface push results clearly
-  - Show success, authentication failure, network failure, and rejection (non-fast-forward) as distinct states in the source control side panel
-  - Never silently swallow push errors
-
-Behavior expectations:
-- Push should never silently fail; the user should always know whether a push succeeded
-- Authentication prompts must be predictable and dismissible
-- Push must run off the main UI thread
-- The app should remain a lightweight GNOME editor with a source control side panel, not a full Git client
-
-Technical expectations:
-- Add `push` to the typed Git boundary in `app/src/git_process.rs`; the README in `app/build-aux/git/` remains the source of truth for the bundled Git surface
-- Re-justify the bundled Git surface explicitly when re-enabling network transport, including which protocols (HTTPS, SSH) are supported and which are not
-- Run push asynchronously via the existing Gio subprocess boundary
-- Use portal-based credential storage where possible; do not invent a custom credential store
-- Keep all user-facing strings ready for gettext localization
-- Preserve hard limits: 600-line files, no `unsafe`/`unwrap`/`expect`, no broad permissions beyond what push genuinely requires
-
-Non-goals for v12:
-- No pull, fetch, or merge UI
-- No branch creation, deletion, or switching
-- No remote add, remove, or rename UI
-- No conflict resolution UI
-- No stash, rebase, cherry-pick, or other rewriting tools
-- No hosted-service integration (GitHub, GitLab, etc.)
-- No log browser beyond what v10 ships
-- No code completion, language servers, or IDE tooling — these remain off the roadmap
-
-Implementation guidance:
-- Treat v12 as the final source-control milestone and the closing release of the lightweight-editor roadmap; do not let push pull other Git capabilities into scope
-- Keep push surgical: one button, one branch, one remote, clear errors
-- Treat the bundled Git build expansion as the central security review of this milestone, not as a side effect of the push button
-- Refresh help and translations as part of the same change
-
-Deliverable:
-Implement a working v10 of the app with completed local source-control list/history/discard/live-refresh workflows and the accumulated UX regression fixes, while preserving the explicit non-goals around branch, conflict, remote, and full Git-client management.
-```
+* Pick a version number (V12, V13, …) and create a full milestone section with Purpose, What it adds, Why this version matters, and Prompt — matching the structure of V1–V11
+* Pull only the items that genuinely belong together in one release; do not promote the whole list at once unless that is the actual decision
+* Re-justify any bundled Git or Flatpak manifest expansion as part of the same change, not as a follow-up
+* Update the header `final_scheduled_version` and the Summary section accordingly
 
 ---
 
 # Summary of the full progression
 
-V1–V10 are complete as of 2026-04-26. V10 closed V9's deferred local items (recent commit history, discard) and cleared the polish regressions accumulated since V8. V11 is a view-and-editing release (replace, find in files, statistics, print, optional spell check, lightweight Markdown preview). V12 closes the lightweight source-control workflow by adding git push, with the security-sensitive bundled Git rebuild scoped to that milestone alone — and is the closing release of the roadmap.
+V1–V10 are complete as of 2026-04-26. V10 closed V9's deferred local items (recent commit history, discard) and cleared the polish regressions accumulated since V8. V11 is the final scheduled release: an editing-power-tools milestone (replace, find in files, statistics, print). Anything beyond V11 — spell check, Markdown preview, git push and the bundled Git network expansion it requires — sits in the "Post-V11 — Unscheduled candidates" section and only earns a version number once one of those items has a concrete reason to ship next.
 
 ## V1
 
@@ -1371,11 +1301,11 @@ Complete the source control workflow and clear accumulated polish regressions.
 
 ## V11
 
-Add view and editing power tools: replace, find in files, statistics, printing, optional spell check, and lightweight Markdown preview.
+Add editing power tools: replace, find in files, statistics, and printing. Final scheduled milestone.
 
-## V12
+## Post-V11
 
-Add git push as the closing source-control milestone, including the safe expansion of the bundled Git build for network transport.
+Unscheduled backlog. Holds spell check, Markdown preview, and the git push bundle (push action + bundled Git network expansion + credential storage + error surfacing). Items only promote to a numbered version when one has a concrete reason to ship next.
 
 ---
 

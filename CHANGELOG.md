@@ -1,6 +1,6 @@
 ---
 created: 2026-04-19
-updated: 2026-04-26
+updated: 2026-04-28
 status: current
 priority: high
 type: release
@@ -44,6 +44,9 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Moved quick app appearance and editor palette controls into an icon-only header-bar Appearance panel with visual palette previews, while keeping editor view toggles such as current-line highlight in Preferences.
 - Refined the editor chrome by putting Project Sidebar first in the header bar, moving Save beside Open, moving a friendly file location into the bottom status bar, and removing the status-bar Actual Size button.
 - Simplified the primary menu into a lean app menu (New Window, Open..., Open Folder..., Recent Files..., Search, Compare..., Keyboard Shortcuts, Preferences, Help, About).
+- Moved text-file, folder, and recent-file opening into a header-bar Open split button, filtering the Open Folder chooser to folders where supported, removing duplicate open commands from the primary menu, and using the standard new-tab icon.
+- Aligned keyboard shortcuts and shortcut labels with GNOME HIG conventions, including Ctrl+N for New Window, Ctrl+T for New Tab, Ctrl+G for find navigation, Ctrl+R for project refresh, and F9 for toggling the project sidebar.
+- Added a native tab context menu for moving tabs backward/forward, moving a tab to a new window, closing other tabs, and closing the current tab, with per-window zoom styling preserved after tab transfer.
 - Reworked Compare into a single-entry flow: Compare... opens a dedicated compare dialog where the user chooses sources (current document, saved version, file, or pasted text), with left as the editable side and right as the reference.
 - Moved compare-session actions (refresh reference, exit compare, next/previous diff) out of the main menu and into the compare view/toolbar.
 - Switched Recent Files to a lightweight dialog listing recent documents (most recent first) instead of nested menu flows.

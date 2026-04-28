@@ -10,19 +10,6 @@ use crate::window_project::{
     ProjectState,
 };
 
-pub(super) fn focus_sidebar(state: &Rc<RefCell<ProjectState>>) {
-    let should_show = {
-        let state = state.borrow();
-        if state.root.is_none() {
-            return;
-        }
-        state.split_view.position() == 0
-    };
-    if should_show && let Some(mut state) = state.try_borrow_mut().ok() {
-        set_sidebar_visibility(&mut state, true);
-    }
-}
-
 pub(super) fn sync_actions_for_root(state: &Rc<RefCell<ProjectState>>) {
     let mut state = state.borrow_mut();
     let has_root = state.root.is_some();

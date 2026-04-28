@@ -164,7 +164,7 @@ msgstr ""
 msgid "Insert Spaces Instead of Tabs"
 msgstr ""
 
-msgid "It provides tabs, search and replace, syntax highlighting, optional line numbers and minimap, format controls for text encoding and line endings, curated editor palettes, and conservative reload prompts when files change on disk."
+msgid "It provides tabs, find and replace, syntax highlighting, optional line numbers and minimap, format controls for text encoding and line endings, curated editor palettes, and conservative reload prompts when files change on disk."
 msgstr ""
 
 msgid "Loading recent commits..."
@@ -224,10 +224,10 @@ msgstr ""
 msgid "Open Appearance from the main menu to adjust app appearance and editor palettes. Enable current-line highlight, line numbers, and the minimap in Preferences when you want more structure while reading longer code or markdown files."
 msgstr ""
 
-msgid "Open Keyboard Shortcuts from the main menu to review the available file, tab, search, and app commands."
+msgid "Open Keyboard Shortcuts from the main menu to review the available file, tab, find, and app commands."
 msgstr ""
 
-msgid "Open Text Files"
+msgid "Open Files"
 msgstr ""
 
 msgid "Open a Git folder to review changed files in the Source Control sidebar, then switch between tree and list views while keeping each view's selection and tree expansion state."
@@ -248,10 +248,10 @@ msgstr ""
 msgid "Pre-commit hooks are not run from Riteed."
 msgstr ""
 
-msgid "Press Ctrl+F to search in the selected document, Ctrl+H to show replace, and F3 or Shift+F3 to move between matches."
+msgid "Press Ctrl+F to find text in the current document, Ctrl+H to show replace, and Ctrl+G or Shift+Ctrl+G to move between matches."
 msgstr ""
 
-msgid "Press Ctrl+N to create another tab, and use Open... (Ctrl+O) to load local plain text files into separate tabs with their saved encoding and line endings."
+msgid "Press Ctrl+T to create another tab, and use Open Files (Ctrl+O) to load local files into separate tabs with their saved encoding and line endings."
 msgstr ""
 
 msgid "Preview unavailable"
@@ -310,7 +310,7 @@ msgstr ""
 msgid "Riteed Only Supports Local Plain Text Files in This Version."
 msgstr ""
 
-msgid "Riteed is a lightweight GNOME editor for text, code, config, and markdown files, with tabs, search, syntax highlighting, session restore, and encoding-aware open and save behavior."
+msgid "Riteed is a lightweight GNOME editor for text, code, config, and markdown files, with tabs, find, syntax highlighting, session restore, and encoding-aware open and save behavior."
 msgstr ""
 
 msgid "Riteed is a small GNOME text editor for editing local text, code, config, and markdown files with encoding-aware open and save behavior."
@@ -325,7 +325,7 @@ msgstr ""
 msgid "Save Changes Before Continuing?"
 msgstr ""
 
-msgid "Save the Selected Document"
+msgid "Save Current File"
 msgstr ""
 
 msgid "Save the open document before using Git actions."

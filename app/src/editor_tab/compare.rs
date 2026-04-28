@@ -171,6 +171,24 @@ impl EditorTab {
         }
     }
 
+    pub(crate) fn clear_compare_zoom_style(&self) {
+        let Ok(compare_state) = self.compare.try_borrow() else {
+            return;
+        };
+        if let Some(compare) = compare_state.as_ref() {
+            compare.clear_zoom_style();
+        }
+    }
+
+    pub(crate) fn restore_compare_zoom_style(&self, css_class: &str) {
+        let Ok(compare_state) = self.compare.try_borrow() else {
+            return;
+        };
+        if let Some(compare) = compare_state.as_ref() {
+            compare.restore_zoom_style(css_class);
+        }
+    }
+
     pub(super) fn sync_compare_reference_after_save(&self, saved_uri: &str) {
         let text = self.buffer_text();
         let Ok(mut compare_state) = self.compare.try_borrow_mut() else {

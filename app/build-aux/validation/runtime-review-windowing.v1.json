@@ -27,7 +27,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 130,
+      "line": 131,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "App-scoped actions borrow shared application state.",
@@ -35,7 +35,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 139,
+      "line": 140,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "File actions borrow shared application state.",
@@ -43,7 +43,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 216,
+      "line": 219,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "App actions borrow shared application state.",
@@ -51,7 +51,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 279,
+      "line": 282,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "Application lifecycle callbacks borrow shared application state.",
@@ -59,7 +59,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 322,
+      "line": 325,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "Window resolution borrows shared application state.",
@@ -67,7 +67,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 332,
+      "line": 335,
       "match": "fn resolve_window(state: &Rc<RefCell<AppState>>) -> Option<Rc<Window>> {",
       "kind": "runtime-shared-state",
       "ownership": "Active editor window resolution reads shared application state.",
@@ -75,7 +75,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 346,
+      "line": 349,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "Window creation borrows shared application state.",
@@ -83,7 +83,15 @@
     },
     {
       "path": "src/app.rs",
-      "line": 374,
+      "line": 381,
+      "match": "state: &Rc<RefCell<AppState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Tab-transfer window handler borrows shared application state.",
+      "justification": "Moving a tab to a new window must create a registered secondary editor window through the same lifecycle registry as normal window creation."
+    },
+    {
+      "path": "src/app.rs",
+      "line": 395,
       "match": "fn register_window(state: &Rc<RefCell<AppState>>, window: &Rc<Window>) {",
       "kind": "runtime-shared-state",
       "ownership": "Window registration mutates shared application state.",

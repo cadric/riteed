@@ -2,7 +2,10 @@ use gtk4::{pango, prelude::*};
 use sourceview5::prelude::*;
 
 use super::EditorTab;
-use crate::editor_zoom::EDITOR_VIEW_CSS_CLASS;
+use crate::editor_zoom::{clear_zoom_css_classes, restore_zoom_css_class};
+
+#[cfg(test)]
+use crate::editor_zoom::{EDITOR_VIEW_CSS_CLASS, EDITOR_ZOOM_CSS_CLASS_PREFIX};
 
 #[cfg(test)]
 use std::rc::Rc;
@@ -56,13 +59,15 @@ impl EditorTab {
     }
 
     pub fn clear_zoom_style(&self) {
-        self.text_view.remove_css_class(EDITOR_VIEW_CSS_CLASS);
+        clear_zoom_css_classes(&self.text_view);
+        self.clear_compare_zoom_style();
         self.minimap
             .set_font_desc(Option::<&pango::FontDescription>::None);
     }
 
-    pub fn restore_zoom_style(&self) {
-        self.text_view.add_css_class(EDITOR_VIEW_CSS_CLASS);
+    pub fn restore_zoom_style(&self, css_class: &str) {
+        restore_zoom_css_class(&self.text_view, css_class);
+        self.restore_compare_zoom_style(css_class);
     }
 
     #[must_use]
@@ -159,6 +164,16 @@ impl EditorTab {
     #[cfg(test)]
     pub(crate) fn view_has_zoom_class_for_tests(&self) -> bool {
         self.text_view.has_css_class(EDITOR_VIEW_CSS_CLASS)
+    }
+
+    #[cfg(test)]
+    pub(crate) fn zoom_css_classes_for_tests(&self) -> Vec<String> {
+        self.text_view
+            .css_classes()
+            .into_iter()
+            .filter(|css_class| css_class.as_str().starts_with(EDITOR_ZOOM_CSS_CLASS_PREFIX))
+            .map(|css_class| css_class.to_string())
+            .collect()
     }
 
     #[cfg(test)]

@@ -1,7 +1,7 @@
 use std::cell::Cell;
 use std::rc::Rc;
 
-use gettextrs::gettext;
+use gettextrs::{gettext, pgettext};
 use gtk4::accessible::Property;
 use gtk4::{gdk, gio, glib, prelude::*};
 use libadwaita as adw;
@@ -60,7 +60,6 @@ pub struct Window {
     find_prev_action: gio::SimpleAction,
     appearance_action: gio::SimpleAction,
     fullscreen_action: gio::SimpleAction,
-    focus_project_action: gio::SimpleAction,
     settings: AppSettings,
     workspace: Rc<Workspace>,
     appearance: WindowAppearanceController,
@@ -119,6 +118,7 @@ impl Window {
         init: WindowInit,
     ) -> Result<Rc<Self>, AppError> {
         let shell = WindowShell::new(app)?;
+        configure_open_button(&shell);
         sourceview5::init();
         configure_runtime_icon_support(&shell.window);
         WindowAppearanceController::install_css(&gtk4::prelude::WidgetExt::display(&shell.window));
@@ -133,7 +133,6 @@ impl Window {
         let appearance_action = gio::SimpleAction::new("appearance", None);
         let fullscreen_action =
             gio::SimpleAction::new_stateful("fullscreen", None, &false.to_variant());
-        let focus_project_action = gio::SimpleAction::new("focus-project-sidebar", None);
         shell.window.add_action(&save_action);
         shell.window.add_action(&save_as_action);
         shell.window.add_action(&close_action);
@@ -144,7 +143,6 @@ impl Window {
         shell.window.add_action(&find_prev_action);
         shell.window.add_action(&appearance_action);
         shell.window.add_action(&fullscreen_action);
-        shell.window.add_action(&focus_project_action);
 
         settings.apply_theme();
 
@@ -194,7 +192,6 @@ impl Window {
             find_prev_action,
             appearance_action,
             fullscreen_action,
-            focus_project_action,
             settings,
             workspace,
             appearance,
@@ -228,6 +225,17 @@ impl Window {
 
     pub fn present(&self) {
         self.shell.window.present();
+    }
+
+    pub(crate) fn workspace(&self) -> Rc<Workspace> {
+        Rc::clone(&self.workspace)
+    }
+
+    pub(crate) fn set_tab_transfer_window_handler(
+        &self,
+        handler: crate::workspace::tabs::TransferWindowHandler,
+    ) {
+        self.workspace.set_transfer_window_handler(handler);
     }
 
     pub fn ensure_default_tab(self: &Rc<Self>) {
@@ -329,6 +337,13 @@ impl Window {
 
     fn install_document_callbacks(self: &Rc<Self>) {
         let weak = Rc::downgrade(self);
+        self.shell.open_button.connect_clicked(move |_| {
+            if let Some(window) = weak.upgrade() {
+                window.request_open_dialog();
+            }
+        });
+
+        let weak = Rc::downgrade(self);
         self.save_action.connect_activate(move |_, _| {
             if let Some(window) = weak.upgrade() {
                 window.request_save();
@@ -405,13 +420,6 @@ impl Window {
         });
 
         let weak = Rc::downgrade(self);
-        self.focus_project_action.connect_activate(move |_, _| {
-            if let Some(window) = weak.upgrade() {
-                window.project.focus_sidebar();
-            }
-        });
-
-        let weak = Rc::downgrade(self);
         self.shell.window.connect_fullscreened_notify(move |shell| {
             if let Some(window) = weak.upgrade() {
                 let fullscreened = shell.is_fullscreen();
@@ -469,13 +477,13 @@ impl Window {
             .update_property(&[Property::Label(&gettext("New Tab"))]);
         self.shell
             .open_button
-            .update_property(&[Property::Label(&gettext("Open Text Files"))]);
+            .update_property(&[Property::Label(&gettext("Open Files"))]);
         self.shell
             .project_sidebar_button
             .update_property(&[Property::Label(&gettext("Project Sidebar"))]);
         self.shell
             .save_button
-            .update_property(&[Property::Label(&gettext("Save the Selected Document"))]);
+            .update_property(&[Property::Label(&gettext("Save Current File"))]);
         self.shell
             .primary_menu_button
             .update_property(&[Property::Label(&gettext("Main Menu"))]);
@@ -518,6 +526,14 @@ impl Window {
         };
         self.settings.set_window_size(width, height);
     }
+}
+
+fn configure_open_button(shell: &WindowShell) {
+    let menu = crate::workspace_menu::build_open_menu();
+    shell.open_button.set_menu_model(Some(&menu));
+    shell
+        .open_button
+        .set_dropdown_tooltip(&pgettext("open menu tooltip", "Open Choices"));
 }
 
 fn configure_runtime_icon_support(window: &adw::ApplicationWindow) {

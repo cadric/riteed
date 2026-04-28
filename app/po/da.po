@@ -42,7 +42,7 @@ msgstr ""
 msgid "Highlight Current Line"
 msgstr ""
 
-msgid "It provides tabs, search and replace, syntax highlighting, optional line numbers and minimap, format controls for text encoding and line endings, curated editor palettes, and conservative reload prompts when files change on disk."
+msgid "It provides tabs, find and replace, syntax highlighting, optional line numbers and minimap, format controls for text encoding and line endings, curated editor palettes, and conservative reload prompts when files change on disk."
 msgstr ""
 
 msgid "Main Menu"
@@ -51,13 +51,13 @@ msgstr ""
 msgid "New Tab"
 msgstr ""
 
-msgid "Open Text Files"
+msgid "Open Files"
 msgstr ""
 
 msgid "Project Sidebar"
 msgstr ""
 
-msgid "Save the Selected Document"
+msgid "Save Current File"
 msgstr ""
 
 msgid "The document contains characters that cannot be saved with the selected encoding."
@@ -98,9 +98,33 @@ msgctxt "editor palette"
 msgid "Solarized Light"
 msgstr ""
 
+msgctxt "file filter"
+msgid "Folders"
+msgstr ""
+
 msgctxt "menu item"
 msgid "Fullscreen"
 msgstr ""
+
+msgctxt "tab menu item"
+msgid "Close"
+msgstr "Luk"
+
+msgctxt "tab menu item"
+msgid "Close Other Tabs"
+msgstr "Luk andre faneblade"
+
+msgctxt "tab menu item"
+msgid "Move Tab Backward"
+msgstr "Flyt faneblad tilbage"
+
+msgctxt "tab menu item"
+msgid "Move Tab Forward"
+msgstr "Flyt faneblad frem"
+
+msgctxt "tab menu item"
+msgid "Move to New Window"
+msgstr "Flyt til nyt vindue"
 
 msgctxt "save safety action"
 msgid "Save"

@@ -12,6 +12,7 @@ use super::ui::{
 };
 use super::{CompareController, CompareTarget};
 use crate::editor_tab::EditorTab;
+use crate::editor_zoom::{clear_zoom_css_classes, restore_zoom_css_class};
 
 impl CompareController {
     pub(super) fn new(tab: &Rc<EditorTab>, target: CompareTarget) -> Self {
@@ -185,6 +186,14 @@ impl CompareController {
 
     pub(super) fn apply_tag_colors(&self, dark: bool) {
         self.tags.apply_colors(dark);
+    }
+
+    pub(super) fn clear_zoom_style(&self) {
+        clear_zoom_css_classes(&self.reference_view);
+    }
+
+    pub(super) fn restore_zoom_style(&self, css_class: &str) {
+        restore_zoom_css_class(&self.reference_view, css_class);
     }
 
     fn scroll_current_hunk(

@@ -22,7 +22,7 @@ struct OpenRequest {
 pub(crate) fn request_open_dialog(workspace: &Rc<Workspace>, parent: &adw::ApplicationWindow) {
     workspace.ensure_default_tab();
     let dialog = gtk4::FileDialog::builder()
-        .title(pgettext("file dialog title", "Open Text Files"))
+        .title(pgettext("file dialog title", "Open Files"))
         .accept_label(pgettext("file dialog action", "Open"))
         .modal(true)
         .build();

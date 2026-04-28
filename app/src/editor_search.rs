@@ -60,7 +60,7 @@ impl EditorSearch {
 
         let close_button = icon_button(
             "window-close-symbolic",
-            &pgettext("search action", "Close Search"),
+            &pgettext("search action", "Close Find"),
         );
 
         let first_row = gtk4::Box::builder()

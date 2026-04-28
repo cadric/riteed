@@ -184,6 +184,7 @@ impl WindowProjectController {
             .accept_label(pgettext("file dialog action", "Open"))
             .modal(true)
             .build();
+        apply_folder_filter(&dialog);
 
         let state = Rc::downgrade(&self.state);
         dialog.select_folder(
@@ -214,11 +215,6 @@ impl WindowProjectController {
 
     pub(crate) fn restore_before_session(&self) {
         self.restore_from_settings();
-    }
-
-    pub(crate) fn focus_sidebar(&self) {
-        sidebar_state::focus_sidebar(&self.state);
-        self.state.borrow().browser.focus_tree_after_reveal();
     }
 
     #[must_use]
@@ -357,6 +353,17 @@ impl WindowProjectController {
 
         sidebar_state::sync_actions_for_root(&self.state);
     }
+}
+
+fn apply_folder_filter(dialog: &gtk4::FileDialog) {
+    let folder_filter = gtk4::FileFilter::new();
+    folder_filter.set_name(Some(&pgettext("file filter", "Folders")));
+    folder_filter.add_mime_type("inode/directory");
+
+    let filters: gio::ListStore = gio::ListStore::new::<gtk4::FileFilter>();
+    filters.append(&folder_filter);
+    dialog.set_filters(Some(&filters));
+    dialog.set_default_filter(Some(&folder_filter));
 }
 
 fn open_file_from_tree(state: &Rc<RefCell<ProjectState>>, file: gio::File) {

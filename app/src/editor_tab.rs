@@ -20,6 +20,9 @@ mod runtime;
 mod save;
 mod view;
 
+type FileDropHandler = Rc<dyn Fn(Vec<gio::File>)>;
+type TabCallback = Rc<dyn Fn()>;
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SaveOutcome {
     pub old_uri: Option<String>,
@@ -135,10 +138,10 @@ pub struct EditorTab {
     compare_request_generation: Cell<u64>,
     autosave_generation: Cell<u64>,
     page: OnceCell<adw::TabPage>,
-    on_file_drop: OnceCell<Rc<dyn Fn(Vec<gio::File>)>>,
-    on_visual_change: OnceCell<Rc<dyn Fn()>>,
-    on_external_state_change: OnceCell<Rc<dyn Fn()>>,
-    on_external_action: OnceCell<Rc<dyn Fn()>>,
+    on_file_drop: RefCell<Option<FileDropHandler>>,
+    on_visual_change: RefCell<Option<TabCallback>>,
+    on_external_state_change: RefCell<Option<TabCallback>>,
+    on_external_action: RefCell<Option<TabCallback>>,
 }
 
 impl EditorTab {
@@ -173,10 +176,10 @@ impl EditorTab {
             compare_request_generation: Cell::new(0),
             autosave_generation: Cell::new(0),
             page: OnceCell::new(),
-            on_file_drop: OnceCell::new(),
-            on_visual_change: OnceCell::new(),
-            on_external_state_change: OnceCell::new(),
-            on_external_action: OnceCell::new(),
+            on_file_drop: RefCell::new(None),
+            on_visual_change: RefCell::new(None),
+            on_external_state_change: RefCell::new(None),
+            on_external_action: RefCell::new(None),
         });
         tab.install_callbacks();
         tab.sync_presentation();
@@ -192,19 +195,19 @@ impl EditorTab {
     }
 
     pub fn set_visual_change_handler(&self, callback: Rc<dyn Fn()>) {
-        let _set_callback = self.on_visual_change.set(callback);
+        self.on_visual_change.replace(Some(callback));
     }
 
     pub fn set_file_drop_handler(&self, callback: Rc<dyn Fn(Vec<gio::File>)>) {
-        let _set_callback = self.on_file_drop.set(callback);
+        self.on_file_drop.replace(Some(callback));
     }
 
     pub fn set_external_state_handler(&self, callback: Rc<dyn Fn()>) {
-        let _set_callback = self.on_external_state_change.set(callback);
+        self.on_external_state_change.replace(Some(callback));
     }
 
     pub fn set_external_action_handler(&self, callback: Rc<dyn Fn()>) {
-        let _set_callback = self.on_external_action.set(callback);
+        self.on_external_action.replace(Some(callback));
     }
 
     #[must_use]
@@ -380,18 +383,22 @@ impl EditorTab {
 
         let weak = Rc::downgrade(self);
         self.text_buffer.connect_cursor_moved(move |_| {
-            if let Some(tab) = weak.upgrade()
-                && let Some(callback) = tab.on_visual_change.get()
-            {
+            let Some(tab) = weak.upgrade() else {
+                return;
+            };
+            let callback = tab.on_visual_change.borrow().clone();
+            if let Some(callback) = callback {
                 callback();
             }
         });
 
         let weak = Rc::downgrade(self);
         self.banner.connect_button_clicked(move |_| {
-            if let Some(tab) = weak.upgrade()
-                && let Some(callback) = tab.on_external_action.get()
-            {
+            let Some(tab) = weak.upgrade() else {
+                return;
+            };
+            let callback = tab.on_external_action.borrow().clone();
+            if let Some(callback) = callback {
                 callback();
             }
         });
@@ -435,7 +442,8 @@ impl EditorTab {
             }
         }
 
-        if let Some(callback) = self.on_visual_change.get() {
+        let callback = self.on_visual_change.borrow().clone();
+        if let Some(callback) = callback {
             callback();
         }
     }
@@ -449,7 +457,8 @@ fn install_file_drop_target(widget: &impl IsA<gtk4::Widget>, weak: &std::rc::Wea
         let Some(tab) = weak.upgrade() else {
             return false;
         };
-        let Some(handler) = tab.on_file_drop.get() else {
+        let handler = tab.on_file_drop.borrow().clone();
+        let Some(handler) = handler else {
             return false;
         };
         match value.get::<gdk::FileList>() {

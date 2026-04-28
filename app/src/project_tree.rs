@@ -14,7 +14,6 @@ pub(crate) enum ProjectTreeActivation {
 pub(crate) struct ProjectTree {
     model: ProjectTreeModel,
     selection: gtk4::SingleSelection,
-    list_view: gtk4::ListView,
     scroller: gtk4::ScrolledWindow,
 }
 
@@ -33,7 +32,6 @@ impl ProjectTree {
         Self {
             model,
             selection,
-            list_view,
             scroller,
         }
     }
@@ -51,26 +49,6 @@ impl ProjectTree {
     #[must_use]
     pub(crate) fn selection(&self) -> &gtk4::SingleSelection {
         &self.selection
-    }
-
-    pub(crate) fn focus_after_map_or_idle(&self) {
-        let list_view = self.list_view.clone();
-        if list_view.is_mapped() {
-            glib::idle_add_local_once(move || {
-                list_view.grab_focus();
-            });
-            return;
-        }
-        let handler = Rc::new(std::cell::Cell::new(None));
-        let handler_for_signal = Rc::clone(&handler);
-        let list_view_for_signal = list_view.clone();
-        let id = list_view.connect_map(move |view| {
-            if let Some(id) = handler_for_signal.take() {
-                view.disconnect(id);
-            }
-            list_view_for_signal.grab_focus();
-        });
-        handler.set(Some(id));
     }
 
     pub(crate) fn clear_selection(&self) {

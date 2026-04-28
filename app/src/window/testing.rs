@@ -50,6 +50,26 @@ impl Window {
         self.workspace.reorder_selected_to_first()
     }
 
+    pub(crate) fn activate_tab_move_backward_for_tests(&self) -> bool {
+        gtk4::prelude::WidgetExt::activate_action(self.widget(), "win.tab-move-backward", None)
+            .is_ok()
+    }
+
+    pub(crate) fn activate_tab_move_forward_for_tests(&self) -> bool {
+        gtk4::prelude::WidgetExt::activate_action(self.widget(), "win.tab-move-forward", None)
+            .is_ok()
+    }
+
+    pub(crate) fn activate_tab_move_to_new_window_for_tests(&self) -> bool {
+        gtk4::prelude::WidgetExt::activate_action(self.widget(), "win.tab-move-to-new-window", None)
+            .is_ok()
+    }
+
+    pub(crate) fn activate_close_other_tabs_for_tests(&self) -> bool {
+        gtk4::prelude::WidgetExt::activate_action(self.widget(), "win.close-other-tabs", None)
+            .is_ok()
+    }
+
     pub(crate) fn shortcuts_enabled_for_tests(&self) -> bool {
         self.workspace.shortcuts_enabled()
     }
@@ -299,6 +319,10 @@ impl Window {
 
     pub(crate) fn selected_zoom_class_for_tests(&self) -> bool {
         self.workspace.selected_zoom_class_for_tests()
+    }
+
+    pub(crate) fn selected_zoom_css_classes_for_tests(&self) -> Vec<String> {
+        self.workspace.selected_zoom_css_classes_for_tests()
     }
 
     pub(crate) fn selected_scroll_past_end_padding_for_tests(&self) -> Option<(i32, i32)> {

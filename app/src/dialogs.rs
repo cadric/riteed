@@ -238,13 +238,13 @@ pub fn show_help(parent: &impl IsA<gtk4::Widget>) {
     let getting_started = adw::PreferencesGroup::builder()
         .title(pgettext("help section", "Getting Started"))
         .description(gettext(
-            "Riteed is a lightweight GNOME editor for text, code, config, and markdown files, with tabs, search, syntax highlighting, session restore, and encoding-aware open and save behavior.",
+            "Riteed is a lightweight GNOME editor for text, code, config, and markdown files, with tabs, find, syntax highlighting, session restore, and encoding-aware open and save behavior.",
         ))
         .build();
     getting_started.add(&help_row(
         &pgettext("help row", "Tabs and Files"),
         &gettext(
-            "Press Ctrl+N to create another tab, and use Open... (Ctrl+O) to load local plain text files into separate tabs with their saved encoding and line endings.",
+            "Press Ctrl+T to create another tab, and use Open Files (Ctrl+O) to load local files into separate tabs with their saved encoding and line endings.",
         ),
     ));
     getting_started.add(&help_row(
@@ -258,9 +258,9 @@ pub fn show_help(parent: &impl IsA<gtk4::Widget>) {
         .title(pgettext("help section", "Everyday Editing"))
         .build();
     editing.add(&help_row(
-        &pgettext("help row", "Search and Replace"),
+        &pgettext("help row", "Find and Replace"),
         &gettext(
-            "Press Ctrl+F to search in the selected document, Ctrl+H to show replace, and F3 or Shift+F3 to move between matches.",
+            "Press Ctrl+F to find text in the current document, Ctrl+H to show replace, and Ctrl+G or Shift+Ctrl+G to move between matches.",
         ),
     ));
     editing.add(&help_row(
@@ -272,7 +272,7 @@ pub fn show_help(parent: &impl IsA<gtk4::Widget>) {
     editing.add(&help_row(
         &pgettext("help row", "More Shortcuts"),
         &gettext(
-            "Open Keyboard Shortcuts from the main menu to review the available file, tab, search, and app commands.",
+            "Open Keyboard Shortcuts from the main menu to review the available file, tab, find, and app commands.",
         ),
     ));
 
