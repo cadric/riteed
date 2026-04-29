@@ -66,21 +66,106 @@ pub const APP_ID: &str = "io.github.cadric.Riteed";
 pub const APP_NAME: &str = "Riteed";
 pub const REPO_URL: &str = "https://github.com/cadric/riteed";
 
-static RUNTIME_INIT: OnceLock<()> = OnceLock::new();
+pub type RuntimeInitResult = Result<RuntimeInitReport, RuntimeInitError>;
 
-pub fn bootstrap_runtime() {
-    RUNTIME_INIT.get_or_init(|| {
-        gtk::glib::set_prgname(Some(APP_ID));
-        gtk::glib::set_application_name(APP_NAME);
-        if let Err(_error) = gtk::gio::resources_register_include!("riteed.gresource") {}
-        if let Err(_error) = TextDomain::new(APP_ID).init() {}
-    });
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct RuntimeInitReport {
+    pub gettext_error: Option<String>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum RuntimeInitError {
+    ResourceRegistration { message: String },
+}
+
+static RUNTIME_INIT: OnceLock<RuntimeInitResult> = OnceLock::new();
+
+/// Initializes process metadata, bundled resources, and gettext.
+///
+/// # Errors
+///
+/// Returns [`RuntimeInitError::ResourceRegistration`] when the compiled
+/// `GResource` bundle cannot be registered. Gettext initialization failures are
+/// reported in [`RuntimeInitReport::gettext_error`] and do not fail startup.
+#[must_use = "startup initialization errors must be handled"]
+pub fn bootstrap_runtime() -> RuntimeInitResult {
+    RUNTIME_INIT
+        .get_or_init(|| {
+            gtk::glib::set_prgname(Some(APP_ID));
+            gtk::glib::set_application_name(APP_NAME);
+            let resource = gtk::gio::resources_register_include!("riteed.gresource")
+                .map_err(|error| error.to_string());
+            let gettext = TextDomain::new(APP_ID)
+                .init()
+                .map(|_locales| ())
+                .map_err(|error| error.to_string());
+            build_runtime_report(resource, gettext)
+        })
+        .clone()
+}
+
+fn build_runtime_report(
+    resource: Result<(), String>,
+    gettext: Result<(), String>,
+) -> RuntimeInitResult {
+    resource.map_err(|message| RuntimeInitError::ResourceRegistration { message })?;
+    Ok(RuntimeInitReport {
+        gettext_error: gettext.err(),
+    })
 }
 
 #[must_use]
 pub fn run() -> gtk::glib::ExitCode {
-    bootstrap_runtime();
-    app::RiteedApp::new().run()
+    match bootstrap_runtime() {
+        Ok(report) => {
+            if let Some(error) = report.gettext_error.as_deref() {
+                gtk::glib::g_warning!(APP_ID, "Gettext initialization failed: {}", error);
+            }
+            app::RiteedApp::new().run()
+        }
+        Err(RuntimeInitError::ResourceRegistration { message }) => {
+            gtk::glib::g_critical!(APP_ID, "Resource registration failed: {}", message);
+            gtk::glib::ExitCode::FAILURE
+        }
+    }
+}
+
+#[cfg(test)]
+mod runtime_tests {
+    use super::{RuntimeInitError, RuntimeInitReport, build_runtime_report};
+
+    #[test]
+    fn resource_registration_failure_is_hard_error() {
+        assert_eq!(
+            build_runtime_report(
+                Err(String::from("missing resource")),
+                Err(String::from("gettext unavailable")),
+            ),
+            Err(RuntimeInitError::ResourceRegistration {
+                message: String::from("missing resource"),
+            })
+        );
+    }
+
+    #[test]
+    fn gettext_failure_is_reported_but_nonfatal() {
+        assert_eq!(
+            build_runtime_report(Ok(()), Err(String::from("gettext unavailable"))),
+            Ok(RuntimeInitReport {
+                gettext_error: Some(String::from("gettext unavailable")),
+            })
+        );
+    }
+
+    #[test]
+    fn successful_runtime_init_has_empty_report() {
+        assert_eq!(
+            build_runtime_report(Ok(()), Ok(())),
+            Ok(RuntimeInitReport {
+                gettext_error: None,
+            })
+        );
+    }
 }
 
 #[cfg(test)]
@@ -102,7 +187,8 @@ pub(crate) mod test_support {
     pub(crate) fn init_gtk_for_tests() -> MutexGuard<'static, ()> {
         let guard = lock_for_tests();
         let _gtk = gtk4::init();
-        crate::bootstrap_runtime();
+        let init = crate::bootstrap_runtime();
+        assert!(init.is_ok(), "bootstrap_runtime failed: {init:?}");
         let _adw = adw::init();
         guard
     }

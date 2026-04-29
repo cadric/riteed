@@ -1,12 +1,15 @@
 use std::cell::{Cell, RefCell};
-use std::path::PathBuf;
+use std::fs;
+use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::time::Duration;
 
 use gtk4::{gio, glib};
 
-use super::support::{base_args, redact_git_argv};
-use super::{GitCallback, GitIdentity, GitProcess, GitProcessError};
+use super::support::base_args;
+use super::{
+    GitCallback, GitIdentity, GitProcess, GitProcessError, GitRepoContext, GitSpec, run_git,
+};
 use crate::git_status::GitPath;
 
 #[test]
@@ -26,25 +29,6 @@ fn identity_rejects_config_injection_bytes() {
 }
 
 #[test]
-fn redaction_hides_identity_config_values() {
-    let argv = vec![
-        String::from("-c"),
-        String::from("user.name=Ada"),
-        String::from("-c"),
-        String::from("user.email=ada@example.test"),
-    ];
-    assert_eq!(
-        redact_git_argv(&argv),
-        vec![
-            String::from("-c"),
-            String::from("user.name=<redacted>"),
-            String::from("-c"),
-            String::from("user.email=<redacted>"),
-        ]
-    );
-}
-
-#[test]
 fn read_only_git_ops_work_against_current_repo() {
     let _guard = crate::test_support::lock_for_tests();
     let app_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -56,7 +40,7 @@ fn read_only_git_ops_work_against_current_repo() {
     let Ok(repo) = detected else {
         return;
     };
-    assert!(repo.ends_with("riteed"));
+    assert!(repo.work_tree.ends_with("riteed"));
     let process = GitProcess::new(repo);
 
     let status = wait_git(|cancellable, callback| process.status(cancellable, callback));
@@ -97,7 +81,7 @@ fn read_only_git_ops_work_against_current_repo() {
 
 #[test]
 fn typed_ops_reject_invalid_inputs_before_spawning() {
-    let process = GitProcess::new(PathBuf::from("/tmp"));
+    let process = GitProcess::new(context_for(Path::new("/tmp")));
     let bad_path = GitPath::from_bytes(b"\xff");
     let cancellable = gio::Cancellable::new();
 
@@ -132,6 +116,89 @@ fn typed_ops_reject_invalid_inputs_before_spawning() {
         commit,
         Some(Err(GitProcessError::InvalidIdentity))
     ));
+}
+
+#[test]
+fn run_specs_use_resolved_git_env_without_joining_dot_git() {
+    let context = GitRepoContext {
+        work_tree: PathBuf::from("/tmp/worktree"),
+        git_dir: PathBuf::from("/tmp/common/worktrees/worktree"),
+        git_common_dir: PathBuf::from("/tmp/common"),
+        head_path: PathBuf::from("/tmp/common/worktrees/worktree/HEAD"),
+        index_path: PathBuf::from("/tmp/common/worktrees/worktree/index"),
+        index_lock_path: PathBuf::from("/tmp/common/worktrees/worktree/index.lock"),
+        refs_heads_dir: PathBuf::from("/tmp/common/refs/heads"),
+        packed_refs_path: PathBuf::from("/tmp/common/packed-refs"),
+    };
+    let process = GitProcess::new(context);
+    let spec_result = process.spec(["status"], None, 4096, false);
+    assert!(spec_result.is_ok());
+    let Ok(spec) = spec_result else {
+        return;
+    };
+    assert!(spec.argv.iter().any(|arg| arg == "status"));
+    assert!(spec.env.contains(&(
+        String::from("GIT_DIR"),
+        String::from("/tmp/common/worktrees/worktree")
+    )));
+    assert!(
+        spec.env
+            .contains(&(String::from("GIT_WORK_TREE"), String::from("/tmp/worktree")))
+    );
+    assert!(
+        !spec
+            .env
+            .iter()
+            .any(|(_, value)| value == "/tmp/worktree/.git")
+    );
+}
+
+#[test]
+fn linked_worktree_detection_uses_resolved_git_dir() {
+    let _guard = crate::test_support::lock_for_tests();
+    let main = temp_repo("riteed-git-process-main");
+    let linked = std::env::temp_dir().join("riteed-git-process-linked");
+    let _removed = fs::remove_dir_all(&linked);
+    assert!(run_git_command(&main, ["init"]).is_ok());
+    assert!(fs::write(main.join("tracked.txt"), b"tracked").is_ok());
+    assert!(run_git_command(&main, ["add", "tracked.txt"]).is_ok());
+    assert!(
+        run_git_command(
+            &main,
+            [
+                "-c",
+                "user.name=Riteed",
+                "-c",
+                "user.email=riteed@example.test",
+                "commit",
+                "--no-gpg-sign",
+                "-m",
+                "initial",
+            ],
+        )
+        .is_ok()
+    );
+    let Some(linked_arg) = linked.to_str() else {
+        let _removed = fs::remove_dir_all(&main);
+        return;
+    };
+    assert!(run_git_command(&main, ["worktree", "add", linked_arg]).is_ok());
+
+    let detected = wait_git(|cancellable, callback| {
+        GitProcess::detect_repo(&linked, cancellable, callback);
+    });
+    let Ok(context) = detected else {
+        let _removed = run_git_command(&main, ["worktree", "remove", "--force", linked_arg]);
+        let _removed = fs::remove_dir_all(&main);
+        return;
+    };
+    assert_ne!(context.git_dir, linked.join(".git"));
+    let process = GitProcess::new(context);
+    let status = wait_git(|cancellable, callback| process.status(cancellable, callback));
+    assert!(status.is_ok());
+
+    let _removed = run_git_command(&main, ["worktree", "remove", "--force", linked_arg]);
+    let _removed = fs::remove_dir_all(&main);
 }
 
 fn immediate_result<T: 'static>(
@@ -179,4 +246,50 @@ fn wait_git<T: 'static>(
         return Err(GitProcessError::Cancelled);
     };
     result
+}
+
+fn run_git_command<const N: usize>(
+    directory: &Path,
+    command_args: [&str; N],
+) -> Result<(), GitProcessError> {
+    let Some(directory) = directory.to_str() else {
+        return Err(GitProcessError::InvalidPath);
+    };
+    let mut git_argv = base_args();
+    git_argv.extend(["-C", directory].map(String::from));
+    git_argv.extend(command_args.map(String::from));
+    wait_git(|cancellable, callback| {
+        run_git(
+            GitSpec {
+                argv: git_argv,
+                env: Vec::new(),
+                stdin: None,
+                stdout_cap: 256 * 1024,
+                allow_failure: false,
+            },
+            cancellable,
+            Rc::new(move |result| callback(result.map(|_output| ()))),
+        );
+    })
+}
+
+fn context_for(work_tree: &Path) -> GitRepoContext {
+    let git = work_tree.join(".git");
+    GitRepoContext {
+        work_tree: work_tree.to_path_buf(),
+        git_dir: git.clone(),
+        git_common_dir: git.clone(),
+        head_path: git.join("HEAD"),
+        index_path: git.join("index"),
+        index_lock_path: git.join("index.lock"),
+        refs_heads_dir: git.join("refs/heads"),
+        packed_refs_path: git.join("packed-refs"),
+    }
+}
+
+fn temp_repo(name: &str) -> PathBuf {
+    let path = std::env::temp_dir().join(name);
+    let _removed = fs::remove_dir_all(&path);
+    assert!(fs::create_dir_all(&path).is_ok());
+    path
 }

@@ -1,23 +1,17 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::rc::Rc;
 
 use gtk4::{gio, glib};
 
-use crate::git_status::{
-    GitAttrs, GitCapabilities, GitPath, GitStatusSnapshot, index_info_line, parse_attrs,
-    parse_ls_tree_entry, parse_status, resolve_capabilities,
-};
-
 mod log;
+mod ops;
+mod repo;
 mod support;
 pub(crate) use log::{GitCommitSummary, GitLogState};
-use support::{
-    base_args, git_env, identity_part_is_valid, optional_text, redact_git_argv, stderr_text,
-};
+pub(crate) use repo::GitRepoContext;
+use repo::fallback_base;
+use support::{base_args, git_env, identity_part_is_valid, stderr_text};
 
-const STATUS_CAP: usize = 4 * 1024 * 1024;
-const ATTR_CAP: usize = 2 * 1024 * 1024;
-const BLOB_CAP: usize = 1_000_001;
 const STDERR_CAP: usize = 64 * 1024;
 
 pub(crate) type GitCallback<T> = Rc<dyn Fn(Result<T, GitProcessError>)>;
@@ -49,7 +43,7 @@ impl GitIdentity {
 
 #[derive(Clone, Debug)]
 pub(crate) struct GitProcess {
-    repo: PathBuf,
+    repo: GitRepoContext,
 }
 
 #[derive(Clone, Debug)]
@@ -69,399 +63,50 @@ struct GitSpec {
 
 impl GitProcess {
     #[must_use]
-    pub(crate) fn new(repo: PathBuf) -> Self {
+    pub(crate) fn new(repo: GitRepoContext) -> Self {
         Self { repo }
+    }
+
+    #[must_use]
+    pub(crate) fn context(&self) -> &GitRepoContext {
+        &self.repo
     }
 
     pub(crate) fn detect_repo(
         folder: &Path,
         cancellable: &gio::Cancellable,
-        callback: GitCallback<PathBuf>,
+        callback: GitCallback<GitRepoContext>,
     ) {
         let Some(folder) = folder.to_str() else {
             callback(Err(GitProcessError::InvalidPath));
             return;
         };
-        let spec = GitSpec {
-            argv: base_args()
-                .into_iter()
-                .chain(["-C", folder, "rev-parse", "--show-toplevel"].map(String::from))
-                .collect(),
-            env: Vec::new(),
-            stdin: None,
-            stdout_cap: 4096,
-            allow_failure: false,
-        };
+        let folder = String::from(folder);
+        let base = fallback_base(Path::new(&folder));
+        let cancellable_for_retry = cancellable.clone();
+        let folder_for_retry = folder.clone();
+        let base_for_retry = base.clone();
+        let callback_for_retry = Rc::clone(&callback);
         run_git(
-            spec,
+            detect_repo_spec(&folder, true),
             cancellable,
             Rc::new(move |result| {
-                callback(result.and_then(|output| {
-                    let text = String::from_utf8(output.stdout)
-                        .map_err(|_| GitProcessError::ParseFailed)?;
-                    let trimmed = text.trim();
-                    if trimmed.is_empty() {
-                        Err(GitProcessError::ParseFailed)
-                    } else {
-                        Ok(PathBuf::from(trimmed))
-                    }
-                }));
-            }),
-        );
-    }
-
-    pub(crate) fn status(
-        &self,
-        cancellable: &gio::Cancellable,
-        callback: GitCallback<GitStatusSnapshot>,
-    ) {
-        self.run(
-            ["status", "--porcelain=v2", "-z", "--branch", "--no-renames"],
-            None,
-            STATUS_CAP,
-            false,
-            cancellable,
-            Rc::new(move |result| {
-                callback(result.map(|output| parse_status(&output.stdout)));
-            }),
-        );
-    }
-
-    pub(crate) fn check_repo_capabilities(
-        &self,
-        cancellable: &gio::Cancellable,
-        callback: GitCallback<GitCapabilities>,
-    ) {
-        let repo = self.clone();
-        let cancellable_for_autocrlf = cancellable.clone();
-        self.run_text(
-            ["rev-parse", "--show-object-format"],
-            false,
-            cancellable,
-            Rc::new(move |object| {
-                let Ok(object_format) = object else {
-                    callback(object.map(|_| GitCapabilities::default()));
-                    return;
-                };
-                let repo_for_eol = repo.clone();
-                let callback_for_eol = Rc::clone(&callback);
-                let cancellable_for_eol = cancellable_for_autocrlf.clone();
-                repo.run_text(
-                    ["config", "--get", "core.autocrlf"],
-                    true,
-                    &cancellable_for_autocrlf,
-                    Rc::new(move |autocrlf| {
-                        let autocrlf = optional_text(autocrlf);
-                        let object_format = object_format.clone();
-                        let callback_for_eol = Rc::clone(&callback_for_eol);
-                        repo_for_eol.run_text(
-                            ["config", "--get", "core.eol"],
-                            true,
-                            &cancellable_for_eol,
-                            Rc::new(move |eol| {
-                                let eol = optional_text(eol);
-                                callback_for_eol(Ok(resolve_capabilities(
-                                    &object_format,
-                                    &autocrlf,
-                                    &eol,
-                                )));
-                            }),
-                        );
-                    }),
-                );
-            }),
-        );
-    }
-
-    pub(crate) fn check_attrs(
-        &self,
-        paths: &[GitPath],
-        cancellable: &gio::Cancellable,
-        callback: GitCallback<GitAttrs>,
-    ) {
-        let mut stdin = Vec::new();
-        for path in paths {
-            stdin.extend_from_slice(path.raw());
-            stdin.push(0);
-        }
-        self.run(
-            [
-                "check-attr",
-                "-z",
-                "--stdin",
-                "filter",
-                "working-tree-encoding",
-                "text",
-                "eol",
-            ],
-            Some(stdin),
-            ATTR_CAP,
-            false,
-            cancellable,
-            Rc::new(move |result| {
-                callback(result.and_then(|output| {
-                    parse_attrs(&output.stdout).map_err(|_| GitProcessError::ParseFailed)
-                }));
-            }),
-        );
-    }
-
-    pub(crate) fn cat_blob(
-        &self,
-        oid: &str,
-        cancellable: &gio::Cancellable,
-        callback: GitCallback<Vec<u8>>,
-    ) {
-        self.run(
-            ["cat-file", "blob", oid],
-            None,
-            BLOB_CAP,
-            false,
-            cancellable,
-            Rc::new(move |result| callback(result.map(|output| output.stdout))),
-        );
-    }
-
-    pub(crate) fn hash_file_no_filters(
-        &self,
-        path: &GitPath,
-        cancellable: &gio::Cancellable,
-        callback: GitCallback<String>,
-    ) {
-        let Some(path) = path.as_utf8() else {
-            callback(Err(GitProcessError::InvalidPath));
-            return;
-        };
-        let absolute_path = self.repo.join(path);
-        let Some(path) = absolute_path.to_str() else {
-            callback(Err(GitProcessError::InvalidPath));
-            return;
-        };
-        self.run_text(
-            ["hash-object", "-w", "--no-filters", "--", path],
-            false,
-            cancellable,
-            Rc::new(move |result| callback(result.map(|text| text.trim().to_string()))),
-        );
-    }
-
-    pub(crate) fn stage_blob_index_info(
-        &self,
-        mode: &str,
-        oid: &str,
-        path: &GitPath,
-        cancellable: &gio::Cancellable,
-        callback: GitCallback<()>,
-    ) {
-        let stdin = index_info_line(mode, oid, path.raw());
-        self.run(
-            ["update-index", "--add", "-z", "--index-info"],
-            Some(stdin),
-            4096,
-            false,
-            cancellable,
-            Rc::new(move |result| callback(result.map(|_output| ()))),
-        );
-    }
-
-    pub(crate) fn read_head_index_entry(
-        &self,
-        path: &GitPath,
-        cancellable: &gio::Cancellable,
-        callback: GitCallback<Option<(String, String)>>,
-    ) {
-        let Some(path) = path.as_utf8() else {
-            callback(Err(GitProcessError::InvalidPath));
-            return;
-        };
-        self.run(
-            ["ls-tree", "-z", "HEAD", "--", path],
-            None,
-            4096,
-            true,
-            cancellable,
-            Rc::new(move |result| {
-                callback(result.map(|output| {
-                    if output.status == 0 && !output.stdout.is_empty() {
-                        parse_ls_tree_entry(&output.stdout)
-                    } else {
-                        None
-                    }
-                }));
-            }),
-        );
-    }
-
-    pub(crate) fn unstage_path(
-        &self,
-        path: &GitPath,
-        cancellable: &gio::Cancellable,
-        callback: GitCallback<()>,
-    ) {
-        let process = self.clone();
-        let path_for_read = path.clone();
-        let path_for_write = path.clone();
-        let cancellable_for_write = cancellable.clone();
-        self.read_head_index_entry(
-            &path_for_read,
-            cancellable,
-            Rc::new(move |result| match result {
-                Ok(Some((mode, oid))) => {
-                    process.stage_blob_index_info(
-                        &mode,
-                        &oid,
-                        &path_for_write,
-                        &cancellable_for_write,
-                        Rc::clone(&callback),
-                    );
+                match result.and_then(|output| GitRepoContext::parse(&output.stdout, &base, true)) {
+                    Ok(repo) => callback(Ok(repo)),
+                    Err(_error) => run_git(
+                        detect_repo_spec(&folder_for_retry, false),
+                        &cancellable_for_retry,
+                        Rc::new({
+                            let base = base_for_retry.clone();
+                            let callback = Rc::clone(&callback_for_retry);
+                            move |fallback| {
+                                callback(fallback.and_then(|output| {
+                                    GitRepoContext::parse(&output.stdout, &base, false)
+                                }));
+                            }
+                        }),
+                    ),
                 }
-                Ok(None) => {
-                    process.remove_from_index(
-                        &path_for_write,
-                        &cancellable_for_write,
-                        Rc::clone(&callback),
-                    );
-                }
-                Err(error) => callback(Err(error)),
-            }),
-        );
-    }
-
-    pub(crate) fn remove_from_index(
-        &self,
-        path: &GitPath,
-        cancellable: &gio::Cancellable,
-        callback: GitCallback<()>,
-    ) {
-        let Some(path) = path.as_utf8() else {
-            callback(Err(GitProcessError::InvalidPath));
-            return;
-        };
-        self.run(
-            ["update-index", "--force-remove", "--", path],
-            None,
-            4096,
-            false,
-            cancellable,
-            Rc::new(move |result| callback(result.map(|_output| ()))),
-        );
-    }
-
-    pub(crate) fn restore_worktree_path(
-        &self,
-        path: &GitPath,
-        cancellable: &gio::Cancellable,
-        callback: GitCallback<()>,
-    ) {
-        let Some(path) = path.as_utf8() else {
-            callback(Err(GitProcessError::InvalidPath));
-            return;
-        };
-        self.run(
-            ["restore", "--worktree", "--", path],
-            None,
-            4096,
-            false,
-            cancellable,
-            Rc::new(move |result| callback(result.map(|_output| ()))),
-        );
-    }
-
-    pub(crate) fn read_git_identity(
-        &self,
-        cancellable: &gio::Cancellable,
-        callback: GitCallback<Option<GitIdentity>>,
-    ) {
-        let repo = self.clone();
-        let cancellable_for_global = cancellable.clone();
-        self.read_identity_scope(
-            "--local",
-            cancellable,
-            Rc::new(move |local| match local {
-                Ok(Some(identity)) => callback(Ok(Some(identity))),
-                Ok(None) => repo.read_identity_scope(
-                    "--global",
-                    &cancellable_for_global,
-                    Rc::clone(&callback),
-                ),
-                Err(error) => callback(Err(error)),
-            }),
-        );
-    }
-
-    pub(crate) fn commit(
-        &self,
-        identity: &GitIdentity,
-        message: &str,
-        cancellable: &gio::Cancellable,
-        callback: GitCallback<()>,
-    ) {
-        if GitIdentity::new(identity.name.clone(), identity.email.clone()).is_err() {
-            callback(Err(GitProcessError::InvalidIdentity));
-            return;
-        }
-        let name = format!("user.name={}", identity.name);
-        let email = format!("user.email={}", identity.email);
-        self.run(
-            [
-                "-c",
-                "core.hooksPath=/dev/null",
-                "-c",
-                name.as_str(),
-                "-c",
-                email.as_str(),
-                "commit",
-                "--no-gpg-sign",
-                "--no-status",
-                "--no-verify",
-                "-m",
-                message,
-            ],
-            None,
-            4096,
-            false,
-            cancellable,
-            Rc::new(move |result| callback(result.map(|_output| ()))),
-        );
-    }
-
-    fn read_identity_scope(
-        &self,
-        scope: &str,
-        cancellable: &gio::Cancellable,
-        callback: GitCallback<Option<GitIdentity>>,
-    ) {
-        let repo = self.clone();
-        let scope = String::from(scope);
-        let scope_for_email = scope.clone();
-        let cancellable_for_email = cancellable.clone();
-        self.run_text(
-            ["config", scope.as_str(), "--get", "user.name"],
-            true,
-            cancellable,
-            Rc::new(move |name| {
-                let name = optional_text(name);
-                let name_for_identity = name.clone();
-                let callback = Rc::clone(&callback);
-                repo.run_text(
-                    ["config", scope_for_email.as_str(), "--get", "user.email"],
-                    true,
-                    &cancellable_for_email,
-                    Rc::new(move |email| {
-                        let email = optional_text(email);
-                        if name_for_identity.trim().is_empty() || email.trim().is_empty() {
-                            callback(Ok(None));
-                        } else {
-                            callback(
-                                GitIdentity::new(
-                                    name_for_identity.trim().to_string(),
-                                    email.trim().to_string(),
-                                )
-                                .map(Some),
-                            );
-                        }
-                    }),
-                );
             }),
         );
     }
@@ -475,28 +120,44 @@ impl GitProcess {
         cancellable: &gio::Cancellable,
         callback: GitCallback<GitRunOutput>,
     ) {
-        let Some(repo) = self.repo.to_str() else {
-            callback(Err(GitProcessError::InvalidPath));
-            return;
-        };
-        let Some(git_dir) = self.repo.join(".git").to_str().map(String::from) else {
-            callback(Err(GitProcessError::InvalidPath));
-            return;
-        };
-        let spec = GitSpec {
+        match self.spec(args, stdin, stdout_cap, allow_failure) {
+            Ok(spec) => run_git(spec, cancellable, callback),
+            Err(error) => callback(Err(error)),
+        }
+    }
+
+    fn spec<const N: usize>(
+        &self,
+        args: [&str; N],
+        stdin: Option<Vec<u8>>,
+        stdout_cap: usize,
+        allow_failure: bool,
+    ) -> Result<GitSpec, GitProcessError> {
+        let git_dir = self
+            .repo
+            .git_dir
+            .to_str()
+            .map(String::from)
+            .ok_or(GitProcessError::InvalidPath)?;
+        let work_tree = self
+            .repo
+            .work_tree
+            .to_str()
+            .map(String::from)
+            .ok_or(GitProcessError::InvalidPath)?;
+        Ok(GitSpec {
             argv: base_args()
                 .into_iter()
                 .chain(args.into_iter().map(String::from))
                 .collect(),
             env: vec![
                 (String::from("GIT_DIR"), git_dir),
-                (String::from("GIT_WORK_TREE"), String::from(repo)),
+                (String::from("GIT_WORK_TREE"), work_tree),
             ],
             stdin,
             stdout_cap,
             allow_failure,
-        };
-        run_git(spec, cancellable, callback);
+        })
     }
 
     fn run_text<const N: usize>(
@@ -521,6 +182,39 @@ impl GitProcess {
     }
 }
 
+fn detect_repo_spec(folder: &str, path_format_absolute: bool) -> GitSpec {
+    let mut argv = base_args();
+    argv.extend(["-C", folder, "rev-parse"].map(String::from));
+    if path_format_absolute {
+        argv.push(String::from("--path-format=absolute"));
+    }
+    argv.extend(
+        [
+            "--show-toplevel",
+            "--absolute-git-dir",
+            "--git-common-dir",
+            "--git-path",
+            "HEAD",
+            "--git-path",
+            "index",
+            "--git-path",
+            "index.lock",
+            "--git-path",
+            "refs/heads",
+            "--git-path",
+            "packed-refs",
+        ]
+        .map(String::from),
+    );
+    GitSpec {
+        argv,
+        env: Vec::new(),
+        stdin: None,
+        stdout_cap: 16 * 1024,
+        allow_failure: false,
+    }
+}
+
 fn run_git(spec: GitSpec, cancellable: &gio::Cancellable, callback: GitCallback<GitRunOutput>) {
     let flags = gio::SubprocessFlags::STDIN_PIPE
         | gio::SubprocessFlags::STDOUT_PIPE
@@ -536,7 +230,6 @@ fn run_git(spec: GitSpec, cancellable: &gio::Cancellable, callback: GitCallback<
     let argv_os: Vec<std::ffi::OsString> = spec.argv.iter().map(std::ffi::OsString::from).collect();
     let argv_refs: Vec<&std::ffi::OsStr> =
         argv_os.iter().map(std::ffi::OsString::as_os_str).collect();
-    drop(redact_git_argv(&spec.argv));
     let subprocess = match launcher.spawn(&argv_refs) {
         Ok(process) => process,
         Err(error) => {

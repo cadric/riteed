@@ -16,25 +16,25 @@
             <child>
               <object class="AdwSwitchRow" id="word_wrap_row">
                 <property name="title" translatable="yes">Word Wrap</property>
-                <property name="subtitle" translatable="yes">Wrap Long Lines Inside the Editor</property>
+                <property name="subtitle" translatable="yes">Wrap long lines inside the editor</property>
               </object>
             </child>
             <child>
               <object class="AdwSwitchRow" id="line_numbers_row">
                 <property name="title" translatable="yes">Line Numbers</property>
-                <property name="subtitle" translatable="yes">Show Line Numbers in the Editor Gutter</property>
+                <property name="subtitle" translatable="yes">Show line numbers in the editor gutter</property>
               </object>
             </child>
             <child>
               <object class="AdwSwitchRow" id="highlight_current_line_row">
                 <property name="title" translatable="yes">Highlight Current Line</property>
-                <property name="subtitle" translatable="yes">Subtly Highlight the Line With the Text Cursor</property>
+                <property name="subtitle" translatable="yes">Subtly highlight the line with the text cursor</property>
               </object>
             </child>
             <child>
               <object class="AdwSwitchRow" id="minimap_row">
                 <property name="title" translatable="yes">Show Minimap</property>
-                <property name="subtitle" translatable="yes">Show a Narrow Document Overview Beside the Editor</property>
+                <property name="subtitle" translatable="yes">Show a narrow document overview beside the editor</property>
               </object>
             </child>
             <child>
@@ -52,13 +52,13 @@
             <child>
               <object class="AdwSwitchRow" id="insert_spaces_row">
                 <property name="title" translatable="yes">Insert Spaces Instead of Tabs</property>
-                <property name="subtitle" translatable="yes">Use Spaces When the Tab Key Inserts Indentation</property>
+                <property name="subtitle" translatable="yes">Use spaces when the Tab key inserts indentation</property>
               </object>
             </child>
             <child>
               <object class="AdwSpinRow" id="tab_width_row">
                 <property name="title" translatable="yes">Tab Width</property>
-                <property name="subtitle" translatable="yes">Show Each Tab Character as This Many Columns</property>
+                <property name="subtitle" translatable="yes">Show each tab character as this many columns</property>
                 <property name="editable">true</property>
                 <property name="numeric">true</property>
                 <property name="snap-to-ticks">true</property>
@@ -78,7 +78,7 @@
             <child>
               <object class="AdwSpinRow" id="indent_width_row">
                 <property name="title" translatable="yes">Indent Width</property>
-                <property name="subtitle" translatable="yes">Use This Many Columns for Automatic Indentation</property>
+                <property name="subtitle" translatable="yes">Use this many columns for automatic indentation</property>
                 <property name="editable">true</property>
                 <property name="numeric">true</property>
                 <property name="snap-to-ticks">true</property>
@@ -103,7 +103,7 @@
             <child>
               <object class="AdwSwitchRow" id="autosave_row">
                 <property name="title" translatable="yes">Autosave Saved Files</property>
-                <property name="subtitle" translatable="yes">Automatically Save Existing Writable Files After Edits</property>
+                <property name="subtitle" translatable="yes">Automatically save existing writable files after edits</property>
               </object>
             </child>
           </object>

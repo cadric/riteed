@@ -290,7 +290,7 @@ fn exercise_compare_dialog_entry(test_app: &adw::Application) {
     click_first_button(&right_buttons_parent, "Clear");
     drain_events(16);
 
-    click_first_button(&left_buttons_parent, "Paste Text...");
+    click_first_button(&left_buttons_parent, "Paste Text…");
     drain_events(16);
 
     wait_for_button(&root_widget, "Use Text", "v7 compare paste dialog opened");
@@ -298,7 +298,7 @@ fn exercise_compare_dialog_entry(test_app: &adw::Application) {
     click_first_button(&root_widget, "Use Text");
     drain_events(16);
 
-    click_first_button(&right_buttons_parent, "Paste Text...");
+    click_first_button(&right_buttons_parent, "Paste Text…");
     drain_events(16);
 
     wait_for_button(

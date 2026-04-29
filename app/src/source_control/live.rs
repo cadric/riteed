@@ -5,6 +5,8 @@ use std::time::{Duration, Instant};
 
 use gtk4::{gio, glib, prelude::*};
 
+use crate::git_process::GitRepoContext;
+use crate::git_status::GitStatusSnapshot;
 use crate::source_control::{SourceControlState, SourceStateRef};
 
 use super::refresh::refresh_status;
@@ -14,32 +16,36 @@ const MIN_INTERVAL: Duration = Duration::from_secs(1);
 const PORTAL_POLL: Duration = Duration::from_secs(4);
 
 pub(crate) struct SourceControlLiveRefresh {
-    repo: PathBuf,
-    head_monitor: Option<gio::FileMonitor>,
-    index_monitor: Option<gio::FileMonitor>,
+    context: GitRepoContext,
+    metadata_targets: Vec<MonitorTarget>,
+    metadata_monitors: Vec<gio::FileMonitor>,
+    branch_ref_path: Option<PathBuf>,
+    branch_ref_target: Option<MonitorTarget>,
+    branch_ref_monitor: Option<gio::FileMonitor>,
     poll_source: Option<glib::SourceId>,
     scheduler: LiveScheduler,
 }
 
 impl SourceControlLiveRefresh {
-    pub(super) fn new(repo: &Path, on_refresh: Rc<dyn Fn()>) -> Self {
-        let scheduler = LiveScheduler::new(repo.to_path_buf(), on_refresh);
-        let (head_monitor, index_monitor, poll_source) = if use_polling(repo) {
-            (None, None, Some(start_polling(&scheduler)))
+    pub(super) fn new(context: GitRepoContext, on_refresh: Rc<dyn Fn()>) -> Self {
+        let scheduler = LiveScheduler::new(context.index_lock_path.clone(), on_refresh);
+        let poll_source = if use_polling(&context) {
+            Some(start_polling(&scheduler))
         } else {
-            (
-                monitor_file(&repo.join(".git/HEAD"), &scheduler),
-                monitor_file(&repo.join(".git/index"), &scheduler),
-                None,
-            )
+            None
         };
-        Self {
-            repo: repo.to_path_buf(),
-            head_monitor,
-            index_monitor,
+        let mut live = Self {
+            context,
+            metadata_targets: Vec::new(),
+            metadata_monitors: Vec::new(),
+            branch_ref_path: None,
+            branch_ref_target: None,
+            branch_ref_monitor: None,
             poll_source,
             scheduler,
-        }
+        };
+        live.refresh_metadata_monitors();
+        live
     }
 
     pub(super) fn schedule(&self) {
@@ -47,17 +53,51 @@ impl SourceControlLiveRefresh {
     }
 
     pub(super) fn index_lock_exists(&self) -> bool {
-        self.repo.join(".git/index.lock").exists()
+        self.context.index_lock_path.exists()
+    }
+
+    pub(super) fn refresh_metadata_monitors(&mut self) {
+        if self.poll_source.is_some() {
+            return;
+        }
+        let targets = metadata_targets(&self.context);
+        if targets == self.metadata_targets {
+            return;
+        }
+        cancel_monitors(&mut self.metadata_monitors);
+        self.metadata_monitors = targets
+            .iter()
+            .filter_map(|target| monitor_target(target, &self.scheduler))
+            .collect();
+        self.metadata_targets = targets;
+    }
+
+    pub(super) fn rebind_branch_ref(&mut self, path: Option<PathBuf>) {
+        if self.poll_source.is_some() {
+            self.branch_ref_path = path;
+            self.branch_ref_target = None;
+            return;
+        }
+        let target = path.as_ref().and_then(|path| monitor_target_for_path(path));
+        if self.branch_ref_path == path && self.branch_ref_target == target {
+            return;
+        }
+        if let Some(monitor) = self.branch_ref_monitor.take() {
+            let _cancelled = monitor.cancel();
+        }
+        self.branch_ref_monitor = target
+            .as_ref()
+            .and_then(|target| monitor_target(target, &self.scheduler));
+        self.branch_ref_path = path;
+        self.branch_ref_target = target;
     }
 
     pub(super) fn cancel(&mut self) {
         if let Some(source) = self.poll_source.take() {
             source.remove();
         }
-        if let Some(monitor) = self.head_monitor.take() {
-            let _cancelled = monitor.cancel();
-        }
-        if let Some(monitor) = self.index_monitor.take() {
+        cancel_monitors(&mut self.metadata_monitors);
+        if let Some(monitor) = self.branch_ref_monitor.take() {
             let _cancelled = monitor.cancel();
         }
     }
@@ -65,12 +105,17 @@ impl SourceControlLiveRefresh {
 
 pub(super) fn install(state: &SourceStateRef) {
     cancel(state);
-    let Some(repo) = state.borrow().repo.clone() else {
+    let Some(context) = state
+        .borrow()
+        .process
+        .as_ref()
+        .map(|process| process.context().clone())
+    else {
         return;
     };
     let weak = Rc::downgrade(state);
     let live = SourceControlLiveRefresh::new(
-        &repo,
+        context,
         Rc::new(move || {
             if let Some(state) = weak.upgrade() {
                 refresh_status(&state);
@@ -100,6 +145,51 @@ pub(super) fn schedule(state: &SourceStateRef) {
     }
 }
 
+pub(super) fn sync_branch_monitor(state: &SourceStateRef, snapshot: &GitStatusSnapshot) {
+    if let Some(live) = state.borrow_mut().live_refresh.as_mut() {
+        live.refresh_metadata_monitors();
+    }
+    if snapshot.detached {
+        clear_branch_monitor(state);
+        return;
+    }
+    let Some(branch) = snapshot.branch.clone() else {
+        clear_branch_monitor(state);
+        return;
+    };
+    if branch == "(detached)" {
+        clear_branch_monitor(state);
+        return;
+    }
+    let (process, cancellable) = {
+        let state = state.borrow();
+        let Some(process) = state.process.clone() else {
+            return;
+        };
+        let cancellable = state.cancellable.clone().unwrap_or_default();
+        (process, cancellable)
+    };
+    let weak = Rc::downgrade(state);
+    process.resolve_branch_ref_path(
+        &branch,
+        &cancellable,
+        Rc::new(move |result| {
+            let Some(state) = weak.upgrade() else {
+                return;
+            };
+            if let Some(live) = state.borrow_mut().live_refresh.as_mut() {
+                live.rebind_branch_ref(result.ok());
+            }
+        }),
+    );
+}
+
+fn clear_branch_monitor(state: &SourceStateRef) {
+    if let Some(live) = state.borrow_mut().live_refresh.as_mut() {
+        live.rebind_branch_ref(None);
+    }
+}
+
 pub(super) fn saved_file_in_repo(state: &SourceControlState, file: &gio::File) -> bool {
     let Some(repo) = state.repo.as_ref() else {
         return false;
@@ -115,16 +205,16 @@ impl Drop for SourceControlLiveRefresh {
 
 #[derive(Clone)]
 struct LiveScheduler {
-    repo: PathBuf,
+    index_lock_path: PathBuf,
     pending: Rc<Cell<bool>>,
     last_refresh: Rc<RefCell<Option<Instant>>>,
     on_refresh: Rc<dyn Fn()>,
 }
 
 impl LiveScheduler {
-    fn new(repo: PathBuf, on_refresh: Rc<dyn Fn()>) -> Self {
+    fn new(index_lock_path: PathBuf, on_refresh: Rc<dyn Fn()>) -> Self {
         Self {
-            repo,
+            index_lock_path,
             pending: Rc::new(Cell::new(false)),
             last_refresh: Rc::new(RefCell::new(None)),
             on_refresh,
@@ -142,7 +232,7 @@ impl LiveScheduler {
 
     fn fire(&self) {
         self.pending.set(false);
-        if self.repo.join(".git/index.lock").exists() {
+        if self.index_lock_path.exists() {
             self.schedule();
             return;
         }
@@ -163,6 +253,58 @@ impl LiveScheduler {
     }
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+enum MonitorKind {
+    File,
+    Directory,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct MonitorTarget {
+    path: PathBuf,
+    kind: MonitorKind,
+}
+
+fn metadata_targets(context: &GitRepoContext) -> Vec<MonitorTarget> {
+    [
+        context.head_path.as_path(),
+        context.index_path.as_path(),
+        context.refs_heads_dir.as_path(),
+        context.packed_refs_path.as_path(),
+    ]
+    .into_iter()
+    .filter_map(monitor_target_for_path)
+    .collect()
+}
+
+fn monitor_target_for_path(path: &Path) -> Option<MonitorTarget> {
+    if path.exists() {
+        return Some(MonitorTarget {
+            path: path.to_path_buf(),
+            kind: if path.is_dir() {
+                MonitorKind::Directory
+            } else {
+                MonitorKind::File
+            },
+        });
+    }
+    let parent = path
+        .ancestors()
+        .skip(1)
+        .find(|ancestor| ancestor.exists())?;
+    Some(MonitorTarget {
+        path: parent.to_path_buf(),
+        kind: MonitorKind::Directory,
+    })
+}
+
+fn monitor_target(target: &MonitorTarget, scheduler: &LiveScheduler) -> Option<gio::FileMonitor> {
+    match target.kind {
+        MonitorKind::File => monitor_file(&target.path, scheduler),
+        MonitorKind::Directory => monitor_directory(&target.path, scheduler),
+    }
+}
+
 fn monitor_file(path: &Path, scheduler: &LiveScheduler) -> Option<gio::FileMonitor> {
     let file = gio::File::for_path(path);
     let monitor = file
@@ -177,6 +319,26 @@ fn monitor_file(path: &Path, scheduler: &LiveScheduler) -> Option<gio::FileMonit
     Some(monitor)
 }
 
+fn monitor_directory(path: &Path, scheduler: &LiveScheduler) -> Option<gio::FileMonitor> {
+    let file = gio::File::for_path(path);
+    let monitor = file
+        .monitor_directory(gio::FileMonitorFlags::NONE, None::<&gio::Cancellable>)
+        .ok()?;
+    let scheduler = scheduler.clone();
+    monitor.connect_changed(move |_, _file, _other, event| {
+        if refresh_event(event) {
+            scheduler.schedule();
+        }
+    });
+    Some(monitor)
+}
+
+fn cancel_monitors(monitors: &mut Vec<gio::FileMonitor>) {
+    for monitor in monitors.drain(..) {
+        let _cancelled = monitor.cancel();
+    }
+}
+
 fn start_polling(scheduler: &LiveScheduler) -> glib::SourceId {
     let scheduler = scheduler.clone();
     glib::timeout_add_local(PORTAL_POLL, move || {
@@ -185,9 +347,19 @@ fn start_polling(scheduler: &LiveScheduler) -> glib::SourceId {
     })
 }
 
-fn use_polling(repo: &Path) -> bool {
-    let file = gio::File::for_path(repo);
-    !file.is_native() || document_portal_path(repo)
+fn use_polling(context: &GitRepoContext) -> bool {
+    [
+        &context.work_tree,
+        &context.git_dir,
+        &context.git_common_dir,
+    ]
+    .into_iter()
+    .any(|path| path_requires_polling(path))
+}
+
+fn path_requires_polling(path: &Path) -> bool {
+    let file = gio::File::for_path(path);
+    !file.is_native() || document_portal_path(path)
 }
 
 fn document_portal_path(path: &Path) -> bool {
@@ -210,12 +382,18 @@ fn refresh_event(event: gio::FileMonitorEvent) -> bool {
 
 #[cfg(test)]
 mod tests {
+    use std::fs;
+    use std::path::{Path, PathBuf};
     use std::rc::Rc;
     use std::time::Instant;
 
     use gtk4::gio;
 
-    use super::{DEBOUNCE, LiveScheduler, document_portal_path, refresh_event};
+    use super::{
+        DEBOUNCE, LiveScheduler, MonitorKind, document_portal_path, metadata_targets,
+        monitor_target_for_path, path_requires_polling, refresh_event, use_polling,
+    };
+    use crate::git_process::GitRepoContext;
 
     #[test]
     fn native_git_events_trigger_refresh() {
@@ -237,10 +415,99 @@ mod tests {
 
     #[test]
     fn live_scheduler_delay_uses_debounce_and_minimum_interval() {
-        let scheduler = LiveScheduler::new(std::path::PathBuf::from("/tmp/repo"), Rc::new(|| {}));
+        let scheduler = LiveScheduler::new(
+            std::path::PathBuf::from("/tmp/repo/.git/index.lock"),
+            Rc::new(|| {}),
+        );
         assert_eq!(scheduler.delay(), DEBOUNCE);
 
         *scheduler.last_refresh.borrow_mut() = Some(Instant::now());
         assert!(scheduler.delay() >= DEBOUNCE);
+    }
+
+    #[test]
+    fn monitor_targets_use_existing_files_and_nearest_existing_parent() {
+        let root = temp_dir("riteed-live-monitor-targets");
+        let git = root.join(".git");
+        assert!(fs::create_dir_all(git.join("refs/heads/feature")).is_ok());
+        assert!(fs::write(git.join("HEAD"), b"ref: refs/heads/main").is_ok());
+
+        let head = monitor_target_for_path(&git.join("HEAD"));
+        assert!(head.is_some_and(|target| target.kind == MonitorKind::File));
+        let branch = monitor_target_for_path(&git.join("refs/heads/feature/topic"));
+        assert!(branch.is_some_and(|target| {
+            target.kind == MonitorKind::Directory && target.path.ends_with("refs/heads/feature")
+        }));
+        let packed = monitor_target_for_path(&git.join("packed-refs"));
+        assert!(packed.is_some_and(|target| {
+            target.kind == MonitorKind::Directory && target.path.ends_with(".git")
+        }));
+
+        let _removed = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn metadata_targets_use_resolved_git_paths() {
+        let root = temp_dir("riteed-live-metadata-targets");
+        let context = context_for(&root);
+        assert!(fs::create_dir_all(&context.refs_heads_dir).is_ok());
+        assert!(fs::write(&context.head_path, b"ref: refs/heads/main").is_ok());
+        assert!(fs::write(&context.index_path, b"").is_ok());
+
+        let targets = metadata_targets(&context);
+        assert!(
+            targets
+                .iter()
+                .any(|target| target.path == context.head_path)
+        );
+        assert!(
+            targets
+                .iter()
+                .any(|target| target.path == context.index_path)
+        );
+        assert!(
+            targets
+                .iter()
+                .any(|target| target.path == context.refs_heads_dir)
+        );
+
+        let _removed = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn polling_checks_worktree_and_metadata_roots() {
+        let context = GitRepoContext {
+            work_tree: PathBuf::from("/tmp/repo"),
+            git_dir: PathBuf::from("/run/flatpak/doc/git"),
+            git_common_dir: PathBuf::from("/tmp/repo/.git"),
+            head_path: PathBuf::from("/tmp/repo/.git/HEAD"),
+            index_path: PathBuf::from("/tmp/repo/.git/index"),
+            index_lock_path: PathBuf::from("/tmp/repo/.git/index.lock"),
+            refs_heads_dir: PathBuf::from("/tmp/repo/.git/refs/heads"),
+            packed_refs_path: PathBuf::from("/tmp/repo/.git/packed-refs"),
+        };
+        assert!(use_polling(&context));
+        assert!(path_requires_polling(Path::new("/run/user/1000/doc/repo")));
+    }
+
+    fn context_for(root: &Path) -> GitRepoContext {
+        let git = root.join(".git");
+        GitRepoContext {
+            work_tree: root.to_path_buf(),
+            git_dir: git.clone(),
+            git_common_dir: git.clone(),
+            head_path: git.join("HEAD"),
+            index_path: git.join("index"),
+            index_lock_path: git.join("index.lock"),
+            refs_heads_dir: git.join("refs/heads"),
+            packed_refs_path: git.join("packed-refs"),
+        }
+    }
+
+    fn temp_dir(name: &str) -> PathBuf {
+        let path = std::env::temp_dir().join(name);
+        let _removed = fs::remove_dir_all(&path);
+        assert!(fs::create_dir_all(&path).is_ok());
+        path
     }
 }

@@ -44,13 +44,3 @@ pub(super) fn identity_part_is_valid(value: &str) -> bool {
 pub(super) fn stderr_text(bytes: &[u8]) -> String {
     String::from_utf8(bytes.to_vec()).unwrap_or_else(|_| String::from("Git command failed."))
 }
-
-pub(super) fn redact_git_argv(argv: &[String]) -> Vec<String> {
-    argv.iter()
-        .map(|arg| match arg.as_str() {
-            value if value.starts_with("user.name=") => String::from("user.name=<redacted>"),
-            value if value.starts_with("user.email=") => String::from("user.email=<redacted>"),
-            _ => arg.clone(),
-        })
-        .collect()
-}

@@ -99,23 +99,7 @@ mod tests {
                 "About Riteed",
             ],
         );
-        assert_menu_excludes(
-            &menu,
-            &[
-                "Open...",
-                "Open Folder...",
-                "Recent Files...",
-                "Search",
-                "Open Text File",
-                "Open Text File…",
-                "Open Files",
-                "Open Files…",
-                "Open Folder",
-                "Open Folder…",
-                "Recent Files",
-                "Recent Files…",
-            ],
-        );
+        assert_menu_excludes_actions(&menu, &["app.open", "app.open-folder", "win.recent-files"]);
     }
 
     #[test]
@@ -152,13 +136,6 @@ mod tests {
         }
     }
 
-    fn assert_menu_excludes(menu: &gtk4::gio::Menu, removed: &[&str]) {
-        let labels = menu_labels(menu);
-        for removed_label in removed {
-            assert!(!labels.iter().any(|label| label == removed_label));
-        }
-    }
-
     fn assert_menu_item(
         menu: &gtk4::gio::Menu,
         index: i32,
@@ -174,9 +151,22 @@ mod tests {
         );
     }
 
+    fn assert_menu_excludes_actions(menu: &gtk4::gio::Menu, removed: &[&str]) {
+        let actions = menu_actions(menu);
+        for removed_action in removed {
+            assert!(!actions.iter().any(|action| action == removed_action));
+        }
+    }
+
     fn menu_labels(menu: &gtk4::gio::Menu) -> Vec<String> {
         (0..menu.n_items())
             .filter_map(|index| item_string(menu, index, "label"))
+            .collect()
+    }
+
+    fn menu_actions(menu: &gtk4::gio::Menu) -> Vec<String> {
+        (0..menu.n_items())
+            .filter_map(|index| item_string(menu, index, "action"))
             .collect()
     }
 

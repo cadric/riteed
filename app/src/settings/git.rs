@@ -1,8 +1,10 @@
 use crate::settings::{
-    AppSettings, KEY_GIT_USER_EMAIL, KEY_GIT_USER_NAME, SettingsBackend, record_memory_write,
-    with_memory, with_memory_mut,
+    AppSettings, SettingsBackend, record_memory_write, with_memory, with_memory_mut,
 };
 use gtk4::prelude::SettingsExt;
+
+const KEY_GIT_USER_NAME: &str = "git-user-name";
+const KEY_GIT_USER_EMAIL: &str = "git-user-email";
 
 impl AppSettings {
     #[must_use]

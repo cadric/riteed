@@ -307,11 +307,11 @@ fn set_project_root(state: &SourceStateRef, folder: Option<gio::File>) {
             let Some(state) = weak.upgrade() else {
                 return;
             };
-            if let Ok(repo) = result {
+            if let Ok(repo_context) = result {
                 {
                     let mut state = state.borrow_mut();
-                    state.repo = Some(repo.clone());
-                    state.process = Some(GitProcess::new(repo));
+                    state.repo = Some(repo_context.work_tree.clone());
+                    state.process = Some(GitProcess::new(repo_context));
                     state.status_stale = true;
                 }
                 live::install(&state);

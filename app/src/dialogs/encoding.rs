@@ -49,7 +49,7 @@ pub fn confirm_decode_failure(
         ("cancel", &pgettext("alert response", "Cancel")),
         (
             "choose-encoding",
-            &pgettext("alert response", "Choose Encoding..."),
+            &ellipsis_label(pgettext("alert response", "Choose Encoding")),
         ),
     ]);
     dialog.set_default_response(Some("choose-encoding"));
@@ -123,7 +123,7 @@ pub fn confirm_invalid_chars_save(
         ("cancel", &pgettext("alert response", "Cancel")),
         (
             "choose-encoding",
-            &pgettext("alert response", "Choose Encoding..."),
+            &ellipsis_label(pgettext("alert response", "Choose Encoding")),
         ),
     ]);
     dialog.set_default_response(Some("choose-encoding"));
@@ -257,6 +257,11 @@ pub fn choose_encoding(
     }
 
     dialog.present(Some(parent));
+}
+
+fn ellipsis_label(mut label: String) -> String {
+    label.push('…');
+    label
 }
 
 #[cfg(test)]

@@ -291,7 +291,7 @@ impl EditorTab {
             .borrow()
             .document
             .file_name()
-            .unwrap_or_else(|| pgettext("save file name", "Untitled.txt"))
+            .unwrap_or_else(|| pgettext("save file name", "Untitled"))
     }
 
     #[must_use]
@@ -435,7 +435,7 @@ impl EditorTab {
             page.set_title(&self.title());
             page.set_tooltip(&self.subtitle());
             if self.is_dirty() {
-                let icon = gio::ThemedIcon::new("document-modified-symbolic");
+                let icon = gio::ThemedIcon::new("document-edit-symbolic");
                 page.set_indicator_icon(Some(&icon));
             } else {
                 page.set_indicator_icon(Option::<&gio::Icon>::None);

@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist gettext-domain="io.github.cadric.Riteed">
+  <enum id="io.github.cadric.Riteed.ThemePreference">
+    <value nick="system" value="0"/>
+    <value nick="light" value="1"/>
+    <value nick="dark" value="2"/>
+  </enum>
   <enum id="io.github.cadric.Riteed.EditorPalette">
     <value nick="follow-system" value="0"/>
     <value nick="adwaita-light" value="1"/>
@@ -10,8 +15,12 @@
     <value nick="solarized-light" value="6"/>
     <value nick="solarized-dark" value="7"/>
   </enum>
+  <enum id="io.github.cadric.Riteed.SourceControlViewMode">
+    <value nick="tree" value="0"/>
+    <value nick="list" value="1"/>
+  </enum>
   <schema id="io.github.cadric.Riteed" path="/io/github/cadric/Riteed/">
-    <key name="theme" type="s">
+    <key name="theme" enum="io.github.cadric.Riteed.ThemePreference">
       <default>'system'</default>
       <summary>Theme Preference</summary>
       <description>Controls whether Riteed uses the system appearance, a light appearance, or a dark appearance.</description>
@@ -103,7 +112,7 @@
       <summary>Git User Email</summary>
       <description>Stores the Git author email Riteed passes to sandboxed Git commits after explicit user action.</description>
     </key>
-    <key name="source-control-view-mode" type="s">
+    <key name="source-control-view-mode" enum="io.github.cadric.Riteed.SourceControlViewMode">
       <default>'tree'</default>
       <summary>Source Control View Mode</summary>
       <description>Controls whether the source control changes view uses a folder tree or a flat list.</description>

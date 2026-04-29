@@ -147,7 +147,7 @@
     },
     {
       "path": "src/editor_tab/compare/ui.rs",
-      "line": 340,
+      "line": 348,
       "match": "idle_pending: &Rc<Cell<bool>>,",
       "kind": "runtime-shared-state",
       "ownership": "Compare scroll synchronization owns its per-direction idle-sync guard.",
@@ -275,7 +275,7 @@
     },
     {
       "path": "src/window_compare/dialog.rs",
-      "line": 346,
+      "line": 354,
       "match": "left: RefCell<CompareSlot>,",
       "kind": "runtime-shared-state",
       "ownership": "The compare dialog owns the mutable left-side source selection.",
@@ -283,7 +283,7 @@
     },
     {
       "path": "src/window_compare/dialog.rs",
-      "line": 347,
+      "line": 355,
       "match": "right: RefCell<CompareSlot>,",
       "kind": "runtime-shared-state",
       "ownership": "The compare dialog owns the mutable right-side source selection.",

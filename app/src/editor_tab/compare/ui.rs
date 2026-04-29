@@ -114,12 +114,20 @@ pub(super) fn compare_toolbar(reference_title: &str) -> gtk4::Box {
         "win.compare-exit",
     ));
     let status = gtk4::Label::builder()
-        .label(pgettext("compare status", "Loading Reference..."))
+        .label(ellipsis_label(pgettext(
+            "compare status",
+            "Loading Reference",
+        )))
         .xalign(1.0)
         .build();
     status.add_css_class("dim-label");
     toolbar.append(&status);
     toolbar
+}
+
+fn ellipsis_label(mut label: String) -> String {
+    label.push('…');
+    label
 }
 
 pub(super) fn install_scroll_sync(

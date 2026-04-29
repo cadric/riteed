@@ -1,12 +1,15 @@
 use gettextrs::{gettext, pgettext};
 use gtk4::prelude::*;
 use libadwaita as adw;
+use sourceview5::prelude::*;
 
-use super::{AppSettings, SOURCE_STYLE_SCHEME_DARK, SOURCE_STYLE_SCHEME_LIGHT, SettingsBackend};
+use super::{AppSettings, SettingsBackend};
 
 const KEY_EDITOR_PALETTE: &str = "editor-palette";
 const KEY_HIGHLIGHT_CURRENT_LINE: &str = "highlight-current-line";
 const KEY_AUTOSAVE_ENABLED: &str = "autosave-enabled";
+const SOURCE_STYLE_SCHEME_LIGHT: &str = "Adwaita";
+const SOURCE_STYLE_SCHEME_DARK: &str = "Adwaita-dark";
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum EditorPalette {
@@ -121,6 +124,15 @@ impl EditorPalette {
 }
 
 impl AppSettings {
+    pub(crate) fn apply_source_style_scheme(&self, buffer: &sourceview5::Buffer) {
+        let manager = sourceview5::StyleSchemeManager::default();
+        let preferred = self.resolved_source_style_scheme_id();
+        let scheme = manager
+            .scheme(&preferred)
+            .or_else(|| manager.scheme(SOURCE_STYLE_SCHEME_LIGHT));
+        buffer.set_style_scheme(scheme.as_ref());
+    }
+
     #[must_use]
     pub fn editor_palette(&self) -> EditorPalette {
         match &self.backend {

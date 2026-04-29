@@ -94,8 +94,10 @@ impl CompareController {
             previous.cancel();
         }
         self.cancellable = Some(cancellable.clone());
-        self.status_label
-            .set_label(&pgettext("compare status", "Loading Reference..."));
+        self.status_label.set_label(&ellipsis_label(pgettext(
+            "compare status",
+            "Loading Reference",
+        )));
     }
 
     pub(super) fn finish_loading(&mut self) {
@@ -238,6 +240,11 @@ impl CompareController {
             self.status_label.set_label(&text);
         }
     }
+}
+
+fn ellipsis_label(mut label: String) -> String {
+    label.push('…');
+    label
 }
 
 pub(super) fn sync_reference_language(

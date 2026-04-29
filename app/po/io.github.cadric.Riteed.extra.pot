@@ -31,7 +31,7 @@ msgid "Refresh Reference"
 msgstr ""
 
 msgctxt "compare dialog action"
-msgid "Choose File..."
+msgid "Choose File"
 msgstr ""
 
 msgctxt "compare dialog action"
@@ -39,7 +39,7 @@ msgid "Clear"
 msgstr ""
 
 msgctxt "compare dialog action"
-msgid "Paste Text..."
+msgid "Paste Text"
 msgstr ""
 
 msgctxt "compare dialog action"
@@ -83,7 +83,7 @@ msgid "Saved Version"
 msgstr ""
 
 msgctxt "compare status"
-msgid "Loading Reference..."
+msgid "Loading Reference"
 msgstr ""
 
 msgctxt "compare toolbar"
@@ -310,16 +310,28 @@ msgctxt "help page"
 msgid "Overview"
 msgstr ""
 
+msgctxt "help page"
+msgid "Technical Notes"
+msgstr ""
+
+msgctxt "help row"
+msgid "Changed Files"
+msgstr ""
+
+msgctxt "help row"
+msgid "Discard Changes"
+msgstr ""
+
 msgctxt "help row"
 msgid "Editor Tools"
 msgstr ""
 
 msgctxt "help row"
-msgid "History and Discard"
+msgid "Live Refresh"
 msgstr ""
 
 msgctxt "help row"
-msgid "Live Refresh"
+msgid "Local Git Only"
 msgstr ""
 
 msgctxt "help row"
@@ -335,11 +347,15 @@ msgid "Find and Replace"
 msgstr ""
 
 msgctxt "help row"
-msgid "Tabs and Files"
+msgid "Safe Discard Limits"
 msgstr ""
 
 msgctxt "help row"
-msgid "Tree and List Views"
+msgid "Stage and Commit"
+msgstr ""
+
+msgctxt "help row"
+msgid "Tabs and Files"
 msgstr ""
 
 msgctxt "help section"
@@ -455,7 +471,7 @@ msgid "Recent Files"
 msgstr ""
 
 msgctxt "save file name"
-msgid "Untitled.txt"
+msgid "Untitled"
 msgstr ""
 
 msgctxt "save safety action"

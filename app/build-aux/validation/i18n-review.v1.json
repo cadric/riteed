@@ -73,7 +73,7 @@
     },
     {
       "path": "src/editor_tab/compare/controller.rs",
-      "line": 232,
+      "line": 234,
       "match": "let text = ngettext(\"%d changed line\", \"%d changed lines\", plural_count)",
       "kind": "i18n-short-string",
       "resolution": "This plural-sensitive compare status counts changed logical lines while hunk navigation remains visible beside it in the full-width compare toolbar."
@@ -109,13 +109,13 @@
     {
       "path": "src/project_tree.rs",
       "line": 172,
-      "match": "label.set_label(&gettext(\"Loading...\"));",
+      "match": "label.set_label(&ellipsis_label(gettext(\"Loading\")));",
       "kind": "i18n-short-string",
       "resolution": "This short inline row label is shown beside a spinner while the project tree enumerates a directory."
     },
     {
       "path": "src/settings/presentation.rs",
-      "line": 88,
+      "line": 91,
       "match": "Self::FollowSystem => gettext(\"Match App Appearance\"),",
       "kind": "i18n-short-string",
       "resolution": "This short palette label appears in the dedicated Appearance panel where it means the editor palette follows the app appearance choice."
@@ -129,21 +129,21 @@
     },
     {
       "path": "src/source_control/refresh.rs",
-      "line": 191,
+      "line": 197,
       "match": "state.status_label.set_label(&gettext(\"No changes.\"));",
       "kind": "i18n-short-string",
       "resolution": "This compact status appears in the Source Control panel when the repository has no changed files."
     },
     {
       "path": "src/source_control/refresh.rs",
-      "line": 193,
+      "line": 199,
       "match": "state.status_label.set_label(&gettext(\"Changed files\"));",
       "kind": "i18n-short-string",
       "resolution": "This short Source Control string appears inside the Git sidebar where the changed-file, history, or action context is visible."
     },
     {
       "path": "src/source_control/history.rs",
-      "line": 166,
+      "line": 167,
       "match": "self.status.set_label(&gettext(\"No commits yet.\"));",
       "kind": "i18n-short-string",
       "resolution": "This short Source Control string appears inside the Git sidebar where the changed-file, history, or action context is visible."
@@ -199,7 +199,7 @@
     },
     {
       "path": "src/window_compare/dialog.rs",
-      "line": 407,
+      "line": 415,
       "match": "row.set_subtitle(&gettext(\"Unavailable\"));",
       "kind": "i18n-short-string",
       "resolution": "This short subtitle appears in the Compare dialog when the Saved Version source is not available for the current left-side selection."

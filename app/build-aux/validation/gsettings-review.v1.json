@@ -3,63 +3,63 @@
   "sites": [
     {
       "path": "src/editor_tab/compare/ui.rs",
-      "line": 274,
+      "line": 282,
       "match": "target.set_value(value);",
       "kind": "gsettings-write",
       "key": "compare-scroll-adjustment",
       "trigger": "Compare scroll synchronization writes only to the peer GTK Adjustment during in-tab split scrolling; no preference or GSettings key is touched."
     },
     {
-      "path": "src/settings.rs",
-      "line": 199,
-      "match": "let _changed = settings.set_string(KEY_THEME, preference.stored());",
+      "path": "src/settings/appearance.rs",
+      "line": 60,
+      "match": "let _changed = settings.set_enum(KEY_THEME, preference.enum_value());",
       "kind": "gsettings-write",
       "key": "theme",
       "trigger": "Explicit theme selection in the preferences dialog."
     },
     {
-      "path": "src/settings.rs",
-      "line": 241,
+      "path": "src/settings/editor.rs",
+      "line": 21,
       "match": "let _changed = settings.set_string(KEY_EDITOR_FONT, font);",
       "kind": "gsettings-write",
       "key": "editor-font",
       "trigger": "Explicit accepted font selection from the editor-font chooser."
     },
     {
-      "path": "src/settings.rs",
-      "line": 271,
+      "path": "src/settings/window_session.rs",
+      "line": 59,
       "match": "let _changed_width = settings.set_int(KEY_WINDOW_WIDTH, width);",
       "kind": "gsettings-write",
       "key": "window-width",
       "trigger": "Main-window close handling after the user changes window size."
     },
     {
-      "path": "src/settings.rs",
-      "line": 272,
+      "path": "src/settings/window_session.rs",
+      "line": 60,
       "match": "let _changed_height = settings.set_int(KEY_WINDOW_HEIGHT, height);",
       "kind": "gsettings-write",
       "key": "window-height",
       "trigger": "Main-window close handling after the user changes window size."
     },
     {
-      "path": "src/settings.rs",
-      "line": 302,
+      "path": "src/settings/window_session.rs",
+      "line": 90,
       "match": "let _changed = settings.set_strv(KEY_RECENT_FILES, files);",
       "kind": "gsettings-write",
       "key": "recent-files",
       "trigger": "Successful explicit open, recent reopen, drag-and-drop open, or local save updates the recent file list."
     },
     {
-      "path": "src/settings.rs",
-      "line": 330,
+      "path": "src/settings/window_session.rs",
+      "line": 118,
       "match": "let _changed = settings.set_strv(KEY_SESSION_FILES, files);",
       "kind": "gsettings-write",
       "key": "session-files",
       "trigger": "Opening, closing, reordering, restoring, or externally renaming saved tabs triggers the existing session snapshot write site outside restore mode."
     },
     {
-      "path": "src/settings.rs",
-      "line": 356,
+      "path": "src/settings/selected_document.rs",
+      "line": 23,
       "match": "let _changed = settings.set_string(KEY_SESSION_SELECTED_FILE, uri);",
       "kind": "gsettings-write",
       "key": "session-selected-file",
@@ -91,7 +91,7 @@
     },
     {
       "path": "src/settings/git.rs",
-      "line": 24,
+      "line": 26,
       "match": "let _changed_name = settings.set_string(KEY_GIT_USER_NAME, name);",
       "kind": "gsettings-write",
       "key": "git-user-name",
@@ -99,7 +99,7 @@
     },
     {
       "path": "src/settings/git.rs",
-      "line": 25,
+      "line": 27,
       "match": "let _changed_email = settings.set_string(KEY_GIT_USER_EMAIL, email);",
       "kind": "gsettings-write",
       "key": "git-user-email",
@@ -131,7 +131,7 @@
     },
     {
       "path": "src/settings/presentation.rs",
-      "line": 139,
+      "line": 151,
       "match": "let _changed = settings.set_enum(KEY_EDITOR_PALETTE, palette.enum_value());",
       "kind": "gsettings-write",
       "key": "editor-palette",
@@ -139,7 +139,7 @@
     },
     {
       "path": "src/settings/presentation.rs",
-      "line": 163,
+      "line": 175,
       "match": "let _changed = settings.set_boolean(KEY_HIGHLIGHT_CURRENT_LINE, enabled);",
       "kind": "gsettings-write",
       "key": "highlight-current-line",
@@ -147,7 +147,7 @@
     },
     {
       "path": "src/settings/presentation.rs",
-      "line": 187,
+      "line": 199,
       "match": "let _changed = settings.set_boolean(KEY_AUTOSAVE_ENABLED, enabled);",
       "kind": "gsettings-write",
       "key": "autosave-enabled",
@@ -187,8 +187,8 @@
     },
     {
       "path": "src/settings/source_control.rs",
-      "line": 48,
-      "match": "let _changed = settings.set_string(KEY_SOURCE_CONTROL_VIEW_MODE, mode.stored());",
+      "line": 59,
+      "match": "let _changed = settings.set_enum(KEY_SOURCE_CONTROL_VIEW_MODE, mode.enum_value());",
       "kind": "gsettings-write",
       "key": "source-control-view-mode",
       "trigger": "Explicit Source Control tree/list segmented-control toggle."

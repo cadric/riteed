@@ -169,7 +169,7 @@ fn bind_project_tree_row(_: &gtk4::SignalListItemFactory, object: &glib::Object)
     match &*borrowed {
         ProjectTreeItem::Loading => {
             icon.set_icon_name(Some("folder-symbolic"));
-            label.set_label(&gettext("Loading..."));
+            label.set_label(&ellipsis_label(gettext("Loading")));
             spinner.set_visible(true);
         }
         ProjectTreeItem::Error(message) => {
@@ -189,6 +189,11 @@ fn bind_project_tree_row(_: &gtk4::SignalListItemFactory, object: &glib::Object)
             }
         }
     }
+}
+
+fn ellipsis_label(mut label: String) -> String {
+    label.push('…');
+    label
 }
 
 fn row_widgets(

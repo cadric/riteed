@@ -11,7 +11,7 @@
     },
     {
       "path": "src/editor_tab/compare/ui.rs",
-      "line": 130,
+      "line": 138,
       "match": "anchors: &Rc<RefCell<Vec<CompareLineAnchor>>>,",
       "kind": "runtime-shared-state",
       "ownership": "The compare controller owns tab-local anchor and scroll synchronization state.",
@@ -19,7 +19,7 @@
     },
     {
       "path": "src/editor_tab/compare/ui.rs",
-      "line": 251,
+      "line": 259,
       "match": "anchors: Rc<RefCell<Vec<CompareLineAnchor>>>,",
       "kind": "runtime-shared-state",
       "ownership": "The compare controller owns tab-local anchor and scroll synchronization state.",
@@ -27,7 +27,7 @@
     },
     {
       "path": "src/editor_tab/compare/ui.rs",
-      "line": 253,
+      "line": 261,
       "match": "syncing: Rc<Cell<bool>>,",
       "kind": "runtime-shared-state",
       "ownership": "The compare controller owns tab-local anchor and scroll synchronization state.",
@@ -115,7 +115,7 @@
     },
     {
       "path": "src/source_control/live.rs",
-      "line": 119,
+      "line": 209,
       "match": "pending: Rc<Cell<bool>>,",
       "kind": "runtime-shared-state",
       "ownership": "The Source Control live-refresh scheduler owns debounce and last-refresh state.",
@@ -123,7 +123,7 @@
     },
     {
       "path": "src/source_control/live.rs",
-      "line": 120,
+      "line": 210,
       "match": "last_refresh: Rc<RefCell<Option<Instant>>>,",
       "kind": "runtime-shared-state",
       "ownership": "The Source Control live-refresh scheduler owns debounce and last-refresh state.",

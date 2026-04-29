@@ -38,7 +38,7 @@ msgstr ""
 msgid "Choose Editor Font"
 msgstr ""
 
-msgid "Choose File... or Paste Text..."
+msgid "Choose File%s or Paste Text%s"
 msgstr ""
 
 msgid "Choose a Different Encoding to Save"
@@ -122,6 +122,9 @@ msgstr ""
 msgid "Diff unavailable for this Git state."
 msgstr ""
 
+msgid "Discard stays disabled when open tabs, Git filters, working-tree encodings, or line-ending conversion make an exact restore unsafe."
+msgstr ""
+
 msgid "Discard File Changes?"
 msgstr ""
 
@@ -167,10 +170,10 @@ msgstr ""
 msgid "It provides tabs, find and replace, syntax highlighting, optional line numbers and minimap, format controls for text encoding and line endings, curated editor palettes, and conservative reload prompts when files change on disk."
 msgstr ""
 
-msgid "Loading recent commits..."
+msgid "Loading recent commits"
 msgstr ""
 
-msgid "Loading..."
+msgid "Loading"
 msgstr ""
 
 msgid "Main Menu"
@@ -230,7 +233,7 @@ msgstr ""
 msgid "Open Files"
 msgstr ""
 
-msgid "Open a Git folder to review changed files in the Source Control sidebar, then switch between tree and list views while keeping each view's selection and tree expansion state."
+msgid "Open a Git folder to review local changes in the Source Control sidebar. Select a changed file to compare it, or switch between tree and list views when a flat list is easier to scan."
 msgstr ""
 
 msgid "Open a folder to see Git status."
@@ -275,16 +278,13 @@ msgstr ""
 msgid "Recent Files"
 msgstr ""
 
-msgid "Recent commits appear below changed files. Tracked unstaged files can be discarded after confirmation when open tabs, Git filters, encodings, and line-ending conversion do not make restore unsafe."
-msgstr ""
-
 msgid "Refresh Project Tree"
 msgstr ""
 
 msgid "Refresh Source Control"
 msgstr ""
 
-msgid "Refreshing Git status..."
+msgid "Refreshing Git status"
 msgstr ""
 
 msgid "Reload the Changed File?"
@@ -359,6 +359,9 @@ msgid "Some files from the last session could not be reopened."
 msgstr ""
 
 msgid "Source Control"
+msgstr ""
+
+msgid "Source Control supports local review, diff, stage, unstage, discard, and simple commits. It does not manage remotes, branches, merges, rebases, conflicts, credentials, or build workflows."
 msgstr ""
 
 msgid "Source Control View Mode"
@@ -475,6 +478,9 @@ msgstr ""
 msgid "Too large to compare differences."
 msgstr ""
 
+msgid "Tracked unstaged files can be discarded after confirmation. Riteed keeps unsafe discard cases disabled when it cannot restore the file predictably."
+msgstr ""
+
 msgid "Unable to Build the Window"
 msgstr ""
 
@@ -505,6 +511,9 @@ msgstr ""
 msgid "Unavailable"
 msgstr ""
 
+msgid "Use the row actions to stage or unstage files, then write a commit message and commit local staged changes with the Git identity saved in Preferences."
+msgstr ""
+
 msgid "Window Height"
 msgstr ""
 
@@ -522,7 +531,7 @@ msgid "Cancel"
 msgstr ""
 
 msgctxt "alert response"
-msgid "Choose Encoding..."
+msgid "Choose Encoding"
 msgstr ""
 
 msgctxt "alert response"

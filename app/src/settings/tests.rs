@@ -1,26 +1,17 @@
 use super::{
-    AppSettings, EditorPalette, SourceControlViewMode, ThemePreference, sanitize_dimension,
-    sanitize_editor_width,
+    AppSettings, EditorPalette, SourceControlViewMode, ThemePreference, sanitize_editor_width,
+    sanitize_restored_dimension,
 };
 #[test]
-fn theme_preference_roundtrips_indices() {
-    assert_eq!(ThemePreference::from_index(0), ThemePreference::System);
-    assert_eq!(ThemePreference::from_index(1), ThemePreference::Light);
-    assert_eq!(ThemePreference::from_index(2), ThemePreference::Dark);
-    assert_eq!(ThemePreference::Dark.index(), 2);
-}
-
-#[test]
-fn theme_preference_parses_stored_values() {
-    assert_eq!(
-        ThemePreference::from_stored("system"),
-        ThemePreference::System
-    );
-    assert_eq!(
-        ThemePreference::from_stored("light"),
-        ThemePreference::Light
-    );
-    assert_eq!(ThemePreference::from_stored("dark"), ThemePreference::Dark);
+fn theme_preference_roundtrips_enum_values() {
+    for theme in ThemePreference::ALL {
+        assert_eq!(
+            ThemePreference::from_enum_value(theme.enum_value()),
+            theme,
+            "{}",
+            theme.nick()
+        );
+    }
 }
 
 #[test]
@@ -36,23 +27,34 @@ fn editor_palette_roundtrips_enum_values() {
 }
 
 #[test]
-fn source_control_view_mode_parses_stored_values() {
-    assert_eq!(
-        SourceControlViewMode::from_stored("list"),
-        SourceControlViewMode::List
-    );
-    assert_eq!(
-        SourceControlViewMode::from_stored("tree"),
-        SourceControlViewMode::Tree
-    );
-    assert_eq!(SourceControlViewMode::Tree.stored(), "tree");
+fn source_control_view_mode_roundtrips_enum_values() {
+    for mode in SourceControlViewMode::ALL {
+        assert_eq!(
+            SourceControlViewMode::from_enum_value(mode.enum_value()),
+            mode,
+            "{}",
+            mode.nick()
+        );
+    }
 }
 
 #[test]
-fn invalid_dimensions_fall_back() {
-    assert_eq!(sanitize_dimension(900, 840), 900);
-    assert_eq!(sanitize_dimension(0, 840), 840);
-    assert_eq!(sanitize_dimension(-1, 620), 620);
+fn restored_window_dimensions_are_clamped() {
+    assert_eq!(sanitize_restored_dimension(900, 840, 360, 4096), 900);
+    assert_eq!(sanitize_restored_dimension(0, 840, 360, 4096), 840);
+    assert_eq!(sanitize_restored_dimension(-1, 620, 320, 2160), 620);
+    assert_eq!(sanitize_restored_dimension(200, 840, 360, 4096), 360);
+    assert_eq!(sanitize_restored_dimension(5000, 840, 360, 4096), 4096);
+}
+
+#[test]
+fn memory_backend_clamps_restored_window_size() {
+    let settings = AppSettings::new_for_tests();
+    settings.set_window_size(200, 3000);
+    assert_eq!(settings.window_size(), (360, 2160));
+
+    settings.set_window_size(0, -1);
+    assert_eq!(settings.window_size(), (840, 620));
 }
 
 #[test]

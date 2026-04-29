@@ -231,8 +231,15 @@ pub fn show_help(parent: &impl IsA<gtk4::Widget>) {
         .follows_content_size(false)
         .build();
 
+    dialog.add(&help_overview_page());
+    dialog.add(&help_technical_page());
+    dialog.present(Some(parent));
+}
+
+fn help_overview_page() -> adw::PreferencesPage {
     let overview = adw::PreferencesPage::builder()
         .title(pgettext("help page", "Overview"))
+        .icon_name("dialog-information-symbolic")
         .build();
 
     let getting_started = adw::PreferencesGroup::builder()
@@ -280,29 +287,60 @@ pub fn show_help(parent: &impl IsA<gtk4::Widget>) {
         .title(pgettext("help section", "Source Control"))
         .build();
     source_control.add(&help_row(
-        &pgettext("help row", "Tree and List Views"),
+        &pgettext("help row", "Changed Files"),
         &gettext(
-            "Open a Git folder to review changed files in the Source Control sidebar, then switch between tree and list views while keeping each view's selection and tree expansion state.",
+            "Open a Git folder to review local changes in the Source Control sidebar. Select a changed file to compare it, or switch between tree and list views when a flat list is easier to scan.",
         ),
     ));
     source_control.add(&help_row(
-        &pgettext("help row", "History and Discard"),
+        &pgettext("help row", "Stage and Commit"),
         &gettext(
-            "Recent commits appear below changed files. Tracked unstaged files can be discarded after confirmation when open tabs, Git filters, encodings, and line-ending conversion do not make restore unsafe.",
+            "Use the row actions to stage or unstage files, then write a commit message and commit local staged changes with the Git identity saved in Preferences.",
         ),
     ));
     source_control.add(&help_row(
-        &pgettext("help row", "Live Refresh"),
+        &pgettext("help row", "Discard Changes"),
         &gettext(
-            "Riteed refreshes Git status after saves and local Git metadata changes. Document-portal folders use periodic polling when native file monitoring is unavailable.",
+            "Tracked unstaged files can be discarded after confirmation. Riteed keeps unsafe discard cases disabled when it cannot restore the file predictably.",
+        ),
+    ));
+    source_control.add(&help_row(
+        &pgettext("help row", "Local Git Only"),
+        &gettext(
+            "Source Control supports local review, diff, stage, unstage, discard, and simple commits. It does not manage remotes, branches, merges, rebases, conflicts, credentials, or build workflows.",
         ),
     ));
 
     overview.add(&getting_started);
     overview.add(&editing);
     overview.add(&source_control);
-    dialog.add(&overview);
-    dialog.present(Some(parent));
+    overview
+}
+
+fn help_technical_page() -> adw::PreferencesPage {
+    let technical = adw::PreferencesPage::builder()
+        .title(pgettext("help page", "Technical Notes"))
+        .icon_name("applications-engineering-symbolic")
+        .build();
+
+    let source_control_notes = adw::PreferencesGroup::builder()
+        .title(pgettext("help section", "Source Control"))
+        .build();
+    source_control_notes.add(&help_row(
+        &pgettext("help row", "Safe Discard Limits"),
+        &gettext(
+            "Discard stays disabled when open tabs, Git filters, working-tree encodings, or line-ending conversion make an exact restore unsafe.",
+        ),
+    ));
+    source_control_notes.add(&help_row(
+        &pgettext("help row", "Live Refresh"),
+        &gettext(
+            "Riteed refreshes Git status after saves and local Git metadata changes. Document-portal folders use periodic polling when native file monitoring is unavailable.",
+        ),
+    ));
+
+    technical.add(&source_control_notes);
+    technical
 }
 
 fn help_row(title: &str, subtitle: &str) -> adw::ActionRow {

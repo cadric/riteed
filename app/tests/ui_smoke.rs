@@ -6,7 +6,8 @@ use libadwaita as adw;
 
 #[test]
 fn constructs_main_surfaces() {
-    riteed::bootstrap_runtime();
+    let init = riteed::bootstrap_runtime();
+    assert!(init.is_ok(), "bootstrap_runtime failed: {init:?}");
     let _gtk = gtk::init();
     let _adw = adw::init();
     if gtk::gdk::Display::default().is_none() {

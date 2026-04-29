@@ -214,7 +214,7 @@ msgstr ""
 msgid "Refresh Source Control"
 msgstr ""
 
-msgid "Refreshing Git status..."
+msgid "Refreshing Git status"
 msgstr ""
 
 msgid "Save the open document before using Git actions."
@@ -347,10 +347,13 @@ msgstr ""
 msgid "Discard File Changes?"
 msgstr ""
 
+msgid "Discard stays disabled when open tabs, Git filters, working-tree encodings, or line-ending conversion make an exact restore unsafe."
+msgstr ""
+
 msgid "This will restore the file to the Git index version."
 msgstr ""
 
-msgid "Loading recent commits..."
+msgid "Loading recent commits"
 msgstr ""
 
 msgid "No commits yet."
@@ -359,10 +362,16 @@ msgstr ""
 msgid "Open Appearance from the main menu to adjust app appearance and editor palettes. Enable current-line highlight, line numbers, and the minimap in Preferences when you want more structure while reading longer code or markdown files."
 msgstr ""
 
-msgid "Recent commits appear below changed files. Tracked unstaged files can be discarded after confirmation when open tabs, Git filters, encodings, and line-ending conversion do not make restore unsafe."
+msgid "Tracked unstaged files can be discarded after confirmation. Riteed keeps unsafe discard cases disabled when it cannot restore the file predictably."
+msgstr ""
+
+msgid "Use the row actions to stage or unstage files, then write a commit message and commit local staged changes with the Git identity saved in Preferences."
 msgstr ""
 
 msgid "Riteed refreshes Git status after saves and local Git metadata changes. Document-portal folders use periodic polling when native file monitoring is unavailable."
+msgstr ""
+
+msgid "Source Control supports local review, diff, stage, unstage, discard, and simple commits. It does not manage remotes, branches, merges, rebases, conflicts, credentials, or build workflows."
 msgstr ""
 
 msgid "Source Control View Mode"
@@ -374,15 +383,31 @@ msgstr ""
 msgid "Unable to read recent commits."
 msgstr ""
 
-msgid "Open a Git folder to review changed files in the Source Control sidebar, then switch between tree and list views while keeping each view's selection and tree expansion state."
+msgid "Open a Git folder to review local changes in the Source Control sidebar. Select a changed file to compare it, or switch between tree and list views when a flat list is easier to scan."
 msgstr ""
 
 msgctxt "help row"
-msgid "Tree and List Views"
+msgid "Changed Files"
 msgstr ""
 
 msgctxt "help row"
-msgid "History and Discard"
+msgid "Stage and Commit"
+msgstr ""
+
+msgctxt "help row"
+msgid "Discard Changes"
+msgstr ""
+
+msgctxt "help row"
+msgid "Local Git Only"
+msgstr ""
+
+msgctxt "help page"
+msgid "Technical Notes"
+msgstr ""
+
+msgctxt "help row"
+msgid "Safe Discard Limits"
 msgstr ""
 
 msgctxt "help row"

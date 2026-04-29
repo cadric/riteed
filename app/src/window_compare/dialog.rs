@@ -117,10 +117,14 @@ fn build_compare_dialog_ui(show_current_document_button: bool) -> CompareDialogU
         gtk4::Button::with_label(&pgettext("compare source", "Current Document"));
     left_current_button.set_visible(show_current_document_button);
     left_buttons.append(&left_current_button);
-    let left_choose_file_button =
-        gtk4::Button::with_label(&pgettext("compare dialog action", "Choose File..."));
-    let left_paste_text_button =
-        gtk4::Button::with_label(&pgettext("compare dialog action", "Paste Text..."));
+    let left_choose_file_button = gtk4::Button::with_label(&ellipsis_label(pgettext(
+        "compare dialog action",
+        "Choose File",
+    )));
+    let left_paste_text_button = gtk4::Button::with_label(&ellipsis_label(pgettext(
+        "compare dialog action",
+        "Paste Text",
+    )));
     let left_clear_button = gtk4::Button::with_label(&pgettext("compare dialog action", "Clear"));
     left_buttons.append(&left_choose_file_button);
     left_buttons.append(&left_paste_text_button);
@@ -135,10 +139,14 @@ fn build_compare_dialog_ui(show_current_document_button: bool) -> CompareDialogU
     let right_buttons = compare_source_buttons_row();
     let right_saved_button = gtk4::Button::with_label(&pgettext("compare source", "Saved Version"));
     right_buttons.append(&right_saved_button);
-    let right_choose_file_button =
-        gtk4::Button::with_label(&pgettext("compare dialog action", "Choose File..."));
-    let right_paste_text_button =
-        gtk4::Button::with_label(&pgettext("compare dialog action", "Paste Text..."));
+    let right_choose_file_button = gtk4::Button::with_label(&ellipsis_label(pgettext(
+        "compare dialog action",
+        "Choose File",
+    )));
+    let right_paste_text_button = gtk4::Button::with_label(&ellipsis_label(pgettext(
+        "compare dialog action",
+        "Paste Text",
+    )));
     let right_clear_button = gtk4::Button::with_label(&pgettext("compare dialog action", "Clear"));
     right_buttons.append(&right_choose_file_button);
     right_buttons.append(&right_paste_text_button);
@@ -393,7 +401,7 @@ fn apply_slot_row(row: &adw::ActionRow, slot: &CompareSlot, saved_version_availa
     match slot {
         CompareSlot::None => {
             row.set_title(&pgettext("compare source", "Not Set"));
-            row.set_subtitle(&gettext("Choose File... or Paste Text..."));
+            row.set_subtitle(&choose_file_or_paste_text_label());
         }
         CompareSlot::CurrentDocument(tab) => {
             row.set_title(&pgettext("compare source", "Current Document"));
@@ -423,6 +431,15 @@ fn compare_source_buttons_row() -> gtk4::Box {
         .orientation(gtk4::Orientation::Horizontal)
         .spacing(6)
         .build()
+}
+
+fn choose_file_or_paste_text_label() -> String {
+    gettext("Choose File%s or Paste Text%s").replace("%s", "…")
+}
+
+fn ellipsis_label(mut label: String) -> String {
+    label.push('…');
+    label
 }
 
 fn file_detail(file: &gio::File) -> String {

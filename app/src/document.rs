@@ -105,11 +105,7 @@ impl DocumentState {
 
     #[must_use]
     pub fn normalized_save_path(path: &Path) -> PathBuf {
-        if path.extension().is_some() {
-            path.to_path_buf()
-        } else {
-            path.with_extension("txt")
-        }
+        path.to_path_buf()
     }
 }
 
@@ -457,8 +453,15 @@ mod tests {
     }
 
     #[test]
-    fn save_path_adds_txt_extension_when_missing() {
-        let normalized = DocumentState::normalized_save_path(Path::new("/tmp/notes"));
-        assert_eq!(normalized.to_string_lossy(), "/tmp/notes.txt");
+    fn save_path_preserves_extensionless_names() {
+        for path in [
+            "/tmp/notes",
+            "/tmp/Makefile",
+            "/tmp/LICENSE",
+            "/tmp/.gitignore",
+        ] {
+            let normalized = DocumentState::normalized_save_path(Path::new(path));
+            assert_eq!(normalized, Path::new(path));
+        }
     }
 }

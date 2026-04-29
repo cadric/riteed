@@ -1,6 +1,6 @@
 ---
 created: 2026-04-19
-updated: 2026-04-28
+updated: 2026-04-29
 status: current
 priority: high
 type: release
@@ -43,11 +43,14 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Made compare highlighting follow the effective editor palette instead of the application theme, and kept autosave saves silent so they do not reorder recent files, persist session state, or show save toasts.
 - Moved quick app appearance and editor palette controls into an icon-only header-bar Appearance panel with visual palette previews, while keeping editor view toggles such as current-line highlight in Preferences.
 - Refined the editor chrome by putting Project Sidebar first in the header bar, moving Save beside Open, moving a friendly file location into the bottom status bar, and removing the status-bar Actual Size button.
-- Simplified the primary menu into a lean app menu (New Window, Open..., Open Folder..., Recent Files..., Search, Compare..., Keyboard Shortcuts, Preferences, Help, About).
+- Simplified the primary menu into a lean app menu (New Window, Open…, Open Folder…, Recent Files…, Search, Compare…, Keyboard Shortcuts, Preferences, Help, About).
 - Moved text-file, folder, and recent-file opening into a header-bar Open split button, filtering the Open Folder chooser to folders where supported, removing duplicate open commands from the primary menu, and using the standard new-tab icon.
 - Aligned keyboard shortcuts and shortcut labels with GNOME HIG conventions, including Ctrl+N for New Window, Ctrl+T for New Tab, Ctrl+G for find navigation, Ctrl+R for project refresh, and F9 for toggling the project sidebar.
 - Added a native tab context menu for moving tabs backward/forward, moving a tab to a new window, closing other tabs, and closing the current tab, with per-window zoom styling preserved after tab transfer.
-- Reworked Compare into a single-entry flow: Compare... opens a dedicated compare dialog where the user chooses sources (current document, saved version, file, or pasted text), with left as the editable side and right as the reference.
+- Fixed the modified-tab indicator so dirty tabs use an available Adwaita symbolic icon instead of showing a missing-icon placeholder.
+- Preserved extensionless filenames during Save As instead of appending `.txt`, so code-oriented names such as `Makefile`, `LICENSE`, and `.gitignore` stay unchanged.
+- Refreshed the pinned Kernel.org `sha256sums.asc` checksum used by the bundled Git Flatpak module after verifying the new signed checksum file.
+- Reworked Compare into a single-entry flow: Compare… opens a dedicated compare dialog where the user chooses sources (current document, saved version, file, or pasted text), with left as the editable side and right as the reference.
 - Moved compare-session actions (refresh reference, exit compare, next/previous diff) out of the main menu and into the compare view/toolbar.
 - Switched Recent Files to a lightweight dialog listing recent documents (most recent first) instead of nested menu flows.
 - Split the left sidebar into Files and Source Control modes with a libadwaita view stack while preserving project-tree state.
@@ -55,9 +58,12 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Moved Appearance from a header-bar button into the main menu, kept the existing visual Appearance dialog, and refreshed Help copy for the new location.
 - Reworked compare scroll synchronization to use diff anchors instead of normalized ratios, and applied active document language highlighting to reference buffers.
 - Refactored compare controller plumbing into smaller modules so Git-backed compare could reuse the existing split-diff engine without growing the compare file past policy limits.
+- Clarified the Riteed settings model into scoped modules and converted theme and Source Control view mode preferences to GSettings enums.
+- Polished UI copy by using real ellipses in dialog labels, sentence-style Preferences subtitles, user-first Help pages, and defensive restored-window size clamping.
 - Revised the runtime policy to allow only typed Gio subprocess Git operations in `src/git_process.rs`; `std::process::Command` and `flatpak-spawn` remain forbidden.
 
 ### Fixed
+- Made startup resource registration and gettext initialization failures visible instead of silently discarding them.
 - Stabilized GTK coverage runs by teaching `tools.coverage_check` to invoke `cargo llvm-cov` with a deterministic `GSK_RENDERER=cairo` environment, with unit coverage for the new tool behavior.
 - Stabilized headless GTK validation further by defaulting `GTK_A11Y=none` for policy and coverage test commands.
 - Ignored embedded app build outputs such as `app/target/`, Flatpak cache directories, and app-local coverage directories so routine local validation does not keep leaving commit noise behind.
@@ -83,6 +89,7 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Removed invalid Appearance CSS size properties and added deterministic indentation coverage for tabs, spaces, indent width, and unindent behavior.
 - Guarded Git stage/compare actions for unsupported repository states such as SHA-256 object format, configured EOL conversion, content filters, working-tree encodings, submodules, binary blobs, large blobs, dirty open tabs, and non-UTF-8 paths.
 - Fixed Flatpak Git status refresh for document-portal project folders by running bundled Git from a stable sandbox cwd with explicit `GIT_DIR` and `GIT_WORK_TREE`.
+- Fixed Source Control Git execution and live refresh for worktrees and non-standard Git directories by resolving Git metadata paths instead of assuming `<worktree>/.git`.
 - Trimmed the bundled Flatpak Git module to local plumbing only and explicitly stripped `/app/bin/git`, reducing the installed app size baseline to 7,617,536 bytes while preserving V9 status, stage, unstage, compare, and commit flows.
 - Restored the resizable sidebar to the left side, kept Files and Source Control inside one switchable sidebar, and clamped drag resizing so the sidebar cannot be hidden permanently by the handle.
 - Fixed V10 polish regressions: Source Control icon registration, first-open Appearance tile sizing, Recent Files bottom actions, animated sidebar show/hide, and status-bar segment dividers.

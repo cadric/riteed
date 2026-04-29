@@ -1,72 +1,13 @@
 use std::rc::Rc;
 use std::sync::Mutex;
 
-use gtk4::{gio, prelude::*};
-use libadwaita as adw;
-use sourceview5::prelude::*;
+use gtk4::gio;
 
 use crate::APP_ID;
 
+pub use appearance::ThemePreference;
 pub use presentation::EditorPalette;
 pub use source_control::SourceControlViewMode;
-
-const KEY_THEME: &str = "theme";
-const KEY_EDITOR_FONT: &str = "editor-font";
-const KEY_WINDOW_WIDTH: &str = "window-width";
-const KEY_WINDOW_HEIGHT: &str = "window-height";
-const KEY_RECENT_FILES: &str = "recent-files";
-const KEY_SESSION_FILES: &str = "session-files";
-const KEY_SESSION_SELECTED_FILE: &str = "session-selected-file";
-const KEY_GIT_USER_NAME: &str = "git-user-name";
-const KEY_GIT_USER_EMAIL: &str = "git-user-email";
-const KEY_SOURCE_CONTROL_VIEW_MODE: &str = "source-control-view-mode";
-const SOURCE_STYLE_SCHEME_LIGHT: &str = "Adwaita";
-const SOURCE_STYLE_SCHEME_DARK: &str = "Adwaita-dark";
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum ThemePreference {
-    System,
-    Light,
-    Dark,
-}
-
-impl ThemePreference {
-    #[must_use]
-    pub fn from_stored(value: &str) -> Self {
-        match value {
-            "light" => Self::Light,
-            "dark" => Self::Dark,
-            _ => Self::System,
-        }
-    }
-
-    #[must_use]
-    pub const fn stored(self) -> &'static str {
-        match self {
-            Self::System => "system",
-            Self::Light => "light",
-            Self::Dark => "dark",
-        }
-    }
-
-    #[must_use]
-    pub const fn index(self) -> u32 {
-        match self {
-            Self::System => 0,
-            Self::Light => 1,
-            Self::Dark => 2,
-        }
-    }
-
-    #[must_use]
-    pub fn from_index(index: u32) -> Self {
-        match index {
-            1 => Self::Light,
-            2 => Self::Dark,
-            _ => Self::System,
-        }
-    }
-}
 
 #[derive(Clone)]
 pub struct AppSettings {
@@ -86,11 +27,8 @@ struct MemorySettings {
     indentation: MemoryIndentationSettings,
     presentation: MemoryPresentationSettings,
     editor_font: String,
-    window_width: i32,
-    window_height: i32,
-    recent_files: Vec<String>,
-    session_files: Vec<String>,
-    session_selected_file: String,
+    window_session: MemoryWindowSessionSettings,
+    selected_document: MemorySelectedDocumentSettings,
     git_user_name: String,
     git_user_email: String,
     source_control_view_mode: SourceControlViewMode,
@@ -118,6 +56,19 @@ struct MemoryPresentationSettings {
     editor_palette: EditorPalette,
     highlight_current_line: bool,
     autosave_enabled: bool,
+}
+
+#[derive(Clone)]
+struct MemoryWindowSessionSettings {
+    window_width: i32,
+    window_height: i32,
+    recent_files: Vec<String>,
+    session_files: Vec<String>,
+}
+
+#[derive(Clone)]
+struct MemorySelectedDocumentSettings {
+    session_selected_file: String,
 }
 
 #[derive(Clone)]
@@ -163,11 +114,15 @@ impl AppSettings {
                     autosave_enabled: false,
                 },
                 editor_font: String::new(),
-                window_width: 840,
-                window_height: 620,
-                recent_files: Vec::new(),
-                session_files: Vec::new(),
-                session_selected_file: String::new(),
+                window_session: MemoryWindowSessionSettings {
+                    window_width: 840,
+                    window_height: 620,
+                    recent_files: Vec::new(),
+                    session_files: Vec::new(),
+                },
+                selected_document: MemorySelectedDocumentSettings {
+                    session_selected_file: String::new(),
+                },
                 git_user_name: String::new(),
                 git_user_email: String::new(),
                 source_control_view_mode: SourceControlViewMode::Tree,
@@ -183,187 +138,6 @@ impl AppSettings {
         }
     }
 
-    #[must_use]
-    pub fn theme(&self) -> ThemePreference {
-        match &self.backend {
-            SettingsBackend::GSettings(settings) => {
-                ThemePreference::from_stored(settings.string(KEY_THEME).as_str())
-            }
-            SettingsBackend::Memory(memory) => with_memory(memory, |state| state.theme),
-        }
-    }
-
-    pub fn set_theme(&self, preference: ThemePreference) {
-        match &self.backend {
-            SettingsBackend::GSettings(settings) => {
-                let _changed = settings.set_string(KEY_THEME, preference.stored());
-            }
-            SettingsBackend::Memory(memory) => {
-                with_memory_mut(memory, |state| {
-                    state.theme = preference;
-                    record_memory_write(state, KEY_THEME);
-                });
-            }
-        }
-    }
-
-    pub fn apply_theme(&self) {
-        let color_scheme = match self.theme() {
-            ThemePreference::System => adw::ColorScheme::Default,
-            ThemePreference::Light => adw::ColorScheme::PreferLight,
-            ThemePreference::Dark => adw::ColorScheme::PreferDark,
-        };
-        adw::StyleManager::default().set_color_scheme(color_scheme);
-    }
-
-    pub(crate) fn apply_source_style_scheme(&self, buffer: &sourceview5::Buffer) {
-        let manager = sourceview5::StyleSchemeManager::default();
-        let preferred = self.resolved_source_style_scheme_id();
-        let scheme = manager
-            .scheme(&preferred)
-            .or_else(|| manager.scheme(SOURCE_STYLE_SCHEME_LIGHT));
-        buffer.set_style_scheme(scheme.as_ref());
-    }
-
-    #[must_use]
-    pub fn editor_font(&self) -> String {
-        match &self.backend {
-            SettingsBackend::GSettings(settings) => settings.string(KEY_EDITOR_FONT).to_string(),
-            SettingsBackend::Memory(memory) => {
-                with_memory(memory, |state| state.editor_font.clone())
-            }
-        }
-    }
-
-    pub fn set_editor_font(&self, font: &str) {
-        match &self.backend {
-            SettingsBackend::GSettings(settings) => {
-                let _changed = settings.set_string(KEY_EDITOR_FONT, font);
-            }
-            SettingsBackend::Memory(memory) => {
-                with_memory_mut(memory, |state| {
-                    state.editor_font = String::from(font);
-                    record_memory_write(state, KEY_EDITOR_FONT);
-                });
-            }
-        }
-    }
-
-    #[must_use]
-    pub fn window_size(&self) -> (i32, i32) {
-        match &self.backend {
-            SettingsBackend::GSettings(settings) => (
-                sanitize_dimension(settings.int(KEY_WINDOW_WIDTH), 840),
-                sanitize_dimension(settings.int(KEY_WINDOW_HEIGHT), 620),
-            ),
-            SettingsBackend::Memory(memory) => with_memory(memory, |state| {
-                (
-                    sanitize_dimension(state.window_width, 840),
-                    sanitize_dimension(state.window_height, 620),
-                )
-            }),
-        }
-    }
-
-    pub fn set_window_size(&self, width: i32, height: i32) {
-        match &self.backend {
-            SettingsBackend::GSettings(settings) => {
-                let _changed_width = settings.set_int(KEY_WINDOW_WIDTH, width);
-                let _changed_height = settings.set_int(KEY_WINDOW_HEIGHT, height);
-            }
-            SettingsBackend::Memory(memory) => {
-                with_memory_mut(memory, |state| {
-                    state.window_width = width;
-                    state.window_height = height;
-                    record_memory_write(state, KEY_WINDOW_WIDTH);
-                    record_memory_write(state, KEY_WINDOW_HEIGHT);
-                });
-            }
-        }
-    }
-
-    #[must_use]
-    pub fn recent_files(&self) -> Vec<String> {
-        match &self.backend {
-            SettingsBackend::GSettings(settings) => settings
-                .strv(KEY_RECENT_FILES)
-                .iter()
-                .map(ToString::to_string)
-                .collect(),
-            SettingsBackend::Memory(memory) => {
-                with_memory(memory, |state| state.recent_files.clone())
-            }
-        }
-    }
-
-    pub fn set_recent_files(&self, files: &[String]) {
-        match &self.backend {
-            SettingsBackend::GSettings(settings) => {
-                let _changed = settings.set_strv(KEY_RECENT_FILES, files);
-            }
-            SettingsBackend::Memory(memory) => {
-                with_memory_mut(memory, |state| {
-                    state.recent_files = files.to_vec();
-                    record_memory_write(state, KEY_RECENT_FILES);
-                });
-            }
-        }
-    }
-
-    #[must_use]
-    pub fn session_files(&self) -> Vec<String> {
-        match &self.backend {
-            SettingsBackend::GSettings(settings) => settings
-                .strv(KEY_SESSION_FILES)
-                .iter()
-                .map(ToString::to_string)
-                .collect(),
-            SettingsBackend::Memory(memory) => {
-                with_memory(memory, |state| state.session_files.clone())
-            }
-        }
-    }
-
-    pub fn set_session_files(&self, files: &[String]) {
-        match &self.backend {
-            SettingsBackend::GSettings(settings) => {
-                let _changed = settings.set_strv(KEY_SESSION_FILES, files);
-            }
-            SettingsBackend::Memory(memory) => {
-                with_memory_mut(memory, |state| {
-                    state.session_files = files.to_vec();
-                    record_memory_write(state, KEY_SESSION_FILES);
-                });
-            }
-        }
-    }
-
-    #[must_use]
-    pub fn session_selected_file(&self) -> String {
-        match &self.backend {
-            SettingsBackend::GSettings(settings) => {
-                settings.string(KEY_SESSION_SELECTED_FILE).to_string()
-            }
-            SettingsBackend::Memory(memory) => {
-                with_memory(memory, |state| state.session_selected_file.clone())
-            }
-        }
-    }
-
-    pub fn set_session_selected_file(&self, uri: &str) {
-        match &self.backend {
-            SettingsBackend::GSettings(settings) => {
-                let _changed = settings.set_string(KEY_SESSION_SELECTED_FILE, uri);
-            }
-            SettingsBackend::Memory(memory) => {
-                with_memory_mut(memory, |state| {
-                    state.session_selected_file = String::from(uri);
-                    record_memory_write(state, KEY_SESSION_SELECTED_FILE);
-                });
-            }
-        }
-    }
-
     #[cfg(test)]
     pub(crate) fn write_log_for_tests(&self) -> Vec<String> {
         match &self.backend {
@@ -373,8 +147,16 @@ impl AppSettings {
     }
 }
 
-const fn sanitize_dimension(value: i32, fallback: i32) -> i32 {
-    if value > 0 { value } else { fallback }
+const fn sanitize_restored_dimension(value: i32, fallback: i32, min: i32, max: i32) -> i32 {
+    if value <= 0 {
+        fallback
+    } else if value < min {
+        min
+    } else if value > max {
+        max
+    } else {
+        value
+    }
 }
 
 const fn sanitize_editor_width(value: i32, fallback: i32) -> i32 {
@@ -413,9 +195,13 @@ fn record_memory_write(_state: &mut MemorySettings, _key: &str) {}
 #[cfg(test)]
 mod tests;
 
+mod appearance;
 mod display;
+mod editor;
 mod git;
 mod indentation;
 mod presentation;
 mod project;
+mod selected_document;
 mod source_control;
+mod window_session;

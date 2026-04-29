@@ -122,7 +122,8 @@ impl SourceControlHistory {
     pub(super) fn set_loading(&self) {
         self.clear_rows();
         self.root.set_visible(true);
-        self.status.set_label(&gettext("Loading recent commits..."));
+        self.status
+            .set_label(&ellipsis_label(gettext("Loading recent commits")));
         self.status.set_visible(true);
     }
 
@@ -172,6 +173,11 @@ impl SourceControlHistory {
             self.list.remove(&child);
         }
     }
+}
+
+fn ellipsis_label(mut label: String) -> String {
+    label.push('…');
+    label
 }
 
 fn commit_row(commit: &GitCommitSummary) -> adw::ActionRow {

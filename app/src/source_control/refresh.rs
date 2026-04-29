@@ -35,7 +35,7 @@ pub(super) fn refresh_status_with_origin(state: &SourceStateRef, origin: Refresh
             state.status_stale = true;
             state
                 .status_label
-                .set_label(&gettext("Refreshing Git status..."));
+                .set_label(&ellipsis_label(gettext("Refreshing Git status")));
         }
     }
     let weak = Rc::downgrade(state);
@@ -60,6 +60,11 @@ pub(super) fn refresh_status_with_origin(state: &SourceStateRef, origin: Refresh
             refresh_status_entries(&state);
         }),
     );
+}
+
+fn ellipsis_label(mut label: String) -> String {
+    label.push('…');
+    label
 }
 
 pub(super) fn finish_error(state: &SourceStateRef, message: &str) {
@@ -145,7 +150,7 @@ fn refresh_attrs(state: &SourceStateRef, snapshot: GitStatusSnapshot, paths: &[G
 }
 
 fn apply_status(state: &SourceStateRef, snapshot: GitStatusSnapshot, attrs: GitAttrs) {
-    let head_oid = {
+    let (head_oid, snapshot) = {
         let mut state = state.borrow_mut();
         let was_stale = state.status_stale;
         let previous_snapshot = state.snapshot.clone();
@@ -161,8 +166,9 @@ fn apply_status(state: &SourceStateRef, snapshot: GitStatusSnapshot, attrs: GitA
             emit_project_statuses(&state);
             rebuild_views(&state);
         }
-        state.snapshot.head_oid.clone()
+        (state.snapshot.head_oid.clone(), state.snapshot.clone())
     };
+    live::sync_branch_monitor(state, &snapshot);
     history::refresh(state, head_oid.as_deref());
 }
 

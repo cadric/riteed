@@ -30,7 +30,7 @@ modules:
         sha256: f689162364c10de79ef89aa8dbf48731eb057e34edbbd20aca510ce0154681a3
       - type: file
         url: https://www.kernel.org/pub/software/scm/git/sha256sums.asc
-        sha256: 9dcbf55ba682be7be6458f7ddca7e96bf42952a91b060db05d6a3ec3cb3585a6
+        sha256: 71893f99a6b1486875415cf1585fb16f8f7cf07d8313dd4ab82cc144e524fd48
       - type: file
         path: git/kernelorg-checksum-autosigner.asc
   - name: riteed

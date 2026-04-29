@@ -35,6 +35,7 @@
 - V9 stages raw editor/on-disk bytes only when Git filters, working-tree encoding, EOL attrs, and repo EOL conversion are absent; unsupported states stay visible with unsafe actions disabled.
 - Source Control uses `U` rather than Git porcelain's `?` for untracked files across both the Source Control list and project tree badges.
 - Source Control tree rows resolve actions by raw Git path against the current status snapshot, not by visible row index.
+- Theme and Source Control view mode now use GSettings enum keys while preserving the existing `theme` and `source-control-view-mode` key names for valid stored values.
 - V10 keeps Source Control local-only: no push, pull, branch UI, remotes, full log browser, merge conflict editor, Markdown preview, or new language catalogs.
 - `.agent/CONTINUITY.md` is local continuity state and is ignored by Git unless explicitly force-added.
 
@@ -46,6 +47,7 @@
 - Document Portal `GetHostPaths` can map `/run/user/$UID/doc/...` mounts back to host paths for display, but Riteed must keep the portal path as the authoritative access path.
 - Git can read document-portal project trees through `GIT_DIR`/`GIT_WORK_TREE`, but `git status` fails if the subprocess current directory itself is inside the portal mount.
 - Local-plumbing Git packaging keeps `/app/bin/git` only, leaves `/app/libexec/git-core` present but empty, and disables/removes network and scripting helpers until a future Git feature re-justifies them.
+- UI copy now uses real ellipses at runtime while keeping Rust gettext msgids ASCII-safe by appending ellipses in code where needed; Help separates user guidance from technical Source Control notes.
 
 ## PROGRESS
 - Source Control virtual tree refactor validation passed: `cargo test --workspace --all-targets --all-features -- --nocapture`, `python3 -m tools.policy_check --root app --strict`, and `python3 -m tools.coverage_check --root app` (80.3% line coverage).
