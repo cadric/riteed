@@ -63,8 +63,8 @@
                     <property name="homogeneous">false</property>
                     <property name="min-children-per-line">2</property>
                     <property name="max-children-per-line">4</property>
-                    <property name="column-spacing">12</property>
-                    <property name="row-spacing">16</property>
+                    <property name="column-spacing">8</property>
+                    <property name="row-spacing">10</property>
                     <property name="halign">center</property>
                   </object>
                 </child>

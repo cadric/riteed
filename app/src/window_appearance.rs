@@ -9,6 +9,7 @@ use libadwaita as adw;
 use libadwaita::prelude::AdwDialogExt;
 
 use crate::error::AppError;
+use crate::palette_preview::PalettePreview;
 use crate::settings::{AppSettings, EditorPalette};
 use crate::workspace::Workspace;
 
@@ -37,7 +38,7 @@ struct AppearanceState {
 struct PaletteTile {
     palette: EditorPalette,
     child: gtk4::FlowBoxChild,
-    preview: Option<sourceview5::StyleSchemePreview>,
+    preview: Option<PalettePreview>,
 }
 
 struct PaletteTarget {
@@ -221,13 +222,15 @@ impl AppearanceState {
 fn build_palette_flow_box(state: &Rc<AppearanceState>, flow_box: &gtk4::FlowBox) {
     for palette in palette_order() {
         let target = palette_target(palette);
-        let (content, preview) = palette_tile_content(palette, target.as_ref());
+        let label = palette.label();
+        let (content, preview) = palette_tile_content(palette, target.as_ref(), &label);
         let child = gtk4::FlowBoxChild::builder()
             .accessible_role(gtk4::AccessibleRole::Radio)
             .focusable(true)
             .child(&content)
             .build();
         child.add_css_class("riteed-palette-tile");
+        child.set_tooltip_text(Some(&label));
         flow_box.append(&child);
         state.palette_tiles.borrow_mut().push(PaletteTile {
             palette,
@@ -261,8 +264,6 @@ fn install_callbacks(state: &Rc<AppearanceState>, flow_box: &gtk4::FlowBox) {
         let Some(state) = weak.upgrade() else {
             return;
         };
-        // GtkSourceStyleSchemePreview can adjust its preferred size on first map without
-        // queueing a resize, which makes the grid start oversized until the next interaction.
         state.queue_palette_preview_resize();
         flow_box.queue_resize();
     });
@@ -284,10 +285,11 @@ fn install_close_callback(dialog: &adw::Dialog, button: &gtk4::Button) {
     });
 }
 
-fn palette_order() -> [EditorPalette; 8] {
+fn palette_order() -> [EditorPalette; 9] {
     [
         EditorPalette::FollowSystem,
-        EditorPalette::Classic,
+        EditorPalette::ClassicLight,
+        EditorPalette::ClassicDark,
         EditorPalette::AdwaitaLight,
         EditorPalette::AdwaitaDark,
         EditorPalette::Kate,
@@ -300,15 +302,13 @@ fn palette_order() -> [EditorPalette; 8] {
 fn palette_tile_content(
     palette: EditorPalette,
     target: Option<&PaletteTarget>,
-) -> (gtk4::Box, Option<sourceview5::StyleSchemePreview>) {
+    label: &str,
+) -> (gtk4::Widget, Option<PalettePreview>) {
     let unavailable = target.is_none_or(|target| !target.available);
-    let content = gtk4::Box::builder()
-        .orientation(gtk4::Orientation::Vertical)
-        .spacing(4)
-        .halign(gtk4::Align::Center)
-        .build();
     let overlay = gtk4::Overlay::new();
     let (preview_widget, preview) = palette_preview_widget(target);
+    overlay.set_tooltip_text(Some(label));
+    preview_widget.set_tooltip_text(Some(label));
     overlay.set_child(Some(&preview_widget));
     if unavailable {
         let label = gtk4::Label::new(Some(&gettext("Unavailable")));
@@ -325,29 +325,20 @@ fn palette_tile_content(
         badge.set_pixel_size(12);
         overlay.add_overlay(&badge);
     }
-    content.append(&overlay);
-    let label = gtk4::Label::new(Some(&palette.label()));
-    label.add_css_class("caption");
-    label.set_wrap(true);
-    label.set_justify(gtk4::Justification::Center);
-    content.append(&label);
-    (content, preview)
+    (overlay.upcast::<gtk4::Widget>(), preview)
 }
 
 fn palette_preview_widget(
     target: Option<&PaletteTarget>,
-) -> (gtk4::Widget, Option<sourceview5::StyleSchemePreview>) {
+) -> (gtk4::Widget, Option<PalettePreview>) {
     if let Some(scheme) = safe_preview_scheme(target.map(|target| target.scheme_id.as_str())) {
-        let preview = sourceview5::StyleSchemePreview::new(&scheme);
-        preview.add_css_class("riteed-palette-preview");
-        preview.set_can_focus(false);
-        preview.set_halign(gtk4::Align::Center);
-        preview.set_valign(gtk4::Align::Center);
-        preview.set_size_request(PALETTE_TILE_WIDTH, PALETTE_TILE_HEIGHT);
-        (preview.clone().upcast::<gtk4::Widget>(), Some(preview))
+        let preview = PalettePreview::new(&scheme);
+        (preview.widget(), Some(preview))
     } else {
         let label = gtk4::Label::new(Some(&gettext("Preview unavailable")));
         label.set_halign(gtk4::Align::Center);
+        label.set_can_focus(false);
+        label.set_can_target(false);
         label.set_size_request(PALETTE_TILE_WIDTH, PALETTE_TILE_HEIGHT);
         (label.upcast::<gtk4::Widget>(), None)
     }

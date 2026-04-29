@@ -14,9 +14,10 @@ const SOURCE_STYLE_SCHEME_DARK: &str = "Adwaita-dark";
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum EditorPalette {
     FollowSystem,
+    ClassicLight,
+    ClassicDark,
     AdwaitaLight,
     AdwaitaDark,
-    Classic,
     Kate,
     KateDark,
     SolarizedLight,
@@ -24,11 +25,12 @@ pub enum EditorPalette {
 }
 
 impl EditorPalette {
-    pub const ALL: [Self; 8] = [
+    pub const ALL: [Self; 9] = [
         Self::FollowSystem,
+        Self::ClassicLight,
+        Self::ClassicDark,
         Self::AdwaitaLight,
         Self::AdwaitaDark,
-        Self::Classic,
         Self::Kate,
         Self::KateDark,
         Self::SolarizedLight,
@@ -41,11 +43,12 @@ impl EditorPalette {
             Self::FollowSystem => 0,
             Self::AdwaitaLight => 1,
             Self::AdwaitaDark => 2,
-            Self::Classic => 3,
+            Self::ClassicLight => 3,
             Self::Kate => 4,
             Self::KateDark => 5,
             Self::SolarizedLight => 6,
             Self::SolarizedDark => 7,
+            Self::ClassicDark => 8,
         }
     }
 
@@ -54,11 +57,12 @@ impl EditorPalette {
         match value {
             1 => Self::AdwaitaLight,
             2 => Self::AdwaitaDark,
-            3 => Self::Classic,
+            3 => Self::ClassicLight,
             4 => Self::Kate,
             5 => Self::KateDark,
             6 => Self::SolarizedLight,
             7 => Self::SolarizedDark,
+            8 => Self::ClassicDark,
             _ => Self::FollowSystem,
         }
     }
@@ -69,7 +73,8 @@ impl EditorPalette {
             Self::FollowSystem => "follow-system",
             Self::AdwaitaLight => "adwaita-light",
             Self::AdwaitaDark => "adwaita-dark",
-            Self::Classic => "classic",
+            Self::ClassicLight => "classic",
+            Self::ClassicDark => "classic-dark",
             Self::Kate => "kate",
             Self::KateDark => "kate-dark",
             Self::SolarizedLight => "solarized-light",
@@ -91,7 +96,8 @@ impl EditorPalette {
             Self::FollowSystem => gettext("Match App Appearance"),
             Self::AdwaitaLight => pgettext("editor palette", "Adwaita Light"),
             Self::AdwaitaDark => pgettext("editor palette", "Adwaita Dark"),
-            Self::Classic => pgettext("editor palette", "Classic"),
+            Self::ClassicLight => pgettext("editor palette", "Classic Light"),
+            Self::ClassicDark => pgettext("editor palette", "Classic Dark"),
             Self::Kate => pgettext("editor palette", "Kate Light"),
             Self::KateDark => pgettext("editor palette", "Kate Dark"),
             Self::SolarizedLight => pgettext("editor palette", "Solarized Light"),
@@ -105,7 +111,8 @@ impl EditorPalette {
             Self::FollowSystem => None,
             Self::AdwaitaLight => Some(SOURCE_STYLE_SCHEME_LIGHT),
             Self::AdwaitaDark => Some(SOURCE_STYLE_SCHEME_DARK),
-            Self::Classic => Some("classic"),
+            Self::ClassicLight => Some("classic"),
+            Self::ClassicDark => Some("classic-dark"),
             Self::Kate => Some("kate"),
             Self::KateDark => Some("kate-dark"),
             Self::SolarizedLight => Some("solarized-light"),
@@ -117,8 +124,12 @@ impl EditorPalette {
     pub(crate) const fn is_dark(self) -> Option<bool> {
         match self {
             Self::FollowSystem => None,
-            Self::AdwaitaDark | Self::KateDark | Self::SolarizedDark => Some(true),
-            Self::AdwaitaLight | Self::Classic | Self::Kate | Self::SolarizedLight => Some(false),
+            Self::AdwaitaDark | Self::ClassicDark | Self::KateDark | Self::SolarizedDark => {
+                Some(true)
+            }
+            Self::AdwaitaLight | Self::ClassicLight | Self::Kate | Self::SolarizedLight => {
+                Some(false)
+            }
         }
     }
 }

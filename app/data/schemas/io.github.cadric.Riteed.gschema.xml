@@ -14,6 +14,7 @@
     <value nick="kate-dark" value="5"/>
     <value nick="solarized-light" value="6"/>
     <value nick="solarized-dark" value="7"/>
+    <value nick="classic-dark" value="8"/>
   </enum>
   <enum id="io.github.cadric.Riteed.SourceControlViewMode">
     <value nick="tree" value="0"/>

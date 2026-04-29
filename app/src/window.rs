@@ -121,6 +121,7 @@ impl Window {
         let shell = WindowShell::new(app)?;
         configure_open_button(&shell);
         sourceview5::init();
+        crate::source_styles::install_builtin_style_schemes();
         configure_runtime_icon_support(&shell.window);
         WindowAppearanceController::install_css(&gtk4::prelude::WidgetExt::display(&shell.window));
         let save_action = gio::SimpleAction::new("save", None);

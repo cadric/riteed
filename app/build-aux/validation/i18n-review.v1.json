@@ -115,10 +115,10 @@
     },
     {
       "path": "src/settings/presentation.rs",
-      "line": 91,
+      "line": 96,
       "match": "Self::FollowSystem => gettext(\"Match App Appearance\"),",
       "kind": "i18n-short-string",
-      "resolution": "This short palette label appears in the dedicated Appearance panel where it means the editor palette follows the app appearance choice."
+      "resolution": "This short palette string is used as the tooltip and accessible label for the preview-only tile that follows the app appearance choice."
     },
     {
       "path": "src/source_control.rs",
@@ -150,35 +150,35 @@
     },
     {
       "path": "src/window.rs",
-      "line": 491,
+      "line": 492,
       "match": ".update_property(&[Property::Label(&gettext(\"New Tab\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
     },
     {
       "path": "src/window.rs",
-      "line": 494,
+      "line": 495,
       "match": ".update_property(&[Property::Label(&gettext(\"Open Files\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
     },
     {
       "path": "src/window.rs",
-      "line": 497,
+      "line": 498,
       "match": ".update_property(&[Property::Label(&gettext(\"Project Sidebar\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
     },
     {
       "path": "src/window.rs",
-      "line": 500,
+      "line": 501,
       "match": ".update_property(&[Property::Label(&gettext(\"Save Current File\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
     },
     {
       "path": "src/window.rs",
-      "line": 503,
+      "line": 504,
       "match": ".update_property(&[Property::Label(&gettext(\"Main Menu\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
@@ -192,7 +192,7 @@
     },
     {
       "path": "src/window_appearance.rs",
-      "line": 349,
+      "line": 338,
       "match": "let label = gtk4::Label::new(Some(&gettext(\"Preview unavailable\")));",
       "kind": "i18n-short-string",
       "resolution": "This compact fallback appears inside an editor palette tile when no safe preview style scheme can be resolved."

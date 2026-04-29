@@ -4,7 +4,7 @@
   <name>Riteed</name>
   <summary>Edit Text, Code, and Config Files</summary>
   <metadata_license>MIT</metadata_license>
-  <project_license>MIT</project_license>
+  <project_license>MIT AND LGPL-2.1-or-later</project_license>
   <launchable type="desktop-id">io.github.cadric.Riteed.desktop</launchable>
   <developer_name>cadric</developer_name>
   <url type="homepage">https://github.com/cadric/riteed</url>

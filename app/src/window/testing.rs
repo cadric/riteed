@@ -172,13 +172,14 @@ impl Window {
 
     pub(crate) fn select_editor_palette_for_tests(&self, index: u32) {
         let palette = match index {
-            1 => crate::settings::EditorPalette::AdwaitaLight,
-            2 => crate::settings::EditorPalette::AdwaitaDark,
-            3 => crate::settings::EditorPalette::Kate,
-            4 => crate::settings::EditorPalette::KateDark,
-            5 => crate::settings::EditorPalette::SolarizedLight,
-            6 => crate::settings::EditorPalette::SolarizedDark,
-            7 => crate::settings::EditorPalette::Classic,
+            1 => crate::settings::EditorPalette::ClassicLight,
+            2 => crate::settings::EditorPalette::ClassicDark,
+            3 => crate::settings::EditorPalette::AdwaitaLight,
+            4 => crate::settings::EditorPalette::AdwaitaDark,
+            5 => crate::settings::EditorPalette::Kate,
+            6 => crate::settings::EditorPalette::KateDark,
+            7 => crate::settings::EditorPalette::SolarizedLight,
+            8 => crate::settings::EditorPalette::SolarizedDark,
             _ => crate::settings::EditorPalette::FollowSystem,
         };
         self.appearance.set_palette_for_tests(palette);

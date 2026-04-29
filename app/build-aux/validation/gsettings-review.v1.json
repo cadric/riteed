@@ -131,15 +131,15 @@
     },
     {
       "path": "src/settings/presentation.rs",
-      "line": 151,
+      "line": 162,
       "match": "let _changed = settings.set_enum(KEY_EDITOR_PALETTE, palette.enum_value());",
       "kind": "gsettings-write",
       "key": "editor-palette",
-      "trigger": "Explicit editor-palette selection in the preferences dialog."
+      "trigger": "Explicit editor-palette selection from an Appearance palette preview tile."
     },
     {
       "path": "src/settings/presentation.rs",
-      "line": 175,
+      "line": 186,
       "match": "let _changed = settings.set_boolean(KEY_HIGHLIGHT_CURRENT_LINE, enabled);",
       "kind": "gsettings-write",
       "key": "highlight-current-line",
@@ -147,7 +147,7 @@
     },
     {
       "path": "src/settings/presentation.rs",
-      "line": 199,
+      "line": 210,
       "match": "let _changed = settings.set_boolean(KEY_AUTOSAVE_ENABLED, enabled);",
       "kind": "gsettings-write",
       "key": "autosave-enabled",
