@@ -60,11 +60,8 @@ impl CompareController {
         let style_manager = adw::StyleManager::default();
         let weak = Rc::downgrade(tab);
         let style_handler = style_manager.connect_dark_notify(move |_| {
-            if let Some(tab) = weak.upgrade()
-                && let Some(compare) = tab.compare.borrow_mut().as_mut()
-            {
-                compare.apply_tag_colors(tab.settings.editor_palette_is_dark());
-                compare.apply_current_hunk(&tab.text_buffer);
+            if let Some(tab) = weak.upgrade() {
+                tab.apply_compare_style();
             }
         });
 

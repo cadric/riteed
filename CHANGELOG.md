@@ -59,6 +59,7 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Reworked compare scroll synchronization to use diff anchors instead of normalized ratios, and applied active document language highlighting to reference buffers.
 - Refactored compare controller plumbing into smaller modules so Git-backed compare could reuse the existing split-diff engine without growing the compare file past policy limits.
 - Clarified the Riteed settings model into scoped modules and converted theme and Source Control view mode preferences to GSettings enums.
+- Reduced `EditorTab` pressure by moving document runtime, I/O, external-file, autosave, and compare state into focused internal owners while keeping the public tab workflow unchanged.
 - Polished UI copy by using real ellipses in dialog labels, sentence-style Preferences subtitles, user-first Help pages, and defensive restored-window size clamping.
 - Revised the runtime policy to allow only typed Gio subprocess Git operations in `src/git_process.rs`; `std::process::Command` and `flatpak-spawn` remain forbidden.
 
@@ -86,6 +87,7 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Added a visible close button to the Appearance panel so it is not only dismissible with Escape.
 - Fixed follow-up regressions in the menu/compare pass: editor zoom and font changes now style the GtkSourceView text node, compare mode restores normal editor scrolling, Recent Files uses a wider dialog, and Saved Version is suppressed while autosave is enabled.
 - Displayed document-portal files with host/home-relative paths in the title/status, Recent Files, and Compare source UI while preserving portal access paths for sandbox-safe I/O.
+- Removed synchronous document-portal host-path lookups from display-path rendering by caching host paths and resolving active document names asynchronously.
 - Removed invalid Appearance CSS size properties and added deterministic indentation coverage for tabs, spaces, indent width, and unindent behavior.
 - Guarded Git stage/compare actions for unsupported repository states such as SHA-256 object format, configured EOL conversion, content filters, working-tree encodings, submodules, binary blobs, large blobs, dirty open tabs, and non-UTF-8 paths.
 - Fixed Flatpak Git status refresh for document-portal project folders by running bundled Git from a stable sandbox cwd with explicit `GIT_DIR` and `GIT_WORK_TREE`.

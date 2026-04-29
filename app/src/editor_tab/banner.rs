@@ -10,13 +10,13 @@ impl EditorTab {
         let state = self.state.borrow();
         self.is_dirty()
             && matches!(
-                state.pending_external,
+                state.external.pending,
                 PendingExternalState::ContentPossiblyChanged {
                     acknowledged: false
                 }
             )
             && !state.ui.external_prompt_active
-            && self.compare.borrow().is_none()
+            && state.compare.active.is_none()
     }
 
     #[must_use]
@@ -34,7 +34,7 @@ impl EditorTab {
     pub fn pause_autosave(&self, message: String) {
         {
             let mut state = self.state.borrow_mut();
-            state.safety.autosave_paused = Some(message);
+            state.autosave.pause(message);
         }
         self.sync_external_banner(true, true);
         self.notify_external_state_change();
@@ -43,9 +43,7 @@ impl EditorTab {
     pub fn clear_autosave_pause(&self) {
         let changed = {
             let mut state = self.state.borrow_mut();
-            let changed = state.safety.autosave_paused.is_some();
-            state.safety.autosave_paused = None;
-            changed
+            state.autosave.clear_pause()
         };
         if changed {
             self.sync_external_banner(true, true);
@@ -60,7 +58,7 @@ impl EditorTab {
     pub fn acknowledge_pending_external(&self) {
         {
             let mut state = self.state.borrow_mut();
-            state.pending_external.acknowledge();
+            state.external.pending.acknowledge();
             state.ui.external_prompt_active = false;
         }
         self.sync_external_banner(true, true);
@@ -70,10 +68,10 @@ impl EditorTab {
     pub fn resolve_pending_external(&self) {
         {
             let mut state = self.state.borrow_mut();
-            state.pending_external = PendingExternalState::Idle;
+            state.external.pending = PendingExternalState::Idle;
             state.ui.external_prompt_active = false;
             state.ui.visible_banner = VisibleBannerState::None;
-            state.progress.external_reload_in_progress = false;
+            state.io.external_reload_in_progress = false;
         }
         self.set_attention(false);
         self.set_banner_revealed(false);
@@ -83,8 +81,7 @@ impl EditorTab {
     pub fn sync_external_banner(&self, is_selected: bool, window_active: bool) {
         let (visible, title, action) = {
             let state = self.state.borrow();
-            let is_dirty =
-                self.text_buffer.is_modified() || state.document.format() != &state.saved_format;
+            let is_dirty = state.is_dirty(self.text_buffer.is_modified());
             let should_offer_reload = is_selected && window_active && !is_dirty;
             visible_banner_state(
                 &state,
@@ -131,7 +128,7 @@ fn visible_banner_state(
     is_selected: bool,
     autosave_enabled: bool,
 ) -> (VisibleBannerState, Option<String>, Option<String>) {
-    match &state.pending_external {
+    match &state.external.pending {
         PendingExternalState::ContentPossiblyChanged {
             acknowledged: false,
         } if should_offer_reload => {
@@ -156,7 +153,9 @@ fn visible_banner_state(
         | PendingExternalState::Missing { .. } => {}
     }
 
-    if state.safety.writability == Writability::Unwritable && state.document.path().is_some() {
+    if state.external.writability == Writability::Unwritable
+        && state.document.document.path().is_some()
+    {
         return (
             VisibleBannerState::ReadOnly,
             Some(pgettext("save safety banner", "This File Is Read-Only.")),
@@ -164,7 +163,7 @@ fn visible_banner_state(
         );
     }
 
-    if autosave_enabled && let Some(message) = &state.safety.autosave_paused {
+    if autosave_enabled && let Some(message) = &state.autosave.paused_message {
         return (
             VisibleBannerState::AutosavePaused,
             Some(message.clone()),

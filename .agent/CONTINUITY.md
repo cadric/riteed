@@ -21,6 +21,7 @@
 - Restored the resizable V9 sidebar layout so Files and Source Control share the left sidebar again, while drag resizing is clamped and no longer persists a fully hidden sidebar by accident.
 - Implemented V10 source-control completion and UX regression fixes: tree/list view mode, recent commit history, safe tracked-file discard, live Git refresh, Source Control icon packaging, Appearance menu action, Recent Files bottom action layout, status separators, sidebar animation, and anchor-based compare scroll sync with reference syntax highlighting.
 - Fixed V10 follow-up regressions: sidebar animations now reach fully hidden/restored positions, automatic Git refreshes skip no-op Source Control/Files rebuilds and history refetches, and compare/Git diff panes scroll in sync again.
+- Reduced `EditorTab` pressure by keeping one shared tab state cell but splitting its contents into document runtime, I/O, external-file, autosave, compare, and UI owner structs.
 - Final validation passed before commit preparation: `python3 -m tools.policy_check --root app --strict`, `python3 -m tools.coverage_check --root app`, and `python3 -m unittest tools.tests.test_policy_check -v`.
 
 ## DECISIONS
@@ -48,6 +49,7 @@
 - Git can read document-portal project trees through `GIT_DIR`/`GIT_WORK_TREE`, but `git status` fails if the subprocess current directory itself is inside the portal mount.
 - Local-plumbing Git packaging keeps `/app/bin/git` only, leaves `/app/libexec/git-core` present but empty, and disables/removes network and scripting helpers until a future Git feature re-justifies them.
 - UI copy now uses real ellipses at runtime while keeping Rust gettext msgids ASCII-safe by appending ellipses in code where needed; Help separates user guidance from technical Source Control notes.
+- Document-portal host-path display lookup is now cache-first and async; display names may update after open/save/move, while portal access paths remain authoritative for I/O.
 
 ## PROGRESS
 - Source Control virtual tree refactor validation passed: `cargo test --workspace --all-targets --all-features -- --nocapture`, `python3 -m tools.policy_check --root app --strict`, and `python3 -m tools.coverage_check --root app` (80.3% line coverage).
@@ -62,3 +64,4 @@
 - V10 regression follow-up local user Flatpak rebuild/install passed with app commit `dee6a3bbe83dee41c214e9a2d15d2e9cd2d51147211879bb3234e17c1e8df274`; `flatpak info --user io.github.cadric.Riteed` reports 7.8 MB installed size and `/app/bin/git` reports `git version 2.54.0`.
 - Menu/shortcut/tab workflow validation passed: `cargo fmt --all --check`, `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `GTK_A11Y=none GSK_RENDERER=cairo cargo test --workspace --all-targets --all-features -- --nocapture`, `python3 -m tools.policy_check --root app --strict`, and `python3 -m tools.coverage_check --root app` (81.0% line coverage).
 - Local user Flatpak rebuild/install passed with app commit `d4c2614239074d8008d80b56bfe9039c10741ee5a7541c912e106c2714630bc5`; tab transfer follow-up scopes editor zoom CSS per window so Move to New Window no longer lets zoom changes in the destination window affect the source window.
+- Async document-portal display-path validation passed: `cargo fmt --all --check`, `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `GTK_A11Y=none GSK_RENDERER=cairo cargo test --workspace --all-targets --all-features -- --nocapture`, `python3 -m tools.policy_check --root app --strict`, and `python3 -m tools.coverage_check --root app` (81.3% line coverage). Local user Flatpak rebuild/install passed with app commit `988f85866de0b3551bed749c0dd361b746ed52bdaac1039d25844d882ff3ee61`, installed size 7.9 MB, and `/app/bin/git` reports `git version 2.54.0`.

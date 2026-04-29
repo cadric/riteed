@@ -10,6 +10,14 @@
       "justification": "Unsaved tab-close, window-close, and quit flows need mutable queue progress without leaking state into the window shell."
     },
     {
+      "path": "src/document_portal.rs",
+      "line": 14,
+      "match": "static PORTAL_HOST_PATHS: RefCell<PortalHostPathCache> =",
+      "kind": "runtime-shared-state",
+      "ownership": "The document portal resolver owns the process-local document ID to host-path cache and in-flight callback queue.",
+      "justification": "Display-path rendering must not block the UI on portal D-Bus calls, so async GetHostPaths results are coalesced and cached while portal access paths remain authoritative for I/O."
+    },
+    {
       "path": "src/editor_monitor.rs",
       "line": 71,
       "match": "poll_source: RefCell<Option<glib::SourceId>>,",
@@ -83,39 +91,15 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 136,
+      "line": 93,
       "match": "state: RefCell<EditorTabState>,",
       "kind": "runtime-shared-state",
-      "ownership": "Each editor tab owns its mutable document format, live source file, file-monitor, deferred external-change state, and in-flight IO state.",
-      "justification": "V5a keeps saved identity, current format, saved-format baseline, monitor bindings, stale-save protection, and cancellable scratch IO on the tab so reload and save remain scratch-then-apply."
+      "ownership": "Each editor tab owns one shared mutable state cell split into document runtime, IO, external-file, autosave, compare, and UI owner structs.",
+      "justification": "The tab facade coordinates cross-owner transitions such as writability, autosave pausing, banners, compare reference loading, and scratch-then-apply IO without introducing multiple independent RefCell borrows."
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 137,
-      "match": "compare: RefCell<Option<compare::CompareController>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "Each editor tab owns its ephemeral compare-mode controller.",
-      "justification": "Compare mode swaps tab-local widgets, reference-buffer state, diff marks, and cancellable reference loading without persisting workspace/session state."
-    },
-    {
-      "path": "src/editor_tab.rs",
-      "line": 138,
-      "match": "compare_request_generation: Cell<u64>,",
-      "kind": "runtime-shared-state",
-      "ownership": "Each editor tab owns the compare reference-load generation token.",
-      "justification": "Async reference loads must ignore stale callbacks after compare exit, target replacement, or tab reload without introducing global state."
-    },
-    {
-      "path": "src/editor_tab.rs",
-      "line": 139,
-      "match": "autosave_generation: Cell<u64>,",
-      "kind": "runtime-shared-state",
-      "ownership": "Each editor tab owns its autosave debounce generation token.",
-      "justification": "Autosave timers must ignore stale callbacks after later edits, tab closure, or compare/save state changes without global state."
-    },
-    {
-      "path": "src/editor_tab.rs",
-      "line": 141,
+      "line": 95,
       "match": "on_file_drop: RefCell<Option<FileDropHandler>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns its current workspace file-drop callback.",
@@ -123,7 +107,7 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 142,
+      "line": 96,
       "match": "on_visual_change: RefCell<Option<TabCallback>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns its current workspace visual-state callback.",
@@ -131,7 +115,7 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 143,
+      "line": 97,
       "match": "on_external_state_change: RefCell<Option<TabCallback>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns its current external-state callback.",
@@ -139,7 +123,7 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 144,
+      "line": 98,
       "match": "on_external_action: RefCell<Option<TabCallback>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns its current external-action callback.",

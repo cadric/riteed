@@ -38,11 +38,11 @@ impl EditorTab {
         let snapshot = ReloadSnapshot::capture(&self.text_buffer);
         let already_loading = {
             let mut state = self.state.borrow_mut();
-            if state.progress.loading || state.progress.external_reload_in_progress {
+            if state.io.loading || state.io.external_reload_in_progress {
                 true
             } else {
-                state.progress.loading = true;
-                state.progress.external_reload_in_progress = true;
+                state.io.loading = true;
+                state.io.external_reload_in_progress = true;
                 false
             }
         };

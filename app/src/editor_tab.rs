@@ -1,14 +1,12 @@
-use std::cell::{Cell, OnceCell, RefCell};
+use std::cell::{OnceCell, RefCell};
 use std::rc::Rc;
 
 use gettextrs::pgettext;
-use gtk4::{gdk, gio, glib::SList, prelude::*};
+use gtk4::{gdk, gio, prelude::*};
 use libadwaita as adw;
 use sourceview5::prelude::*;
 
-use crate::document::DocumentState;
-use crate::editor_format::SavedTextFormat;
-use crate::editor_monitor::{MonitorBinding, PendingExternalState};
+use crate::editor_monitor::PendingExternalState;
 use crate::editor_view::EditorView;
 use crate::error::AppError;
 use crate::settings::AppSettings;
@@ -18,7 +16,10 @@ mod compare;
 mod open;
 mod runtime;
 mod save;
+mod state;
 mod view;
+
+use state::EditorTabState;
 
 type FileDropHandler = Rc<dyn Fn(Vec<gio::File>)>;
 type TabCallback = Rc<dyn Fn()>;
@@ -79,50 +80,6 @@ pub enum VisibleBannerState {
     None,
 }
 
-struct EditorTabState {
-    document: DocumentState,
-    saved_format: SavedTextFormat,
-    source_file: Option<sourceview5::File>,
-    content_type: Option<String>,
-    language_id: Option<String>,
-    monitor: Option<MonitorBinding>,
-    pending_external: PendingExternalState,
-    safety: SafetyState,
-    progress: ProgressState,
-    ui: UiState,
-    io: IoState,
-    language_request_generation: u64,
-}
-
-#[derive(Default)]
-struct IoState {
-    generation: u64,
-    cancellable: Option<gio::Cancellable>,
-    candidate_encodings: Option<SList<sourceview5::Encoding>>,
-}
-
-#[derive(Default)]
-struct SafetyState {
-    writability: Writability,
-    writability_generation: u64,
-    writability_cancellable: Option<gio::Cancellable>,
-    autosave_paused: Option<String>,
-}
-
-#[derive(Default)]
-struct ProgressState {
-    loading: bool,
-    external_reload_in_progress: bool,
-}
-
-#[derive(Default)]
-struct UiState {
-    suppress_changes: bool,
-    external_prompt_active: bool,
-    banner_syncing: bool,
-    visible_banner: VisibleBannerState,
-}
-
 pub struct EditorTab {
     root: gtk4::Box,
     banner: adw::Banner,
@@ -134,9 +91,6 @@ pub struct EditorTab {
     text_buffer: sourceview5::Buffer,
     settings: AppSettings,
     state: RefCell<EditorTabState>,
-    compare: RefCell<Option<compare::CompareController>>,
-    compare_request_generation: Cell<u64>,
-    autosave_generation: Cell<u64>,
     page: OnceCell<adw::TabPage>,
     on_file_drop: RefCell<Option<FileDropHandler>>,
     on_visual_change: RefCell<Option<TabCallback>>,
@@ -158,23 +112,7 @@ impl EditorTab {
             text_view: view.text_view,
             text_buffer: view.text_buffer,
             settings: settings.clone(),
-            state: RefCell::new(EditorTabState {
-                document: DocumentState::new_empty(),
-                saved_format: SavedTextFormat::new_document_defaults(),
-                source_file: None,
-                content_type: None,
-                language_id: None,
-                monitor: None,
-                pending_external: PendingExternalState::Idle,
-                safety: SafetyState::default(),
-                progress: ProgressState::default(),
-                ui: UiState::default(),
-                io: IoState::default(),
-                language_request_generation: 0,
-            }),
-            compare: RefCell::new(None),
-            compare_request_generation: Cell::new(0),
-            autosave_generation: Cell::new(0),
+            state: RefCell::new(EditorTabState::default()),
             page: OnceCell::new(),
             on_file_drop: RefCell::new(None),
             on_visual_change: RefCell::new(None),
@@ -217,55 +155,52 @@ impl EditorTab {
 
     #[must_use]
     pub fn uri(&self) -> Option<String> {
-        self.state.borrow().document.uri()
+        self.state.borrow().document.document.uri()
     }
 
     #[must_use]
     pub fn is_dirty(&self) -> bool {
-        let state = self.state.borrow();
-        self.text_buffer.is_modified() || state.document.format() != &state.saved_format
+        self.state.borrow().is_dirty(self.text_buffer.is_modified())
     }
 
     #[must_use]
     pub fn is_loading(&self) -> bool {
-        self.state.borrow().progress.loading
+        self.state.borrow().io.loading
     }
 
     #[must_use]
     pub fn is_autosave_eligible(&self) -> bool {
         let state = self.state.borrow();
-        let is_dirty =
-            self.text_buffer.is_modified() || state.document.format() != &state.saved_format;
+        let is_dirty = state.is_dirty(self.text_buffer.is_modified());
         self.settings.autosave_enabled()
             && is_dirty
-            && state.document.path().is_some()
-            && state.pending_external.is_idle()
-            && state.safety.writability == Writability::Writable
-            && !state.progress.loading
-            && self.compare.borrow().is_none()
+            && state.document.document.path().is_some()
+            && state.external.pending.is_idle()
+            && state.external.writability == Writability::Writable
+            && !state.io.loading
+            && state.compare.active.is_none()
     }
 
     #[must_use]
     pub fn next_autosave_generation(&self) -> u64 {
-        let next = self.autosave_generation.get().saturating_add(1);
-        self.autosave_generation.set(next);
-        next
+        self.state.borrow_mut().autosave.next_generation()
     }
 
     #[must_use]
     pub fn autosave_generation(&self) -> u64 {
-        self.autosave_generation.get()
+        self.state.borrow().autosave.generation
     }
 
     #[must_use]
     pub fn is_clean_untitled(&self) -> bool {
-        self.state.borrow().document.path().is_none() && !self.is_dirty()
+        self.state.borrow().document.document.path().is_none() && !self.is_dirty()
     }
 
     #[must_use]
     pub fn title(&self) -> String {
         self.state
             .borrow()
+            .document
             .document
             .file_name()
             .unwrap_or_else(|| pgettext("document title", "Untitled"))
@@ -276,19 +211,21 @@ impl EditorTab {
         self.state
             .borrow()
             .document
+            .document
             .path_display()
             .unwrap_or_else(|| pgettext("document subtitle", "Plain Text Document"))
     }
 
     #[must_use]
     pub fn path_display(&self) -> Option<String> {
-        self.state.borrow().document.path_display()
+        self.state.borrow().document.document.path_display()
     }
 
     #[must_use]
     pub fn save_name_suggestion(&self) -> String {
         self.state
             .borrow()
+            .document
             .document
             .file_name()
             .unwrap_or_else(|| pgettext("save file name", "Untitled"))
@@ -323,26 +260,26 @@ impl EditorTab {
 
     #[must_use]
     pub fn language_id(&self) -> Option<String> {
-        self.state.borrow().language_id.clone()
+        self.state.borrow().document.language_id.clone()
     }
 
     #[must_use]
     pub fn pending_external_state(&self) -> PendingExternalState {
-        self.state.borrow().pending_external.clone()
+        self.state.borrow().external.pending.clone()
     }
 
     #[must_use]
     pub fn writability(&self) -> Writability {
-        self.state.borrow().safety.writability
+        self.state.borrow().external.writability
     }
 
     pub fn set_writability_for_tests(&self, writability: Writability) {
-        self.state.borrow_mut().safety.writability = writability;
+        self.state.borrow_mut().external.writability = writability;
     }
 
     #[must_use]
     pub fn should_show_stale_save_conflict(&self) -> bool {
-        self.state.borrow().pending_external.is_content_changed()
+        self.state.borrow().external.pending.is_content_changed()
     }
 
     #[must_use]
@@ -356,6 +293,7 @@ impl EditorTab {
         let target = self
             .state
             .borrow()
+            .external
             .monitor
             .as_ref()
             .map(|binding| binding.target_uri().to_string());

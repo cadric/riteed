@@ -30,7 +30,7 @@ impl EditorTab {
         save_kind: SaveKind,
         callback: Rc<dyn Fn(SaveResult)>,
     ) {
-        let current_path = self.state.borrow().document.path();
+        let current_path = self.state.borrow().document.document.path();
         if !force_save_as && let Some(path) = current_path {
             if self.should_show_stale_save_conflict() {
                 if save_kind == SaveKind::Autosave {
@@ -98,7 +98,7 @@ impl EditorTab {
             .modal(true)
             .build();
         dialog.set_initial_name(Some(&self.save_name_suggestion()));
-        if let Some(path) = self.state.borrow().document.path() {
+        if let Some(path) = self.state.borrow().document.document.path() {
             dialog.set_initial_file(Some(&gio::File::for_path(path)));
         }
         super::apply_text_filters(&dialog);

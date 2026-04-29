@@ -201,7 +201,9 @@ pub fn local_path_info(file: &gio::File) -> Result<LocalPathInfo, AppError> {
 mod tests {
     use gtk4::{gio, glib};
 
-    use super::{LoadFailure, SaveFailure, local_path, map_load_failure, map_save_failure};
+    use super::{
+        LoadFailure, SaveFailure, local_path, local_path_info, map_load_failure, map_save_failure,
+    };
     use crate::error::AppError;
 
     #[test]
@@ -261,5 +263,31 @@ mod tests {
     fn non_local_files_are_rejected() {
         let file = gio::File::for_uri("resource:///io/github/cadric/Riteed/missing.txt");
         assert!(matches!(local_path(&file), Err(AppError::NonLocalFile)));
+    }
+
+    #[test]
+    fn local_path_info_uses_cached_portal_display_path_only() {
+        crate::document_portal::reset_cache_for_tests();
+        let file = gio::File::for_path("/run/user/1000/doc/23ef3b31/CoreOS_Server/AGENTS.md");
+        let info = local_path_info(&file);
+        assert!(info.is_ok());
+        let Ok(info) = info else {
+            return;
+        };
+        assert_eq!(info.display_path, None);
+
+        crate::document_portal::cache_host_path_for_tests(
+            "23ef3b31",
+            "/home/cadric/Dokumenter/CoreOS_Server".into(),
+        );
+        let info = local_path_info(&file);
+        assert!(info.is_ok());
+        let Ok(info) = info else {
+            return;
+        };
+        assert_eq!(
+            info.display_path,
+            Some("/home/cadric/Dokumenter/CoreOS_Server/AGENTS.md".into())
+        );
     }
 }

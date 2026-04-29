@@ -6,6 +6,7 @@ pub mod close_flow;
 mod dialog_shell;
 pub mod dialogs;
 pub mod document;
+mod document_portal;
 pub mod editor_format;
 pub mod editor_io;
 mod editor_language;

@@ -1,3 +1,4 @@
+use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
 use gtk4::{gio, glib::SList, prelude::*};
@@ -14,8 +15,7 @@ impl EditorTab {
     pub fn cancel_io(&self) {
         let cancellable = {
             let mut state = self.state.borrow_mut();
-            state.io.candidate_encodings = None;
-            state.io.cancellable.take()
+            state.io.cancel_request()
         };
         if let Some(cancellable) = cancellable {
             cancellable.cancel();
@@ -23,9 +23,8 @@ impl EditorTab {
         if let Some(cancellable) = self
             .state
             .borrow_mut()
-            .safety
-            .writability_cancellable
-            .take()
+            .external
+            .cancel_writability_request()
         {
             cancellable.cancel();
         }
@@ -33,17 +32,22 @@ impl EditorTab {
 
     #[must_use]
     pub fn current_format(&self) -> crate::editor_format::SavedTextFormat {
-        self.state.borrow().document.format().clone()
+        self.state.borrow().document.document.format().clone()
     }
 
     #[must_use]
     pub fn current_format_summary(&self) -> String {
-        self.state.borrow().document.format().summary()
+        self.state.borrow().document.document.format().summary()
     }
 
     #[must_use]
     pub fn current_line_ending_mode(&self) -> crate::editor_format::LineEndingMode {
-        self.state.borrow().document.format().line_ending_mode()
+        self.state
+            .borrow()
+            .document
+            .document
+            .format()
+            .line_ending_mode()
     }
 
     #[must_use]
@@ -60,10 +64,13 @@ impl EditorTab {
     ) {
         let changed = {
             let mut state = self.state.borrow_mut();
-            if state.document.format().line_ending_mode() == line_ending_mode {
+            if state.document.document.format().line_ending_mode() == line_ending_mode {
                 false
             } else {
-                state.document.set_line_ending_mode(line_ending_mode);
+                state
+                    .document
+                    .document
+                    .set_line_ending_mode(line_ending_mode);
                 true
             }
         };
@@ -75,10 +82,10 @@ impl EditorTab {
     pub fn set_current_encoding(&self, encoding: crate::editor_format::EncodingInfo) {
         let changed = {
             let mut state = self.state.borrow_mut();
-            if state.document.format().encoding() == &encoding {
+            if state.document.document.format().encoding() == &encoding {
                 false
             } else {
-                state.document.set_encoding(encoding);
+                state.document.document.set_encoding(encoding);
                 true
             }
         };
@@ -91,16 +98,19 @@ impl EditorTab {
         match event {
             crate::editor_monitor::ExternalFileEvent::Moved { new_file } => {
                 if let Ok(path_info) = crate::editor_io::local_path_info(&new_file) {
+                    let moved_access_path = path_info.path.clone();
                     {
                         let mut state = self.state.borrow_mut();
                         state
                             .document
+                            .document
                             .set_saved_with_display_path(path_info.path, path_info.display_path);
-                        state.pending_external = PendingExternalState::Idle;
+                        state.external.pending = PendingExternalState::Idle;
                     }
                     self.swap_monitor(&new_file);
                     self.refresh_language_for_file(&new_file);
                     self.refresh_writability_for_file(&new_file);
+                    self.resolve_display_path_for_access_path(&moved_access_path);
                     self.set_attention(false);
                     self.sync_presentation();
                     self.notify_external_state_change();
@@ -132,12 +142,12 @@ impl EditorTab {
                 }
             }),
         ) {
-            self.state.borrow_mut().monitor = Some(binding);
+            self.state.borrow_mut().external.monitor = Some(binding);
         }
     }
 
     pub fn clear_monitor(&self) {
-        if let Some(binding) = self.state.borrow_mut().monitor.take() {
+        if let Some(binding) = self.state.borrow_mut().external.monitor.take() {
             binding.cancel();
         }
     }
@@ -146,8 +156,7 @@ impl EditorTab {
         let identity = file.uri().to_string();
         let generation = {
             let mut state = self.state.borrow_mut();
-            state.language_request_generation += 1;
-            state.language_request_generation
+            state.document.next_language_request_generation()
         };
         let weak = Rc::downgrade(self);
         editor_language::detect_for_file(
@@ -168,11 +177,17 @@ impl EditorTab {
     ) {
         let should_apply = {
             let mut state = self.state.borrow_mut();
-            let matches_request = state.language_request_generation == generation
-                && state.document.uri().as_deref() == Some(identity);
+            let matches_request = state.document.language_request_generation == generation
+                && state.document.document.uri().as_deref() == Some(identity);
             if matches_request {
-                state.content_type.clone_from(&detection.content_type);
-                state.language_id.clone_from(&detection.language_id);
+                state
+                    .document
+                    .content_type
+                    .clone_from(&detection.content_type);
+                state
+                    .document
+                    .language_id
+                    .clone_from(&detection.language_id);
                 true
             } else {
                 false
@@ -186,11 +201,16 @@ impl EditorTab {
     }
 
     pub(super) fn saved_file(&self) -> Option<gio::File> {
-        self.state.borrow().document.path().map(gio::File::for_path)
+        self.state
+            .borrow()
+            .document
+            .document
+            .path()
+            .map(gio::File::for_path)
     }
 
     pub(super) fn source_file(&self) -> Option<sourceview5::File> {
-        self.state.borrow().source_file.clone()
+        self.state.borrow().document.source_file.clone()
     }
 
     pub(super) fn apply_loaded_document(
@@ -199,22 +219,23 @@ impl EditorTab {
         snapshot: Option<&ReloadSnapshot>,
     ) {
         self.exit_compare();
+        let loaded_access_path = document.path.clone();
         {
             let mut state = self.state.borrow_mut();
-            state.document = DocumentState::from_loaded_with_display_path(
+            state.document.document = DocumentState::from_loaded_with_display_path(
                 document.path,
                 document.display_path,
                 document.format.clone(),
             );
-            state.saved_format = document.format.clone();
-            state.source_file = Some(document.source_file);
-            state.pending_external = PendingExternalState::Idle;
-            state.safety.writability = Writability::Unknown;
-            state.safety.autosave_paused = None;
+            state.document.saved_format = document.format.clone();
+            state.document.source_file = Some(document.source_file);
+            state.external.pending = PendingExternalState::Idle;
+            state.external.writability = Writability::Unknown;
+            state.autosave.paused_message = None;
             state.ui.external_prompt_active = false;
             state.ui.visible_banner = crate::editor_tab::VisibleBannerState::None;
-            state.content_type = None;
-            state.language_id = None;
+            state.document.content_type = None;
+            state.document.language_id = None;
             state.ui.suppress_changes = true;
         }
         self.replace_buffer_text(&document.text, document.format.implicit_trailing_newline());
@@ -228,40 +249,37 @@ impl EditorTab {
         if let Some(file) = self.saved_file() {
             self.refresh_writability_for_file(&file);
         }
+        self.resolve_display_path_for_access_path(&loaded_access_path);
     }
 
     pub(super) fn apply_saved_document(self: &Rc<Self>, saved: SavedDocument) {
         let saved_uri = saved.uri.clone();
+        let saved_access_path = saved.path.clone();
         let saved_file = gio::File::for_path(&saved.path);
         let mut state = self.state.borrow_mut();
         state
             .document
+            .document
             .set_saved_with_display_path(saved.path, saved.display_path.clone());
-        state.document.set_format(saved.format.clone());
-        state.saved_format = saved.format.clone();
-        state.source_file = Some(saved.source_file);
-        state.safety.writability = Writability::Writable;
-        state.safety.autosave_paused = None;
+        state.document.document.set_format(saved.format.clone());
+        state.document.saved_format = saved.format.clone();
+        state.document.source_file = Some(saved.source_file);
+        state.external.writability = Writability::Writable;
+        state.autosave.paused_message = None;
         self.text_buffer
             .set_implicit_trailing_newline(saved.format.implicit_trailing_newline());
         self.text_buffer.set_modified(false);
         drop(state);
         self.sync_compare_reference_after_save(&saved_uri);
         self.refresh_writability_for_file(&saved_file);
+        self.resolve_display_path_for_access_path(&saved_access_path);
     }
 
     pub(super) fn refresh_writability_for_file(self: &Rc<Self>, file: &gio::File) {
         let expected_uri = file.uri().to_string();
         let (generation, cancellable) = {
             let mut state = self.state.borrow_mut();
-            if let Some(cancellable) = state.safety.writability_cancellable.take() {
-                cancellable.cancel();
-            }
-            state.safety.writability_generation += 1;
-            let generation = state.safety.writability_generation;
-            let cancellable = gio::Cancellable::new();
-            state.safety.writability_cancellable = Some(cancellable.clone());
-            (generation, cancellable)
+            state.external.start_writability_request()
         };
         let weak = Rc::downgrade(self);
         file.query_info_async(
@@ -281,13 +299,13 @@ impl EditorTab {
                 };
                 let should_apply = {
                     let mut state = tab.state.borrow_mut();
-                    if state.safety.writability_generation != generation
-                        || state.document.uri().as_deref() != Some(expected_uri.as_str())
+                    if state.external.writability_generation != generation
+                        || state.document.document.uri().as_deref() != Some(expected_uri.as_str())
                     {
                         return;
                     }
-                    state.safety.writability_cancellable = None;
-                    state.safety.writability = writability;
+                    state.external.writability_cancellable = None;
+                    state.external.writability = writability;
                     true
                 };
                 if should_apply {
@@ -315,10 +333,10 @@ impl EditorTab {
     pub(super) fn finish_reload(&self, applied: bool) {
         {
             let mut state = self.state.borrow_mut();
-            state.progress.loading = false;
-            state.progress.external_reload_in_progress = false;
-            if !applied && matches!(state.pending_external, PendingExternalState::Idle) {
-                state.pending_external = PendingExternalState::ContentPossiblyChanged {
+            state.io.loading = false;
+            state.io.external_reload_in_progress = false;
+            if !applied && matches!(state.external.pending, PendingExternalState::Idle) {
+                state.external.pending = PendingExternalState::ContentPossiblyChanged {
                     acknowledged: false,
                 };
             }
@@ -343,28 +361,15 @@ impl EditorTab {
         &self,
         candidate_encodings: Option<SList<sourceview5::Encoding>>,
     ) -> (u64, gio::Cancellable) {
-        let new_cancellable = gio::Cancellable::new();
-        let generation = {
-            let mut state = self.state.borrow_mut();
-            if let Some(cancellable) = state.io.cancellable.take() {
-                cancellable.cancel();
-            }
-            state.io.generation += 1;
-            state.io.cancellable = Some(new_cancellable.clone());
-            state.io.candidate_encodings = candidate_encodings;
-            state.io.generation
-        };
-        (generation, new_cancellable)
+        self.state
+            .borrow_mut()
+            .io
+            .start_request(candidate_encodings)
     }
 
     pub(super) fn finish_io_request(&self, generation: u64) -> bool {
         let mut state = self.state.borrow_mut();
-        if state.io.generation != generation {
-            return false;
-        }
-        state.io.cancellable = None;
-        state.io.candidate_encodings = None;
-        true
+        state.io.finish_request(generation)
     }
 
     pub(super) fn with_io_candidate_encodings<T>(
@@ -378,8 +383,8 @@ impl EditorTab {
     fn set_pending_external(&self, pending: PendingExternalState) {
         let is_idle = {
             let mut state = self.state.borrow_mut();
-            state.pending_external = pending;
-            state.pending_external.is_idle()
+            state.external.pending = pending;
+            state.external.pending.is_idle()
         };
         self.set_attention(!is_idle);
         self.notify_external_state_change();
@@ -405,9 +410,37 @@ impl EditorTab {
     }
 
     pub(super) fn set_loading(&self, loading: bool) {
-        self.state.borrow_mut().progress.loading = loading;
+        self.state.borrow_mut().io.loading = loading;
         if let Some(page) = self.page() {
             page.set_loading(loading);
+        }
+    }
+
+    fn resolve_display_path_for_access_path(self: &Rc<Self>, access_path: &Path) {
+        crate::document_portal::resolve_display_path_async(access_path, {
+            let weak = Rc::downgrade(self);
+            let expected_path = access_path.to_path_buf();
+            move |display_path| {
+                let Some(display_path) = display_path else {
+                    return;
+                };
+                if let Some(tab) = weak.upgrade() {
+                    tab.apply_resolved_display_path(&expected_path, display_path);
+                }
+            }
+        });
+    }
+
+    fn apply_resolved_display_path(&self, access_path: &Path, display_path: PathBuf) {
+        let changed = {
+            let mut state = self.state.borrow_mut();
+            state
+                .document
+                .document
+                .set_display_path_for_access_path(access_path, Some(display_path))
+        };
+        if changed {
+            self.sync_presentation();
         }
     }
 }

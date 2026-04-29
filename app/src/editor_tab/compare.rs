@@ -41,9 +41,9 @@ pub(crate) struct CompareController {
 impl EditorTab {
     #[must_use]
     pub fn is_compare_active(&self) -> bool {
-        self.compare
+        self.state
             .try_borrow()
-            .map_or(true, |compare| compare.is_some())
+            .map_or(true, |state| state.compare.active.is_some())
     }
 
     #[must_use]
@@ -53,8 +53,10 @@ impl EditorTab {
 
     #[must_use]
     pub fn compare_reference_is_refreshable(&self) -> bool {
-        self.compare.try_borrow().is_ok_and(|compare| {
-            compare
+        self.state.try_borrow().is_ok_and(|state| {
+            state
+                .compare
+                .active
                 .as_ref()
                 .is_some_and(|compare| compare.target.is_refreshable())
         })
@@ -65,8 +67,8 @@ impl EditorTab {
         let Some(uri) = self.uri() else {
             return false;
         };
-        self.compare.try_borrow().is_ok_and(|compare| {
-            compare.as_ref().is_some_and(|compare| {
+        self.state.try_borrow().is_ok_and(|state| {
+            state.compare.active.as_ref().is_some_and(|compare| {
                 compare.target.kind == CompareTargetKind::Disk
                     && compare.target.uri.as_deref() == Some(uri.as_str())
             })
@@ -111,11 +113,13 @@ impl EditorTab {
     }
 
     pub fn refresh_compare_reference(self: &Rc<Self>, callback: Rc<dyn Fn(Result<(), AppError>)>) {
-        let target = self
-            .compare
-            .try_borrow()
-            .ok()
-            .and_then(|compare| compare.as_ref().map(|compare| compare.target.clone()));
+        let target = self.state.try_borrow().ok().and_then(|state| {
+            state
+                .compare
+                .active
+                .as_ref()
+                .map(|compare| compare.target.clone())
+        });
         if let Some(target) = target {
             self.load_compare_reference(&target, callback);
         } else {
@@ -125,7 +129,7 @@ impl EditorTab {
 
     pub fn exit_compare(&self) {
         self.bump_compare_generation();
-        let compare = self.compare.borrow_mut().take();
+        let compare = self.state.borrow_mut().compare.active.take();
         if let Some(mut compare) = compare {
             compare.cancel();
             clear_tags(&self.text_buffer, &compare.reference_buffer, &compare.tags);
@@ -150,19 +154,19 @@ impl EditorTab {
 
     pub(super) fn recompute_compare_from_editable(&self) {
         let text = self.buffer_text();
-        let Ok(mut compare_state) = self.compare.try_borrow_mut() else {
+        let Ok(mut state) = self.state.try_borrow_mut() else {
             return;
         };
-        if let Some(compare) = compare_state.as_mut() {
+        if let Some(compare) = state.compare.active.as_mut() {
             compare.recompute(&self.text_buffer, &self.text_view, &text);
         }
     }
 
-    pub(super) fn apply_compare_style(&self) {
-        let Ok(compare_state) = self.compare.try_borrow() else {
+    pub(crate) fn apply_compare_style(&self) {
+        let Ok(state) = self.state.try_borrow() else {
             return;
         };
-        if let Some(compare) = compare_state.as_ref() {
+        if let Some(compare) = state.compare.active.as_ref() {
             self.settings
                 .apply_source_style_scheme(&compare.reference_buffer);
             sync_reference_language(&self.text_buffer, &compare.reference_buffer);
@@ -172,29 +176,29 @@ impl EditorTab {
     }
 
     pub(crate) fn clear_compare_zoom_style(&self) {
-        let Ok(compare_state) = self.compare.try_borrow() else {
+        let Ok(state) = self.state.try_borrow() else {
             return;
         };
-        if let Some(compare) = compare_state.as_ref() {
+        if let Some(compare) = state.compare.active.as_ref() {
             compare.clear_zoom_style();
         }
     }
 
     pub(crate) fn restore_compare_zoom_style(&self, css_class: &str) {
-        let Ok(compare_state) = self.compare.try_borrow() else {
+        let Ok(state) = self.state.try_borrow() else {
             return;
         };
-        if let Some(compare) = compare_state.as_ref() {
+        if let Some(compare) = state.compare.active.as_ref() {
             compare.restore_zoom_style(css_class);
         }
     }
 
     pub(super) fn sync_compare_reference_after_save(&self, saved_uri: &str) {
         let text = self.buffer_text();
-        let Ok(mut compare_state) = self.compare.try_borrow_mut() else {
+        let Ok(mut state) = self.state.try_borrow_mut() else {
             return;
         };
-        if let Some(compare) = compare_state.as_mut()
+        if let Some(compare) = state.compare.active.as_mut()
             && compare.target.kind == CompareTargetKind::Disk
             && compare.target.uri.as_deref() == Some(saved_uri)
         {
@@ -205,11 +209,13 @@ impl EditorTab {
 
     #[cfg(test)]
     pub(crate) fn compare_diff_count_for_tests(&self) -> usize {
-        self.compare
+        self.state
             .try_borrow()
             .ok()
-            .and_then(|compare| {
-                compare
+            .and_then(|state| {
+                state
+                    .compare
+                    .active
                     .as_ref()
                     .map(|compare| compare.diff_plan.hunks.len())
             })
@@ -218,11 +224,13 @@ impl EditorTab {
 
     #[cfg(test)]
     pub(crate) fn compare_status_for_tests(&self) -> String {
-        self.compare
+        self.state
             .try_borrow()
             .ok()
-            .and_then(|compare| {
-                compare
+            .and_then(|state| {
+                state
+                    .compare
+                    .active
                     .as_ref()
                     .map(|compare| compare.status_label.text().to_string())
             })
@@ -231,10 +239,13 @@ impl EditorTab {
 
     #[cfg(test)]
     pub(crate) fn compare_current_hunk_for_tests(&self) -> Option<usize> {
-        self.compare
-            .try_borrow()
-            .ok()
-            .and_then(|compare| compare.as_ref().and_then(|compare| compare.current_hunk))
+        self.state.try_borrow().ok().and_then(|state| {
+            state
+                .compare
+                .active
+                .as_ref()
+                .and_then(|compare| compare.current_hunk)
+        })
     }
 
     #[cfg(test)]
@@ -266,7 +277,7 @@ impl EditorTab {
         self.root.append(&compare.toolbar);
         self.root.append(&compare.paned);
         compare.apply_tag_colors(self.settings.editor_palette_is_dark());
-        self.compare.borrow_mut().replace(compare);
+        self.state.borrow_mut().compare.active = Some(compare);
         self.sync_presentation();
     }
 
@@ -282,8 +293,8 @@ impl EditorTab {
             };
             let editable_text = self.buffer_text();
             let applied = {
-                let mut compare_state = self.compare.borrow_mut();
-                if let Some(compare) = compare_state.as_mut() {
+                let mut state = self.state.borrow_mut();
+                if let Some(compare) = state.compare.active.as_mut() {
                     compare.set_reference_text(reference_text, target.implicit_trailing_newline);
                     compare.recompute(&self.text_buffer, &self.text_view, &editable_text);
                     true
@@ -311,7 +322,7 @@ impl EditorTab {
 
         let generation = self.bump_compare_generation();
         let cancellable = gio::Cancellable::new();
-        if let Some(compare) = self.compare.borrow_mut().as_mut() {
+        if let Some(compare) = self.state.borrow_mut().compare.active.as_mut() {
             compare.set_loading(&cancellable);
         }
         let weak = Rc::downgrade(self);
@@ -323,15 +334,15 @@ impl EditorTab {
                 let Some(tab) = weak.upgrade() else {
                     return;
                 };
-                if tab.compare_request_generation.get() != generation {
+                if tab.compare_generation() != generation {
                     return;
                 }
                 let outcome = match result {
                     Ok(document) => {
                         let editable_text = tab.buffer_text();
                         let applied = {
-                            let mut compare_state = tab.compare.borrow_mut();
-                            if let Some(compare) = compare_state.as_mut()
+                            let mut state = tab.state.borrow_mut();
+                            if let Some(compare) = state.compare.active.as_mut()
                                 && compare.target.uri.as_deref() == Some(target_uri.as_str())
                             {
                                 compare.finish_loading();
@@ -360,15 +371,17 @@ impl EditorTab {
     }
 
     fn move_compare_hunk(&self, direction: i32) {
-        if let Some(compare) = self.compare.borrow_mut().as_mut() {
+        if let Some(compare) = self.state.borrow_mut().compare.active.as_mut() {
             compare.move_hunk(&self.text_buffer, &self.text_view, direction);
         }
     }
 
     fn bump_compare_generation(&self) -> u64 {
-        let next = self.compare_request_generation.get().saturating_add(1);
-        self.compare_request_generation.set(next);
-        next
+        self.state.borrow_mut().compare.next_generation()
+    }
+
+    fn compare_generation(&self) -> u64 {
+        self.state.borrow().compare.request_generation
     }
 }
 
