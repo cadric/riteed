@@ -185,7 +185,7 @@ impl Window {
     }
 
     pub(crate) fn set_app_appearance_for_tests(&self, theme: crate::settings::ThemePreference) {
-        self.appearance.set_theme_for_tests(theme);
+        crate::window_theme::set_theme_for_tests(&self.theme_action, theme);
     }
 
     pub(crate) fn sync_appearance_for_tests(&self) {

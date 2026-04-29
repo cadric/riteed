@@ -273,7 +273,7 @@ fn help_overview_page() -> adw::PreferencesPage {
     editing.add(&help_row(
         &pgettext("help row", "Editor Tools"),
         &gettext(
-            "Open Appearance from the main menu to adjust app appearance and editor palettes. Enable current-line highlight, line numbers, and the minimap in Preferences when you want more structure while reading longer code or markdown files.",
+            "Use the main menu theme selector to switch System, Light, or Dark appearance. Open Appearance from the main menu to adjust editor palettes. Enable current-line highlight, line numbers, and the minimap in Preferences when you want more structure while reading longer code or markdown files.",
         ),
     ));
     editing.add(&help_row(

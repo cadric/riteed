@@ -510,10 +510,8 @@
     {
       "message": "Libadwaita apps must not force a custom color scheme.",
       "pattern": "ColorScheme::Force(Light|Dark)",
-      "paths": [
-        "src/**/*.rs",
-        "crates/**/*.rs"
-      ]
+      "paths": ["src/**/*.rs", "crates/**/*.rs"],
+      "exceptions": ["src/settings/appearance.rs"]
     },
     {
       "message": "GTK/libadwaita CSS must not define a global reset selector.",

@@ -7,6 +7,7 @@ This directory is the canonical contract for policy scope, validator behavior, a
 - `gnome-rust-app.bundle.json` is the entrypoint bundle.
 - `validation-tooling.policy.json` owns shared thresholds, required tools, line limits, and review-artifact discovery.
 - Domain policies own domain-specific hard-fail and `review_required` rules.
+- `hard_fail_patterns[].exceptions` are narrow repo-relative globs applied before scanner regex matching; keep them path-scoped.
 
 ## Review Evidence
 

@@ -2,18 +2,6 @@ msgctxt "alert response"
 msgid "Save Anyway"
 msgstr ""
 
-msgctxt "app appearance"
-msgid "Dark"
-msgstr ""
-
-msgctxt "app appearance"
-msgid "Follow System"
-msgstr ""
-
-msgctxt "app appearance"
-msgid "Light"
-msgstr ""
-
 msgctxt "compare action"
 msgid "Exit Compare"
 msgstr ""
@@ -540,6 +528,30 @@ msgstr ""
 
 msgctxt "status zoom"
 msgid "Zoom"
+msgstr ""
+
+msgctxt "theme selector accessibility"
+msgid "Dark style"
+msgstr ""
+
+msgctxt "theme selector accessibility"
+msgid "Follow system style"
+msgstr ""
+
+msgctxt "theme selector accessibility"
+msgid "Light style"
+msgstr ""
+
+msgctxt "theme selector tooltip"
+msgid "Dark Style"
+msgstr ""
+
+msgctxt "theme selector tooltip"
+msgid "Follow System Style"
+msgstr ""
+
+msgctxt "theme selector tooltip"
+msgid "Light Style"
 msgstr ""
 
 msgctxt "zoom action"

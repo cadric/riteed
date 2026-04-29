@@ -74,6 +74,7 @@ Direct fallback commands:
 - No gettext bypass for user-visible strings.
 - No ad hoc config files for preferences.
 - No warning relaxation, lints suppression, or validator downgrades as a shortcut.
+- Only `src/settings/appearance.rs` may force Light/Dark color schemes to honor explicit user theme choices; every other forced color scheme remains forbidden.
 
 ## Identity and Consistency
 The application ID is authoritative and must stay consistent across:

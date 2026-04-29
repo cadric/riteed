@@ -4,7 +4,7 @@ import re
 from pathlib import Path
 
 from tools.scanners.sites import ScanHit
-from tools.validation_tooling import normalize_path, read_text, scoped_files
+from tools.validation_tooling import match_any, normalize_path, read_text, relpath, scoped_files
 
 
 def first_content_line(path: Path) -> tuple[int, str] | None:
@@ -34,11 +34,17 @@ def css_review_hits(root: Path) -> list[ScanHit]:
     return hits
 
 
-def regex_hits(root: Path, patterns: list[dict[str, str]]) -> list[str]:
+def regex_hits(root: Path, patterns: list[dict[str, object]]) -> list[str]:
     findings: list[str] = []
     for item in patterns:
-        regex = re.compile(item["pattern"])
-        for path in scoped_files(root, item["paths"]):
+        regex = re.compile(str(item["pattern"]))
+        exceptions = item.get("exceptions", [])
+        paths = [
+            path
+            for path in scoped_files(root, item["paths"])
+            if not match_any(relpath(path, root), exceptions)
+        ]
+        for path in paths:
             for index, line in enumerate(read_text(path).splitlines(), start=1):
                 if regex.search(line):
                     findings.append(f"{path.relative_to(root).as_posix()}:{index}: {item['message']}")

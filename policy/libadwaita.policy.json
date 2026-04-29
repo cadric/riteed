@@ -61,7 +61,7 @@
   "style_and_theming": {
     "adw_style_manager_required_for_color_scheme_integration": true,
     "respect_system_light_dark_and_accent_preferences": true,
-    "forcing_custom_theme_or_color_scheme": "forbidden",
+    "forcing_custom_theme_or_color_scheme": "forbidden_except_explicit_user_selected_light_dark_app_preference",
     "replacing_core_adwaita_spacing_typography_or_widget_shapes": "forbidden",
     "custom_css_only_for_app_specific_additions": true
   },
@@ -79,10 +79,8 @@
       {
         "message": "Libadwaita apps must not force a custom color scheme.",
         "pattern": "ColorScheme::Force(Light|Dark)",
-        "paths": [
-          "src/**/*.rs",
-          "crates/**/*.rs"
-        ]
+        "paths": ["src/**/*.rs", "crates/**/*.rs"],
+        "exceptions": ["src/settings/appearance.rs"]
       },
       {
         "message": "GTK3-era Leaflet patterns are forbidden by default.",
@@ -120,7 +118,7 @@
   },
   "prohibited": [
     "gtk_only_window_shell_when_libadwaita_is_available",
-    "custom_theme_forcing",
+    "unreviewed_custom_theme_forcing",
     "nonadaptive_large_screen_only_layouts",
     "about_dialogs_not_using_libadwaita",
     "preferences_surfaces_not_following_libadwaita_patterns"

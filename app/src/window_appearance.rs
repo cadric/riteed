@@ -2,14 +2,14 @@ use std::cell::{Cell, RefCell};
 use std::rc::{Rc, Weak};
 use std::sync::OnceLock;
 
-use gettextrs::{gettext, pgettext};
+use gettextrs::gettext;
 use gtk4::accessible::{Property, State};
 use gtk4::{gdk, glib, prelude::*};
 use libadwaita as adw;
 use libadwaita::prelude::AdwDialogExt;
 
 use crate::error::AppError;
-use crate::settings::{AppSettings, EditorPalette, ThemePreference};
+use crate::settings::{AppSettings, EditorPalette};
 use crate::workspace::Workspace;
 
 const APPEARANCE_CSS_RESOURCE: &str = "/io/github/cadric/Riteed/ui/appearance.css";
@@ -30,14 +30,7 @@ struct AppearanceState {
     dialog: adw::Dialog,
     dialog_child: gtk4::Widget,
     palette_flow_box: gtk4::FlowBox,
-    theme_buttons: RefCell<Vec<ThemeButton>>,
     palette_tiles: RefCell<Vec<PaletteTile>>,
-}
-
-#[derive(Clone)]
-struct ThemeButton {
-    theme: ThemePreference,
-    button: gtk4::ToggleButton,
 }
 
 #[derive(Clone)]
@@ -63,13 +56,9 @@ impl WindowAppearanceController {
             .child()
             .ok_or_else(|| AppError::Internal(String::from("Missing appearance dialog child.")))?;
         let close_button: gtk4::Button = builder_object(&builder, "appearance_close_button")?;
-        let app_box: gtk4::Box = builder_object(&builder, "app_appearance_box")?;
         let palette_flow_box: gtk4::FlowBox = builder_object(&builder, "palette_flow_box")?;
         close_button.update_property(&[Property::Label(&gettext("Close Appearance Panel"))]);
         install_close_callback(&dialog, &close_button);
-
-        let (app_group, theme_buttons) = build_app_appearance_group();
-        app_box.append(&app_group);
 
         let state = Rc::new(AppearanceState {
             settings: settings.clone(),
@@ -78,7 +67,6 @@ impl WindowAppearanceController {
             dialog,
             dialog_child,
             palette_flow_box: palette_flow_box.clone(),
-            theme_buttons: RefCell::new(theme_buttons),
             palette_tiles: RefCell::new(Vec::new()),
         });
 
@@ -119,11 +107,6 @@ impl WindowAppearanceController {
     }
 
     #[cfg(test)]
-    pub(crate) fn set_theme_for_tests(&self, theme: ThemePreference) {
-        self.state.activate_theme(theme);
-    }
-
-    #[cfg(test)]
     pub(crate) fn set_palette_for_tests(&self, palette: EditorPalette) {
         self.state.activate_palette(palette);
     }
@@ -137,12 +120,6 @@ impl WindowAppearanceController {
 impl AppearanceState {
     fn sync_all(&self) {
         self.syncing.set(true);
-        let theme = self.settings.theme();
-        for theme_button in self.theme_buttons.borrow().iter() {
-            let selected = theme_button.theme == theme;
-            theme_button.button.set_active(selected);
-            update_theme_accessibility(&theme_button.button, theme_button.theme, selected);
-        }
         self.refresh_palette_tiles();
         self.queue_palette_preview_resize();
         self.syncing.set(false);
@@ -203,16 +180,6 @@ impl AppearanceState {
         }
     }
 
-    fn activate_theme(&self, theme: ThemePreference) {
-        if self.syncing.get() {
-            return;
-        }
-        self.settings.set_theme(theme);
-        self.settings.apply_theme();
-        self.apply_source_styles();
-        self.sync_all();
-    }
-
     fn activate_palette(&self, palette: EditorPalette) {
         if self.syncing.get() || !palette_available_for_selection(palette) {
             return;
@@ -248,60 +215,6 @@ impl AppearanceState {
                 }
             }
         });
-    }
-}
-
-fn build_app_appearance_group() -> (gtk4::Box, Vec<ThemeButton>) {
-    let group = gtk4::Box::builder()
-        .orientation(gtk4::Orientation::Horizontal)
-        .hexpand(true)
-        .build();
-    group.add_css_class("linked");
-    group.add_css_class("riteed-app-appearance");
-    group.set_accessible_role(gtk4::AccessibleRole::RadioGroup);
-
-    let mut buttons = Vec::new();
-    let mut radio_group: Option<gtk4::ToggleButton> = None;
-    for theme in [
-        ThemePreference::System,
-        ThemePreference::Light,
-        ThemePreference::Dark,
-    ] {
-        let button = gtk4::ToggleButton::builder()
-            .accessible_role(gtk4::AccessibleRole::Radio)
-            .focusable(true)
-            .hexpand(true)
-            .child(&theme_button_content(theme))
-            .build();
-        if let Some(radio_group) = radio_group.as_ref() {
-            button.set_group(Some(radio_group));
-        } else {
-            radio_group = Some(button.clone());
-        }
-        group.append(&button);
-        buttons.push(ThemeButton { theme, button });
-    }
-    (group, buttons)
-}
-
-fn theme_button_content(theme: ThemePreference) -> gtk4::Box {
-    let content = gtk4::Box::builder()
-        .orientation(gtk4::Orientation::Horizontal)
-        .spacing(4)
-        .halign(gtk4::Align::Center)
-        .build();
-    let icon = gtk4::Image::from_icon_name(theme_icon_name(theme));
-    let label = gtk4::Label::new(Some(&theme_label(theme)));
-    content.append(&icon);
-    content.append(&label);
-    content
-}
-
-fn theme_icon_name(theme: ThemePreference) -> &'static str {
-    match theme {
-        ThemePreference::System => "display-brightness-symbolic",
-        ThemePreference::Light => "weather-clear-symbolic",
-        ThemePreference::Dark => "weather-clear-night-symbolic",
     }
 }
 
@@ -354,19 +267,6 @@ fn install_callbacks(state: &Rc<AppearanceState>, flow_box: &gtk4::FlowBox) {
         flow_box.queue_resize();
     });
 
-    for theme_button in state.theme_buttons.borrow().iter() {
-        let weak = Rc::downgrade(state);
-        let theme = theme_button.theme;
-        theme_button.button.connect_toggled(move |button| {
-            if !button.is_active() {
-                return;
-            }
-            if let Some(state) = weak.upgrade() {
-                state.activate_theme(theme);
-            }
-        });
-    }
-
     let weak = Rc::downgrade(state);
     let _handler = adw::StyleManager::default().connect_dark_notify(move |_| {
         if let Some(state) = weak.upgrade() {
@@ -382,27 +282,6 @@ fn install_close_callback(dialog: &adw::Dialog, button: &gtk4::Button) {
     button.connect_clicked(move |_| {
         let _closed = dialog.close();
     });
-}
-
-fn theme_label(theme: ThemePreference) -> String {
-    match theme {
-        ThemePreference::System => pgettext("app appearance", "Follow System"),
-        ThemePreference::Light => pgettext("app appearance", "Light"),
-        ThemePreference::Dark => pgettext("app appearance", "Dark"),
-    }
-}
-
-fn update_theme_accessibility(button: &gtk4::ToggleButton, theme: ThemePreference, selected: bool) {
-    let label = theme_label(theme);
-    button.update_property(&[Property::Label(&label)]);
-    button.update_state(&[
-        State::Selected(Some(selected)),
-        State::Checked(if selected {
-            gtk4::AccessibleTristate::True
-        } else {
-            gtk4::AccessibleTristate::False
-        }),
-    ]);
 }
 
 fn palette_order() -> [EditorPalette; 8] {

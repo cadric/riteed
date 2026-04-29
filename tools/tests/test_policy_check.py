@@ -154,6 +154,28 @@ class PolicyCheckTests(unittest.TestCase):
             self.assertTrue(any("Gio subprocess outside" in item and "src/other.rs" in item for item in errors))
             self.assertFalse(any("src/git_process.rs" in item for item in errors))
 
+    def test_validation_color_scheme_exception_is_path_scoped(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            shutil.copytree(REPO_ROOT / "policy", root / "policy")
+            _write(root / "src" / "settings" / "appearance.rs", "fn ok() { adw::ColorScheme::ForceLight; }\n")
+            _write(root / "src" / "other.rs", "fn bad() { adw::ColorScheme::ForceDark; }\n")
+            errors: list[str] = []
+            foundation.check_forbidden_patterns(root, errors)
+            self.assertTrue(any("custom color scheme" in item and "src/other.rs" in item for item in errors))
+            self.assertFalse(any("src/settings/appearance.rs" in item for item in errors))
+
+    def test_libadwaita_color_scheme_exception_is_path_scoped(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            shutil.copytree(REPO_ROOT / "policy", root / "policy")
+            _write(root / "src" / "settings" / "appearance.rs", "fn ok() { adw::ColorScheme::ForceLight; }\n")
+            _write(root / "src" / "other.rs", "fn bad() { adw::ColorScheme::ForceDark; }\n")
+            errors: list[str] = []
+            libadwaita.check_libadwaita(root, errors)
+            self.assertTrue(any("custom color scheme" in item and "src/other.rs" in item for item in errors))
+            self.assertFalse(any("src/settings/appearance.rs" in item for item in errors))
+
     def test_flatpak_spawn_and_std_command_have_no_git_process_exception(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

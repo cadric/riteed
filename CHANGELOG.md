@@ -55,7 +55,7 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Switched Recent Files to a lightweight dialog listing recent documents (most recent first) instead of nested menu flows.
 - Split the left sidebar into Files and Source Control modes with a libadwaita view stack while preserving project-tree state.
 - Reworked the Source Control changed-file view into a virtual folder tree with compact file rows, click-to-compare activation, hover/focus Stage and Unstage icons, and consistent `U` badges for untracked files.
-- Moved Appearance from a header-bar button into the main menu, kept the existing visual Appearance dialog, and refreshed Help copy for the new location.
+- Moved app theme selection into GNOME-style System/Light/Dark swatches at the top of the primary menu, while keeping Appearance focused on editor palettes.
 - Reworked compare scroll synchronization to use diff anchors instead of normalized ratios, and applied active document language highlighting to reference buffers.
 - Refactored compare controller plumbing into smaller modules so Git-backed compare could reuse the existing split-diff engine without growing the compare file past policy limits.
 - Clarified the Riteed settings model into scoped modules and converted theme and Source Control view mode preferences to GSettings enums.

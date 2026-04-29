@@ -82,8 +82,8 @@ fn assert_settings_apply() {
     settings.set_theme(ThemePreference::Dark);
     settings.apply_theme();
     assert_eq!(
-        adw::StyleManager::default().color_scheme(),
-        adw::ColorScheme::PreferDark
+        format!("{:?}", adw::StyleManager::default().color_scheme()),
+        "ForceDark"
     );
     assert!(!settings.show_line_numbers());
     settings.set_show_line_numbers(true);
@@ -100,6 +100,12 @@ fn assert_settings_apply() {
     } else {
         assert!(buffer.style_scheme().is_some());
     }
+    settings.set_theme(ThemePreference::Light);
+    settings.apply_theme();
+    assert_eq!(
+        format!("{:?}", adw::StyleManager::default().color_scheme()),
+        "ForceLight"
+    );
 }
 
 fn assert_app_actions_exist() {

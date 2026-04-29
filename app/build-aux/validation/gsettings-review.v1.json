@@ -11,11 +11,11 @@
     },
     {
       "path": "src/settings/appearance.rs",
-      "line": 60,
+      "line": 70,
       "match": "let _changed = settings.set_enum(KEY_THEME, preference.enum_value());",
       "kind": "gsettings-write",
       "key": "theme",
-      "trigger": "Explicit theme selection in the preferences dialog."
+      "trigger": "Explicit theme selection from the primary menu theme selector."
     },
     {
       "path": "src/settings/editor.rs",

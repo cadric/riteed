@@ -11,7 +11,9 @@ fn theme_preference_roundtrips_enum_values() {
             "{}",
             theme.nick()
         );
+        assert_eq!(ThemePreference::from_nick(theme.nick()), Some(theme));
     }
+    assert_eq!(ThemePreference::from_nick("unknown"), None);
 }
 
 #[test]

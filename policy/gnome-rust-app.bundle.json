@@ -321,8 +321,8 @@
     },
     {
       "file": "libadwaita.policy.json",
-      "sha256": "e03565108097c0fc8f8035cd439a19e7e3aaccebad12db2c0ee35e93e3a64044",
-      "bytes": 4633
+      "sha256": "3fef442f60d47780ff5397d0d575a09d42d294a9779bc319e2741156ffe218d5",
+      "bytes": 4724
     },
     {
       "file": "hig.policy.json",
@@ -346,8 +346,8 @@
     },
     {
       "file": "validation-tooling.policy.json",
-      "sha256": "dfda5d18ecf52b274467705697a0207f8a0084aa4659141b4c3dd2fa2106c49c",
-      "bytes": 14541
+      "sha256": "334550b1928c79ebad79d2ac204f8c10a3bfd5472db21e6afc998284be41cc18",
+      "bytes": 14569
     }
   ]
 }

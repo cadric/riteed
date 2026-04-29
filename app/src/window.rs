@@ -60,6 +60,7 @@ pub struct Window {
     find_prev_action: gio::SimpleAction,
     appearance_action: gio::SimpleAction,
     fullscreen_action: gio::SimpleAction,
+    theme_action: gio::SimpleAction,
     settings: AppSettings,
     workspace: Rc<Workspace>,
     appearance: WindowAppearanceController,
@@ -133,6 +134,7 @@ impl Window {
         let appearance_action = gio::SimpleAction::new("appearance", None);
         let fullscreen_action =
             gio::SimpleAction::new_stateful("fullscreen", None, &false.to_variant());
+        let theme_action = crate::window_theme::create_action(&settings);
         shell.window.add_action(&save_action);
         shell.window.add_action(&save_as_action);
         shell.window.add_action(&close_action);
@@ -143,6 +145,7 @@ impl Window {
         shell.window.add_action(&find_prev_action);
         shell.window.add_action(&appearance_action);
         shell.window.add_action(&fullscreen_action);
+        shell.window.add_action(&theme_action);
 
         settings.apply_theme();
 
@@ -192,6 +195,7 @@ impl Window {
             find_prev_action,
             appearance_action,
             fullscreen_action,
+            theme_action,
             settings,
             workspace,
             appearance,
@@ -209,6 +213,7 @@ impl Window {
         window
             .source_control
             .set_project_root(window.project.current_root_file());
+        window.install_theme_action();
         window.zoom.set_editor_font(&window.settings.editor_font());
         window.install_accessible_labels();
         window.appearance.sync();
@@ -333,6 +338,15 @@ impl Window {
 
         self.install_document_callbacks();
         self.install_window_state_callbacks();
+    }
+
+    fn install_theme_action(&self) {
+        crate::window_theme::install(
+            &self.theme_action,
+            &self.settings,
+            &self.workspace,
+            &self.shell.primary_menu_button,
+        );
     }
 
     fn install_document_callbacks(self: &Rc<Self>) {

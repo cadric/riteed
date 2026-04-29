@@ -33,6 +33,7 @@ mod window_compare;
 mod window_preferences;
 mod window_project;
 pub mod window_shell;
+mod window_theme;
 pub mod workspace;
 mod workspace_close;
 mod workspace_menu;

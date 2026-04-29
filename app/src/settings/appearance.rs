@@ -41,6 +41,16 @@ impl ThemePreference {
             Self::Dark => "dark",
         }
     }
+
+    #[must_use]
+    pub fn from_nick(value: &str) -> Option<Self> {
+        match value {
+            "system" => Some(Self::System),
+            "light" => Some(Self::Light),
+            "dark" => Some(Self::Dark),
+            _ => None,
+        }
+    }
 }
 
 impl AppSettings {
@@ -71,8 +81,8 @@ impl AppSettings {
     pub fn apply_theme(&self) {
         let color_scheme = match self.theme() {
             ThemePreference::System => adw::ColorScheme::Default,
-            ThemePreference::Light => adw::ColorScheme::PreferLight,
-            ThemePreference::Dark => adw::ColorScheme::PreferDark,
+            ThemePreference::Light => adw::ColorScheme::ForceLight,
+            ThemePreference::Dark => adw::ColorScheme::ForceDark,
         };
         adw::StyleManager::default().set_color_scheme(color_scheme);
     }

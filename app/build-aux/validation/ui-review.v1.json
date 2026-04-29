@@ -6,8 +6,8 @@
       "line": 5,
       "match": "<object class=\"AdwDialog\" id=\"appearance_dialog\">",
       "smallest_width": 320,
-      "adaptive_pattern": "Small libadwaita appearance panel opened from the header-bar Appearance button with app appearance controls and visual editor palette tiles.",
-      "collapse_behavior": "The compact controls remain vertically stacked, and the palette grid keeps stable visual choices without hiding palettes dynamically.",
+      "adaptive_pattern": "Small libadwaita appearance panel opened from the main menu with visual editor palette tiles.",
+      "collapse_behavior": "The palette grid keeps stable visual choices without hiding palettes dynamically.",
       "copy_reviewed": true,
       "a11y_reviewed": true
     },

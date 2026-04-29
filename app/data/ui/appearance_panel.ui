@@ -50,21 +50,6 @@
                 <child>
                   <object class="GtkLabel">
                     <property name="xalign">0</property>
-                    <property name="label" translatable="yes">App Appearance</property>
-                    <style>
-                      <class name="caption-heading"/>
-                    </style>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkBox" id="app_appearance_box">
-                    <property name="orientation">vertical</property>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkLabel">
-                    <property name="xalign">0</property>
-                    <property name="margin-top">12</property>
                     <property name="label" translatable="yes">Editor Palette</property>
                     <style>
                       <class name="caption-heading"/>
