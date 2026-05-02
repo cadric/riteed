@@ -248,6 +248,11 @@ impl EditorTab {
     }
 
     #[must_use]
+    pub fn supports_search(&self) -> bool {
+        crate::document_limits::buffer_supports_search(&self.text_buffer)
+    }
+
+    #[must_use]
     pub fn cursor_position(&self) -> (u32, u32) {
         let iter = self
             .text_buffer

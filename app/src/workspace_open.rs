@@ -147,6 +147,14 @@ fn process_open_request(workspace: &Rc<Workspace>, request: Rc<RefCell<OpenReque
         return;
     };
 
+    if source == OpenSource::SessionRestore
+        && !crate::document_limits::file_supports_session_restore(&file)
+    {
+        request.borrow_mut().failures += 1;
+        process_open_request(workspace, request);
+        return;
+    }
+
     if let Some(existing) = find_tab_by_file(workspace, &file) {
         request.borrow_mut().successes += 1;
         let existing_uri = existing.uri().unwrap_or_else(|| desired_uri.clone());

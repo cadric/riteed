@@ -90,6 +90,15 @@
   box-shadow: 0 0 0 1px alpha(black, 0.08);
 }
 
+.riteed-palette-adaptive-badge {
+  margin: 6px;
+  padding: 3px;
+  background: var(--accent-bg-color);
+  color: var(--accent-fg-color);
+  border-radius: 999px;
+  box-shadow: 0 0 0 1px alpha(black, 0.08);
+}
+
 .riteed-palette-unavailable {
   background: color-mix(in srgb, var(--window-bg-color) 84%, transparent);
   color: var(--window-fg-color);

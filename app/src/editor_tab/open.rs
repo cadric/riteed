@@ -35,6 +35,10 @@ impl EditorTab {
             callback(Err(AppError::MissingSavePath));
             return;
         };
+        if let Err(error) = editor_io::validate_text_file_open(&saved_file) {
+            callback(Err(map_load_failure_to_app_error(error)));
+            return;
+        }
         let snapshot = ReloadSnapshot::capture(&self.text_buffer);
         let already_loading = {
             let mut state = self.state.borrow_mut();
@@ -172,6 +176,10 @@ impl EditorTab {
         candidate_encodings: Option<SList<sourceview5::Encoding>>,
         callback: Rc<dyn Fn(Result<String, AppError>)>,
     ) {
+        if let Err(error) = editor_io::validate_text_file_open(file) {
+            callback(Err(map_load_failure_to_app_error(error)));
+            return;
+        }
         self.set_loading(true);
         let (generation, cancellable) = self.start_io_request(candidate_encodings);
         let weak = Rc::downgrade(self);
@@ -240,6 +248,10 @@ impl EditorTab {
             callback(Err(AppError::MissingSavePath));
             return;
         };
+        if let Err(error) = editor_io::validate_text_file_open(&saved_file) {
+            callback(Err(map_load_failure_to_app_error(error)));
+            return;
+        }
 
         self.set_loading(true);
         let snapshot = ReloadSnapshot::capture(&self.text_buffer);
@@ -402,5 +414,13 @@ impl EditorTab {
                 DecodeFailureResponse::Cancel => callback(Err(AppError::Cancelled)),
             }
         });
+    }
+}
+
+fn map_load_failure_to_app_error(error: LoadFailure) -> AppError {
+    match error {
+        LoadFailure::DecodeFailed(path) => AppError::DecodeFailed(path),
+        LoadFailure::TooBig(path) => AppError::FileTooBig(path),
+        LoadFailure::Failed(error) => error,
     }
 }

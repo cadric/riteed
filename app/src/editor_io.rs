@@ -52,10 +52,10 @@ pub fn load_text_file(
     cancellable: Option<&gio::Cancellable>,
     callback: Rc<dyn Fn(Result<LoadedDocument, LoadFailure>)>,
 ) {
-    let path_info = match local_path_info(file) {
+    let path_info = match validate_text_file_open(file) {
         Ok(path_info) => path_info,
         Err(error) => {
-            callback(Err(LoadFailure::Failed(error)));
+            callback(Err(error));
             return;
         }
     };
@@ -99,6 +99,17 @@ pub fn load_text_file(
             Err(error) => callback(Err(map_load_failure(&callback_path, &error))),
         },
     );
+}
+
+/// # Errors
+///
+/// Returns an error when the file is not local or exceeds Riteed's normal editor open limit.
+pub fn validate_text_file_open(file: &gio::File) -> Result<LocalPathInfo, LoadFailure> {
+    let path_info = local_path_info(file).map_err(LoadFailure::Failed)?;
+    if !crate::document_limits::path_supports_open(&path_info.path) {
+        return Err(LoadFailure::TooBig(path_info.path));
+    }
+    Ok(path_info)
 }
 
 pub fn save_text_file(

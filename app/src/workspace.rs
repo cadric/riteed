@@ -393,9 +393,15 @@ impl Workspace {
                 .into_iter()
                 .map(|tab| tab.uri())
                 .collect::<Vec<_>>(),
-        );
-        let selected =
-            crate::session::selected_session_value(self.selected_tab().and_then(|tab| tab.uri()));
+        )
+        .into_iter()
+        .filter(|uri| crate::document_limits::uri_supports_session_restore(uri))
+        .collect::<Vec<_>>();
+        let selected = self
+            .selected_tab()
+            .and_then(|tab| tab.uri())
+            .filter(|uri| crate::document_limits::uri_supports_session_restore(uri));
+        let selected = crate::session::selected_session_value(selected);
 
         let Ok(mut state) = self.state.try_borrow_mut() else {
             return;

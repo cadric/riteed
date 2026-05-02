@@ -563,7 +563,7 @@
     },
     {
       "path": "src/workspace_open.rs",
-      "line": 214,
+      "line": 222,
       "match": "fn finish_open_request(workspace: &Rc<Workspace>, request: &Rc<RefCell<OpenRequest>>) {",
       "kind": "runtime-shared-state",
       "ownership": "The open-request finisher reads shared batch state.",

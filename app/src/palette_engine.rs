@@ -461,6 +461,10 @@ pub(crate) fn exercise_palette_engine_for_tests() {
         editor_scheme_id(EditorPalette::FollowSystem, true),
         ADWAITA_DARK_SCHEME
     );
+    assert_eq!(
+        editor_scheme_id(EditorPalette::FollowSystem, false),
+        ADWAITA_LIGHT_SCHEME
+    );
 
     let light = resolve_family_scheme(PaletteFamily::Classic, SchemePolarity::Light);
     let dark = resolve_family_scheme(PaletteFamily::Classic, SchemePolarity::Dark);

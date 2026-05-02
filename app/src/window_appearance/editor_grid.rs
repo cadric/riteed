@@ -91,7 +91,7 @@ impl EditorGridState {
         for palette in palette_order() {
             let target = palette_target(palette);
             let label = palette.label();
-            let (content, preview) = palette_tile_content(&target, &label);
+            let (content, preview) = palette_tile_content(palette, &target, &label);
             let child = gtk4::FlowBoxChild::builder()
                 .accessible_role(gtk4::AccessibleRole::Radio)
                 .focusable(true)
@@ -185,8 +185,9 @@ fn install_callbacks(state: &Rc<EditorGridState>) {
     });
 }
 
-fn palette_order() -> [EditorPalette; 8] {
+fn palette_order() -> [EditorPalette; 9] {
     [
+        EditorPalette::FollowSystem,
         EditorPalette::AdwaitaLight,
         EditorPalette::AdwaitaDark,
         EditorPalette::ClassicLight,
@@ -199,6 +200,7 @@ fn palette_order() -> [EditorPalette; 8] {
 }
 
 fn palette_tile_content(
+    palette: EditorPalette,
     target: &PaletteTarget,
     label: &str,
 ) -> (gtk4::Widget, Option<PalettePreview>) {
@@ -208,6 +210,9 @@ fn palette_tile_content(
     overlay.set_tooltip_text(Some(label));
     preview_widget.set_tooltip_text(Some(label));
     overlay.set_child(Some(&preview_widget));
+    if palette == EditorPalette::FollowSystem {
+        add_adaptive_badge(&overlay);
+    }
     if unavailable {
         let label = gtk4::Label::new(Some(&gettext("Unavailable")));
         label.add_css_class("riteed-palette-unavailable");
@@ -216,6 +221,16 @@ fn palette_tile_content(
         overlay.add_overlay(&label);
     }
     (overlay.upcast::<gtk4::Widget>(), preview)
+}
+
+fn add_adaptive_badge(overlay: &gtk4::Overlay) {
+    let badge = gtk4::Image::from_icon_name("display-brightness-symbolic");
+    badge.add_css_class("riteed-palette-adaptive-badge");
+    badge.set_halign(gtk4::Align::End);
+    badge.set_valign(gtk4::Align::Start);
+    badge.set_can_focus(false);
+    badge.set_can_target(false);
+    overlay.add_overlay(&badge);
 }
 
 fn palette_preview_widget(target: &PaletteTarget) -> (gtk4::Widget, Option<PalettePreview>) {

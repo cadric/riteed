@@ -63,9 +63,23 @@ fn exercise_presentation_preferences(test_app: &adw::Application) {
     assert_eq!(window.preferences_write_log_for_tests(), writes_before_sync);
     window.present_appearance_for_tests();
     assert_eq!(window.preferences_write_log_for_tests(), writes_before_sync);
+    assert_eq!(
+        window.selected_appearance_palette_for_tests(),
+        EditorPalette::FollowSystem
+    );
 
     window.set_app_appearance_for_tests(ThemePreference::Light);
-    window.select_editor_palette_for_tests(1);
+    assert_eq!(
+        window.selected_style_scheme_id_for_tests().as_deref(),
+        Some(crate::palette_engine::ADWAITA_LIGHT_SCHEME)
+    );
+    window.set_app_appearance_for_tests(ThemePreference::Dark);
+    assert_eq!(
+        window.selected_style_scheme_id_for_tests().as_deref(),
+        Some(crate::palette_engine::ADWAITA_DARK_SCHEME)
+    );
+    window.set_app_appearance_for_tests(ThemePreference::Light);
+    window.select_editor_palette_for_tests(2);
     window.set_current_line_highlight_for_tests(false);
     window.set_autosave_for_tests(true);
     window.set_fullscreen_for_tests(true);
@@ -82,6 +96,10 @@ fn exercise_presentation_preferences(test_app: &adw::Application) {
     assert_eq!(
         window.selected_appearance_palette_for_tests(),
         EditorPalette::AdwaitaDark
+    );
+    assert_eq!(
+        window.selected_style_scheme_id_for_tests().as_deref(),
+        Some(crate::palette_engine::ADWAITA_DARK_SCHEME)
     );
 }
 

@@ -335,6 +335,9 @@ msgstr ""
 msgid "Save the open document before using Git actions."
 msgstr ""
 
+msgid "Search is disabled for very large files."
+msgstr ""
+
 msgid "Select the editable document on the left and the reference on the right."
 msgstr ""
 

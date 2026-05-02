@@ -391,6 +391,12 @@ impl EditorSearch {
             self.update_result_state();
             return;
         }
+        if !tab.supports_search() {
+            self.state.borrow_mut().manual_message =
+                Some(gettext("Search is disabled for very large files."));
+            self.update_result_state();
+            return;
+        }
 
         let context = sourceview5::SearchContext::new(&tab.text_buffer(), Some(&self.settings));
         context.set_highlight(true);

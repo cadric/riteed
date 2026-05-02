@@ -30,6 +30,7 @@ fn editor_palette_roundtrips_enum_values() {
     assert_eq!(EditorPalette::ClassicLight.nick(), "classic");
     assert_eq!(EditorPalette::ClassicDark.enum_value(), 8);
     assert_eq!(EditorPalette::ClassicDark.nick(), "classic-dark");
+    assert_eq!(EditorPalette::FollowSystem.label(), "Auto");
 }
 
 #[test]

@@ -127,6 +127,10 @@ msgid "Adwaita Light"
 msgstr ""
 
 msgctxt "editor palette"
+msgid "Auto"
+msgstr ""
+
+msgctxt "editor palette"
 msgid "Classic Dark"
 msgstr ""
 

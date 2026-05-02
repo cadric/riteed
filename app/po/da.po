@@ -89,7 +89,7 @@ msgid "Classic Light"
 msgstr ""
 
 msgctxt "editor palette"
-msgid "Follow System"
+msgid "Auto"
 msgstr ""
 
 msgctxt "editor palette"
@@ -242,6 +242,9 @@ msgstr ""
 
 msgid "Save the open document before using Git actions."
 msgstr ""
+
+msgid "Search is disabled for very large files."
+msgstr "Søgning er slået fra for meget store filer."
 
 msgid "Set a Git identity in Preferences before committing."
 msgstr ""

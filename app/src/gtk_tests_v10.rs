@@ -38,6 +38,8 @@ pub(crate) fn exercise_chrome_palette(test_app: &libadwaita::Application) {
     settings.set_window_palette(crate::settings::WindowPalette::Solarized);
     settings.set_editor_palette(crate::settings::EditorPalette::AdwaitaDark);
     assert!(crate::app_chrome::chrome_css_for_settings(&settings).is_empty());
+    settings.set_editor_palette(crate::settings::EditorPalette::FollowSystem);
+    assert!(crate::app_chrome::chrome_css_for_settings(&settings).is_empty());
 
     settings.set_editor_palette(crate::settings::EditorPalette::SolarizedDark);
     let Some(solarized_light) = manager.scheme("solarized-light") else {

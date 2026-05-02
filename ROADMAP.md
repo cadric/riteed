@@ -1,12 +1,12 @@
 ---
 created: 2026-04-19
-updated: 2026-04-27
+updated: 2026-05-02
 status: active
 priority: high
 type: roadmap
 completed_through: v10
 next_version: v11
-final_scheduled_version: v11
+final_scheduled_version: v12
 ---
 
 # Complete Roadmap: Mini GNOME Text Editor in Rust
@@ -1002,7 +1002,7 @@ Implement a working v9 of the app with Git repository detection, a lightweight s
 
 V10 finishes the local source control work started in V9 and clears the polish regressions that have accumulated since V8.
 
-The goal is to make local Git workflows feel complete enough for daily use while restoring the visual and interaction polish the app expects. Network-bound source control (push) is intentionally held out of V10 so the security-sensitive bundled Git rebuild can be reviewed on its own; it now lives in the Post-V11 unscheduled candidates and is not part of the current roadmap.
+The goal is to make local Git workflows feel complete enough for daily use while restoring the visual and interaction polish the app expects. Network-bound source control (push) is intentionally held out of V10 so the security-sensitive bundled Git rebuild can be reviewed on its own; it now lives in the Post-V12 unscheduled candidates and is not part of the current roadmap.
 
 ## What V10 adds
 
@@ -1022,7 +1022,7 @@ The goal is to make local Git workflows feel complete enough for daily use while
 
 ## Why this version matters
 
-V10 turns V9's local source-control core into a complete local workflow. The deferred history and discard items finish the local loop, while the polish work removes the lingering regressions that signal "still in motion". Push is intentionally held back so its security-sensitive bundled Git rebuild can be reviewed on its own; it sits in the Post-V11 unscheduled backlog and is not part of the active roadmap. After V10 the app should feel like the V9 plan was always going to land here.
+V10 turns V9's local source-control core into a complete local workflow. The deferred history and discard items finish the local loop, while the polish work removes the lingering regressions that signal "still in motion". Push is intentionally held back so its security-sensitive bundled Git rebuild can be reviewed on its own; it sits in the Post-V12 unscheduled backlog and is not part of the active roadmap. After V10 the app should feel like the V9 plan was always going to land here.
 
 ## Prompt for V10
 
@@ -1093,7 +1093,7 @@ Behavior expectations:
 Technical expectations:
 - Continue to use only the bundled `/app/bin/git` boundary in `app/src/git_process.rs`
 - Add only these new Git verbs to the typed Git boundary as required: `log` and `checkout`/`restore` for discard. Update `app/src/git_process.rs` and `app/build-aux/git/README.md` together; the README is the source of truth for the bundled Git surface
-- Do not expand the bundled Git build flags in v10; network transport stays disabled and any future re-enable belongs to its own dedicated milestone (currently in the Post-V11 unscheduled backlog)
+- Do not expand the bundled Git build flags in v10; network transport stays disabled and any future re-enable belongs to its own dedicated milestone (currently in the Post-V12 unscheduled backlog)
 - Keep all source control UI changes inside the existing source control panel architecture
 - Reuse the file-monitoring infrastructure from v4 for the live refresh
 - Keep all user-facing strings ready for gettext localization
@@ -1104,7 +1104,7 @@ Non-goals for v10:
 - No branch management UI
 - No pull, fetch, or merge UI
 - No remote configuration UI
-- No git push (held back so the bundled Git build expansion can be reviewed on its own; currently sits in the Post-V11 unscheduled backlog and is not part of the active roadmap)
+- No git push (held back so the bundled Git build expansion can be reviewed on its own; currently sits in the Post-V12 unscheduled backlog and is not part of the active roadmap)
 - No stash, rebase, or cherry-pick tooling
 - No conflict resolution UI
 - No GitHub or GitLab integration
@@ -1121,10 +1121,105 @@ Implement a working v10 of the app with the local source control workflows compl
 
 ---
 
-# V11 — Editing power tools
+# V11 — Split diff polish
 
-> created: 2026-04-26
-> updated: 2026-04-26
+> created: 2026-05-02
+> updated: 2026-05-02
+> status: planned
+> priority: high
+> type: roadmap-milestone
+> implementation: pending
+
+## Purpose
+
+V11 makes Riteed's Compare and Git diff workflow practical enough for daily changed-file review.
+
+This is a focused readability release. It keeps the existing compare model, but makes side-by-side diffs easier to scan, easier to trust, and useful enough that users do not need to open a heavier editor just to understand a local change.
+
+## What V11 adds
+
+* Logical side-by-side diff row alignment
+* Placeholder rows for insertions and deletions
+* Intra-line highlighting for changed regions within modified lines
+* Clearer diff status and hunk navigation behavior
+* The same improved diff surface for manual Compare and Git compare
+
+## Why this version matters
+
+V10 made Source Control useful enough that diff readability is now the main friction in daily review. Riteed already has compare entry points and Git-backed diffs, but the current split view is still too hard to read when inserted, deleted, and modified lines drift apart. V11 prioritizes this over broader editing power tools because changed-file review is one of the product's core reasons to exist.
+
+## Prompt for V11
+
+```text
+Build v11 of the GNOME desktop application in Rust by polishing the existing split diff and compare workflow.
+
+The goal of v11 is to make Compare and Git compare genuinely practical for daily changed-file review. The app already has manual compare actions, Git-backed compare, hunk navigation, and side-by-side panes. This version should keep that architecture, but make the diff output readable enough that users can quickly understand what changed without opening a heavier editor.
+
+What v11 adds:
+- Logical row alignment for side-by-side diffs
+- Placeholder rows for insertions and deletions
+- Intra-line highlighting for changed regions inside modified lines
+- Clearer diff status and hunk navigation behavior
+- The same improved diff surface for manual Compare and Git compare
+
+Scope for v11:
+- Improve the existing compare implementation rather than creating a separate diff application
+- Build a shared logical diff-row model for the left and right panes
+- Align both panes by logical diff rows, not just by independent scroll position
+- Represent inserted and deleted lines with blank or placeholder rows on the opposite side
+- Highlight changed regions inside modified lines, not only whole changed lines
+- Introduce or preserve scroll sync so both panes follow the same logical diff-row position
+- Keep existing hunk navigation working with the new row model
+- Keep source style, high-contrast behavior, and tab-local compare state working
+- Apply the same improved diff surface to:
+  - Compare With File
+  - Compare With Saved Version
+  - Compare Pasted Text
+  - Git compare from Source Control
+- Keep the advanced compare dialog implementation available behind the simpler tab actions
+
+Behavior expectations:
+- The app should remain a lightweight GNOME editor
+- Diffs should be readable at a glance, with corresponding left/right lines visually aligned
+- Insertions and deletions should not make the opposite pane appear to drift
+- Modified lines should show the changed region clearly enough to distinguish small edits from full-line replacements
+- Hunk navigation should move to the same logical change in both panes
+- Manual compare and Git compare should feel like one feature, not two separate implementations
+
+Technical expectations:
+- Extend the existing Rust + GTK4 + Libadwaita + GtkSourceView codebase
+- Reuse the current compare and source-control entry points
+- Keep diff state tab-local and ephemeral
+- Avoid adding a merge engine or conflict-resolution model
+- Keep all user-facing strings ready for gettext localization
+- Preserve hard limits: 600-line files, no `unsafe`/`unwrap`/`expect`, no broad permissions
+- Add tests for row alignment, insertion/deletion placeholders, intra-line changes, hunk navigation, and Git compare reuse
+
+Non-goals for v11:
+- No merge editor
+- No conflict resolver
+- No three-way diff
+- No standalone Git client behavior
+- No branch, push, pull, stash, rebase, or remote workflow
+- No large-file streaming or huge-file viewer
+
+Implementation guidance:
+- Treat v11 as a polish pass on the existing compare architecture
+- Prefer a small shared diff-row model over ad hoc scroll compensation
+- Keep the visual treatment GNOME-native and restrained
+- Make the test cases small and explicit so future compare changes do not regress alignment
+- Refresh help and translations only if user-visible strings change
+
+Deliverable:
+Implement a working v11 of the app where manual Compare and Git compare use a clearer, aligned side-by-side diff surface with placeholder rows, intra-line highlighting, reliable hunk navigation, and preserved GNOME-native behavior.
+```
+
+---
+
+# V12 — Editing power tools
+
+> created: 2026-05-02
+> updated: 2026-05-02
 > status: planned
 > priority: medium
 > type: roadmap-milestone
@@ -1132,11 +1227,11 @@ Implement a working v10 of the app with the local source control workflows compl
 
 ## Purpose
 
-V11 broadens the everyday editing workflow with the missing power features that complement the existing search, edit, and workspace model.
+V12 broadens the everyday editing workflow with the missing power features that complement the existing search, edit, and workspace model.
 
 This is a writing-and-editing release: it makes the editor self-sufficient for serious text work without crossing into IDE territory.
 
-## What V11 adds
+## What V12 adds
 
 * Replace and Replace All
 * Find in Files across the open workspace
@@ -1145,22 +1240,22 @@ This is a writing-and-editing release: it makes the editor self-sufficient for s
 
 ## Why this version matters
 
-V11 closes practical gaps that have shown up in real use: replace was implied by V3's search but never fully landed, find-in-files leverages the V6 workspace model, and statistics and printing make the app appropriate for documents that leave the editor. V11 is the final scheduled milestone on the roadmap; remaining ideas (spell check, Markdown preview, git push) are collected as unscheduled candidates and only promoted to a real version once one of them earns it.
+V12 closes practical gaps that have shown up in real use: replace was implied by V3's search but never fully landed, find-in-files leverages the V6 workspace model, and statistics and printing make the app appropriate for documents that leave the editor. V12 is the final scheduled milestone on the roadmap; remaining ideas (spell check, Markdown preview, large-file streaming, and git push) are collected as unscheduled candidates and only promoted to a real version once one of them earns it.
 
-## Prompt for V11
+## Prompt for V12
 
 ```text
-Build v11 of the GNOME desktop application in Rust by extending everyday editing capabilities with replace, project-wide search, document statistics, and printing.
+Build v12 of the GNOME desktop application in Rust by extending everyday editing capabilities with replace, project-wide search, document statistics, and printing.
 
-The goal of v11 is to make the editor genuinely capable for serious text work, while keeping the app lightweight and GNOME-native. This version should round out features that complement the existing search and workspace model rather than introduce new architectural pieces.
+The goal of v12 is to make the editor genuinely capable for serious text work, while keeping the app lightweight and GNOME-native. This version should round out features that complement the existing search and workspace model rather than introduce new architectural pieces.
 
-What v11 adds:
+What v12 adds:
 - Replace and Replace All in the search bar
 - Find in Files across the open workspace
 - Document statistics (word count, line count, character counts with and without spaces)
 - Print support via the portal
 
-Scope for v11:
+Scope for v12:
 - Add Replace and Replace All
   - Extend the v3 search bar with a replacement field
   - Provide single-replace-and-advance and replace-all actions
@@ -1194,7 +1289,7 @@ Technical expectations:
 - Keep all user-facing strings ready for gettext localization
 - Preserve hard limits: 600-line files, no `unsafe`/`unwrap`/`expect`, no broad permissions
 
-Non-goals for v11:
+Non-goals for v12:
 - No regex-based find and replace if it requires non-trivial UI scope (defer if it grows)
 - No find-in-files indexing layer; use a streaming scan
 - No advanced print preview beyond what the portal provides
@@ -1207,15 +1302,15 @@ Implementation guidance:
 - Refresh help and translations as part of the same change
 
 Deliverable:
-Implement a working v11 of the app with replace and replace-all, find in files across the workspace, document statistics, and print support, while preserving the app's identity as a lightweight GNOME editor.
+Implement a working v12 of the app with replace and replace-all, find in files across the workspace, document statistics, and print support, while preserving the app's identity as a lightweight GNOME editor.
 ```
 
 ---
 
-# Post-V11 — Unscheduled candidates
+# Post-V12 — Unscheduled candidates
 
 > created: 2026-04-27
-> updated: 2026-04-27
+> updated: 2026-05-02
 > status: deferred
 > priority: low
 > type: roadmap-backlog
@@ -1235,6 +1330,7 @@ The rule for promotion is unchanged from the rest of the roadmap: a candidate be
 * Bundled Git build expanded to support network transport (re-enabling curl/openssl/expat with documented justification)
 * Authentication path for push using GNOME-appropriate credential storage
 * Clear surfacing of authentication, network, and rejection errors in the source control side panel
+* Initial chunk streaming for very large files
 
 ## Why each candidate is deferred
 
@@ -1244,11 +1340,13 @@ The rule for promotion is unchanged from the rest of the roadmap: a candidate be
 
 **Git push (and the three items it requires)** — push is treated as a single coupled bundle: it cannot ship without re-enabling network transport in the bundled Git build (re-justifying NO_CURL/NO_OPENSSL/NO_EXPAT), without a credential storage path, and without explicit error surfacing. The bundled Git network expansion is security-sensitive enough that it should only be opened when push itself is the next thing to ship — not preemptively.
 
+**Initial chunk streaming for very large files** — useful and worth investigating, but it likely needs its own document/viewer mode rather than normal GtkSourceView loading. It should be promoted only when the milestone can focus on large-file architecture, including clear behavior for search, syntax highlighting, minimap, compare, autosave, and session restore.
+
 ## Promotion rules
 
 If any of these items is promoted to a real version later, the promoting change must:
 
-* Pick a version number (V12, V13, …) and create a full milestone section with Purpose, What it adds, Why this version matters, and Prompt — matching the structure of V1–V11
+* Pick a version number (V13, V14, …) and create a full milestone section with Purpose, What it adds, Why this version matters, and Prompt — matching the structure of V1–V12
 * Pull only the items that genuinely belong together in one release; do not promote the whole list at once unless that is the actual decision
 * Re-justify any bundled Git or Flatpak manifest expansion as part of the same change, not as a follow-up
 * Update the header `final_scheduled_version` and the Summary section accordingly
@@ -1257,7 +1355,7 @@ If any of these items is promoted to a real version later, the promoting change 
 
 # Summary of the full progression
 
-V1–V10 are complete as of 2026-04-26. V10 closed V9's deferred local items (recent commit history, discard) and cleared the polish regressions accumulated since V8. V11 is the final scheduled release: an editing-power-tools milestone (replace, find in files, statistics, print). Anything beyond V11 — spell check, Markdown preview, git push and the bundled Git network expansion it requires — sits in the "Post-V11 — Unscheduled candidates" section and only earns a version number once one of those items has a concrete reason to ship next.
+V1–V10 are complete as of 2026-04-26. V10 closed V9's deferred local items (recent commit history, discard) and cleared the polish regressions accumulated since V8. V11 is a focused split-diff polish milestone. V12 is the final scheduled release: an editing-power-tools milestone (replace, find in files, statistics, print). Anything beyond V12 — spell check, Markdown preview, large-file streaming, git push and the bundled Git network expansion it requires — sits in the "Post-V12 — Unscheduled candidates" section and only earns a version number once one of them has a concrete reason to ship next.
 
 ## V1
 
@@ -1301,11 +1399,15 @@ Complete the source control workflow and clear accumulated polish regressions.
 
 ## V11
 
+Polish split diff so manual Compare and Git compare become practical for daily changed-file review. The side-by-side panes should align by logical diff rows, show placeholders for insertions and deletions, and highlight changed regions inside modified lines.
+
+## V12
+
 Add editing power tools: replace, find in files, statistics, and printing. Final scheduled milestone.
 
-## Post-V11
+## Post-V12
 
-Unscheduled backlog. Holds spell check, Markdown preview, and the git push bundle (push action + bundled Git network expansion + credential storage + error surfacing). Items only promote to a numbered version when one has a concrete reason to ship next.
+Unscheduled backlog. Holds spell check, Markdown preview, initial large-file streaming, and the git push bundle (push action + bundled Git network expansion + credential storage + error surfacing). Items only promote to a numbered version when one has a concrete reason to ship next.
 
 ---
 

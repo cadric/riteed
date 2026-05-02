@@ -155,7 +155,7 @@ impl EditorPalette {
     #[must_use]
     pub fn label(self) -> String {
         match self {
-            Self::FollowSystem => String::from("Compatibility"),
+            Self::FollowSystem => pgettext("editor palette", "Auto"),
             Self::AdwaitaLight => pgettext("editor palette", "Adwaita Light"),
             Self::AdwaitaDark => pgettext("editor palette", "Adwaita Dark"),
             Self::ClassicLight => pgettext("editor palette", "Classic Light"),

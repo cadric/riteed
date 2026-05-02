@@ -3,6 +3,7 @@ use std::rc::Rc;
 use gettextrs::pgettext;
 use gtk4::prelude::*;
 use libadwaita as adw;
+use sourceview5::prelude::*;
 
 use super::Workspace;
 
@@ -19,6 +20,12 @@ impl Workspace {
     pub(crate) fn selected_text(&self) -> String {
         self.selected_tab()
             .map_or_else(String::new, |tab| tab.buffer_text())
+    }
+
+    pub(crate) fn selected_style_scheme_id(&self) -> Option<String> {
+        self.selected_tab()
+            .and_then(|tab| tab.text_buffer().style_scheme())
+            .map(|scheme| scheme.id().to_string())
     }
 
     pub(crate) fn set_selected_text(&self, text: &str) {

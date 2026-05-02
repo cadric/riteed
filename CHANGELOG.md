@@ -64,7 +64,7 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Reworked Riteed's Window Palette chrome from per-window scoped surface CSS to one global libadwaita `:root` color-variable provider, so tabs, header bars, status bars, dialogs, and popovers share palette colors consistently.
 - Moved Riteed's document tab strip into the libadwaita toolbar top-bar stack, keeping sidebar-friendly flat chrome while preserving tab search and transfer behavior.
 - Moved Appearance palette controls from a separate primary-menu dialog into a dedicated page inside Preferences, leaving the primary menu focused on standard app actions.
-- Simplified Appearance preferences into Style and Palette controls, hiding the legacy Window Palette and Match App Appearance choices while deriving window chrome from the editor palette family and current app style.
+- Simplified Appearance preferences into Style and Palette controls, keeping Auto as the default adaptive editor palette while deriving window chrome from the editor palette family and current app style.
 - Added explicit standard symbolic icons to the Preferences Editor and Appearance pages so the page switcher no longer shows missing-icon placeholders.
 - Grouped the primary menu into native `GMenu` sections so theme choices, workflow actions, and standard GNOME items render with clear separators.
 - Reworked compare scroll synchronization to use diff anchors instead of normalized ratios, and applied active document language highlighting to reference buffers.
@@ -76,6 +76,7 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 
 ### Fixed
 - Made startup resource registration and gettext initialization failures visible instead of silently discarding them.
+- Blocked normal editor opens above 25 MiB, prevented very large files from being restored automatically in later sessions, and disabled in-document search before SourceView indexes very large buffers.
 - Stabilized GTK coverage runs by teaching `tools.coverage_check` to invoke `cargo llvm-cov` with a deterministic `GSK_RENDERER=cairo` environment, with unit coverage for the new tool behavior.
 - Stabilized headless GTK validation further by defaulting `GTK_A11Y=none` for policy and coverage test commands.
 - Ignored embedded app build outputs such as `app/target/`, Flatpak cache directories, and app-local coverage directories so routine local validation does not keep leaving commit noise behind.
