@@ -3,7 +3,7 @@ use libadwaita as adw;
 use crate::palette_engine::{
     self, ADWAITA_DARK_SCHEME, ADWAITA_LIGHT_SCHEME, ChromeColors, rgba_to_css,
 };
-use crate::settings::AppSettings;
+use crate::settings::{AppSettings, WindowPalette};
 
 struct CssColors {
     window_background: String,
@@ -58,7 +58,7 @@ pub(crate) fn chrome_css_for_settings(settings: &AppSettings) -> String {
     }
     let app_dark = style_manager.is_dark();
     let Some(scheme_id) = palette_engine::window_scheme_id(
-        settings.window_palette(),
+        WindowPalette::FollowEditor,
         settings.editor_palette(),
         app_dark,
     ) else {

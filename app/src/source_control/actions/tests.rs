@@ -3,9 +3,15 @@ use std::path::PathBuf;
 
 use gtk4::prelude::FileExt;
 
-use super::{discard_state, entry_disabled_reason, mode_for_path, reference_oid, reference_text};
+use super::{
+    commit_sensitive, discard_state, entry_disabled_reason, mode_for_path, reference_oid,
+    reference_text,
+};
 use crate::git_process::GitProcessError;
-use crate::git_status::{GitAttrs, GitFileStatus, GitPath, GitStatusEntry};
+use crate::git_status::{
+    GitActionState, GitAttrState, GitAttrs, GitFileStatus, GitPath, GitStatusEntry,
+    GitStatusSnapshot,
+};
 
 #[test]
 fn disabled_reasons_cover_unsupported_paths_and_modes() {
@@ -15,7 +21,7 @@ fn disabled_reasons_cover_unsupported_paths_and_modes() {
         entry_disabled_reason(
             Some(&repo),
             &entry_bytes(b"\xff", GitFileStatus::Modified),
-            &GitAttrs::default(),
+            &known_attrs(),
             &[],
         )
         .as_deref(),
@@ -25,7 +31,7 @@ fn disabled_reasons_cover_unsupported_paths_and_modes() {
         entry_disabled_reason(
             Some(&repo),
             &entry("tracked.txt", GitFileStatus::Conflicted, true, true),
-            &GitAttrs::default(),
+            &known_attrs(),
             &[],
         )
         .as_deref(),
@@ -35,7 +41,7 @@ fn disabled_reasons_cover_unsupported_paths_and_modes() {
         entry_disabled_reason(
             None,
             &entry("tracked.txt", GitFileStatus::Modified, true, true),
-            &GitAttrs::default(),
+            &known_attrs(),
             &[],
         )
         .as_deref(),
@@ -48,7 +54,7 @@ fn disabled_reasons_cover_unsupported_paths_and_modes() {
         entry_disabled_reason(
             Some(&repo),
             &entry("tracked.txt", GitFileStatus::Modified, true, true),
-            &GitAttrs::default(),
+            &known_attrs(),
             &[dirty_uri],
         )
         .as_deref(),
@@ -64,13 +70,40 @@ fn disabled_reasons_cover_unsupported_paths_and_modes() {
             entry_disabled_reason(
                 Some(&repo),
                 &entry("linked.txt", GitFileStatus::Modified, true, true),
-                &GitAttrs::default(),
+                &known_attrs(),
                 &[],
             )
             .as_deref(),
             Some("Symlinks and unsupported file modes are visible only.")
         );
     }
+}
+
+#[test]
+fn unavailable_attrs_disable_git_actions_and_commit() {
+    let repo = temp_repo("riteed-git-actions-attrs");
+    assert!(fs::write(repo.join("tracked.txt"), b"tracked").is_ok());
+    let attrs = GitAttrState::Unavailable;
+    assert_eq!(
+        entry_disabled_reason(
+            Some(&repo),
+            &entry("tracked.txt", GitFileStatus::Modified, true, true),
+            &attrs,
+            &[],
+        )
+        .as_deref(),
+        Some("Unable to read Git attributes. Git actions are disabled.")
+    );
+
+    let mut staged = entry("tracked.txt", GitFileStatus::Modified, true, false);
+    staged.unstage_action = GitActionState::Enabled;
+    let snapshot = GitStatusSnapshot {
+        entries: vec![staged],
+        ..GitStatusSnapshot::default()
+    };
+    assert!(commit_sensitive(&snapshot, &known_attrs(), false));
+    assert!(!commit_sensitive(&snapshot, &attrs, false));
+    assert!(!commit_sensitive(&snapshot, &known_attrs(), true));
 }
 
 #[test]
@@ -133,6 +166,10 @@ fn discard_only_enables_tracked_unstaged_worktree_changes() {
 
     let untracked = entry("new.txt", GitFileStatus::Untracked, false, true);
     assert!(!discard_state(&untracked).enabled());
+}
+
+fn known_attrs() -> GitAttrState {
+    GitAttrState::Known(GitAttrs::default())
 }
 
 fn entry(path: &str, status: GitFileStatus, staged: bool, unstaged: bool) -> GitStatusEntry {

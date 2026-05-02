@@ -15,6 +15,7 @@ This repository contains the authoritative policy and validation tooling for nat
 
 ## Core Workflow
 0. Read `.agent/CONTINUITY.md` if it exists. Treat it as continuity only, never as policy.
+0.4. Use Web search and context7 for up to date code information always.
 0.5. Read `policy/README.md` for scope mapping and review-artifact rules when policy or validation work is in scope.
 1. Identify every affected policy surface before editing: Rust, gtk4-rs, libadwaita, HIG, gettext/i18n, GSettings, Flatpak metadata, and validation tooling.
 2. Read the current implementation and summarize the present behavior.

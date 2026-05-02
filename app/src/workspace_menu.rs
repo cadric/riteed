@@ -3,8 +3,6 @@ use gtk4::gio;
 use gtk4::glib::variant::ToVariant;
 use gtk4::prelude::*;
 
-use crate::settings::ThemePreference;
-
 const THEME_CUSTOM_ID: &str = "theme";
 
 pub(crate) fn build_primary_menu() -> gio::Menu {
@@ -88,76 +86,9 @@ fn ellipsis_label(mut label: String) -> String {
 pub(crate) fn build_primary_popover() -> gtk4::PopoverMenu {
     let menu = build_primary_menu();
     let popover = gtk4::PopoverMenu::from_model(Some(&menu));
-    let _added = popover.add_child(&theme_selector(), THEME_CUSTOM_ID);
+    let _added = popover.add_child(&crate::window_theme::build_selector(), THEME_CUSTOM_ID);
     popover.set_width_request(320);
     popover
-}
-
-fn theme_selector() -> gtk4::Box {
-    let selector = gtk4::Box::builder()
-        .orientation(gtk4::Orientation::Horizontal)
-        .halign(gtk4::Align::Center)
-        .hexpand(true)
-        .spacing(12)
-        .build();
-    selector.add_css_class("riteed-theme-selector");
-    selector.set_accessible_role(gtk4::AccessibleRole::RadioGroup);
-
-    let mut group: Option<gtk4::CheckButton> = None;
-    for theme in ThemePreference::ALL {
-        let button = theme_button(theme);
-        if let Some(group) = group.as_ref() {
-            button.set_group(Some(group));
-        } else {
-            group = Some(button.clone());
-        }
-        selector.append(&button);
-    }
-    selector
-}
-
-fn theme_button(theme: ThemePreference) -> gtk4::CheckButton {
-    let button = gtk4::CheckButton::builder()
-        .accessible_role(gtk4::AccessibleRole::Radio)
-        .focusable(true)
-        .halign(gtk4::Align::Center)
-        .hexpand(true)
-        .build();
-    button.add_css_class("riteed-theme-choice");
-    button.add_css_class(theme_css_class(theme));
-    button.set_size_request(44, 44);
-    button.set_focus_on_click(false);
-    button.set_tooltip_text(Some(&theme_tooltip(theme)));
-    button.set_action_name(Some(crate::window_theme::DETAILED_ACTION_NAME));
-    button.set_action_target_value(Some(&theme.nick().to_variant()));
-    button.update_property(&[gtk4::accessible::Property::Label(&theme_accessible_label(
-        theme,
-    ))]);
-    button
-}
-
-fn theme_css_class(theme: ThemePreference) -> &'static str {
-    match theme {
-        ThemePreference::System => "system",
-        ThemePreference::Light => "light",
-        ThemePreference::Dark => "dark",
-    }
-}
-
-fn theme_tooltip(theme: ThemePreference) -> String {
-    match theme {
-        ThemePreference::System => pgettext("theme selector tooltip", "Follow System Style"),
-        ThemePreference::Light => pgettext("theme selector tooltip", "Light Style"),
-        ThemePreference::Dark => pgettext("theme selector tooltip", "Dark Style"),
-    }
-}
-
-fn theme_accessible_label(theme: ThemePreference) -> String {
-    match theme {
-        ThemePreference::System => pgettext("theme selector accessibility", "Follow system style"),
-        ThemePreference::Light => pgettext("theme selector accessibility", "Light style"),
-        ThemePreference::Dark => pgettext("theme selector accessibility", "Dark style"),
-    }
 }
 
 #[cfg(test)]

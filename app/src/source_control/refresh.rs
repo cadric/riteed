@@ -4,8 +4,10 @@ use gettextrs::{gettext, pgettext};
 use gtk4::gio;
 use gtk4::prelude::*;
 
-use crate::git_status::{GitAttrs, GitPath, GitStatusSnapshot};
-use crate::source_control::{SourceControlState, SourceStateRef, actions, history, live};
+use crate::git_status::{GitAttrState, GitPath, GitStatusSnapshot};
+use crate::source_control::{
+    SourceControlState, SourceStateRef, actions, git_attrs_unavailable_text, history, live,
+};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) enum RefreshOrigin {
@@ -121,7 +123,7 @@ fn refresh_status_entries(state: &SourceStateRef) {
             };
             let paths = snapshot.changed_paths();
             if paths.is_empty() {
-                apply_status(&state, snapshot, GitAttrs::default());
+                apply_status(&state, snapshot, GitAttrState::default());
                 return;
             }
             refresh_attrs(&state, snapshot, &paths);
@@ -144,12 +146,13 @@ fn refresh_attrs(state: &SourceStateRef, snapshot: GitStatusSnapshot, paths: &[G
             let Some(state) = weak.upgrade() else {
                 return;
             };
-            apply_status(&state, snapshot.clone(), result.unwrap_or_default());
+            let attrs = result.map_or(GitAttrState::Unavailable, GitAttrState::Known);
+            apply_status(&state, snapshot.clone(), attrs);
         }),
     );
 }
 
-fn apply_status(state: &SourceStateRef, snapshot: GitStatusSnapshot, attrs: GitAttrs) {
+fn apply_status(state: &SourceStateRef, snapshot: GitStatusSnapshot, attrs: GitAttrState) {
     let (head_oid, snapshot) = {
         let mut state = state.borrow_mut();
         let was_stale = state.status_stale;
@@ -193,7 +196,9 @@ fn update_title(state: &SourceControlState) {
 }
 
 fn update_status_label(state: &SourceControlState) {
-    if state.snapshot.entries.is_empty() {
+    if state.attrs.is_unavailable() {
+        state.status_label.set_label(&git_attrs_unavailable_text());
+    } else if state.snapshot.entries.is_empty() {
         state.status_label.set_label(&gettext("No changes."));
     } else {
         state.status_label.set_label(&gettext("Changed files"));

@@ -3,7 +3,7 @@
   "sites": [
     {
       "path": "src/editor_tab/compare/ui.rs",
-      "line": 282,
+      "line": 306,
       "match": "target.set_value(value);",
       "kind": "gsettings-write",
       "key": "compare-scroll-adjustment",
@@ -143,7 +143,7 @@
       "match": "let _changed = settings.set_enum(KEY_WINDOW_PALETTE, palette.enum_value());",
       "kind": "gsettings-write",
       "key": "window-palette",
-      "trigger": "Explicit window-palette family selection from an Appearance chrome preview tile."
+      "trigger": "Compatibility setter retained for existing window-palette enum values and focused settings tests; the runtime UI no longer exposes or consumes explicit window-palette choices."
     },
     {
       "path": "src/settings/presentation.rs",
@@ -211,7 +211,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 293,
+      "line": 296,
       "match": "row.set_value(f64::from(applied));",
       "kind": "gsettings-write",
       "key": "tab-width-or-indent-width",

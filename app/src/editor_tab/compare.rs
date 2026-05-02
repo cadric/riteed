@@ -36,6 +36,7 @@ pub(crate) struct CompareController {
     right_handler: Option<glib::SignalHandlerId>,
     style_manager: adw::StyleManager,
     style_handler: Option<glib::SignalHandlerId>,
+    high_contrast_handler: Option<glib::SignalHandlerId>,
 }
 
 impl EditorTab {
@@ -170,7 +171,10 @@ impl EditorTab {
             self.settings
                 .apply_source_style_scheme(&compare.reference_buffer);
             sync_reference_language(&self.text_buffer, &compare.reference_buffer);
-            compare.apply_tag_colors(self.settings.editor_palette_is_dark());
+            compare.apply_tag_colors(
+                self.settings.editor_palette_is_dark(),
+                compare.style_manager.is_high_contrast(),
+            );
             compare.apply_current_hunk(&self.text_buffer);
         }
     }
@@ -276,7 +280,10 @@ impl EditorTab {
         compare.paned.set_start_child(Some(&self.content));
         self.root.append(&compare.toolbar);
         self.root.append(&compare.paned);
-        compare.apply_tag_colors(self.settings.editor_palette_is_dark());
+        compare.apply_tag_colors(
+            self.settings.editor_palette_is_dark(),
+            compare.style_manager.is_high_contrast(),
+        );
         self.state.borrow_mut().compare.active = Some(compare);
         self.sync_presentation();
     }

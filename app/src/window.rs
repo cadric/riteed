@@ -127,7 +127,6 @@ impl Window {
     }
 
     #[cfg(test)]
-    #[cfg(test)]
     pub(crate) fn new_with_settings_for_tests(
         app: &adw::Application,
         settings: AppSettings,

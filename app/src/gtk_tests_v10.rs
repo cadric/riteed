@@ -32,22 +32,28 @@ pub(crate) fn exercise_chrome_palette(test_app: &libadwaita::Application) {
         assert!(!css.contains("box-shadow:"));
     }
 
+    let settings = crate::settings::AppSettings::new_for_tests();
+    settings.set_theme(crate::settings::ThemePreference::Light);
+    settings.apply_theme();
+    settings.set_window_palette(crate::settings::WindowPalette::Solarized);
+    settings.set_editor_palette(crate::settings::EditorPalette::AdwaitaDark);
+    assert!(crate::app_chrome::chrome_css_for_settings(&settings).is_empty());
+
+    settings.set_editor_palette(crate::settings::EditorPalette::SolarizedDark);
+    let Some(solarized_light) = manager.scheme("solarized-light") else {
+        return;
+    };
+    assert_eq!(
+        crate::app_chrome::chrome_css_for_settings(&settings),
+        crate::app_chrome::chrome_css(&crate::palette_engine::derive_chrome_colors(
+            &solarized_light
+        ))
+    );
+
     let Some(window) = crate::gtk_tests::build_window(test_app) else {
         return;
     };
-    window.set_window_palette_for_tests(crate::settings::WindowPalette::Solarized);
-    assert_eq!(
-        window.selected_window_palette_for_tests(),
-        crate::settings::WindowPalette::Solarized
-    );
     let css = window.chrome_css_for_tests();
-    if !css.is_empty() {
-        assert!(css.contains(":root"));
-        assert!(css.contains("--dialog-bg-color"));
-        assert!(css.contains("--card-bg-color"));
-        assert!(css.contains("--accent-bg-color"));
-        assert!(!css.contains("--destructive-bg-color"));
-        assert!(!css.contains("tabbar tab"));
-        assert!(!css.contains("riteed-window-chrome-"));
-    }
+    assert!(!css.contains("tabbar tab"));
+    assert!(!css.contains("riteed-window-chrome-"));
 }

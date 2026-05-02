@@ -19,6 +19,11 @@ pub(super) struct CompareTags {
     pub(super) reference_current: gtk4::TextTag,
 }
 
+pub(super) struct CompareToolbar {
+    pub(super) root: gtk4::Box,
+    pub(super) status_label: gtk4::Label,
+}
+
 impl CompareTags {
     pub(super) fn new(
         editable_buffer: &sourceview5::Buffer,
@@ -39,15 +44,31 @@ impl CompareTags {
         tags
     }
 
-    pub(super) fn apply_colors(&self, dark: bool) {
+    pub(super) fn apply_colors(&self, dark: bool, high_contrast: bool) {
         self.editable_changed
-            .set_background_rgba(Some(&compare_color(dark, CompareColor::Editable)));
+            .set_background_rgba(Some(&compare_color(
+                dark,
+                high_contrast,
+                CompareColor::Editable,
+            )));
         self.reference_changed
-            .set_background_rgba(Some(&compare_color(dark, CompareColor::Reference)));
+            .set_background_rgba(Some(&compare_color(
+                dark,
+                high_contrast,
+                CompareColor::Reference,
+            )));
         self.editable_current
-            .set_background_rgba(Some(&compare_color(dark, CompareColor::Current)));
+            .set_background_rgba(Some(&compare_color(
+                dark,
+                high_contrast,
+                CompareColor::Current,
+            )));
         self.reference_current
-            .set_background_rgba(Some(&compare_color(dark, CompareColor::Current)));
+            .set_background_rgba(Some(&compare_color(
+                dark,
+                high_contrast,
+                CompareColor::Current,
+            )));
     }
 }
 
@@ -71,7 +92,7 @@ pub(super) fn configure_reference_view(tab: &EditorTab, view: &sourceview5::View
     tab.settings.apply_indentation(view);
 }
 
-pub(super) fn compare_toolbar(reference_title: &str) -> gtk4::Box {
+pub(super) fn compare_toolbar(reference_title: &str) -> CompareToolbar {
     let toolbar = gtk4::Box::builder()
         .orientation(gtk4::Orientation::Horizontal)
         .spacing(6)
@@ -122,7 +143,10 @@ pub(super) fn compare_toolbar(reference_title: &str) -> gtk4::Box {
         .build();
     status.add_css_class("dim-label");
     toolbar.append(&status);
-    toolbar
+    CompareToolbar {
+        root: toolbar,
+        status_label: status,
+    }
 }
 
 fn ellipsis_label(mut label: String) -> String {
@@ -401,20 +425,28 @@ enum CompareColor {
     Current,
 }
 
-fn compare_color(dark: bool, color: CompareColor) -> gdk::RGBA {
-    match (dark, color) {
-        (false, CompareColor::Editable) => gdk::RGBA::new(0.80, 0.94, 0.82, 1.0),
-        (false, CompareColor::Reference) => gdk::RGBA::new(1.00, 0.86, 0.84, 1.0),
-        (false, CompareColor::Current) => gdk::RGBA::new(0.80, 0.88, 1.00, 1.0),
-        (true, CompareColor::Editable) => gdk::RGBA::new(0.12, 0.34, 0.20, 1.0),
-        (true, CompareColor::Reference) => gdk::RGBA::new(0.42, 0.16, 0.14, 1.0),
-        (true, CompareColor::Current) => gdk::RGBA::new(0.16, 0.24, 0.40, 1.0),
+fn compare_color(dark: bool, high_contrast: bool, color: CompareColor) -> gdk::RGBA {
+    match (dark, high_contrast, color) {
+        (false, true, CompareColor::Editable | CompareColor::Reference) => {
+            gdk::RGBA::new(0.0, 0.0, 0.0, 0.12)
+        }
+        (false, true, CompareColor::Current) => gdk::RGBA::new(0.0, 0.0, 0.0, 0.22),
+        (true, true, CompareColor::Editable | CompareColor::Reference) => {
+            gdk::RGBA::new(1.0, 1.0, 1.0, 0.18)
+        }
+        (true, true, CompareColor::Current) => gdk::RGBA::new(1.0, 1.0, 1.0, 0.30),
+        (false, false, CompareColor::Editable) => gdk::RGBA::new(0.80, 0.94, 0.82, 1.0),
+        (false, false, CompareColor::Reference) => gdk::RGBA::new(1.00, 0.86, 0.84, 1.0),
+        (false, false, CompareColor::Current) => gdk::RGBA::new(0.80, 0.88, 1.00, 1.0),
+        (true, false, CompareColor::Editable) => gdk::RGBA::new(0.12, 0.34, 0.20, 1.0),
+        (true, false, CompareColor::Reference) => gdk::RGBA::new(0.42, 0.16, 0.14, 1.0),
+        (true, false, CompareColor::Current) => gdk::RGBA::new(0.16, 0.24, 0.40, 1.0),
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::proportional_value;
+    use super::{CompareColor, compare_color, proportional_value};
 
     #[test]
     fn proportional_fallback_preserves_scroll_region() {
@@ -426,5 +458,18 @@ mod tests {
     fn proportional_fallback_handles_empty_source_range() {
         let value = proportional_value(0.0, 0.0, 0.0, 20.0, 400.0);
         assert!((value - 20.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn high_contrast_compare_colors_use_neutral_alpha() {
+        let light_changed = compare_color(false, true, CompareColor::Editable);
+        let light_current = compare_color(false, true, CompareColor::Current);
+        let dark_changed = compare_color(true, true, CompareColor::Reference);
+        let dark_current = compare_color(true, true, CompareColor::Current);
+
+        assert!((light_changed.alpha() - 0.12).abs() < f32::EPSILON);
+        assert!((light_current.alpha() - 0.22).abs() < f32::EPSILON);
+        assert!((dark_changed.alpha() - 0.18).abs() < f32::EPSILON);
+        assert!((dark_current.alpha() - 0.30).abs() < f32::EPSILON);
     }
 }

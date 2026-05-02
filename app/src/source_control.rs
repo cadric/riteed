@@ -8,7 +8,7 @@ use gtk4::{gio, prelude::*};
 use libadwaita as adw;
 
 use crate::git_process::{GitIdentity, GitProcess, GitProcessError};
-use crate::git_status::{GitAttrs, GitCapabilities, GitStatusSnapshot};
+use crate::git_status::{GitAttrState, GitCapabilities, GitStatusSnapshot};
 use crate::settings::AppSettings;
 #[cfg(test)]
 use crate::settings::SourceControlViewMode;
@@ -56,7 +56,7 @@ pub(super) struct SourceControlState {
     pub(super) repo: Option<PathBuf>,
     pub(super) process: Option<GitProcess>,
     pub(super) capabilities: GitCapabilities,
-    pub(super) attrs: GitAttrs,
+    pub(super) attrs: GitAttrState,
     pub(super) snapshot: GitStatusSnapshot,
     pub(super) cancellable: Option<gio::Cancellable>,
     pub(super) live_refresh: Option<SourceControlLiveRefresh>,
@@ -145,7 +145,7 @@ impl SourceControlController {
             repo: None,
             process: None,
             capabilities: GitCapabilities::default(),
-            attrs: GitAttrs::default(),
+            attrs: GitAttrState::default(),
             snapshot: GitStatusSnapshot::default(),
             cancellable: None,
             live_refresh: None,
@@ -264,6 +264,7 @@ fn set_project_root(state: &SourceStateRef, folder: Option<gio::File>) {
         let mut state = state.borrow_mut();
         state.repo = None;
         state.process = None;
+        state.attrs = GitAttrState::default();
         state.snapshot = GitStatusSnapshot::default();
         state
             .status_label
@@ -277,6 +278,8 @@ fn set_project_root(state: &SourceStateRef, folder: Option<gio::File>) {
         let mut state = state.borrow_mut();
         state.repo = None;
         state.process = None;
+        state.attrs = GitAttrState::default();
+        state.snapshot = GitStatusSnapshot::default();
         state
             .status_label
             .set_label(&gettext("Only local Git folders are supported."));
@@ -289,6 +292,8 @@ fn set_project_root(state: &SourceStateRef, folder: Option<gio::File>) {
         let mut state = state.borrow_mut();
         state.repo = None;
         state.process = None;
+        state.attrs = GitAttrState::default();
+        state.snapshot = GitStatusSnapshot::default();
         state
             .status_label
             .set_label(&gettext("This folder is not a Git repository."));
@@ -312,6 +317,8 @@ fn set_project_root(state: &SourceStateRef, folder: Option<gio::File>) {
                     let mut state = state.borrow_mut();
                     state.repo = Some(repo_context.work_tree.clone());
                     state.process = Some(GitProcess::new(repo_context));
+                    state.attrs = GitAttrState::default();
+                    state.snapshot = GitStatusSnapshot::default();
                     state.status_stale = true;
                 }
                 live::install(&state);
@@ -320,6 +327,8 @@ fn set_project_root(state: &SourceStateRef, folder: Option<gio::File>) {
                 let mut state = state.borrow_mut();
                 state.repo = None;
                 state.process = None;
+                state.attrs = GitAttrState::default();
+                state.snapshot = GitStatusSnapshot::default();
                 state
                     .status_label
                     .set_label(&gettext("This folder is not a Git repository."));
@@ -337,15 +346,22 @@ fn has_git_metadata_candidate(path: &Path) -> bool {
 }
 
 fn commit(state: &SourceStateRef) {
-    let (process, message, settings_identity) = {
+    let (process, message, settings_identity, attrs_unavailable) = {
         let state = state.borrow();
         let Some(process) = state.process.clone() else {
             return;
         };
         let message = state.commit_entry.text().to_string();
         let identity = state.settings.git_identity();
-        (process, message, identity)
+        (process, message, identity, state.attrs.is_unavailable())
     };
+    if attrs_unavailable {
+        state
+            .borrow()
+            .status_label
+            .set_label(&git_attrs_unavailable_text());
+        return;
+    }
     if message.trim().is_empty() {
         state
             .borrow()
@@ -402,6 +418,10 @@ pub(super) fn git_error_text(error: &GitProcessError) -> String {
         GitProcessError::OutputTooLarge => gettext("Git output was too large to process safely."),
         _ => gettext("The Git operation failed."),
     }
+}
+
+pub(super) fn git_attrs_unavailable_text() -> String {
+    gettext("Unable to read Git attributes. Git actions are disabled.")
 }
 
 fn cancel_refresh(state: &SourceStateRef) {

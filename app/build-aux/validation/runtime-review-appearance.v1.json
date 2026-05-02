@@ -18,22 +18,6 @@
       "justification": "Editor palette preview tiles are built dynamically and refreshed when app appearance or palette settings change."
     },
     {
-      "path": "src/window_appearance/window_grid.rs",
-      "line": 24,
-      "match": "syncing: Cell<bool>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The window palette grid owns its programmatic-sync guard.",
-      "justification": "Opening or refreshing window palette tiles must update state without recursively writing GSettings."
-    },
-    {
-      "path": "src/window_appearance/window_grid.rs",
-      "line": 25,
-      "match": "tiles: RefCell<Vec<WindowTile>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The window palette grid owns its chrome preview tile set.",
-      "justification": "Window palette preview tiles are built dynamically and refreshed when app appearance, editor palette, or window palette settings change."
-    },
-    {
       "path": "src/app_chrome/mod.rs",
       "line": 26,
       "match": "observers: RefCell<Vec<Weak<ObserverInner>>>,",
@@ -47,7 +31,7 @@
       "match": "subscriptions: RefCell<Vec<Subscription>>,",
       "kind": "runtime-shared-state",
       "ownership": "AppChromeController owns the global libadwaita color provider and palette signal subscriptions for the entire application.",
-      "justification": "A single GtkCssProvider attached to gdk::Display::default() at startup overrides libadwaita CSS custom properties on :root. Subscriptions cover StyleManager dark + high-contrast and AppSettings window-palette + editor-palette; recoloring is a no-op for high-contrast and Adwaita schemes."
+      "justification": "A single GtkCssProvider attached to gdk::Display::default() at startup overrides libadwaita CSS custom properties on :root. Subscriptions cover StyleManager dark + high-contrast and AppSettings editor-palette changes; recoloring is a no-op for high-contrast and Adwaita schemes."
     }
   ]
 }

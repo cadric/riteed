@@ -41,12 +41,7 @@ pub(crate) struct ChromeColors {
     pub(crate) view_bg: gdk::RGBA,
     pub(crate) view_fg: gdk::RGBA,
     pub(crate) headerbar_bg: gdk::RGBA,
-    pub(crate) tabbar_bg: gdk::RGBA,
-    pub(crate) active_tab_bg: gdk::RGBA,
-    pub(crate) hover_tab_bg: gdk::RGBA,
-    pub(crate) active_tab_indicator: gdk::RGBA,
     pub(crate) sidebar_bg: gdk::RGBA,
-    pub(crate) statusbar_bg: gdk::RGBA,
     pub(crate) popover_bg: gdk::RGBA,
     pub(crate) popover_fg: gdk::RGBA,
     pub(crate) dialog_bg: gdk::RGBA,
@@ -135,6 +130,8 @@ pub(crate) fn window_palette_family(
     window_palette: WindowPalette,
     editor_palette: EditorPalette,
 ) -> PaletteFamily {
+    // Explicit variants are retained for schema compatibility and focused tests.
+    // Runtime chrome always passes FollowEditor.
     match window_palette {
         WindowPalette::FollowEditor => editor_palette_family(editor_palette),
         WindowPalette::Adwaita => PaletteFamily::Adwaita,
@@ -268,19 +265,11 @@ pub(crate) fn derive_chrome_colors(scheme: &sourceview5::StyleScheme) -> ChromeC
         &surface_text_color,
         if dark { 0.10 } else { 0.06 },
     );
-    let tabbar_bg = headerbar_bg;
-    let active_tab_bg = surface_background;
-    let hover_tab_bg = mix(
-        &tabbar_bg,
-        &surface_text_color,
-        if dark { 0.04 } else { 0.02 },
-    );
     let sidebar_bg = mix(
         &surface_background,
         &surface_text_color,
         if dark { 0.05 } else { 0.03 },
     );
-    let statusbar_bg = headerbar_bg;
     let popover_bg = mix(
         &surface_background,
         &surface_text_color,
@@ -302,12 +291,7 @@ pub(crate) fn derive_chrome_colors(scheme: &sourceview5::StyleScheme) -> ChromeC
         view_bg: surface_background,
         view_fg: surface_text_color,
         headerbar_bg,
-        tabbar_bg,
-        active_tab_bg,
-        hover_tab_bg,
-        active_tab_indicator: selection_background,
         sidebar_bg,
-        statusbar_bg,
         popover_bg,
         popover_fg: surface_text_color,
         dialog_bg,
@@ -484,6 +468,23 @@ pub(crate) fn exercise_palette_engine_for_tests() {
     assert_eq!(dark.id, "classic-dark");
     assert!(light.available);
     assert!(dark.available);
+
+    assert_eq!(
+        window_scheme_id(
+            WindowPalette::FollowEditor,
+            EditorPalette::SolarizedDark,
+            false
+        ),
+        Some(String::from(SOLARIZED_LIGHT_SCHEME))
+    );
+    assert_eq!(
+        window_scheme_id(
+            WindowPalette::FollowEditor,
+            EditorPalette::SolarizedDark,
+            true
+        ),
+        Some(String::from(SOLARIZED_DARK_SCHEME))
+    );
 
     if let Some(classic_dark) = manager.scheme("classic-dark") {
         assert_eq!(scheme_polarity(&classic_dark), SchemePolarity::Dark);

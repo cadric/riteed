@@ -34,10 +34,7 @@ impl CompareController {
         reference_scrolled.set_min_content_width(0);
 
         let toolbar = compare_toolbar(&target.title);
-        let status_label = toolbar
-            .last_child()
-            .and_downcast::<gtk4::Label>()
-            .unwrap_or_else(|| gtk4::Label::new(None));
+        let status_label = toolbar.status_label.clone();
         let paned = gtk4::Paned::new(gtk4::Orientation::Horizontal);
         paned.set_resize_start_child(true);
         paned.set_shrink_start_child(false);
@@ -64,10 +61,16 @@ impl CompareController {
                 tab.apply_compare_style();
             }
         });
+        let weak = Rc::downgrade(tab);
+        let high_contrast_handler = style_manager.connect_high_contrast_notify(move |_| {
+            if let Some(tab) = weak.upgrade() {
+                tab.apply_compare_style();
+            }
+        });
 
         Self {
             target,
-            toolbar,
+            toolbar: toolbar.root,
             status_label,
             paned,
             reference_view,
@@ -83,6 +86,7 @@ impl CompareController {
             right_handler: Some(right_handler),
             style_manager,
             style_handler: Some(style_handler),
+            high_contrast_handler: Some(high_contrast_handler),
         }
     }
 
@@ -183,8 +187,8 @@ impl CompareController {
         }
     }
 
-    pub(super) fn apply_tag_colors(&self, dark: bool) {
-        self.tags.apply_colors(dark);
+    pub(super) fn apply_tag_colors(&self, dark: bool, high_contrast: bool) {
+        self.tags.apply_colors(dark, high_contrast);
     }
 
     pub(super) fn clear_zoom_style(&self) {
@@ -263,6 +267,9 @@ impl Drop for CompareController {
             self.right_adjustment.disconnect(handler);
         }
         if let Some(handler) = self.style_handler.take() {
+            self.style_manager.disconnect(handler);
+        }
+        if let Some(handler) = self.high_contrast_handler.take() {
             self.style_manager.disconnect(handler);
         }
     }

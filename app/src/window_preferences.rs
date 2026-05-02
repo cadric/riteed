@@ -287,7 +287,10 @@ fn commit_spin_row(
         return;
     }
     row.update();
-    let value = row.text().parse::<i32>().unwrap_or_default();
+    let value = match row.text().parse::<i32>() {
+        Ok(value) => value,
+        Err(_) => rounded_spin_value(row.value()),
+    };
     let applied = commit(value);
     with_syncing(state, || {
         row.set_value(f64::from(applied));
@@ -500,6 +503,20 @@ fn set_spin_dirty(state: &Rc<RefCell<PreferencesState>>, dirty_spin: DirtySpin, 
     match dirty_spin {
         DirtySpin::TabWidth => state.tab_width_staged = value,
         DirtySpin::IndentWidth => state.indent_width_staged = value,
+    }
+}
+
+fn rounded_spin_value(value: f64) -> i32 {
+    let text = format!(
+        "{:.0}",
+        value
+            .round()
+            .clamp(f64::from(i32::MIN), f64::from(i32::MAX))
+    );
+    match text.parse::<i32>() {
+        Ok(value) => value,
+        Err(_) if value.is_sign_negative() => i32::MIN,
+        Err(_) => i32::MAX,
     }
 }
 

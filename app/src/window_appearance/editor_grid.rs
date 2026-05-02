@@ -91,7 +91,7 @@ impl EditorGridState {
         for palette in palette_order() {
             let target = palette_target(palette);
             let label = palette.label();
-            let (content, preview) = palette_tile_content(palette, &target, &label);
+            let (content, preview) = palette_tile_content(&target, &label);
             let child = gtk4::FlowBoxChild::builder()
                 .accessible_role(gtk4::AccessibleRole::Radio)
                 .focusable(true)
@@ -138,7 +138,7 @@ impl EditorGridState {
         if palette_available_for_selection(palette) {
             palette
         } else {
-            EditorPalette::FollowSystem
+            current_adwaita_palette()
         }
     }
 
@@ -185,13 +185,12 @@ fn install_callbacks(state: &Rc<EditorGridState>) {
     });
 }
 
-fn palette_order() -> [EditorPalette; 9] {
+fn palette_order() -> [EditorPalette; 8] {
     [
-        EditorPalette::FollowSystem,
-        EditorPalette::ClassicLight,
-        EditorPalette::ClassicDark,
         EditorPalette::AdwaitaLight,
         EditorPalette::AdwaitaDark,
+        EditorPalette::ClassicLight,
+        EditorPalette::ClassicDark,
         EditorPalette::Kate,
         EditorPalette::KateDark,
         EditorPalette::SolarizedLight,
@@ -200,7 +199,6 @@ fn palette_order() -> [EditorPalette; 9] {
 }
 
 fn palette_tile_content(
-    palette: EditorPalette,
     target: &PaletteTarget,
     label: &str,
 ) -> (gtk4::Widget, Option<PalettePreview>) {
@@ -216,14 +214,6 @@ fn palette_tile_content(
         label.set_halign(gtk4::Align::Center);
         label.set_valign(gtk4::Align::Center);
         overlay.add_overlay(&label);
-    }
-    if palette == EditorPalette::FollowSystem {
-        let badge = gtk4::Image::from_icon_name("display-brightness-symbolic");
-        badge.add_css_class("riteed-palette-adaptive-badge");
-        badge.set_halign(gtk4::Align::End);
-        badge.set_valign(gtk4::Align::Start);
-        badge.set_pixel_size(12);
-        overlay.add_overlay(&badge);
     }
     (overlay.upcast::<gtk4::Widget>(), preview)
 }
@@ -278,7 +268,15 @@ fn palette_scheme_id(palette: EditorPalette) -> String {
 }
 
 fn palette_available_for_selection(palette: EditorPalette) -> bool {
-    palette_target(palette).available
+    palette_order().contains(&palette) && palette_target(palette).available
+}
+
+fn current_adwaita_palette() -> EditorPalette {
+    if libadwaita::StyleManager::default().is_dark() {
+        EditorPalette::AdwaitaDark
+    } else {
+        EditorPalette::AdwaitaLight
+    }
 }
 
 fn safe_preview_scheme(target: Option<&str>) -> Option<sourceview5::StyleScheme> {

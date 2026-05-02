@@ -11,7 +11,7 @@
     },
     {
       "path": "src/editor_tab/compare/ui.rs",
-      "line": 138,
+      "line": 162,
       "match": "anchors: &Rc<RefCell<Vec<CompareLineAnchor>>>,",
       "kind": "runtime-shared-state",
       "ownership": "The compare controller owns tab-local anchor and scroll synchronization state.",
@@ -19,7 +19,7 @@
     },
     {
       "path": "src/editor_tab/compare/ui.rs",
-      "line": 259,
+      "line": 283,
       "match": "anchors: Rc<RefCell<Vec<CompareLineAnchor>>>,",
       "kind": "runtime-shared-state",
       "ownership": "The compare controller owns tab-local anchor and scroll synchronization state.",
@@ -27,7 +27,7 @@
     },
     {
       "path": "src/editor_tab/compare/ui.rs",
-      "line": 261,
+      "line": 285,
       "match": "syncing: Rc<Cell<bool>>,",
       "kind": "runtime-shared-state",
       "ownership": "The compare controller owns tab-local anchor and scroll synchronization state.",

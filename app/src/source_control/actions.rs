@@ -8,8 +8,12 @@ use gtk4::{gio, prelude::*};
 use crate::dialogs::{self, GitDiscardResponse};
 use crate::editor_tab::EditorTab;
 use crate::git_process::GitProcessError;
-use crate::git_status::{GitActionState, GitAttrs, GitFileStatus, GitPath, GitStatusEntry};
-use crate::source_control::{SourceControlState, SourceStateRef, git_error_text};
+use crate::git_status::{
+    GitActionState, GitAttrState, GitFileStatus, GitPath, GitStatusEntry, GitStatusSnapshot,
+};
+use crate::source_control::{
+    SourceControlState, SourceStateRef, git_attrs_unavailable_text, git_error_text,
+};
 use crate::workspace::{OpenSource, Workspace};
 
 use super::refresh::{finish_error, refresh_status};
@@ -47,14 +51,21 @@ pub(super) fn apply_entry_actions(state: &mut SourceControlState) {
         entry.discard_action = discard_state(entry);
         entry.diff_action = GitActionState::Enabled;
     }
-    let can_commit = state
-        .snapshot
-        .entries
-        .iter()
-        .any(|entry| entry.staged && entry.unstage_action.enabled());
-    state
-        .commit_button
-        .set_sensitive(can_commit && !state.status_stale);
+    let can_commit = commit_sensitive(&state.snapshot, &state.attrs, state.status_stale);
+    state.commit_button.set_sensitive(can_commit);
+}
+
+fn commit_sensitive(
+    snapshot: &GitStatusSnapshot,
+    attrs: &GitAttrState,
+    status_stale: bool,
+) -> bool {
+    !status_stale
+        && !attrs.is_unavailable()
+        && snapshot
+            .entries
+            .iter()
+            .any(|entry| entry.staged && entry.unstage_action.enabled())
 }
 
 pub(super) fn run_path_action(state: &SourceStateRef, path: &[u8], action: GitRowAction) {
@@ -356,7 +367,7 @@ fn entry_matches_snapshot(state: &SourceControlState, entry: &GitStatusEntry) ->
 fn entry_disabled_reason(
     repo: Option<&Path>,
     entry: &GitStatusEntry,
-    attrs: &GitAttrs,
+    attrs: &GitAttrState,
     dirty_uris: &[String],
 ) -> Option<String> {
     if entry.path.as_utf8().is_none() {
@@ -369,6 +380,9 @@ fn entry_disabled_reason(
         return Some(gettext(
             "This Git state is visible but not editable in Riteed.",
         ));
+    }
+    if attrs.is_unavailable() {
+        return Some(git_attrs_unavailable_text());
     }
     if attrs.blocks(entry.path.raw()) {
         return Some(gettext(

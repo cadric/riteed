@@ -1,4 +1,4 @@
-use gettextrs::{gettext, pgettext};
+use gettextrs::pgettext;
 use gtk4::prelude::*;
 use libadwaita as adw;
 use sourceview5::prelude::*;
@@ -77,7 +77,7 @@ impl WindowPalette {
     #[must_use]
     pub fn label(self) -> String {
         match self {
-            Self::FollowEditor => gettext("Match Editor Palette"),
+            Self::FollowEditor => String::from("Compatibility"),
             Self::Adwaita => pgettext("window palette", "Adwaita"),
             Self::Classic => pgettext("window palette", "Classic"),
             Self::Kate => pgettext("window palette", "Kate"),
@@ -155,7 +155,7 @@ impl EditorPalette {
     #[must_use]
     pub fn label(self) -> String {
         match self {
-            Self::FollowSystem => gettext("Match App Appearance"),
+            Self::FollowSystem => String::from("Compatibility"),
             Self::AdwaitaLight => pgettext("editor palette", "Adwaita Light"),
             Self::AdwaitaDark => pgettext("editor palette", "Adwaita Dark"),
             Self::ClassicLight => pgettext("editor palette", "Classic Light"),
@@ -315,13 +315,5 @@ impl AppSettings {
         callback: impl Fn() + 'static,
     ) -> super::SettingsSubscription {
         self.connect_changed(KEY_EDITOR_PALETTE, callback)
-    }
-
-    #[must_use]
-    pub(crate) fn connect_window_palette_changed(
-        &self,
-        callback: impl Fn() + 'static,
-    ) -> super::SettingsSubscription {
-        self.connect_changed(KEY_WINDOW_PALETTE, callback)
     }
 }

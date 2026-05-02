@@ -160,17 +160,6 @@ fn install_callbacks(state: &Rc<ChromeState>) {
         )));
 
     let weak = Rc::downgrade(state);
-    let window_palette_subscription = state.settings.connect_window_palette_changed(move || {
-        if let Some(state) = weak.upgrade() {
-            state.refresh();
-        }
-    });
-    state
-        .subscriptions
-        .borrow_mut()
-        .push(Subscription::Settings(window_palette_subscription));
-
-    let weak = Rc::downgrade(state);
     let editor_palette_subscription = state.settings.connect_editor_palette_changed(move || {
         if let Some(state) = weak.upgrade() {
             state.refresh();

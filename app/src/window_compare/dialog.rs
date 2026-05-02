@@ -434,7 +434,7 @@ fn compare_source_buttons_row() -> gtk4::Box {
 }
 
 fn choose_file_or_paste_text_label() -> String {
-    gettext("Choose File%s or Paste Text%s").replace("%s", "…")
+    pgettext("compare source placeholder", "Choose File or Paste Text")
 }
 
 fn ellipsis_label(mut label: String) -> String {

@@ -10,10 +10,8 @@ use crate::settings::AppSettings;
 use crate::workspace::Workspace;
 
 mod editor_grid;
-mod window_grid;
 
 use editor_grid::EditorPaletteGrid;
-use window_grid::WindowPaletteGrid;
 
 const APPEARANCE_CSS_RESOURCE: &str = "/io/github/cadric/Riteed/ui/appearance.css";
 const APPEARANCE_RESOURCE: &str = "/io/github/cadric/Riteed/ui/appearance_page.ui";
@@ -31,7 +29,6 @@ struct AppearanceState {
     #[cfg(test)]
     page: adw::PreferencesPage,
     editor_grid: EditorPaletteGrid,
-    window_grid: WindowPaletteGrid,
 }
 
 impl WindowAppearanceController {
@@ -45,8 +42,9 @@ impl WindowAppearanceController {
     ) -> Result<Self, AppError> {
         let builder = gtk4::Builder::from_resource(APPEARANCE_RESOURCE);
         let page: adw::PreferencesPage = builder_object(&builder, "appearance_page")?;
+        let style_group: adw::PreferencesGroup = builder_object(&builder, "style_group")?;
         let editor_flow_box: gtk4::FlowBox = builder_object(&builder, "palette_flow_box")?;
-        let window_flow_box: gtk4::FlowBox = builder_object(&builder, "window_palette_flow_box")?;
+        style_group.add(&crate::window_theme::build_selector());
         preferences_dialog.add(&page);
 
         let state = Rc::new(AppearanceState {
@@ -55,7 +53,6 @@ impl WindowAppearanceController {
             #[cfg(test)]
             page,
             editor_grid: EditorPaletteGrid::new(settings, workspace, &editor_flow_box),
-            window_grid: WindowPaletteGrid::new(settings, &window_flow_box),
         });
         state.sync_all();
         Ok(Self { state })
@@ -100,22 +97,11 @@ impl WindowAppearanceController {
     pub(crate) fn selected_palette_for_tests(&self) -> crate::settings::EditorPalette {
         self.state.editor_grid.selected_palette_for_ui()
     }
-
-    #[cfg(test)]
-    pub(crate) fn set_window_palette_for_tests(&self, palette: crate::settings::WindowPalette) {
-        self.state.window_grid.set_palette_for_tests(palette);
-    }
-
-    #[cfg(test)]
-    pub(crate) fn selected_window_palette_for_tests(&self) -> crate::settings::WindowPalette {
-        self.state.window_grid.selected_palette_for_ui()
-    }
 }
 
 impl AppearanceState {
     fn sync_all(&self) {
         self.editor_grid.sync();
-        self.window_grid.sync();
     }
 
     #[cfg(test)]
@@ -128,10 +114,8 @@ impl AppearanceState {
 
     fn queue_resize(&self) {
         let editor_grid = self.editor_grid.clone();
-        let window_grid = self.window_grid.clone();
         glib::idle_add_local_once(move || {
             editor_grid.queue_resize();
-            window_grid.queue_resize();
         });
     }
 }

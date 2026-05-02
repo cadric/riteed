@@ -56,8 +56,8 @@
     </key>
     <key name="window-palette" enum="io.github.cadric.Riteed.WindowPalette">
       <default>'follow-editor'</default>
-      <summary>Window Palette</summary>
-      <description>Controls the color family used for Riteed window chrome. Light and dark variants follow the app appearance.</description>
+      <summary>Compatibility Window Palette</summary>
+      <description>Stores the previous window palette setting for compatibility. Riteed now derives window chrome from the editor palette family and app style.</description>
     </key>
     <key name="highlight-current-line" type="b">
       <default>true</default>

@@ -38,7 +38,8 @@ msgstr ""
 msgid "Choose Editor Font"
 msgstr ""
 
-msgid "Choose File%s or Paste Text%s"
+msgctxt "compare source placeholder"
+msgid "Choose File or Paste Text"
 msgstr ""
 
 msgid "Choose a Different Encoding to Save"
@@ -71,6 +72,9 @@ msgstr ""
 msgid "Close Folder"
 msgstr ""
 
+msgid "Compatibility Window Palette"
+msgstr ""
+
 msgid "Controls how many columns a tab character occupies in the editor."
 msgstr ""
 
@@ -80,7 +84,7 @@ msgstr ""
 msgid "Controls the color palette used for editor buffers."
 msgstr ""
 
-msgid "Controls the color family used for Riteed window chrome. Light and dark variants follow the app appearance."
+msgid "Stores the previous window palette setting for compatibility. Riteed now derives window chrome from the editor palette family and app style."
 msgstr ""
 
 msgid "Controls whether Riteed automatically saves already-saved writable files after edits."
@@ -155,6 +159,9 @@ msgstr ""
 msgid "Git content filters or EOL conversion are configured for this file."
 msgstr ""
 
+msgid "Unable to read Git attributes. Git actions are disabled."
+msgstr ""
+
 msgid "Git output was too large to process safely."
 msgstr ""
 
@@ -177,12 +184,6 @@ msgid "Loading"
 msgstr ""
 
 msgid "Main Menu"
-msgstr ""
-
-msgid "Match App Appearance"
-msgstr ""
-
-msgid "Match Editor Palette"
 msgstr ""
 
 msgid "Modification State"
@@ -524,9 +525,6 @@ msgid "Window Width"
 msgstr ""
 
 msgid "Word Wrap"
-msgstr ""
-
-msgid "Window Palette"
 msgstr ""
 
 msgid "text;editor;code;markdown;config;"

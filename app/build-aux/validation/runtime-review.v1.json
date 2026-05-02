@@ -131,7 +131,7 @@
     },
     {
       "path": "src/editor_tab/compare/ui.rs",
-      "line": 348,
+      "line": 372,
       "match": "idle_pending: &Rc<Cell<bool>>,",
       "kind": "runtime-shared-state",
       "ownership": "Compare scroll synchronization owns its per-direction idle-sync guard.",
@@ -331,7 +331,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 301,
+      "line": 304,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The preferences controller borrows the shared staged preferences state.",
@@ -339,7 +339,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 345,
+      "line": 348,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The preferences controller borrows the shared staged preferences state.",
@@ -347,7 +347,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 484,
+      "line": 487,
       "match": "fn with_syncing(state: &Rc<RefCell<PreferencesState>>, operation: impl FnOnce()) {",
       "kind": "runtime-shared-state",
       "ownership": "The dialog-scoped syncing helper mutates the shared preferences state.",
@@ -355,7 +355,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 490,
+      "line": 493,
       "match": "fn spin_dirty(state: &Rc<RefCell<PreferencesState>>, dirty_spin: DirtySpin) -> bool {",
       "kind": "runtime-shared-state",
       "ownership": "The staged SpinRow read helper borrows the shared preferences state.",
@@ -363,7 +363,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 498,
+      "line": 501,
       "match": "fn set_spin_dirty(state: &Rc<RefCell<PreferencesState>>, dirty_spin: DirtySpin, value: bool) {",
       "kind": "runtime-shared-state",
       "ownership": "The staged SpinRow write helper mutates the shared preferences state.",

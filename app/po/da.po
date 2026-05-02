@@ -27,10 +27,13 @@ msgstr ""
 msgid "Autosave paused because the file could not be written."
 msgstr ""
 
+msgid "Compatibility Window Palette"
+msgstr ""
+
 msgid "Controls the color palette used for editor buffers."
 msgstr ""
 
-msgid "Controls the color family used for Riteed window chrome. Light and dark variants follow the app appearance."
+msgid "Stores the previous window palette setting for compatibility. Riteed now derives window chrome from the editor palette family and app style."
 msgstr ""
 
 msgid "Controls whether Riteed automatically saves already-saved writable files after edits."
@@ -40,9 +43,6 @@ msgid "Controls whether Riteed highlights the active line in editable documents.
 msgstr ""
 
 msgid "Editor Palette"
-msgstr ""
-
-msgid "Window Palette"
 msgstr ""
 
 msgid "Highlight Current Line"
@@ -166,12 +166,6 @@ msgstr ""
 msgid "Current Document Location"
 msgstr ""
 
-msgid "Match App Appearance"
-msgstr ""
-
-msgid "Match Editor Palette"
-msgstr ""
-
 msgid "Preview unavailable"
 msgstr ""
 
@@ -214,6 +208,9 @@ msgid "Git User Name"
 msgstr ""
 
 msgid "Git content filters or EOL conversion are configured for this file."
+msgstr ""
+
+msgid "Unable to read Git attributes. Git actions are disabled."
 msgstr ""
 
 msgid "Git output was too large to process safely."
@@ -296,6 +293,10 @@ msgstr ""
 
 msgctxt "compare source"
 msgid "Git Version"
+msgstr ""
+
+msgctxt "compare source placeholder"
+msgid "Choose File or Paste Text"
 msgstr ""
 
 msgctxt "git action tooltip"

@@ -98,14 +98,6 @@
   font-size: 0.8em;
 }
 
-.riteed-palette-adaptive-badge {
-  margin: 4px;
-  padding: 2px;
-  background: color-mix(in srgb, var(--accent-bg-color) 85%, transparent);
-  color: var(--accent-fg-color);
-  border-radius: 999px;
-}
-
 /* Bottom status bar: keep it compact so height matches the actual content. */
 .toolbar.riteed-status-bar {
   padding-top: 3px;

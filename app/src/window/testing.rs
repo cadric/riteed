@@ -179,15 +179,14 @@ impl Window {
 
     pub(crate) fn select_editor_palette_for_tests(&self, index: u32) {
         let palette = match index {
-            1 => crate::settings::EditorPalette::ClassicLight,
-            2 => crate::settings::EditorPalette::ClassicDark,
-            3 => crate::settings::EditorPalette::AdwaitaLight,
-            4 => crate::settings::EditorPalette::AdwaitaDark,
-            5 => crate::settings::EditorPalette::Kate,
-            6 => crate::settings::EditorPalette::KateDark,
-            7 => crate::settings::EditorPalette::SolarizedLight,
-            8 => crate::settings::EditorPalette::SolarizedDark,
-            _ => crate::settings::EditorPalette::FollowSystem,
+            1 => crate::settings::EditorPalette::AdwaitaDark,
+            2 => crate::settings::EditorPalette::ClassicLight,
+            3 => crate::settings::EditorPalette::ClassicDark,
+            4 => crate::settings::EditorPalette::Kate,
+            5 => crate::settings::EditorPalette::KateDark,
+            6 => crate::settings::EditorPalette::SolarizedLight,
+            7 => crate::settings::EditorPalette::SolarizedDark,
+            _ => crate::settings::EditorPalette::AdwaitaLight,
         };
         self.appearance.set_palette_for_tests(palette);
     }
@@ -206,14 +205,6 @@ impl Window {
 
     pub(crate) fn selected_appearance_palette_for_tests(&self) -> crate::settings::EditorPalette {
         self.appearance.selected_palette_for_tests()
-    }
-
-    pub(crate) fn set_window_palette_for_tests(&self, palette: crate::settings::WindowPalette) {
-        self.appearance.set_window_palette_for_tests(palette);
-    }
-
-    pub(crate) fn selected_window_palette_for_tests(&self) -> crate::settings::WindowPalette {
-        self.appearance.selected_window_palette_for_tests()
     }
 
     pub(crate) fn chrome_css_for_tests(&self) -> String {

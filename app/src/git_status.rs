@@ -163,6 +163,33 @@ impl GitAttrs {
     }
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(crate) enum GitAttrState {
+    Known(GitAttrs),
+    Unavailable,
+}
+
+impl GitAttrState {
+    #[must_use]
+    pub(crate) fn is_unavailable(&self) -> bool {
+        matches!(self, Self::Unavailable)
+    }
+
+    #[must_use]
+    pub(crate) fn blocks(&self, path: &[u8]) -> bool {
+        match self {
+            Self::Known(attrs) => attrs.blocks(path),
+            Self::Unavailable => false,
+        }
+    }
+}
+
+impl Default for GitAttrState {
+    fn default() -> Self {
+        Self::Known(GitAttrs::default())
+    }
+}
+
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub(crate) struct GitCapabilities {
     pub(crate) object_format_supported: bool,
