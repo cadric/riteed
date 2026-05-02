@@ -109,7 +109,8 @@ fn exercise_indentation_content_behavior(test_app: &adw::Application) {
 }
 
 fn exercise_zoom_controller(test_app: &adw::Application) {
-    let window = Window::new_for_tests(test_app).ok();
+    let settings = AppSettings::new_for_tests();
+    let window = Window::new_for_tests(test_app, &settings, None).ok();
     assert!(window.is_some());
     let Some(window) = window else {
         return;

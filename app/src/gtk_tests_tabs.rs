@@ -4,6 +4,7 @@ use libadwaita as adw;
 use crate::app::{AppState, ensure_window_for_tests, install_for_tests};
 use crate::dialogs::{self, UnsavedResponse};
 use crate::gtk_tests::{drain_events, spin_until};
+use crate::settings::AppSettings;
 
 pub(crate) fn exercise_tab_context_actions() {
     let test_app = adw::Application::builder()
@@ -12,6 +13,8 @@ pub(crate) fn exercise_tab_context_actions() {
         .build();
     let _registered = test_app.register(None::<&gio::Cancellable>);
     let state = std::rc::Rc::new(std::cell::RefCell::new(AppState {
+        settings: AppSettings::new_for_tests(),
+        chrome: None,
         windows: Vec::new(),
         last_focused_window: None,
         session_restore_attempted: false,

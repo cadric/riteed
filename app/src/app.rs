@@ -2,21 +2,30 @@ use std::cell::RefCell;
 use std::rc::{Rc, Weak};
 
 use gettextrs::gettext;
-use gtk4::{gio, glib, prelude::*};
+use gtk4::{gdk, gio, glib, prelude::*};
 use libadwaita as adw;
 use libadwaita::prelude::*;
 
+use crate::app_chrome::AppChromeController;
 use crate::dialogs;
+use crate::settings::AppSettings;
 use crate::window::Window;
+use crate::window_appearance::WindowAppearanceController;
 use crate::{APP_ID, APP_NAME};
 
 pub(crate) struct AppState {
+    pub(crate) settings: AppSettings,
+    pub(crate) chrome: Option<AppChromeController>,
     pub(crate) windows: Vec<Rc<Window>>,
     pub(crate) last_focused_window: Option<Weak<Window>>,
     pub(crate) session_restore_attempted: bool,
 }
 
-type WindowFactory = fn(&adw::Application) -> Result<Rc<Window>, crate::error::AppError>;
+type WindowFactory = fn(
+    &adw::Application,
+    &AppSettings,
+    Option<&AppChromeController>,
+) -> Result<Rc<Window>, crate::error::AppError>;
 
 #[derive(Clone, Copy)]
 struct WindowFactories {
@@ -44,7 +53,10 @@ impl RiteedApp {
             .flags(gio::ApplicationFlags::HANDLES_OPEN)
             .resource_base_path("/io/github/cadric/Riteed")
             .build();
+        let settings = default_settings();
         let state = Rc::new(RefCell::new(AppState {
+            settings: settings.clone(),
+            chrome: None,
             windows: Vec::new(),
             last_focused_window: None,
             session_restore_attempted: false,
@@ -57,6 +69,14 @@ impl RiteedApp {
         };
         install_actions(&app, &state, factories);
         install_lifecycle(&app, &state, factories);
+
+        let state_for_startup = Rc::clone(&state);
+        app.connect_startup(move |_app| {
+            let Some(display) = gdk::Display::default() else {
+                return;
+            };
+            install_display_services(&display, &state_for_startup);
+        });
 
         Self { app, state }
     }
@@ -82,6 +102,9 @@ pub(crate) fn install_for_tests(app: &adw::Application, state: &Rc<RefCell<AppSt
     };
     install_actions(app, state, factories);
     install_lifecycle(app, state, factories);
+    if let Some(display) = gdk::Display::default() {
+        install_display_services(&display, state);
+    }
 }
 
 #[cfg(test)]
@@ -350,7 +373,11 @@ fn create_window(
     factory: WindowFactory,
     factories: WindowFactories,
 ) -> Option<Rc<Window>> {
-    match factory(app) {
+    let (settings, chrome) = {
+        let app_state = state.borrow();
+        (app_state.settings.clone(), app_state.chrome.clone())
+    };
+    match factory(app, &settings, chrome.as_ref()) {
         Ok(window) => {
             register_window(state, &window);
             install_transfer_window_handler(app, state, factories, &window);
@@ -429,6 +456,27 @@ fn register_window(state: &Rc<RefCell<AppState>>, window: &Rc<Window>) {
     let mut app_state = state.borrow_mut();
     app_state.last_focused_window = Some(Rc::downgrade(window));
     app_state.windows.push(Rc::clone(window));
+}
+
+fn install_display_services(display: &gdk::Display, state: &Rc<RefCell<AppState>>) {
+    sourceview5::init();
+    crate::source_styles::install_builtin_style_schemes();
+    let settings = state.borrow().settings.clone();
+    settings.apply_theme();
+    let chrome = AppChromeController::install(display, &settings);
+    WindowAppearanceController::install_css(display);
+    state.borrow_mut().chrome = Some(chrome);
+}
+
+fn default_settings() -> AppSettings {
+    #[cfg(test)]
+    {
+        AppSettings::new_for_tests()
+    }
+    #[cfg(not(test))]
+    {
+        AppSettings::new()
+    }
 }
 
 #[cfg(test)]

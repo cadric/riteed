@@ -58,6 +58,7 @@ pub(crate) struct ChromeColors {
     pub(crate) accent_fg: gdk::RGBA,
     pub(crate) border: gdk::RGBA,
     pub(crate) shade: gdk::RGBA,
+    pub(crate) headerbar_darker_shade: gdk::RGBA,
 }
 
 #[derive(Clone, Copy)]
@@ -291,7 +292,9 @@ pub(crate) fn derive_chrome_colors(scheme: &sourceview5::StyleScheme) -> ChromeC
     } else {
         mix(&surface_background, &gdk::RGBA::WHITE, 0.55)
     };
-    let border = mix(&surface_background, &surface_text_color, 0.15);
+    let shade = gdk::RGBA::new(0.0, 0.0, 0.0, shade_alpha(dark));
+    let border = gdk::RGBA::new(0.0, 0.0, 0.0, border_alpha(dark));
+    let headerbar_darker_shade = gdk::RGBA::new(0.0, 0.0, 0.0, darker_shade_alpha(dark));
 
     ChromeColors {
         window_bg: surface_background,
@@ -311,12 +314,25 @@ pub(crate) fn derive_chrome_colors(scheme: &sourceview5::StyleScheme) -> ChromeC
         dialog_fg: surface_text_color,
         card_bg,
         card_fg: surface_text_color,
-        card_shade: border,
+        card_shade: shade,
         accent_bg: selection_background,
         accent_fg: selection_text_color,
         border,
-        shade: border,
+        shade,
+        headerbar_darker_shade,
     }
+}
+
+const fn shade_alpha(dark: bool) -> f32 {
+    if dark { 0.36 } else { 0.07 }
+}
+
+const fn border_alpha(dark: bool) -> f32 {
+    if dark { 0.36 } else { 0.15 }
+}
+
+const fn darker_shade_alpha(dark: bool) -> f32 {
+    if dark { 0.90 } else { 0.12 }
 }
 
 fn surface_colors(scheme: &sourceview5::StyleScheme, dark: bool) -> (gdk::RGBA, gdk::RGBA) {

@@ -1,6 +1,6 @@
 ---
 created: 2026-04-19
-updated: 2026-04-30
+updated: 2026-05-02
 status: current
 priority: high
 type: release
@@ -58,6 +58,9 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Moved app theme selection into GNOME-style System/Light/Dark swatches at the top of the primary menu, while keeping Appearance focused on editor palettes.
 - Replaced editor palette preview tiles with custom non-selectable code previews, compact preview-only swatches, tooltips, and a bundled Classic Dark palette alongside the renamed Classic Light palette.
 - Added a family-based Window Palette to Appearance that derives per-window chrome colors from GtkSourceView schemes, while editor palettes remain exact scheme choices.
+- Reworked Riteed's Window Palette chrome from per-window scoped surface CSS to one global libadwaita `:root` color-variable provider, so tabs, header bars, status bars, dialogs, and popovers share palette colors consistently.
+- Moved Appearance palette controls from a separate primary-menu dialog into a dedicated page inside Preferences, leaving the primary menu focused on standard app actions.
+- Grouped the primary menu into native `GMenu` sections so theme choices, workflow actions, and standard GNOME items render with clear separators.
 - Reworked compare scroll synchronization to use diff anchors instead of normalized ratios, and applied active document language highlighting to reference buffers.
 - Refactored compare controller plumbing into smaller modules so Git-backed compare could reuse the existing split-diff engine without growing the compare file past policy limits.
 - Clarified the Riteed settings model into scoped modules and converted theme and Source Control view mode preferences to GSettings enums.

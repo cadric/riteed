@@ -1,11 +1,9 @@
 use std::rc::Rc;
 use std::sync::OnceLock;
 
-use gettextrs::gettext;
-use gtk4::accessible::Property;
 use gtk4::{gdk, glib, prelude::*};
 use libadwaita as adw;
-use libadwaita::prelude::AdwDialogExt;
+use libadwaita::prelude::*;
 
 use crate::error::AppError;
 use crate::settings::AppSettings;
@@ -18,7 +16,7 @@ use editor_grid::EditorPaletteGrid;
 use window_grid::WindowPaletteGrid;
 
 const APPEARANCE_CSS_RESOURCE: &str = "/io/github/cadric/Riteed/ui/appearance.css";
-const APPEARANCE_RESOURCE: &str = "/io/github/cadric/Riteed/ui/appearance_panel.ui";
+const APPEARANCE_RESOURCE: &str = "/io/github/cadric/Riteed/ui/appearance_page.ui";
 
 static APPEARANCE_CSS_INSTALLED: OnceLock<()> = OnceLock::new();
 
@@ -28,8 +26,10 @@ pub struct WindowAppearanceController {
 }
 
 struct AppearanceState {
-    dialog: adw::Dialog,
-    dialog_child: gtk4::Widget,
+    #[cfg(test)]
+    preferences_dialog: adw::PreferencesDialog,
+    #[cfg(test)]
+    page: adw::PreferencesPage,
     editor_grid: EditorPaletteGrid,
     window_grid: WindowPaletteGrid,
 }
@@ -37,22 +37,23 @@ struct AppearanceState {
 impl WindowAppearanceController {
     /// # Errors
     ///
-    /// Returns an error when the resource-backed appearance panel cannot be loaded.
-    pub fn new(settings: &AppSettings, workspace: &Rc<Workspace>) -> Result<Self, AppError> {
+    /// Returns an error when the resource-backed appearance page cannot be loaded.
+    pub fn new(
+        settings: &AppSettings,
+        workspace: &Rc<Workspace>,
+        preferences_dialog: &adw::PreferencesDialog,
+    ) -> Result<Self, AppError> {
         let builder = gtk4::Builder::from_resource(APPEARANCE_RESOURCE);
-        let dialog: adw::Dialog = builder_object(&builder, "appearance_dialog")?;
-        let dialog_child = dialog
-            .child()
-            .ok_or_else(|| AppError::Internal(String::from("Missing appearance dialog child.")))?;
-        let close_button: gtk4::Button = builder_object(&builder, "appearance_close_button")?;
+        let page: adw::PreferencesPage = builder_object(&builder, "appearance_page")?;
         let editor_flow_box: gtk4::FlowBox = builder_object(&builder, "palette_flow_box")?;
         let window_flow_box: gtk4::FlowBox = builder_object(&builder, "window_palette_flow_box")?;
-        close_button.update_property(&[Property::Label(&gettext("Close Appearance Panel"))]);
-        install_close_callback(&dialog, &close_button);
+        preferences_dialog.add(&page);
 
         let state = Rc::new(AppearanceState {
-            dialog,
-            dialog_child,
+            #[cfg(test)]
+            preferences_dialog: preferences_dialog.clone(),
+            #[cfg(test)]
+            page,
             editor_grid: EditorPaletteGrid::new(settings, workspace, &editor_flow_box),
             window_grid: WindowPaletteGrid::new(settings, &window_flow_box),
         });
@@ -64,8 +65,8 @@ impl WindowAppearanceController {
         self.state.sync_all();
     }
 
-    pub fn present(&self, parent: &impl IsA<gtk4::Widget>) {
-        self.state.present(parent);
+    pub fn queue_resize(&self) {
+        self.state.queue_resize();
     }
 
     #[cfg(test)]
@@ -117,29 +118,22 @@ impl AppearanceState {
         self.window_grid.sync();
     }
 
+    #[cfg(test)]
     fn present(&self, parent: &impl IsA<gtk4::Widget>) {
         self.sync_all();
-        self.dialog.present(Some(parent));
-        self.queue_first_open_resize();
+        self.preferences_dialog.set_visible_page(&self.page);
+        self.preferences_dialog.present(Some(parent));
+        self.queue_resize();
     }
 
-    fn queue_first_open_resize(&self) {
-        let dialog_child = self.dialog_child.clone();
+    fn queue_resize(&self) {
         let editor_grid = self.editor_grid.clone();
         let window_grid = self.window_grid.clone();
         glib::idle_add_local_once(move || {
-            dialog_child.queue_resize();
             editor_grid.queue_resize();
             window_grid.queue_resize();
         });
     }
-}
-
-fn install_close_callback(dialog: &adw::Dialog, button: &gtk4::Button) {
-    let dialog = dialog.clone();
-    button.connect_clicked(move |_| {
-        let _closed = dialog.close();
-    });
 }
 
 fn builder_object<T: IsA<gtk4::glib::Object>>(

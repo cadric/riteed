@@ -7,6 +7,7 @@ use gtk4::{gdk, gio, glib, prelude::*};
 use libadwaita as adw;
 use libadwaita::prelude::*;
 
+use crate::app_chrome::{AppChromeController, ChromeObserver};
 use crate::dialogs;
 use crate::editor_zoom::EditorZoomController;
 use crate::error::AppError;
@@ -14,7 +15,6 @@ use crate::settings::AppSettings;
 use crate::sidebar_host::SidebarHost;
 use crate::source_control::SourceControlController;
 use crate::window_appearance::WindowAppearanceController;
-use crate::window_chrome::WindowChromeController;
 use crate::window_compare::WindowCompareController;
 use crate::window_preferences::WindowPreferencesController;
 use crate::window_project::WindowProjectController;
@@ -58,13 +58,13 @@ pub struct Window {
     replace_action: gio::SimpleAction,
     find_next_action: gio::SimpleAction,
     find_prev_action: gio::SimpleAction,
-    appearance_action: gio::SimpleAction,
     fullscreen_action: gio::SimpleAction,
+    #[cfg(test)]
     theme_action: gio::SimpleAction,
     settings: AppSettings,
     workspace: Rc<Workspace>,
     appearance: WindowAppearanceController,
-    chrome: WindowChromeController,
+    _chrome_observer: Option<ChromeObserver>,
     _preferences: WindowPreferencesController,
     compare: Rc<WindowCompareController>,
     project: WindowProjectController,
@@ -81,50 +81,70 @@ impl Window {
     /// # Errors
     ///
     /// Returns an error when the resource-backed editor UI cannot be loaded.
-    pub fn new(app: &adw::Application) -> Result<Rc<Self>, AppError> {
-        Self::build(app, AppSettings::new(), WindowInit::primary())
+    pub(crate) fn new(
+        app: &adw::Application,
+        settings: &AppSettings,
+        chrome: Option<&AppChromeController>,
+    ) -> Result<Rc<Self>, AppError> {
+        Self::build(app, settings.clone(), chrome, WindowInit::primary())
     }
 
     /// # Errors
     ///
     /// Returns an error when the resource-backed editor UI cannot be loaded.
-    pub fn new_secondary(app: &adw::Application) -> Result<Rc<Self>, AppError> {
-        Self::build(app, AppSettings::new(), WindowInit::secondary())
+    pub(crate) fn new_secondary(
+        app: &adw::Application,
+        settings: &AppSettings,
+        chrome: Option<&AppChromeController>,
+    ) -> Result<Rc<Self>, AppError> {
+        Self::build(app, settings.clone(), chrome, WindowInit::secondary())
     }
 
     /// # Errors
     ///
     /// Returns an error when the resource-backed editor UI cannot be loaded.
-    pub fn new_for_tests(app: &adw::Application) -> Result<Rc<Self>, AppError> {
-        Self::build(app, AppSettings::new_for_tests(), WindowInit::primary())
+    #[cfg(test)]
+    pub(crate) fn new_for_tests(
+        app: &adw::Application,
+        settings: &AppSettings,
+        chrome: Option<&AppChromeController>,
+    ) -> Result<Rc<Self>, AppError> {
+        install_sourceview_for_tests();
+        Self::build(app, settings.clone(), chrome, WindowInit::primary())
     }
 
     /// # Errors
     ///
     /// Returns an error when the resource-backed editor UI cannot be loaded.
-    pub fn new_secondary_for_tests(app: &adw::Application) -> Result<Rc<Self>, AppError> {
-        Self::build(app, AppSettings::new_for_tests(), WindowInit::secondary())
+    #[cfg(test)]
+    pub(crate) fn new_secondary_for_tests(
+        app: &adw::Application,
+        settings: &AppSettings,
+        chrome: Option<&AppChromeController>,
+    ) -> Result<Rc<Self>, AppError> {
+        install_sourceview_for_tests();
+        Self::build(app, settings.clone(), chrome, WindowInit::secondary())
     }
 
+    #[cfg(test)]
     #[cfg(test)]
     pub(crate) fn new_with_settings_for_tests(
         app: &adw::Application,
         settings: AppSettings,
     ) -> Result<Rc<Self>, AppError> {
-        Self::build(app, settings, WindowInit::primary())
+        install_sourceview_for_tests();
+        Self::build(app, settings, None, WindowInit::primary())
     }
 
     fn build(
         app: &adw::Application,
         settings: AppSettings,
+        chrome: Option<&AppChromeController>,
         init: WindowInit,
     ) -> Result<Rc<Self>, AppError> {
         let shell = WindowShell::new(app)?;
         configure_open_button(&shell);
-        sourceview5::init();
-        crate::source_styles::install_builtin_style_schemes();
         crate::runtime_icons::configure(&shell.window);
-        WindowAppearanceController::install_css(&gtk4::prelude::WidgetExt::display(&shell.window));
         let save_action = gio::SimpleAction::new("save", None);
         let save_as_action = gio::SimpleAction::new("save-as", None);
         let close_action = gio::SimpleAction::new("close", None);
@@ -133,7 +153,6 @@ impl Window {
         let replace_action = gio::SimpleAction::new("replace", None);
         let find_next_action = gio::SimpleAction::new("find-next", None);
         let find_prev_action = gio::SimpleAction::new("find-prev", None);
-        let appearance_action = gio::SimpleAction::new("appearance", None);
         let fullscreen_action =
             gio::SimpleAction::new_stateful("fullscreen", None, &false.to_variant());
         let theme_action = crate::window_theme::create_action(&settings);
@@ -145,11 +164,8 @@ impl Window {
         shell.window.add_action(&replace_action);
         shell.window.add_action(&find_next_action);
         shell.window.add_action(&find_prev_action);
-        shell.window.add_action(&appearance_action);
         shell.window.add_action(&fullscreen_action);
         shell.window.add_action(&theme_action);
-
-        settings.apply_theme();
 
         let (width, height) = settings.window_size();
         shell.window.set_default_size(width, height);
@@ -168,12 +184,15 @@ impl Window {
             persist_session: init.persist_session,
         });
         let zoom = EditorZoomController::new(&shell.window, &workspace, &settings);
-        let appearance = WindowAppearanceController::new(&settings, &workspace)?;
-        let chrome = WindowChromeController::new(
-            &shell.window,
+        let appearance =
+            WindowAppearanceController::new(&settings, &workspace, &shell.preferences_dialog)?;
+        let chrome_observer = install_chrome_observer(chrome, &appearance, &workspace);
+        crate::window_theme::install(
+            &theme_action,
             &settings,
             &workspace,
             &appearance,
+            chrome,
             &shell.primary_menu_button,
         );
         let preferences = WindowPreferencesController::new(&shell, &settings, &workspace, &zoom);
@@ -202,13 +221,13 @@ impl Window {
             replace_action,
             find_next_action,
             find_prev_action,
-            appearance_action,
             fullscreen_action,
+            #[cfg(test)]
             theme_action,
             settings,
             workspace,
             appearance,
-            chrome,
+            _chrome_observer: chrome_observer,
             _preferences: preferences,
             compare,
             project,
@@ -302,13 +321,11 @@ impl Window {
     }
 
     pub fn show_preferences(&self) {
+        self.appearance.sync();
         self.shell
             .preferences_dialog
             .present(Some(&self.shell.window));
-    }
-
-    pub fn show_appearance(&self) {
-        self.appearance.present(&self.shell.window);
+        self.appearance.queue_resize();
     }
 
     pub fn show_about(&self) {
@@ -341,21 +358,9 @@ impl Window {
         self.install_window_state_callbacks();
     }
 
-    fn install_theme_action(&self) {
-        crate::window_theme::install(
-            &self.theme_action,
-            &self.settings,
-            &self.workspace,
-            &self.appearance,
-            &self.chrome,
-            &self.shell.primary_menu_button,
-        );
-    }
-
     fn finish_initialization(self: &Rc<Self>) {
         self.source_control
             .set_project_root(self.project.current_root_file());
-        self.install_theme_action();
         self.zoom.set_editor_font(&self.settings.editor_font());
         self.install_accessible_labels();
         self.appearance.sync();
@@ -424,13 +429,6 @@ impl Window {
         self.find_prev_action.connect_activate(move |_, _| {
             if let Some(window) = weak.upgrade() {
                 window.find_previous();
-            }
-        });
-
-        let weak = Rc::downgrade(self);
-        self.appearance_action.connect_activate(move |_, _| {
-            if let Some(window) = weak.upgrade() {
-                window.show_appearance();
             }
         });
     }
@@ -553,4 +551,27 @@ fn configure_open_button(shell: &WindowShell) {
     shell
         .open_button
         .set_dropdown_tooltip(&pgettext("open menu tooltip", "Open Choices"));
+}
+
+fn install_chrome_observer(
+    chrome: Option<&AppChromeController>,
+    appearance: &WindowAppearanceController,
+    workspace: &Rc<Workspace>,
+) -> Option<ChromeObserver> {
+    chrome.map(|chrome| {
+        let appearance = appearance.clone();
+        let workspace_weak = Rc::downgrade(workspace);
+        chrome.add_observer(move || {
+            appearance.sync();
+            if let Some(workspace) = workspace_weak.upgrade() {
+                workspace.apply_source_style_scheme_to_tabs();
+            }
+        })
+    })
+}
+
+#[cfg(test)]
+fn install_sourceview_for_tests() {
+    sourceview5::init();
+    crate::source_styles::install_builtin_style_schemes();
 }

@@ -1,7 +1,6 @@
 use std::rc::Rc;
 
 use gettextrs::pgettext;
-use gtk4::prelude::*;
 use libadwaita as adw;
 
 use super::Workspace;
@@ -55,15 +54,6 @@ impl Workspace {
 
     pub(crate) fn shortcuts_enabled(&self) -> bool {
         self.tab_view.shortcuts() == adw::TabViewShortcuts::ALL_SHORTCUTS
-    }
-
-    pub(crate) fn chrome_tab_classes_for_tests(&self) -> (bool, bool) {
-        (
-            self.tab_bar
-                .has_css_class(crate::window_chrome::TAB_BAR_CLASS),
-            self.tab_view
-                .has_css_class(crate::window_chrome::TAB_VIEW_CLASS),
-        )
     }
 
     pub(crate) fn search_visible(&self) -> bool {

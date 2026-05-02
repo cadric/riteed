@@ -68,9 +68,6 @@ msgstr ""
 msgid "Clear Recent Files?"
 msgstr ""
 
-msgid "Close Appearance Panel"
-msgstr ""
-
 msgid "Close Folder"
 msgstr ""
 
@@ -230,7 +227,7 @@ msgstr ""
 msgid "Only one folder can be opened at a time."
 msgstr ""
 
-msgid "Use the main menu theme selector to switch System, Light, or Dark appearance. Open Appearance from the main menu to adjust editor palettes. Enable current-line highlight, line numbers, and the minimap in Preferences when you want more structure while reading longer code or markdown files."
+msgid "Use the main menu theme selector to switch System, Light, or Dark appearance. Open Preferences to adjust window and editor palettes, current-line highlight, line numbers, and the minimap when you want more structure while reading longer code or markdown files."
 msgstr ""
 
 msgid "Open Keyboard Shortcuts from the main menu to review the available file, tab, find, and app commands."

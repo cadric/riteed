@@ -2,6 +2,7 @@
 #![deny(unsafe_op_in_unsafe_fn)]
 
 pub mod app;
+mod app_chrome;
 pub mod close_flow;
 mod dialog_shell;
 pub mod dialogs;
@@ -33,7 +34,6 @@ mod source_control;
 mod source_styles;
 pub mod window;
 mod window_appearance;
-mod window_chrome;
 mod window_compare;
 mod window_preferences;
 mod window_project;

@@ -10,35 +10,42 @@ const THEME_CUSTOM_ID: &str = "theme";
 pub(crate) fn build_primary_menu() -> gio::Menu {
     let menu = gio::Menu::new();
     menu.append_section(None, &theme_section());
-    menu.append(
+    menu.append_section(None, &workflow_section());
+    menu.append_section(None, &standard_section());
+    menu
+}
+
+fn workflow_section() -> gio::Menu {
+    let section = gio::Menu::new();
+    section.append(
         Some(&pgettext("menu item", "New Window")),
         Some("app.new-window"),
     );
-    menu.append(Some(&pgettext("menu item", "Find")), Some("win.search"));
+    section.append(Some(&pgettext("menu item", "Find")), Some("win.search"));
 
     let compare_label = ellipsis_label(pgettext("menu item", "Compare"));
     let compare_item = gio::MenuItem::new(Some(&compare_label), Some("win.compare"));
     compare_item.set_attribute_value("hidden-when", Some(&"action-missing".to_variant()));
-    menu.append_item(&compare_item);
+    section.append_item(&compare_item);
+    section
+}
 
-    menu.append(
-        Some(&pgettext("menu item", "Keyboard Shortcuts")),
-        Some("win.show-help-overlay"),
-    );
-    menu.append(
+fn standard_section() -> gio::Menu {
+    let section = gio::Menu::new();
+    section.append(
         Some(&pgettext("menu item", "Preferences")),
         Some("app.preferences"),
     );
-    menu.append(
-        Some(&pgettext("menu item", "Appearance")),
-        Some("win.appearance"),
+    section.append(
+        Some(&pgettext("menu item", "Keyboard Shortcuts")),
+        Some("win.show-help-overlay"),
     );
-    menu.append(Some(&pgettext("menu item", "Help")), Some("app.help"));
-    menu.append(
+    section.append(Some(&pgettext("menu item", "Help")), Some("app.help"));
+    section.append(
         Some(&pgettext("menu item", "About Riteed")),
         Some("app.about"),
     );
-    menu
+    section
 }
 
 fn theme_section() -> gio::Menu {
@@ -160,24 +167,40 @@ fn theme_accessible_label(theme: ThemePreference) -> String {
 
 #[cfg(test)]
 mod tests {
-    use gtk4::prelude::MenuModelExt;
+    use gtk4::prelude::*;
 
     use super::{build_open_menu, build_primary_menu};
 
     #[test]
-    fn primary_menu_contains_core_actions() {
+    fn primary_menu_uses_hig_sections() {
         let menu = build_primary_menu();
+        assert_eq!(menu.n_items(), 3);
+
+        let theme = section(&menu, 0);
+        assert_eq!(theme.n_items(), 1);
+        assert_eq!(item_string(&theme, 0, "custom").as_deref(), Some("theme"));
+        assert_eq!(item_string(&theme, 0, "action"), None);
+
+        let workflow = section(&menu, 1);
+        assert_menu_labels(&workflow, &["New Window", "Find", "Compare…"]);
+        assert_menu_actions(&workflow, &["app.new-window", "win.search", "win.compare"]);
+        assert_eq!(
+            item_string(&workflow, 2, "hidden-when").as_deref(),
+            Some("action-missing")
+        );
+
+        let standard = section(&menu, 2);
         assert_menu_labels(
-            &menu,
+            &standard,
+            &["Preferences", "Keyboard Shortcuts", "Help", "About Riteed"],
+        );
+        assert_menu_actions(
+            &standard,
             &[
-                "New Window",
-                "Find",
-                "Compare…",
-                "Keyboard Shortcuts",
-                "Preferences",
-                "Appearance",
-                "Help",
-                "About Riteed",
+                "app.preferences",
+                "win.show-help-overlay",
+                "app.help",
+                "app.about",
             ],
         );
         assert_menu_excludes_actions(&menu, &["app.open", "app.open-folder", "win.recent-files"]);
@@ -210,15 +233,14 @@ mod tests {
         );
     }
 
-    fn assert_menu_labels(menu: &gtk4::gio::Menu, expected: &[&str]) {
+    fn assert_menu_labels(menu: &impl MenuModelExt, expected: &[&str]) {
         let labels = menu_labels(menu);
-        for expected_label in expected {
-            assert!(labels.iter().any(|label| label == expected_label));
-        }
+        let expected = expected_strings(expected);
+        assert_eq!(labels, expected);
     }
 
     fn assert_menu_item(
-        menu: &gtk4::gio::Menu,
+        menu: &impl MenuModelExt,
         index: i32,
         label: &str,
         action: &str,
@@ -232,27 +254,50 @@ mod tests {
         );
     }
 
-    fn assert_menu_excludes_actions(menu: &gtk4::gio::Menu, removed: &[&str]) {
+    fn assert_menu_actions(menu: &impl MenuModelExt, expected: &[&str]) {
+        let actions = menu_actions(menu);
+        let expected = expected_strings(expected);
+        assert_eq!(actions, expected);
+    }
+
+    fn assert_menu_excludes_actions(menu: &impl MenuModelExt, removed: &[&str]) {
         let actions = menu_actions(menu);
         for removed_action in removed {
             assert!(!actions.iter().any(|action| action == removed_action));
         }
     }
 
-    fn menu_labels(menu: &gtk4::gio::Menu) -> Vec<String> {
+    fn menu_labels(menu: &impl MenuModelExt) -> Vec<String> {
         (0..menu.n_items())
             .filter_map(|index| item_string(menu, index, "label"))
             .collect()
     }
 
-    fn menu_actions(menu: &gtk4::gio::Menu) -> Vec<String> {
-        (0..menu.n_items())
-            .filter_map(|index| item_string(menu, index, "action"))
-            .collect()
+    fn menu_actions(menu: &impl MenuModelExt) -> Vec<String> {
+        let mut actions = Vec::new();
+        for index in 0..menu.n_items() {
+            if let Some(action) = item_string(menu, index, "action") {
+                actions.push(action);
+            }
+            if let Some(section) = menu.item_link(index, "section") {
+                actions.extend(menu_actions(&section));
+            }
+        }
+        actions
     }
 
-    fn item_string(menu: &gtk4::gio::Menu, index: i32, attribute: &str) -> Option<String> {
+    fn section(menu: &impl MenuModelExt, index: i32) -> gtk4::gio::MenuModel {
+        let section = menu.item_link(index, "section");
+        assert!(section.is_some());
+        section.unwrap_or_else(|| gtk4::gio::Menu::new().upcast())
+    }
+
+    fn item_string(menu: &impl MenuModelExt, index: i32, attribute: &str) -> Option<String> {
         menu.item_attribute_value(index, attribute, None)
             .and_then(|value| value.get::<String>())
+    }
+
+    fn expected_strings(expected: &[&str]) -> Vec<String> {
+        expected.iter().map(|item| String::from(*item)).collect()
     }
 }

@@ -46,7 +46,8 @@ pub(crate) fn wait_millis(label: &str, millis: u64) {
 }
 
 pub(crate) fn build_window(app: &adw::Application) -> Option<std::rc::Rc<Window>> {
-    Window::new_for_tests(app).ok()
+    let settings = AppSettings::new_for_tests();
+    Window::new_for_tests(app, &settings, None).ok()
 }
 
 pub(crate) fn build_window_with_settings(
@@ -361,6 +362,8 @@ fn exercise_app_open_actions() {
         .build();
     let _registered = test_app.register(None::<&gio::Cancellable>);
     let state = std::rc::Rc::new(std::cell::RefCell::new(AppState {
+        settings: AppSettings::new_for_tests(),
+        chrome: None,
         windows: Vec::new(),
         last_focused_window: None,
         session_restore_attempted: false,
@@ -402,6 +405,8 @@ fn exercise_app_actions_more() {
         .build();
     let _registered = test_app.register(None::<&gio::Cancellable>);
     let state = std::rc::Rc::new(std::cell::RefCell::new(AppState {
+        settings: AppSettings::new_for_tests(),
+        chrome: None,
         windows: Vec::new(),
         last_focused_window: None,
         session_restore_attempted: false,

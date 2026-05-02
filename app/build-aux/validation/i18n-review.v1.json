@@ -157,35 +157,35 @@
     },
     {
       "path": "src/window.rs",
-      "line": 496,
+      "line": 494,
       "match": ".update_property(&[Property::Label(&gettext(\"New Tab\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
     },
     {
       "path": "src/window.rs",
-      "line": 499,
+      "line": 497,
       "match": ".update_property(&[Property::Label(&gettext(\"Open Files\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
     },
     {
       "path": "src/window.rs",
-      "line": 502,
+      "line": 500,
       "match": ".update_property(&[Property::Label(&gettext(\"Project Sidebar\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
     },
     {
       "path": "src/window.rs",
-      "line": 505,
+      "line": 503,
       "match": ".update_property(&[Property::Label(&gettext(\"Save Current File\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
     },
     {
       "path": "src/window.rs",
-      "line": 508,
+      "line": 506,
       "match": ".update_property(&[Property::Label(&gettext(\"Main Menu\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."

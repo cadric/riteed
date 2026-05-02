@@ -209,21 +209,8 @@ impl Window {
         self.appearance.selected_window_palette_for_tests()
     }
 
-    pub(crate) fn chrome_css_class_for_tests(&self) -> String {
-        self.chrome.css_class_for_tests()
-    }
-
     pub(crate) fn chrome_css_for_tests(&self) -> String {
-        self.chrome.css_for_tests()
-    }
-
-    pub(crate) fn chrome_surface_classes_for_tests(
-        &self,
-    ) -> ((bool, bool), (bool, bool, bool, bool)) {
-        (
-            self.workspace.chrome_tab_classes_for_tests(),
-            self.sidebar_host.chrome_classes_for_tests(),
-        )
+        crate::app_chrome::chrome_css_for_settings(&self.settings)
     }
 
     pub(crate) fn set_fullscreen_for_tests(&self, fullscreen: bool) {

@@ -1,7 +1,3 @@
-.riteed-appearance-panel {
-  padding: 0;
-}
-
 .riteed-theme-selector {
   margin: 9px;
 }
@@ -12,7 +8,7 @@
   border-radius: 999px;
   padding: 1px;
   background-clip: content-box;
-  box-shadow: inset 0 0 0 1px @borders;
+  box-shadow: inset 0 0 0 1px var(--shade-color);
 }
 
 .riteed-theme-choice.system {
@@ -39,13 +35,13 @@
 }
 
 .riteed-theme-choice:checked {
-  box-shadow: inset 0 0 0 2px @theme_selected_bg_color;
+  box-shadow: inset 0 0 0 2px var(--accent-bg-color);
 }
 
 .riteed-theme-choice:checked radio {
   -gtk-icon-source: -gtk-icontheme("object-select-symbolic");
-  background-color: @theme_selected_bg_color;
-  color: @theme_selected_fg_color;
+  background-color: var(--accent-bg-color);
+  color: var(--accent-fg-color);
 }
 
 .riteed-palette-tile {
@@ -82,21 +78,21 @@
   border-radius: 9px;
   min-width: 132px;
   min-height: 92px;
-  box-shadow: inset 0 0 0 3px @accent_bg_color;
+  box-shadow: inset 0 0 0 3px var(--accent-bg-color);
 }
 
 .riteed-palette-selected-badge {
   margin: 6px;
   padding: 3px;
-  background: @accent_bg_color;
-  color: @accent_fg_color;
+  background: var(--accent-bg-color);
+  color: var(--accent-fg-color);
   border-radius: 999px;
   box-shadow: 0 0 0 1px alpha(black, 0.08);
 }
 
 .riteed-palette-unavailable {
-  background: alpha(@window_bg_color, 0.84);
-  color: @window_fg_color;
+  background: color-mix(in srgb, var(--window-bg-color) 84%, transparent);
+  color: var(--window-fg-color);
   padding: 4px 8px;
   border-radius: 999px;
   font-size: 0.8em;
@@ -105,8 +101,8 @@
 .riteed-palette-adaptive-badge {
   margin: 4px;
   padding: 2px;
-  background: alpha(@accent_bg_color, 0.85);
-  color: @accent_fg_color;
+  background: color-mix(in srgb, var(--accent-bg-color) 85%, transparent);
+  color: var(--accent-fg-color);
   border-radius: 999px;
 }
 
@@ -126,7 +122,7 @@
   opacity: 0;
   transition: opacity 120ms ease;
   padding: 0 6px 0 24px;
-  background: linear-gradient(to right, transparent, @view_bg_color 24px);
+  background: linear-gradient(to right, transparent, var(--view-bg-color) 24px);
   border-radius: 6px;
 }
 
@@ -151,22 +147,22 @@
 }
 
 .riteed-git-status-badge.riteed-git-status-modified {
-  color: @warning_color;
+  color: var(--warning-color);
 }
 
 .riteed-git-status-badge.riteed-git-status-added {
-  color: @success_color;
+  color: var(--success-color);
 }
 
 .riteed-git-status-badge.riteed-git-status-deleted {
-  color: @error_color;
+  color: var(--error-color);
 }
 
 .riteed-git-status-badge.riteed-git-status-conflicted {
-  color: @error_color;
+  color: var(--error-color);
   font-weight: 800;
 }
 
 .riteed-git-staged {
-  color: @accent_color;
+  color: var(--accent-color);
 }

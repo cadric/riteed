@@ -407,10 +407,6 @@ msgid "About Riteed"
 msgstr ""
 
 msgctxt "menu item"
-msgid "Appearance"
-msgstr ""
-
-msgctxt "menu item"
 msgid "Compare"
 msgstr ""
 

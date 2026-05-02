@@ -531,7 +531,7 @@
     },
     {
       "path": "src/workspace.rs",
-      "line": 64,
+      "line": 62,
       "match": "pub(crate) state: RefCell<WorkspaceState>,",
       "kind": "runtime-shared-state",
       "ownership": "The workspace owns tab collection, recent/session caches, restore gating, and active close flow.",
