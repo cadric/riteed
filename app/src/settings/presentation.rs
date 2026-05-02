@@ -5,11 +5,10 @@ use sourceview5::prelude::*;
 
 use super::{AppSettings, SettingsBackend};
 
-const KEY_EDITOR_PALETTE: &str = "editor-palette";
+pub(crate) const KEY_EDITOR_PALETTE: &str = "editor-palette";
+pub(crate) const KEY_WINDOW_PALETTE: &str = "window-palette";
 const KEY_HIGHLIGHT_CURRENT_LINE: &str = "highlight-current-line";
 const KEY_AUTOSAVE_ENABLED: &str = "autosave-enabled";
-const SOURCE_STYLE_SCHEME_LIGHT: &str = "Adwaita";
-const SOURCE_STYLE_SCHEME_DARK: &str = "Adwaita-dark";
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum EditorPalette {
@@ -22,6 +21,69 @@ pub enum EditorPalette {
     KateDark,
     SolarizedLight,
     SolarizedDark,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum WindowPalette {
+    FollowEditor,
+    Adwaita,
+    Classic,
+    Kate,
+    Solarized,
+}
+
+impl WindowPalette {
+    pub const ALL: [Self; 5] = [
+        Self::FollowEditor,
+        Self::Adwaita,
+        Self::Classic,
+        Self::Kate,
+        Self::Solarized,
+    ];
+
+    #[must_use]
+    pub const fn enum_value(self) -> i32 {
+        match self {
+            Self::FollowEditor => 0,
+            Self::Adwaita => 1,
+            Self::Classic => 2,
+            Self::Kate => 3,
+            Self::Solarized => 4,
+        }
+    }
+
+    #[must_use]
+    pub const fn from_enum_value(value: i32) -> Self {
+        match value {
+            1 => Self::Adwaita,
+            2 => Self::Classic,
+            3 => Self::Kate,
+            4 => Self::Solarized,
+            _ => Self::FollowEditor,
+        }
+    }
+
+    #[must_use]
+    pub const fn nick(self) -> &'static str {
+        match self {
+            Self::FollowEditor => "follow-editor",
+            Self::Adwaita => "adwaita",
+            Self::Classic => "classic",
+            Self::Kate => "kate",
+            Self::Solarized => "solarized",
+        }
+    }
+
+    #[must_use]
+    pub fn label(self) -> String {
+        match self {
+            Self::FollowEditor => gettext("Match Editor Palette"),
+            Self::Adwaita => pgettext("window palette", "Adwaita"),
+            Self::Classic => pgettext("window palette", "Classic"),
+            Self::Kate => pgettext("window palette", "Kate"),
+            Self::Solarized => pgettext("window palette", "Solarized"),
+        }
+    }
 }
 
 impl EditorPalette {
@@ -109,27 +171,14 @@ impl EditorPalette {
     pub(crate) const fn scheme_id(self) -> Option<&'static str> {
         match self {
             Self::FollowSystem => None,
-            Self::AdwaitaLight => Some(SOURCE_STYLE_SCHEME_LIGHT),
-            Self::AdwaitaDark => Some(SOURCE_STYLE_SCHEME_DARK),
+            Self::AdwaitaLight => Some(crate::palette_engine::ADWAITA_LIGHT_SCHEME),
+            Self::AdwaitaDark => Some(crate::palette_engine::ADWAITA_DARK_SCHEME),
             Self::ClassicLight => Some("classic"),
             Self::ClassicDark => Some("classic-dark"),
             Self::Kate => Some("kate"),
             Self::KateDark => Some("kate-dark"),
             Self::SolarizedLight => Some("solarized-light"),
             Self::SolarizedDark => Some("solarized-dark"),
-        }
-    }
-
-    #[must_use]
-    pub(crate) const fn is_dark(self) -> Option<bool> {
-        match self {
-            Self::FollowSystem => None,
-            Self::AdwaitaDark | Self::ClassicDark | Self::KateDark | Self::SolarizedDark => {
-                Some(true)
-            }
-            Self::AdwaitaLight | Self::ClassicLight | Self::Kate | Self::SolarizedLight => {
-                Some(false)
-            }
         }
     }
 }
@@ -140,7 +189,7 @@ impl AppSettings {
         let preferred = self.resolved_source_style_scheme_id();
         let scheme = manager
             .scheme(&preferred)
-            .or_else(|| manager.scheme(SOURCE_STYLE_SCHEME_LIGHT));
+            .or_else(|| manager.scheme(crate::palette_engine::ADWAITA_LIGHT_SCHEME));
         buffer.set_style_scheme(scheme.as_ref());
     }
 
@@ -165,6 +214,32 @@ impl AppSettings {
                 super::with_memory_mut(memory, |state| {
                     state.presentation.editor_palette = palette;
                     super::record_memory_write(state, KEY_EDITOR_PALETTE);
+                });
+            }
+        }
+    }
+
+    #[must_use]
+    pub fn window_palette(&self) -> WindowPalette {
+        match &self.backend {
+            SettingsBackend::GSettings(settings) => {
+                WindowPalette::from_enum_value(settings.enum_(KEY_WINDOW_PALETTE))
+            }
+            SettingsBackend::Memory(memory) => {
+                super::with_memory(memory, |state| state.presentation.window_palette)
+            }
+        }
+    }
+
+    pub fn set_window_palette(&self, palette: WindowPalette) {
+        match &self.backend {
+            SettingsBackend::GSettings(settings) => {
+                let _changed = settings.set_enum(KEY_WINDOW_PALETTE, palette.enum_value());
+            }
+            SettingsBackend::Memory(memory) => {
+                super::with_memory_mut(memory, |state| {
+                    state.presentation.window_palette = palette;
+                    super::record_memory_write(state, KEY_WINDOW_PALETTE);
                 });
             }
         }
@@ -220,33 +295,33 @@ impl AppSettings {
 
     #[must_use]
     pub(crate) fn resolved_source_style_scheme_id(&self) -> String {
-        let selected = self.editor_palette();
-        if let Some(scheme_id) = selected.scheme_id()
-            && sourceview5::StyleSchemeManager::default()
-                .scheme(scheme_id)
-                .is_some()
-        {
-            return String::from(scheme_id);
-        }
-
-        let dark = adw::StyleManager::default().is_dark();
-        String::from(if dark {
-            SOURCE_STYLE_SCHEME_DARK
-        } else {
-            SOURCE_STYLE_SCHEME_LIGHT
-        })
+        crate::palette_engine::editor_scheme_id(
+            self.editor_palette(),
+            adw::StyleManager::default().is_dark(),
+        )
     }
 
     #[must_use]
     pub(crate) fn editor_palette_is_dark(&self) -> bool {
-        let selected = self.editor_palette();
-        if let Some(scheme_id) = selected.scheme_id()
-            && sourceview5::StyleSchemeManager::default()
-                .scheme(scheme_id)
-                .is_some()
-        {
-            return selected.is_dark().unwrap_or(false);
-        }
-        adw::StyleManager::default().is_dark()
+        crate::palette_engine::editor_palette_is_dark(
+            self.editor_palette(),
+            adw::StyleManager::default().is_dark(),
+        )
+    }
+
+    #[must_use]
+    pub(crate) fn connect_editor_palette_changed(
+        &self,
+        callback: impl Fn() + 'static,
+    ) -> super::SettingsSubscription {
+        self.connect_changed(KEY_EDITOR_PALETTE, callback)
+    }
+
+    #[must_use]
+    pub(crate) fn connect_window_palette_changed(
+        &self,
+        callback: impl Fn() + 'static,
+    ) -> super::SettingsSubscription {
+        self.connect_changed(KEY_WINDOW_PALETTE, callback)
     }
 }

@@ -108,14 +108,21 @@
     },
     {
       "path": "src/project_tree.rs",
-      "line": 172,
+      "line": 173,
       "match": "label.set_label(&ellipsis_label(gettext(\"Loading\")));",
       "kind": "i18n-short-string",
       "resolution": "This short inline row label is shown beside a spinner while the project tree enumerates a directory."
     },
     {
       "path": "src/settings/presentation.rs",
-      "line": 96,
+      "line": 80,
+      "match": "Self::FollowEditor => gettext(\"Match Editor Palette\"),",
+      "kind": "i18n-short-string",
+      "resolution": "This short window palette string is used as the tooltip and accessible label for the preview tile that follows the selected editor palette family."
+    },
+    {
+      "path": "src/settings/presentation.rs",
+      "line": 158,
       "match": "Self::FollowSystem => gettext(\"Match App Appearance\"),",
       "kind": "i18n-short-string",
       "resolution": "This short palette string is used as the tooltip and accessible label for the preview-only tile that follows the app appearance choice."
@@ -150,52 +157,66 @@
     },
     {
       "path": "src/window.rs",
-      "line": 492,
+      "line": 496,
       "match": ".update_property(&[Property::Label(&gettext(\"New Tab\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
     },
     {
       "path": "src/window.rs",
-      "line": 495,
+      "line": 499,
       "match": ".update_property(&[Property::Label(&gettext(\"Open Files\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
     },
     {
       "path": "src/window.rs",
-      "line": 498,
+      "line": 502,
       "match": ".update_property(&[Property::Label(&gettext(\"Project Sidebar\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
     },
     {
       "path": "src/window.rs",
-      "line": 501,
+      "line": 505,
       "match": ".update_property(&[Property::Label(&gettext(\"Save Current File\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
     },
     {
       "path": "src/window.rs",
-      "line": 504,
+      "line": 508,
       "match": ".update_property(&[Property::Label(&gettext(\"Main Menu\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
     },
     {
-      "path": "src/window_appearance.rs",
-      "line": 314,
+      "path": "src/window_appearance/editor_grid.rs",
+      "line": 214,
       "match": "let label = gtk4::Label::new(Some(&gettext(\"Unavailable\")));",
       "kind": "i18n-short-string",
-      "resolution": "This short overlay label is shown directly on palette tiles whose source style scheme is not available on the current system."
+      "resolution": "This short overlay label is shown directly on editor palette tiles whose source style scheme is not available on the current system."
     },
     {
-      "path": "src/window_appearance.rs",
-      "line": 338,
+      "path": "src/window_appearance/editor_grid.rs",
+      "line": 236,
       "match": "let label = gtk4::Label::new(Some(&gettext(\"Preview unavailable\")));",
       "kind": "i18n-short-string",
       "resolution": "This compact fallback appears inside an editor palette tile when no safe preview style scheme can be resolved."
+    },
+    {
+      "path": "src/window_appearance/window_grid.rs",
+      "line": 266,
+      "match": "let label = gtk4::Label::new(Some(&gettext(\"Unavailable\")));",
+      "kind": "i18n-short-string",
+      "resolution": "This short overlay label is shown directly on window palette tiles whose source style scheme is not available on the current system."
+    },
+    {
+      "path": "src/window_appearance/window_grid.rs",
+      "line": 289,
+      "match": "let label = gtk4::Label::new(Some(&gettext(\"Preview unavailable\")));",
+      "kind": "i18n-short-string",
+      "resolution": "This compact fallback appears inside a window palette tile when no safe chrome preview style scheme can be resolved."
     },
     {
       "path": "src/window_compare/dialog.rs",

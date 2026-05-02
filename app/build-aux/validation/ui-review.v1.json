@@ -6,8 +6,8 @@
       "line": 5,
       "match": "<object class=\"AdwDialog\" id=\"appearance_dialog\">",
       "smallest_width": 320,
-      "adaptive_pattern": "Small libadwaita appearance panel opened from the main menu with preview-only editor palette tiles.",
-      "collapse_behavior": "The compact palette grid keeps stable visual choices without hiding palettes dynamically; each unlabeled tile keeps a tooltip and accessible name.",
+      "adaptive_pattern": "Small libadwaita appearance panel opened from the main menu with preview-only window chrome and editor palette tiles.",
+      "collapse_behavior": "The compact palette grids keep stable visual choices without hiding palettes dynamically; each unlabeled tile keeps a tooltip and accessible name.",
       "copy_reviewed": true,
       "a11y_reviewed": true
     },

@@ -154,6 +154,22 @@ msgctxt "editor palette"
 msgid "Solarized Light"
 msgstr ""
 
+msgctxt "window palette"
+msgid "Adwaita"
+msgstr ""
+
+msgctxt "window palette"
+msgid "Classic"
+msgstr ""
+
+msgctxt "window palette"
+msgid "Kate"
+msgstr ""
+
+msgctxt "window palette"
+msgid "Solarized"
+msgstr ""
+
 msgctxt "error title"
 msgid "Action Cancelled"
 msgstr ""

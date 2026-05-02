@@ -570,4 +570,5 @@ fn gtk_surfaces_and_editor_flow_work() {
     crate::gtk_tests_v7::exercise_v7_compare(&test_app);
     crate::gtk_tests_v8::exercise_v8_polish_and_safety(&test_app);
     crate::gtk_tests_v9::exercise_v9_source_control(&test_app);
+    crate::gtk_tests_v10::exercise_chrome_palette(&test_app);
 }

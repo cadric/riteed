@@ -4,6 +4,8 @@ use gtk4::glib::variant::ToVariant;
 use gtk4::{gio, glib, prelude::*};
 
 use crate::settings::{AppSettings, ThemePreference};
+use crate::window_appearance::WindowAppearanceController;
+use crate::window_chrome::WindowChromeController;
 use crate::workspace::Workspace;
 
 pub(crate) const ACTION_NAME: &str = "theme";
@@ -21,12 +23,16 @@ pub(crate) fn install(
     action: &gio::SimpleAction,
     settings: &AppSettings,
     workspace: &Rc<Workspace>,
+    appearance: &WindowAppearanceController,
+    chrome: &WindowChromeController,
     menu_button: &gtk4::MenuButton,
 ) {
     sync_theme_action_from_settings(action, settings);
 
     let settings_for_action = settings.clone();
     let weak_workspace = Rc::downgrade(workspace);
+    let appearance_for_action = appearance.clone();
+    let chrome_for_action = chrome.clone();
     action.connect_change_state(move |action, value| {
         let Some(theme) = theme_from_variant(value) else {
             sync_theme_action_from_settings(action, &settings_for_action);
@@ -35,9 +41,11 @@ pub(crate) fn install(
         settings_for_action.set_theme(theme);
         settings_for_action.apply_theme();
         action.set_state(&theme.nick().to_variant());
+        chrome_for_action.refresh();
         if let Some(workspace) = weak_workspace.upgrade() {
             workspace.apply_source_style_scheme_to_tabs();
         }
+        appearance_for_action.sync();
     });
 
     let action_for_active = action.clone();

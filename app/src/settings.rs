@@ -1,12 +1,12 @@
 use std::rc::Rc;
 use std::sync::Mutex;
 
-use gtk4::gio;
+use gtk4::{gio, glib, prelude::*};
 
 use crate::APP_ID;
 
 pub use appearance::ThemePreference;
-pub use presentation::EditorPalette;
+pub use presentation::{EditorPalette, WindowPalette};
 pub use source_control::SourceControlViewMode;
 
 #[derive(Clone)]
@@ -54,6 +54,7 @@ struct MemoryIndentationSettings {
 #[derive(Clone)]
 struct MemoryPresentationSettings {
     editor_palette: EditorPalette,
+    window_palette: WindowPalette,
     highlight_current_line: bool,
     autosave_enabled: bool,
 }
@@ -110,6 +111,7 @@ impl AppSettings {
                 },
                 presentation: MemoryPresentationSettings {
                     editor_palette: EditorPalette::FollowSystem,
+                    window_palette: WindowPalette::FollowEditor,
                     highlight_current_line: true,
                     autosave_enabled: false,
                 },
@@ -143,6 +145,52 @@ impl AppSettings {
         match &self.backend {
             SettingsBackend::GSettings(_) => Vec::new(),
             SettingsBackend::Memory(memory) => with_memory(memory, |state| state.write_log.clone()),
+        }
+    }
+
+    #[must_use]
+    pub(crate) fn connect_changed(
+        &self,
+        key: &'static str,
+        callback: impl Fn() + 'static,
+    ) -> SettingsSubscription {
+        match &self.backend {
+            SettingsBackend::GSettings(settings) => {
+                let handler = settings.connect_changed(Some(key), move |_, _| callback());
+                SettingsSubscription::new(settings, handler)
+            }
+            SettingsBackend::Memory(_) => SettingsSubscription::noop(),
+        }
+    }
+}
+
+pub(crate) struct SettingsSubscription {
+    settings: Option<gio::Settings>,
+    handler: Option<glib::SignalHandlerId>,
+}
+
+impl SettingsSubscription {
+    #[must_use]
+    fn new(settings: &gio::Settings, handler: glib::SignalHandlerId) -> Self {
+        Self {
+            settings: Some(settings.clone()),
+            handler: Some(handler),
+        }
+    }
+
+    #[must_use]
+    fn noop() -> Self {
+        Self {
+            settings: None,
+            handler: None,
+        }
+    }
+}
+
+impl Drop for SettingsSubscription {
+    fn drop(&mut self) {
+        if let (Some(settings), Some(handler)) = (self.settings.as_ref(), self.handler.take()) {
+            settings.disconnect(handler);
         }
     }
 }

@@ -1,6 +1,6 @@
 use super::{
-    AppSettings, EditorPalette, SourceControlViewMode, ThemePreference, sanitize_editor_width,
-    sanitize_restored_dimension,
+    AppSettings, EditorPalette, SourceControlViewMode, ThemePreference, WindowPalette,
+    sanitize_editor_width, sanitize_restored_dimension,
 };
 #[test]
 fn theme_preference_roundtrips_enum_values() {
@@ -30,6 +30,20 @@ fn editor_palette_roundtrips_enum_values() {
     assert_eq!(EditorPalette::ClassicLight.nick(), "classic");
     assert_eq!(EditorPalette::ClassicDark.enum_value(), 8);
     assert_eq!(EditorPalette::ClassicDark.nick(), "classic-dark");
+}
+
+#[test]
+fn window_palette_roundtrips_enum_values() {
+    for palette in WindowPalette::ALL {
+        assert_eq!(
+            WindowPalette::from_enum_value(palette.enum_value()),
+            palette,
+            "{}",
+            palette.nick()
+        );
+    }
+    assert_eq!(WindowPalette::FollowEditor.enum_value(), 0);
+    assert_eq!(WindowPalette::FollowEditor.nick(), "follow-editor");
 }
 
 #[test]
@@ -75,6 +89,7 @@ fn memory_backend_roundtrips_values() {
     let settings = AppSettings::new_for_tests();
     settings.set_theme(ThemePreference::Dark);
     settings.set_editor_palette(EditorPalette::KateDark);
+    settings.set_window_palette(WindowPalette::Solarized);
     settings.set_word_wrap(true);
     settings.set_show_line_numbers(true);
     settings.set_show_minimap(true);
@@ -100,6 +115,7 @@ fn memory_backend_roundtrips_values() {
 
     assert_eq!(settings.theme(), ThemePreference::Dark);
     assert_eq!(settings.editor_palette(), EditorPalette::KateDark);
+    assert_eq!(settings.window_palette(), WindowPalette::Solarized);
     assert!(settings.word_wrap());
     assert!(settings.show_line_numbers());
     assert!(settings.show_minimap());
@@ -146,6 +162,7 @@ fn memory_backend_records_writes_for_tests() {
     settings.set_tab_width(6);
     settings.set_project_show_hidden(true);
     settings.set_editor_font("Monospace 11");
+    settings.set_window_palette(WindowPalette::Classic);
     settings.set_autosave_enabled(true);
     settings.set_git_identity("Ada", "ada@example.test");
     settings.set_source_control_view_mode(SourceControlViewMode::List);
@@ -155,6 +172,7 @@ fn memory_backend_records_writes_for_tests() {
             String::from("tab-width"),
             String::from("project-show-hidden"),
             String::from("editor-font"),
+            String::from("window-palette"),
             String::from("autosave-enabled"),
             String::from("git-user-name"),
             String::from("git-user-email"),

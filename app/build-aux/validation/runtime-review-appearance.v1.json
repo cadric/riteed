@@ -2,20 +2,52 @@
   "version": 1,
   "sites": [
     {
-      "path": "src/window_appearance.rs",
-      "line": 30,
+      "path": "src/window_appearance/editor_grid.rs",
+      "line": 24,
       "match": "syncing: Cell<bool>,",
       "kind": "runtime-shared-state",
-      "ownership": "The appearance panel controller owns its programmatic-sync guard.",
-      "justification": "Opening or refreshing the panel must update tile state without recursively writing GSettings."
+      "ownership": "The editor palette grid owns its programmatic-sync guard.",
+      "justification": "Opening or refreshing editor palette tiles must update state without recursively writing GSettings."
     },
     {
-      "path": "src/window_appearance.rs",
-      "line": 34,
-      "match": "palette_tiles: RefCell<Vec<PaletteTile>>,",
+      "path": "src/window_appearance/editor_grid.rs",
+      "line": 25,
+      "match": "tiles: RefCell<Vec<EditorTile>>,",
       "kind": "runtime-shared-state",
-      "ownership": "The appearance panel controller owns the editor palette tile set.",
-      "justification": "Palette preview tiles are built dynamically and refreshed when app appearance changes without rebuilding the window shell."
+      "ownership": "The editor palette grid owns its preview tile set.",
+      "justification": "Editor palette preview tiles are built dynamically and refreshed when app appearance or palette settings change."
+    },
+    {
+      "path": "src/window_appearance/window_grid.rs",
+      "line": 24,
+      "match": "syncing: Cell<bool>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The window palette grid owns its programmatic-sync guard.",
+      "justification": "Opening or refreshing window palette tiles must update state without recursively writing GSettings."
+    },
+    {
+      "path": "src/window_appearance/window_grid.rs",
+      "line": 25,
+      "match": "tiles: RefCell<Vec<WindowTile>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The window palette grid owns its chrome preview tile set.",
+      "justification": "Window palette preview tiles are built dynamically and refreshed when app appearance, editor palette, or window palette settings change."
+    },
+    {
+      "path": "src/window_chrome/mod.rs",
+      "line": 38,
+      "match": "current_popover: RefCell<Option<gtk4::Popover>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The per-window chrome controller tracks the currently classed primary-menu popover.",
+      "justification": "Popover classing must be idempotent across menu rebuilds and must remove the scoped class from stale popover instances."
+    },
+    {
+      "path": "src/window_chrome/mod.rs",
+      "line": 39,
+      "match": "subscriptions: RefCell<Vec<Subscription>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The per-window chrome controller owns its signal and settings subscriptions.",
+      "justification": "Per-window handlers must stay alive while the window exists and disconnect during controller drop to avoid global signal leaks."
     }
   ]
 }

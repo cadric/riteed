@@ -131,7 +131,7 @@
     },
     {
       "path": "src/settings/presentation.rs",
-      "line": 162,
+      "line": 211,
       "match": "let _changed = settings.set_enum(KEY_EDITOR_PALETTE, palette.enum_value());",
       "kind": "gsettings-write",
       "key": "editor-palette",
@@ -139,7 +139,15 @@
     },
     {
       "path": "src/settings/presentation.rs",
-      "line": 186,
+      "line": 237,
+      "match": "let _changed = settings.set_enum(KEY_WINDOW_PALETTE, palette.enum_value());",
+      "kind": "gsettings-write",
+      "key": "window-palette",
+      "trigger": "Explicit window-palette family selection from an Appearance chrome preview tile."
+    },
+    {
+      "path": "src/settings/presentation.rs",
+      "line": 261,
       "match": "let _changed = settings.set_boolean(KEY_HIGHLIGHT_CURRENT_LINE, enabled);",
       "kind": "gsettings-write",
       "key": "highlight-current-line",
@@ -147,7 +155,7 @@
     },
     {
       "path": "src/settings/presentation.rs",
-      "line": 210,
+      "line": 285,
       "match": "let _changed = settings.set_boolean(KEY_AUTOSAVE_ENABLED, enabled);",
       "kind": "gsettings-write",
       "key": "autosave-enabled",

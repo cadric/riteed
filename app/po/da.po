@@ -30,6 +30,9 @@ msgstr ""
 msgid "Controls the color palette used for editor buffers."
 msgstr ""
 
+msgid "Controls the color family used for Riteed window chrome. Light and dark variants follow the app appearance."
+msgstr ""
+
 msgid "Controls whether Riteed automatically saves already-saved writable files after edits."
 msgstr ""
 
@@ -37,6 +40,9 @@ msgid "Controls whether Riteed highlights the active line in editable documents.
 msgstr ""
 
 msgid "Editor Palette"
+msgstr ""
+
+msgid "Window Palette"
 msgstr ""
 
 msgid "Highlight Current Line"
@@ -154,6 +160,9 @@ msgstr ""
 msgid "Match App Appearance"
 msgstr ""
 
+msgid "Match Editor Palette"
+msgstr ""
+
 msgid "Preview unavailable"
 msgstr ""
 
@@ -162,6 +171,22 @@ msgstr ""
 
 msgctxt "editor palette"
 msgid "Kate Light"
+msgstr ""
+
+msgctxt "window palette"
+msgid "Adwaita"
+msgstr ""
+
+msgctxt "window palette"
+msgid "Classic"
+msgstr ""
+
+msgctxt "window palette"
+msgid "Kate"
+msgstr ""
+
+msgctxt "window palette"
+msgid "Solarized"
 msgstr ""
 
 msgid "Changed files"

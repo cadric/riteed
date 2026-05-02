@@ -1,6 +1,6 @@
 ---
 created: 2026-04-19
-updated: 2026-04-29
+updated: 2026-04-30
 status: current
 priority: high
 type: release
@@ -57,6 +57,7 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Reworked the Source Control changed-file view into a virtual folder tree with compact file rows, click-to-compare activation, hover/focus Stage and Unstage icons, and consistent `U` badges for untracked files.
 - Moved app theme selection into GNOME-style System/Light/Dark swatches at the top of the primary menu, while keeping Appearance focused on editor palettes.
 - Replaced editor palette preview tiles with custom non-selectable code previews, compact preview-only swatches, tooltips, and a bundled Classic Dark palette alongside the renamed Classic Light palette.
+- Added a family-based Window Palette to Appearance that derives per-window chrome colors from GtkSourceView schemes, while editor palettes remain exact scheme choices.
 - Reworked compare scroll synchronization to use diff anchors instead of normalized ratios, and applied active document language highlighting to reference buffers.
 - Refactored compare controller plumbing into smaller modules so Git-backed compare could reuse the existing split-diff engine without growing the compare file past policy limits.
 - Clarified the Riteed settings model into scoped modules and converted theme and Source Control view mode preferences to GSettings enums.
@@ -98,6 +99,7 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Fixed V10 polish regressions: Source Control icon registration, first-open Appearance tile sizing, Recent Files bottom actions, animated sidebar show/hide, and status-bar segment dividers.
 - Fixed V10 follow-up regressions where sidebar animation prevented full hiding, automatic Git refreshes repeatedly rebuilt Source Control and Files UI, and compare/Git diff panes drifted out of scroll sync.
 - Source Control: action buttons no longer reserve inline space; status badges color-coded by Git state.
+- Fixed Window Palette chrome coverage so scoped scheme colors reach the sidebar, tab strip, libadwaita dialogs, primary menu, and card-like dialog content without global theme rebinding.
 
 ## 1.0.1 — 2026-04-19
 

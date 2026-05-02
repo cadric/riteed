@@ -16,6 +16,14 @@
     <value nick="solarized-dark" value="7"/>
     <value nick="classic-dark" value="8"/>
   </enum>
+  <!-- Family-only window chrome palette; light/dark variants follow the effective app style. -->
+  <enum id="io.github.cadric.Riteed.WindowPalette">
+    <value nick="follow-editor" value="0"/>
+    <value nick="adwaita" value="1"/>
+    <value nick="classic" value="2"/>
+    <value nick="kate" value="3"/>
+    <value nick="solarized" value="4"/>
+  </enum>
   <enum id="io.github.cadric.Riteed.SourceControlViewMode">
     <value nick="tree" value="0"/>
     <value nick="list" value="1"/>
@@ -45,6 +53,11 @@
       <default>'follow-system'</default>
       <summary>Editor Palette</summary>
       <description>Controls the color palette used for editor buffers.</description>
+    </key>
+    <key name="window-palette" enum="io.github.cadric.Riteed.WindowPalette">
+      <default>'follow-editor'</default>
+      <summary>Window Palette</summary>
+      <description>Controls the color family used for Riteed window chrome. Light and dark variants follow the app appearance.</description>
     </key>
     <key name="highlight-current-line" type="b">
       <default>true</default>

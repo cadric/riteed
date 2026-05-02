@@ -52,6 +52,8 @@ pub struct Workspace {
     pub(crate) save_as_action: gio::SimpleAction,
     pub(crate) close_action: gio::SimpleAction,
     pub(crate) settings: AppSettings,
+    #[cfg(test)]
+    pub(crate) tab_bar: adw::TabBar,
     pub(crate) tab_view: adw::TabView,
     pub(crate) tab_controls: tabs::TabControls,
     pub(crate) search: Rc<EditorSearch>,
@@ -81,11 +83,13 @@ impl Workspace {
     #[must_use]
     pub fn new(parts: WorkspaceParts<'_>) -> Rc<Self> {
         let tab_view = adw::TabView::new();
+        tab_view.add_css_class(crate::window_chrome::TAB_VIEW_CLASS);
         tab_view.set_hexpand(true);
         tab_view.set_shortcuts(adw::TabViewShortcuts::ALL_SHORTCUTS);
         tab_view.set_vexpand(true);
 
         let tab_bar = adw::TabBar::new();
+        tab_bar.add_css_class(crate::window_chrome::TAB_BAR_CLASS);
         tab_bar.set_autohide(true);
         tab_bar.set_view(Some(&tab_view));
         parts.workspace_box.set_hexpand(true);
@@ -108,6 +112,8 @@ impl Workspace {
             save_as_action: parts.save_as_action.clone(),
             close_action: parts.close_action.clone(),
             settings: parts.settings.clone(),
+            #[cfg(test)]
+            tab_bar: tab_bar.clone(),
             tab_view,
             tab_controls: tabs::TabControls::new(),
             search,

@@ -102,6 +102,7 @@ fn setup_project_tree_row(_: &gtk4::SignalListItemFactory, object: &glib::Object
     expander.set_indent_for_depth(true);
 
     let row_box = gtk4::Box::new(gtk4::Orientation::Horizontal, 6);
+    row_box.add_css_class("riteed-sidebar-row");
     row_box.set_margin_start(6);
     row_box.set_margin_end(6);
     row_box.set_margin_top(3);

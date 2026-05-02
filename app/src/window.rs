@@ -7,7 +7,6 @@ use gtk4::{gdk, gio, glib, prelude::*};
 use libadwaita as adw;
 use libadwaita::prelude::*;
 
-use crate::APP_ID;
 use crate::dialogs;
 use crate::editor_zoom::EditorZoomController;
 use crate::error::AppError;
@@ -15,6 +14,7 @@ use crate::settings::AppSettings;
 use crate::sidebar_host::SidebarHost;
 use crate::source_control::SourceControlController;
 use crate::window_appearance::WindowAppearanceController;
+use crate::window_chrome::WindowChromeController;
 use crate::window_compare::WindowCompareController;
 use crate::window_preferences::WindowPreferencesController;
 use crate::window_project::WindowProjectController;
@@ -64,6 +64,7 @@ pub struct Window {
     settings: AppSettings,
     workspace: Rc<Workspace>,
     appearance: WindowAppearanceController,
+    chrome: WindowChromeController,
     _preferences: WindowPreferencesController,
     compare: Rc<WindowCompareController>,
     project: WindowProjectController,
@@ -122,7 +123,7 @@ impl Window {
         configure_open_button(&shell);
         sourceview5::init();
         crate::source_styles::install_builtin_style_schemes();
-        configure_runtime_icon_support(&shell.window);
+        crate::runtime_icons::configure(&shell.window);
         WindowAppearanceController::install_css(&gtk4::prelude::WidgetExt::display(&shell.window));
         let save_action = gio::SimpleAction::new("save", None);
         let save_as_action = gio::SimpleAction::new("save-as", None);
@@ -168,6 +169,13 @@ impl Window {
         });
         let zoom = EditorZoomController::new(&shell.window, &workspace, &settings);
         let appearance = WindowAppearanceController::new(&settings, &workspace)?;
+        let chrome = WindowChromeController::new(
+            &shell.window,
+            &settings,
+            &workspace,
+            &appearance,
+            &shell.primary_menu_button,
+        );
         let preferences = WindowPreferencesController::new(&shell, &settings, &workspace, &zoom);
         let compare = WindowCompareController::new(&shell.window, &workspace);
         let project =
@@ -200,6 +208,7 @@ impl Window {
             settings,
             workspace,
             appearance,
+            chrome,
             _preferences: preferences,
             compare,
             project,
@@ -211,16 +220,7 @@ impl Window {
             zoom,
             last_non_fullscreen_size: Cell::new((width, height)),
         });
-        window
-            .source_control
-            .set_project_root(window.project.current_root_file());
-        window.install_theme_action();
-        window.zoom.set_editor_font(&window.settings.editor_font());
-        window.install_accessible_labels();
-        window.appearance.sync();
-        window.compare.refresh_action_state();
-        window.install_callbacks();
-        window.install_style_callbacks();
+        window.finish_initialization();
         Ok(window)
     }
 
@@ -346,8 +346,21 @@ impl Window {
             &self.theme_action,
             &self.settings,
             &self.workspace,
+            &self.appearance,
+            &self.chrome,
             &self.shell.primary_menu_button,
         );
+    }
+
+    fn finish_initialization(self: &Rc<Self>) {
+        self.source_control
+            .set_project_root(self.project.current_root_file());
+        self.install_theme_action();
+        self.zoom.set_editor_font(&self.settings.editor_font());
+        self.install_accessible_labels();
+        self.appearance.sync();
+        self.compare.refresh_action_state();
+        self.install_callbacks();
     }
 
     fn install_document_callbacks(self: &Rc<Self>) {
@@ -477,15 +490,6 @@ impl Window {
         self.shell.window.add_controller(key_controller);
     }
 
-    fn install_style_callbacks(self: &Rc<Self>) {
-        let weak = Rc::downgrade(self);
-        let _handler = adw::StyleManager::default().connect_dark_notify(move |_| {
-            if let Some(window) = weak.upgrade() {
-                window.workspace.apply_source_style_scheme_to_tabs();
-            }
-        });
-    }
-
     fn install_accessible_labels(&self) {
         self.shell
             .new_button
@@ -549,26 +553,4 @@ fn configure_open_button(shell: &WindowShell) {
     shell
         .open_button
         .set_dropdown_tooltip(&pgettext("open menu tooltip", "Open Choices"));
-}
-
-fn configure_runtime_icon_support(window: &adw::ApplicationWindow) {
-    if let Some(display) = gtk4::gdk::Display::default() {
-        let icon_theme = gtk4::IconTheme::for_display(&display);
-        icon_theme.add_resource_path("/io/github/cadric/Riteed/icons");
-        if let Ok(path) = std::env::var("RITEED_DEV_ICON_DIR") {
-            let icon_dir = std::path::PathBuf::from(path);
-            if icon_dir.is_dir() {
-                let mut search_paths = icon_theme.search_path();
-                search_paths.retain(|existing| existing != &icon_dir);
-                search_paths.insert(0, icon_dir);
-                let refs = search_paths
-                    .iter()
-                    .map(std::path::PathBuf::as_path)
-                    .collect::<Vec<_>>();
-                icon_theme.set_search_path(&refs);
-            }
-        }
-    }
-    gtk4::Window::set_default_icon_name(APP_ID);
-    window.set_icon_name(Some(APP_ID));
 }

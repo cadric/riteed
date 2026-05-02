@@ -83,6 +83,9 @@ msgstr ""
 msgid "Controls the color palette used for editor buffers."
 msgstr ""
 
+msgid "Controls the color family used for Riteed window chrome. Light and dark variants follow the app appearance."
+msgstr ""
+
 msgid "Controls whether Riteed automatically saves already-saved writable files after edits."
 msgstr ""
 
@@ -180,6 +183,9 @@ msgid "Main Menu"
 msgstr ""
 
 msgid "Match App Appearance"
+msgstr ""
+
+msgid "Match Editor Palette"
 msgstr ""
 
 msgid "Modification State"
@@ -521,6 +527,9 @@ msgid "Window Width"
 msgstr ""
 
 msgid "Word Wrap"
+msgstr ""
+
+msgid "Window Palette"
 msgstr ""
 
 msgid "text;editor;code;markdown;config;"

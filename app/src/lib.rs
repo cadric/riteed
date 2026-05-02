@@ -19,11 +19,13 @@ mod editor_zoom;
 pub mod error;
 mod git_process;
 mod git_status;
+mod palette_engine;
 mod palette_preview;
 mod project_browser;
 mod project_tree;
 mod project_tree_model;
 mod project_tree_monitor;
+mod runtime_icons;
 pub mod session;
 pub mod settings;
 mod sidebar_host;
@@ -31,6 +33,7 @@ mod source_control;
 mod source_styles;
 pub mod window;
 mod window_appearance;
+mod window_chrome;
 mod window_compare;
 mod window_preferences;
 mod window_project;
@@ -46,6 +49,8 @@ mod workspace_open;
 mod gtk_tests;
 #[cfg(test)]
 mod gtk_tests_tabs;
+#[cfg(test)]
+mod gtk_tests_v10;
 #[cfg(test)]
 mod gtk_tests_v4;
 #[cfg(test)]
