@@ -9,7 +9,7 @@
     <property name="content">
       <object class="AdwToolbarView" id="toolbar_view">
         <child type="top">
-          <object class="AdwHeaderBar">
+          <object class="AdwHeaderBar" id="header_bar">
             <child type="start">
               <object class="GtkToggleButton" id="project_sidebar_button">
                 <property name="action-name">win.project-sidebar-visible</property>

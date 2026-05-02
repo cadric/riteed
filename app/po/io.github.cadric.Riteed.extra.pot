@@ -106,10 +106,6 @@ msgctxt "dialog button"
 msgid "Save"
 msgstr ""
 
-msgctxt "dialog button"
-msgid "Use Text"
-msgstr ""
-
 msgctxt "document format"
 msgid "No Document"
 msgstr ""
@@ -407,10 +403,6 @@ msgid "About Riteed"
 msgstr ""
 
 msgctxt "menu item"
-msgid "Compare"
-msgstr ""
-
-msgctxt "menu item"
 msgid "Help"
 msgstr ""
 
@@ -447,23 +439,35 @@ msgid "Find"
 msgstr ""
 
 msgctxt "tab menu item"
-msgid "Close"
+msgid "_Close"
 msgstr ""
 
 msgctxt "tab menu item"
-msgid "Close Other Tabs"
+msgid "Close _Other Tabs"
 msgstr ""
 
 msgctxt "tab menu item"
-msgid "Move Tab Backward"
+msgid "Move Tab _Backward"
 msgstr ""
 
 msgctxt "tab menu item"
-msgid "Move Tab Forward"
+msgid "Move Tab _Forward"
 msgstr ""
 
 msgctxt "tab menu item"
-msgid "Move to New Window"
+msgid "Move to _New Window"
+msgstr ""
+
+msgctxt "tab menu item"
+msgid "Compare With F_ile"
+msgstr ""
+
+msgctxt "tab menu item"
+msgid "Compare With _Saved Version"
+msgstr ""
+
+msgctxt "tab menu item"
+msgid "Compare With _Pasted Text"
 msgstr ""
 
 msgctxt "paste dialog title"

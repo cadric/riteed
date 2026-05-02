@@ -446,7 +446,7 @@ fn file_detail(file: &gio::File) -> String {
     crate::document::display_path_for_file(file)
 }
 
-fn choose_file(
+pub(super) fn choose_file(
     parent: &adw::ApplicationWindow,
     title: &str,
     on_file: Rc<dyn Fn(Option<gio::File>)>,
@@ -473,18 +473,18 @@ fn choose_file(
     );
 }
 
-fn show_paste_text_dialog(
-    parent: &adw::Dialog,
+pub(super) fn show_paste_text_dialog(
+    parent: &impl IsA<gtk4::Widget>,
     initial: Option<&str>,
     on_text: Rc<dyn Fn(Option<String>)>,
 ) {
-    let dialog = adw::Dialog::builder()
-        .title(pgettext("paste dialog title", "Paste Text"))
-        .content_width(540)
-        .content_height(420)
-        .follows_content_size(false)
-        .can_close(true)
-        .build();
+    let shell = build_dialog_shell(
+        &pgettext("paste dialog title", "Paste Text"),
+        540,
+        Some(420),
+        false,
+    );
+    let dialog = shell.dialog;
 
     let text_view = gtk4::TextView::builder()
         .monospace(true)
@@ -495,9 +495,9 @@ fn show_paste_text_dialog(
     }
     let scrolled = gtk4::ScrolledWindow::builder()
         .child(&text_view)
+        .vexpand(true)
         .hscrollbar_policy(gtk4::PolicyType::Never)
         .vscrollbar_policy(gtk4::PolicyType::Automatic)
-        .min_content_height(240)
         .build();
 
     let button_box = gtk4::Box::builder()
@@ -505,39 +505,17 @@ fn show_paste_text_dialog(
         .halign(gtk4::Align::End)
         .spacing(12)
         .build();
-    let cancel_button = gtk4::Button::with_label(&pgettext("dialog button", "Cancel"));
-    let accept_button = gtk4::Button::with_label(&pgettext("dialog button", "Use Text"));
+    let accept_button = gtk4::Button::with_label(&pgettext("dialog button", "Compare"));
     accept_button.add_css_class("suggested-action");
-    button_box.append(&cancel_button);
     button_box.append(&accept_button);
 
-    let content = gtk4::Box::builder()
-        .orientation(gtk4::Orientation::Vertical)
-        .spacing(12)
-        .margin_top(18)
-        .margin_bottom(18)
-        .margin_start(18)
-        .margin_end(18)
-        .build();
+    let content = shell.content;
     content.append(&scrolled);
     content.append(&button_box);
-    dialog.set_child(Some(&content));
+    dialog.set_default_widget(Some(&accept_button));
 
     let handled = Rc::new(Cell::new(false));
     let callback = Rc::new(RefCell::new(Some(on_text)));
-
-    {
-        let dialog = dialog.clone();
-        let handled = handled.clone();
-        let callback = callback.clone();
-        cancel_button.connect_clicked(move |_| {
-            handled.set(true);
-            if let Some(callback) = callback.borrow_mut().take() {
-                callback(None);
-            }
-            let _closed = dialog.close();
-        });
-    }
 
     {
         let dialog = dialog.clone();

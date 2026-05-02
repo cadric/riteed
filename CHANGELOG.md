@@ -51,6 +51,8 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Preserved extensionless filenames during Save As instead of appending `.txt`, so code-oriented names such as `Makefile`, `LICENSE`, and `.gitignore` stay unchanged.
 - Refreshed the pinned Kernel.org `sha256sums.asc` checksum used by the bundled Git Flatpak module after verifying the new signed checksum file.
 - Reworked Compare into a single-entry flow: Compare… opens a dedicated compare dialog where the user chooses sources (current document, saved version, file, or pasted text), with left as the editable side and right as the reference.
+- Moved Compare entry points into the tab context menu with file, saved-version, and pasted-text actions, hiding Saved Version when autosave makes it irrelevant.
+- Polished the pasted-text Compare dialog with a standard header close button, a bottom-aligned primary Compare action, and an expanding text area.
 - Moved compare-session actions (refresh reference, exit compare, next/previous diff) out of the main menu and into the compare view/toolbar.
 - Switched Recent Files to a lightweight dialog listing recent documents (most recent first) instead of nested menu flows.
 - Split the left sidebar into Files and Source Control modes with a libadwaita view stack while preserving project-tree state.
@@ -59,6 +61,7 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Replaced editor palette preview tiles with custom non-selectable code previews, compact preview-only swatches, tooltips, and a bundled Classic Dark palette alongside the renamed Classic Light palette.
 - Added a family-based Window Palette to Appearance that derives per-window chrome colors from GtkSourceView schemes, while editor palettes remain exact scheme choices.
 - Reworked Riteed's Window Palette chrome from per-window scoped surface CSS to one global libadwaita `:root` color-variable provider, so tabs, header bars, status bars, dialogs, and popovers share palette colors consistently.
+- Moved Riteed's document tab strip into the libadwaita toolbar top-bar stack, keeping sidebar-friendly flat chrome while preserving tab search and transfer behavior.
 - Moved Appearance palette controls from a separate primary-menu dialog into a dedicated page inside Preferences, leaving the primary menu focused on standard app actions.
 - Grouped the primary menu into native `GMenu` sections so theme choices, workflow actions, and standard GNOME items render with clear separators.
 - Reworked compare scroll synchronization to use diff anchors instead of normalized ratios, and applied active document language highlighting to reference buffers.

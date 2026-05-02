@@ -22,11 +22,6 @@ fn workflow_section() -> gio::Menu {
         Some("app.new-window"),
     );
     section.append(Some(&pgettext("menu item", "Find")), Some("win.search"));
-
-    let compare_label = ellipsis_label(pgettext("menu item", "Compare"));
-    let compare_item = gio::MenuItem::new(Some(&compare_label), Some("win.compare"));
-    compare_item.set_attribute_value("hidden-when", Some(&"action-missing".to_variant()));
-    section.append_item(&compare_item);
     section
 }
 
@@ -182,12 +177,8 @@ mod tests {
         assert_eq!(item_string(&theme, 0, "action"), None);
 
         let workflow = section(&menu, 1);
-        assert_menu_labels(&workflow, &["New Window", "Find", "Compare…"]);
-        assert_menu_actions(&workflow, &["app.new-window", "win.search", "win.compare"]);
-        assert_eq!(
-            item_string(&workflow, 2, "hidden-when").as_deref(),
-            Some("action-missing")
-        );
+        assert_menu_labels(&workflow, &["New Window", "Find"]);
+        assert_menu_actions(&workflow, &["app.new-window", "win.search"]);
 
         let standard = section(&menu, 2);
         assert_menu_labels(

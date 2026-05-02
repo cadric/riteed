@@ -6,6 +6,7 @@ use crate::error::AppError;
 pub struct WindowShell {
     pub window: adw::ApplicationWindow,
     pub toolbar_view: adw::ToolbarView,
+    pub header_bar: adw::HeaderBar,
     pub title_widget: adw::WindowTitle,
     pub toast_overlay: adw::ToastOverlay,
     pub project_split_view: gtk4::Paned,
@@ -40,6 +41,7 @@ impl WindowShell {
         let builder = gtk4::Builder::from_resource("/io/github/cadric/Riteed/ui/window.ui");
         let window: adw::ApplicationWindow = builder_object(&builder, "window")?;
         let toolbar_view: adw::ToolbarView = builder_object(&builder, "toolbar_view")?;
+        let header_bar: adw::HeaderBar = builder_object(&builder, "header_bar")?;
         let title_widget: adw::WindowTitle = builder_object(&builder, "window_title")?;
         let toast_overlay: adw::ToastOverlay = builder_object(&builder, "toast_overlay")?;
         let project_split_view: gtk4::Paned = builder_object(&builder, "project_split_view")?;
@@ -89,6 +91,7 @@ impl WindowShell {
         Ok(Self {
             window,
             toolbar_view,
+            header_bar,
             title_widget,
             toast_overlay,
             project_split_view,

@@ -74,6 +74,13 @@ impl Window {
         self.workspace.shortcuts_enabled()
     }
 
+    pub(crate) fn tab_chrome_layout_for_tests(&self) -> bool {
+        self.workspace.tab_bar_controls_tab_view()
+            && self.workspace.top_bar_order_matches(&self.shell.header_bar)
+            && self.shell.toolbar_view.top_bar_style() == libadwaita::ToolbarStyle::Flat
+            && self.workspace_box_contains_only_tab_view_for_tests()
+    }
+
     pub(crate) fn search_visible_for_tests(&self) -> bool {
         self.workspace.search_visible()
     }
@@ -396,6 +403,14 @@ impl Window {
         start_is_sidebar && end_is_workspace
     }
 
+    fn workspace_box_contains_only_tab_view_for_tests(&self) -> bool {
+        let Some(first_child) = self.shell.workspace_box.first_child() else {
+            return false;
+        };
+        first_child == self.workspace.tab_view.clone().upcast::<gtk4::Widget>()
+            && first_child.next_sibling().is_none()
+    }
+
     pub(crate) fn source_control_icon_for_tests(&self) -> Option<String> {
         self.sidebar_host.source_control_icon_for_tests()
     }
@@ -426,6 +441,10 @@ impl Window {
 
     pub(crate) fn compare_action_states_for_tests(&self) -> (bool, bool, bool, bool, bool) {
         self.compare.action_states_for_tests()
+    }
+
+    pub(crate) fn tab_compare_action_states_for_tests(&self) -> (bool, bool, bool) {
+        self.compare.tab_compare_action_states_for_tests()
     }
 
     pub(crate) fn compare_with_disk_for_tests(self: &Rc<Self>) {

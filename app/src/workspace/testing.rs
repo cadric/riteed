@@ -1,6 +1,7 @@
 use std::rc::Rc;
 
 use gettextrs::pgettext;
+use gtk4::prelude::*;
 use libadwaita as adw;
 
 use super::Workspace;
@@ -54,6 +55,29 @@ impl Workspace {
 
     pub(crate) fn shortcuts_enabled(&self) -> bool {
         self.tab_view.shortcuts() == adw::TabViewShortcuts::ALL_SHORTCUTS
+    }
+
+    pub(crate) fn tab_bar_controls_tab_view(&self) -> bool {
+        self.tab_bar
+            .view()
+            .as_ref()
+            .is_some_and(|view| view == &self.tab_view)
+    }
+
+    pub(crate) fn top_bar_order_matches(&self, header_bar: &adw::HeaderBar) -> bool {
+        let header_widget = header_bar.clone().upcast::<gtk4::Widget>();
+        let tab_widget = self.tab_bar.clone().upcast::<gtk4::Widget>();
+        let search_widget = self.search.widget().clone().upcast::<gtk4::Widget>();
+        let Some(parent) = header_widget.parent() else {
+            return false;
+        };
+        if tab_widget.parent().as_ref() != Some(&parent)
+            || search_widget.parent().as_ref() != Some(&parent)
+        {
+            return false;
+        }
+        header_widget.next_sibling().as_ref() == Some(&tab_widget)
+            && tab_widget.next_sibling().as_ref() == Some(&search_widget)
     }
 
     pub(crate) fn search_visible(&self) -> bool {

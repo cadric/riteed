@@ -117,24 +117,36 @@ msgid "Fullscreen"
 msgstr ""
 
 msgctxt "tab menu item"
-msgid "Close"
-msgstr "Luk"
+msgid "_Close"
+msgstr "_Luk"
 
 msgctxt "tab menu item"
-msgid "Close Other Tabs"
-msgstr "Luk andre faneblade"
+msgid "Close _Other Tabs"
+msgstr "Luk _andre faneblade"
 
 msgctxt "tab menu item"
-msgid "Move Tab Backward"
-msgstr "Flyt faneblad tilbage"
+msgid "Move Tab _Backward"
+msgstr "Flyt faneblad _tilbage"
 
 msgctxt "tab menu item"
-msgid "Move Tab Forward"
-msgstr "Flyt faneblad frem"
+msgid "Move Tab _Forward"
+msgstr "Flyt faneblad _frem"
 
 msgctxt "tab menu item"
-msgid "Move to New Window"
-msgstr "Flyt til nyt vindue"
+msgid "Move to _New Window"
+msgstr "Flyt til _nyt vindue"
+
+msgctxt "tab menu item"
+msgid "Compare With F_ile"
+msgstr "Sammenlign med f_il"
+
+msgctxt "tab menu item"
+msgid "Compare With _Saved Version"
+msgstr "Sammenlign med _gemt version"
+
+msgctxt "tab menu item"
+msgid "Compare With _Pasted Text"
+msgstr "Sammenlign med ind_sat tekst"
 
 msgctxt "save safety action"
 msgid "Save"

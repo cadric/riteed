@@ -53,6 +53,8 @@ pub struct Workspace {
     pub(crate) close_action: gio::SimpleAction,
     pub(crate) settings: AppSettings,
     pub(crate) tab_view: adw::TabView,
+    #[cfg(test)]
+    tab_bar: adw::TabBar,
     pub(crate) tab_controls: tabs::TabControls,
     pub(crate) search: Rc<EditorSearch>,
     pub(crate) status_bar: EditorStatusBar,
@@ -88,9 +90,9 @@ impl Workspace {
         let tab_bar = adw::TabBar::new();
         tab_bar.set_autohide(true);
         tab_bar.set_view(Some(&tab_view));
+        parts.toolbar_view.add_top_bar(&tab_bar);
         parts.workspace_box.set_hexpand(true);
         parts.workspace_box.set_vexpand(true);
-        parts.workspace_box.append(&tab_bar);
         parts.workspace_box.append(&tab_view);
 
         let search = EditorSearch::new(parts.shell);
@@ -109,6 +111,8 @@ impl Workspace {
             close_action: parts.close_action.clone(),
             settings: parts.settings.clone(),
             tab_view,
+            #[cfg(test)]
+            tab_bar,
             tab_controls: tabs::TabControls::new(),
             search,
             status_bar,

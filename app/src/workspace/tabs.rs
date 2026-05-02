@@ -2,6 +2,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use gettextrs::pgettext;
+use gtk4::glib::variant::ToVariant;
 use gtk4::{gio, prelude::*};
 use libadwaita as adw;
 
@@ -124,8 +125,10 @@ fn install_state_callbacks(workspace: &Rc<Workspace>) {
             if let (Some(workspace), Some(page)) = (weak.upgrade(), page) {
                 tab_view.set_selected_page(page);
                 workspace.sync_tab_action_state();
+                workspace.refresh_selected_state();
             } else if let Some(workspace) = weak.upgrade() {
                 workspace.sync_tab_action_state();
+                workspace.refresh_selected_state();
             }
         });
 
@@ -161,24 +164,68 @@ fn install_state_callbacks(workspace: &Rc<Workspace>) {
 
 fn build_tab_menu() -> gio::Menu {
     let menu = gio::Menu::new();
-    menu.append(
-        Some(&pgettext("tab menu item", "Move Tab Backward")),
+    menu.append_section(None, &tab_move_section());
+    menu.append_section(None, &tab_compare_section());
+    menu.append_section(None, &tab_close_section());
+    menu
+}
+
+fn tab_move_section() -> gio::Menu {
+    let section = gio::Menu::new();
+    section.append(
+        Some(&pgettext("tab menu item", "Move Tab _Backward")),
         Some("win.tab-move-backward"),
     );
-    menu.append(
-        Some(&pgettext("tab menu item", "Move Tab Forward")),
+    section.append(
+        Some(&pgettext("tab menu item", "Move Tab _Forward")),
         Some("win.tab-move-forward"),
     );
-    menu.append(
-        Some(&pgettext("tab menu item", "Move to New Window")),
+    section.append(
+        Some(&pgettext("tab menu item", "Move to _New Window")),
         Some("win.tab-move-to-new-window"),
     );
-    menu.append(
-        Some(&pgettext("tab menu item", "Close Other Tabs")),
+    section
+}
+
+fn tab_compare_section() -> gio::Menu {
+    let section = gio::Menu::new();
+    section.append_item(&hidden_when_disabled_item(
+        &ellipsis_label(pgettext("tab menu item", "Compare With F_ile")),
+        "win.tab-compare-with-file",
+    ));
+    section.append_item(&hidden_when_disabled_item(
+        &pgettext("tab menu item", "Compare With _Saved Version"),
+        "win.tab-compare-with-saved-version",
+    ));
+    section.append_item(&hidden_when_disabled_item(
+        &ellipsis_label(pgettext("tab menu item", "Compare With _Pasted Text")),
+        "win.tab-compare-with-pasted-text",
+    ));
+    section
+}
+
+fn tab_close_section() -> gio::Menu {
+    let section = gio::Menu::new();
+    section.append(
+        Some(&pgettext("tab menu item", "Close _Other Tabs")),
         Some("win.close-other-tabs"),
     );
-    menu.append(Some(&pgettext("tab menu item", "Close")), Some("win.close"));
-    menu
+    section.append(
+        Some(&pgettext("tab menu item", "_Close")),
+        Some("win.close"),
+    );
+    section
+}
+
+fn hidden_when_disabled_item(label: &str, action: &str) -> gio::MenuItem {
+    let item = gio::MenuItem::new(Some(label), Some(action));
+    item.set_attribute_value("hidden-when", Some(&"action-disabled".to_variant()));
+    item
+}
+
+fn ellipsis_label(mut label: String) -> String {
+    label.push('…');
+    label
 }
 
 impl Workspace {
@@ -370,6 +417,8 @@ impl Workspace {
 
 #[cfg(test)]
 mod tests {
+    use gtk4::gio;
+    use gtk4::prelude::Cast;
     use gtk4::prelude::MenuModelExt;
 
     use super::build_tab_menu;
@@ -377,34 +426,64 @@ mod tests {
     #[test]
     fn tab_menu_contains_standard_tab_actions() {
         let menu = build_tab_menu();
-        let labels = (0..menu.n_items())
-            .filter_map(|index| menu.item_attribute_value(index, "label", None))
-            .filter_map(|value| value.get::<String>())
-            .collect::<Vec<_>>();
-        let actions = (0..menu.n_items())
-            .filter_map(|index| menu.item_attribute_value(index, "action", None))
-            .filter_map(|value| value.get::<String>())
-            .collect::<Vec<_>>();
+        assert_eq!(menu.n_items(), 3);
 
-        assert_eq!(
-            labels,
-            [
-                "Move Tab Backward",
-                "Move Tab Forward",
-                "Move to New Window",
-                "Close Other Tabs",
-                "Close",
-            ]
-        );
-        assert_eq!(
-            actions,
-            [
+        assert_menu_section(
+            &section(&menu, 0),
+            &[
+                "Move Tab _Backward",
+                "Move Tab _Forward",
+                "Move to _New Window",
+            ],
+            &[
                 "win.tab-move-backward",
                 "win.tab-move-forward",
                 "win.tab-move-to-new-window",
-                "win.close-other-tabs",
-                "win.close",
-            ]
+            ],
         );
+        let compare = section(&menu, 1);
+        assert_menu_section(
+            &compare,
+            &[
+                "Compare With F_ile…",
+                "Compare With _Saved Version",
+                "Compare With _Pasted Text…",
+            ],
+            &[
+                "win.tab-compare-with-file",
+                "win.tab-compare-with-saved-version",
+                "win.tab-compare-with-pasted-text",
+            ],
+        );
+        for index in 0..compare.n_items() {
+            assert_eq!(
+                item_string(&compare, index, "hidden-when").as_deref(),
+                Some("action-disabled")
+            );
+        }
+        assert_menu_section(
+            &section(&menu, 2),
+            &["Close _Other Tabs", "_Close"],
+            &["win.close-other-tabs", "win.close"],
+        );
+    }
+
+    fn section(menu: &gio::Menu, index: i32) -> gio::MenuModel {
+        let link = menu.item_link(index, "section");
+        assert!(link.is_some(), "tab menu section must exist");
+        link.unwrap_or_else(|| gio::Menu::new().upcast::<gio::MenuModel>())
+    }
+
+    fn assert_menu_section(menu: &gio::MenuModel, labels: &[&str], actions: &[&str]) {
+        assert_eq!(usize::try_from(menu.n_items()), Ok(labels.len()));
+        for (index, (label, action)) in (0_i32..).zip(labels.iter().zip(actions.iter())) {
+            assert_eq!(item_string(menu, index, "label").as_deref(), Some(*label));
+            assert_eq!(item_string(menu, index, "action").as_deref(), Some(*action));
+        }
+    }
+
+    fn item_string(menu: &gio::MenuModel, index: i32, attribute: &str) -> Option<String> {
+        menu.item_attribute_value(index, attribute, None)
+            .and_then(|value| value.get::<String>())
     }
 }

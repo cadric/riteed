@@ -12,6 +12,7 @@ pub(crate) fn exercise_v7_compare(test_app: &adw::Application) {
     exercise_compare_navigation(test_app);
     exercise_compare_two_files(test_app);
     exercise_compare_dialog_entry(test_app);
+    exercise_compare_tab_actions(test_app);
     exercise_compare_exits_on_open(test_app);
 }
 
@@ -59,6 +60,15 @@ fn click_first_button(root: &gtk4::Widget, label: &str) {
     }
 }
 
+fn click_first_sensitive_button(root: &gtk4::Widget, label: &str) {
+    if let Some(button) = collect_buttons(root, label)
+        .into_iter()
+        .find(gtk4::prelude::WidgetExt::is_sensitive)
+    {
+        button.emit_clicked();
+    }
+}
+
 fn wait_for_button(root: &gtk4::Widget, label: &str, reason: &str) {
     spin_until(reason, || !collect_buttons(root, label).is_empty());
 }
@@ -95,6 +105,10 @@ fn exercise_compare_with_disk_and_file(test_app: &adw::Application) {
         window.compare_action_states_for_tests(),
         (true, false, false, false, false)
     );
+    assert_eq!(
+        window.tab_compare_action_states_for_tests(),
+        (true, false, true)
+    );
 
     window.compare_with_disk_for_tests();
     spin_until("v7 compare with disk starts", || {
@@ -105,6 +119,10 @@ fn exercise_compare_with_disk_and_file(test_app: &adw::Application) {
     assert_eq!(
         window.compare_action_states_for_tests(),
         (false, true, true, true, true)
+    );
+    assert_eq!(
+        window.tab_compare_action_states_for_tests(),
+        (false, false, false)
     );
 
     window.set_selected_text_for_tests("a\nchanged\nc");
@@ -293,20 +311,20 @@ fn exercise_compare_dialog_entry(test_app: &adw::Application) {
     click_first_button(&left_buttons_parent, "Paste Text…");
     drain_events(16);
 
-    wait_for_button(&root_widget, "Use Text", "v7 compare paste dialog opened");
-    assert_eq!(collect_buttons(&root_widget, "Cancel").len(), 1);
-    click_first_button(&root_widget, "Use Text");
+    wait_for_sensitive_button(&root_widget, "Compare", "v7 compare paste dialog opened");
+    assert!(collect_buttons(&root_widget, "Cancel").is_empty());
+    click_first_sensitive_button(&root_widget, "Compare");
     drain_events(16);
 
     click_first_button(&right_buttons_parent, "Paste Text…");
     drain_events(16);
 
-    wait_for_button(
+    wait_for_sensitive_button(
         &root_widget,
-        "Use Text",
+        "Compare",
         "v7 compare paste dialog opened again",
     );
-    click_first_button(&root_widget, "Use Text");
+    click_first_sensitive_button(&root_widget, "Compare");
     drain_events(16);
 
     wait_for_sensitive_button(&root_widget, "Swap", "v7 compare dialog swap enabled");
@@ -318,7 +336,7 @@ fn exercise_compare_dialog_entry(test_app: &adw::Application) {
         "Compare",
         "v7 compare dialog compare button enabled",
     );
-    click_first_button(&root_widget, "Compare");
+    click_first_sensitive_button(&root_widget, "Compare");
     spin_until("v7 compare started from dialog", || {
         window.selected_compare_active_for_tests()
     });
@@ -326,4 +344,89 @@ fn exercise_compare_dialog_entry(test_app: &adw::Application) {
     drain_events(16);
 
     let _removed = fs::remove_file(compare_path);
+}
+
+fn exercise_compare_tab_actions(test_app: &adw::Application) {
+    let Some(window) = build_window(test_app) else {
+        return;
+    };
+    let compare_path = write_temp_file("riteed-v7-tab-actions.txt", b"before\n");
+    let compare_uri = gio::File::for_path(&compare_path).uri().to_string();
+    window.request_open_files(
+        vec![gio::File::for_path(&compare_path)],
+        OpenSource::AppOpen,
+    );
+    spin_until("v7 compare tab action file opened", || {
+        window.selected_saved_uri_for_tests() == compare_uri
+    });
+    assert_eq!(
+        window.tab_compare_action_states_for_tests(),
+        (true, false, true)
+    );
+    window.set_selected_text_for_tests("before\nchanged");
+    drain_events(16);
+    assert_eq!(
+        window.tab_compare_action_states_for_tests(),
+        (true, true, true)
+    );
+    window.set_autosave_for_tests(true);
+    drain_events(16);
+    assert_eq!(
+        window.tab_compare_action_states_for_tests(),
+        (true, false, true)
+    );
+    window.set_autosave_for_tests(false);
+    window.set_selected_text_for_tests("before\nchanged again");
+    drain_events(16);
+    assert_eq!(
+        window.tab_compare_action_states_for_tests(),
+        (true, true, true)
+    );
+
+    let activated = gtk4::prelude::WidgetExt::activate_action(
+        window.widget(),
+        "win.tab-compare-with-saved-version",
+        None,
+    )
+    .is_ok();
+    assert!(activated);
+    spin_until("v7 compare starts from saved tab action", || {
+        window.selected_compare_active_for_tests()
+    });
+    window.exit_compare_for_tests();
+    drain_events(16);
+    assert_eq!(
+        window.tab_compare_action_states_for_tests(),
+        (true, true, true)
+    );
+
+    let root_widget = window.widget().clone().upcast::<gtk4::Widget>();
+    let activated = gtk4::prelude::WidgetExt::activate_action(
+        window.widget(),
+        "win.tab-compare-with-pasted-text",
+        None,
+    )
+    .is_ok();
+    assert!(activated);
+    drain_events(16);
+    wait_for_sensitive_button(
+        &root_widget,
+        "Compare",
+        "v7 compare pasted text action opens paste dialog",
+    );
+    click_first_sensitive_button(&root_widget, "Compare");
+    spin_until("v7 compare starts from pasted text tab action", || {
+        window.selected_compare_active_for_tests()
+            && window.selected_compare_diff_count_for_tests() > 0
+    });
+    window.exit_compare_for_tests();
+
+    let reference_path = write_temp_file("riteed-v7-tab-action-ref.txt", b"reference\n");
+    window.compare_with_file_for_tests(&gio::File::for_path(&reference_path));
+    spin_until("v7 compare with file helper still starts", || {
+        window.selected_compare_active_for_tests()
+    });
+
+    let _removed = fs::remove_file(compare_path);
+    let _removed = fs::remove_file(reference_path);
 }

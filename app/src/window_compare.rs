@@ -3,6 +3,7 @@ mod dialog;
 use std::cell::Cell;
 use std::rc::Rc;
 
+use gettextrs::pgettext;
 use gtk4::{gio, prelude::*};
 use libadwaita as adw;
 
@@ -21,6 +22,9 @@ pub(crate) struct WindowCompareController {
     exit_action: gio::SimpleAction,
     next_action: gio::SimpleAction,
     prev_action: gio::SimpleAction,
+    tab_compare_file_action: gio::SimpleAction,
+    tab_compare_saved_action: gio::SimpleAction,
+    tab_compare_pasted_text_action: gio::SimpleAction,
     compare_action_installed: Cell<bool>,
 }
 
@@ -35,6 +39,15 @@ impl WindowCompareController {
             exit_action: gio::SimpleAction::new("compare-exit", None),
             next_action: gio::SimpleAction::new("diff-next", None),
             prev_action: gio::SimpleAction::new("diff-prev", None),
+            tab_compare_file_action: gio::SimpleAction::new("tab-compare-with-file", None),
+            tab_compare_saved_action: gio::SimpleAction::new(
+                "tab-compare-with-saved-version",
+                None,
+            ),
+            tab_compare_pasted_text_action: gio::SimpleAction::new(
+                "tab-compare-with-pasted-text",
+                None,
+            ),
             compare_action_installed: Cell::new(false),
         });
         controller.install_actions();
@@ -105,11 +118,23 @@ impl WindowCompareController {
         )
     }
 
+    #[cfg(test)]
+    pub(crate) fn tab_compare_action_states_for_tests(&self) -> (bool, bool, bool) {
+        (
+            self.tab_compare_file_action.is_enabled(),
+            self.tab_compare_saved_action.is_enabled(),
+            self.tab_compare_pasted_text_action.is_enabled(),
+        )
+    }
+
     fn install_actions(&self) {
         self.shell.add_action(&self.refresh_reference_action);
         self.shell.add_action(&self.exit_action);
         self.shell.add_action(&self.next_action);
         self.shell.add_action(&self.prev_action);
+        self.shell.add_action(&self.tab_compare_file_action);
+        self.shell.add_action(&self.tab_compare_saved_action);
+        self.shell.add_action(&self.tab_compare_pasted_text_action);
         self.shell.add_action(&self.compare_action);
         self.compare_action_installed.set(true);
     }
@@ -152,16 +177,49 @@ impl WindowCompareController {
                 controller.previous_diff();
             }
         });
+        let weak = Rc::downgrade(self);
+        self.tab_compare_file_action.connect_activate(move |_, _| {
+            if let Some(controller) = weak.upgrade() {
+                controller.present_tab_compare_file();
+            }
+        });
+        let weak = Rc::downgrade(self);
+        self.tab_compare_saved_action.connect_activate(move |_, _| {
+            if let Some(controller) = weak.upgrade() {
+                controller.compare_selected_with_saved();
+            }
+        });
+        let weak = Rc::downgrade(self);
+        self.tab_compare_pasted_text_action
+            .connect_activate(move |_, _| {
+                if let Some(controller) = weak.upgrade() {
+                    controller.present_tab_compare_pasted_text();
+                }
+            });
     }
 
     fn sync_actions(&self, selected: Option<&EditorTab>) {
         let active = selected.is_some_and(EditorTab::is_compare_active);
+        let can_start = selected.is_some_and(|tab| !tab.is_compare_active());
         self.set_compare_action_visible(!active);
+        self.tab_compare_file_action.set_enabled(can_start);
+        self.tab_compare_pasted_text_action.set_enabled(can_start);
+        self.tab_compare_saved_action
+            .set_enabled(self.can_compare_with_saved(selected));
         self.refresh_reference_action
             .set_enabled(selected.is_some_and(EditorTab::compare_reference_is_refreshable));
         self.exit_action.set_enabled(active);
         self.next_action.set_enabled(active);
         self.prev_action.set_enabled(active);
+    }
+
+    fn can_compare_with_saved(&self, selected: Option<&EditorTab>) -> bool {
+        selected.is_some_and(|tab| {
+            !tab.is_compare_active()
+                && tab.has_saved_local_uri()
+                && tab.is_dirty()
+                && !self.workspace.settings.autosave_enabled()
+        })
     }
 
     fn set_compare_action_visible(&self, visible: bool) {
@@ -180,6 +238,56 @@ impl WindowCompareController {
 
     fn present_compare_dialog(self: &Rc<Self>) {
         dialog::present_compare_dialog(self);
+    }
+
+    fn present_tab_compare_file(self: &Rc<Self>) {
+        if !self.tab_compare_file_action.is_enabled() {
+            return;
+        }
+        let weak = Rc::downgrade(self);
+        dialog::choose_file(
+            &self.shell,
+            &pgettext("file dialog title", "Choose a File"),
+            Rc::new(move |file| {
+                if let Some(controller) = weak.upgrade()
+                    && let Some(file) = file
+                {
+                    controller.start_compare_for_selected_tab(CompareSlot::File(file));
+                }
+            }),
+        );
+    }
+
+    fn compare_selected_with_saved(self: &Rc<Self>) {
+        if self.tab_compare_saved_action.is_enabled() {
+            self.start_compare_for_selected_tab(CompareSlot::SavedVersion);
+        }
+    }
+
+    fn present_tab_compare_pasted_text(self: &Rc<Self>) {
+        if !self.tab_compare_pasted_text_action.is_enabled() {
+            return;
+        }
+        let weak = Rc::downgrade(self);
+        dialog::show_paste_text_dialog(
+            &self.shell,
+            None,
+            Rc::new(move |text| {
+                if let Some(controller) = weak.upgrade()
+                    && let Some(text) = text
+                {
+                    controller.start_compare_for_selected_tab(CompareSlot::Text(text));
+                }
+            }),
+        );
+    }
+
+    fn start_compare_for_selected_tab(self: &Rc<Self>, right: CompareSlot) {
+        let Some(tab) = self.workspace.selected_tab() else {
+            return;
+        };
+        let callback = self.wrap_compare_callback(Rc::new(|_result| {}));
+        self.start_compare_for_current_document(&tab, right, &callback);
     }
 
     fn start_compare_from_dialog(

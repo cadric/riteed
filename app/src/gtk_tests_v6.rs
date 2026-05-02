@@ -146,6 +146,7 @@ pub(crate) fn exercise_v6_project_navigation(test_app: &adw::Application) {
             && window.selected_saved_uri_for_tests() == gio::File::for_path(&open_file).uri()
     });
     assert!(window.project_sidebar_left_layout_for_tests());
+    assert!(window.tab_chrome_layout_for_tests());
     window.set_project_sidebar_position_for_tests(12);
     spin_until("project sidebar drag clamps to minimum", || {
         window.project_sidebar_position_for_tests() >= 220

@@ -251,7 +251,7 @@
     },
     {
       "path": "src/window_compare.rs",
-      "line": 24,
+      "line": 28,
       "match": "compare_action_installed: Cell<bool>,",
       "kind": "runtime-shared-state",
       "ownership": "The compare controller owns its action-installed guard.",
@@ -531,7 +531,7 @@
     },
     {
       "path": "src/workspace.rs",
-      "line": 62,
+      "line": 64,
       "match": "pub(crate) state: RefCell<WorkspaceState>,",
       "kind": "runtime-shared-state",
       "ownership": "The workspace owns tab collection, recent/session caches, restore gating, and active close flow.",
@@ -539,7 +539,7 @@
     },
     {
       "path": "src/workspace/tabs.rs",
-      "line": 19,
+      "line": 20,
       "match": "transfer_window_handler: RefCell<Option<TransferWindowHandler>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each workspace owns the callback that creates registered destination windows for tab transfer.",
@@ -547,7 +547,7 @@
     },
     {
       "path": "src/workspace/tabs.rs",
-      "line": 20,
+      "line": 21,
       "match": "transferring_page: RefCell<Option<adw::TabPage>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each workspace owns the page currently being transferred out or in.",
