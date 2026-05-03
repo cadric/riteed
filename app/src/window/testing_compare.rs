@@ -4,6 +4,12 @@ use gtk4::gio;
 
 use super::Window;
 
+type CompareViewportPositionForTests = Option<(usize, f64)>;
+type CompareViewportPositionsForTests = (
+    CompareViewportPositionForTests,
+    CompareViewportPositionForTests,
+);
+
 impl Window {
     pub(crate) fn compare_action_states_for_tests(&self) -> (bool, bool, bool, bool, bool) {
         self.compare.action_states_for_tests()
@@ -134,10 +140,18 @@ impl Window {
             .map(|tab| tab.compare_wrap_modes_for_tests())
     }
 
-    pub(crate) fn selected_compare_top_visible_row_for_tests(&self) -> usize {
+    pub(crate) fn selected_compare_top_visible_rows_for_tests(&self) -> (usize, usize) {
         self.workspace
             .selected_tab()
-            .map_or(0, |tab| tab.compare_top_visible_row_for_tests())
+            .map_or((0, 0), |tab| tab.compare_top_visible_rows_for_tests())
+    }
+
+    pub(crate) fn selected_compare_top_visible_positions_for_tests(
+        &self,
+    ) -> CompareViewportPositionsForTests {
+        self.workspace.selected_tab().map_or((None, None), |tab| {
+            tab.compare_top_visible_positions_for_tests()
+        })
     }
 
     pub(crate) fn selected_compare_gutter_widths_for_tests(&self) -> (i32, i32) {
@@ -149,6 +163,50 @@ impl Window {
     pub(crate) fn scroll_selected_compare_to_row_for_tests(&self, row: usize) {
         if let Some(tab) = self.workspace.selected_tab() {
             tab.compare_scroll_to_row_for_tests(row);
+        }
+    }
+
+    pub(crate) fn scroll_left_compare_to_row_offset_for_tests(
+        &self,
+        row: usize,
+        offset: f64,
+    ) -> bool {
+        self.workspace
+            .selected_tab()
+            .is_some_and(|tab| tab.compare_scroll_left_to_row_offset_for_tests(row, offset))
+    }
+
+    pub(crate) fn scroll_right_compare_to_row_offset_for_tests(
+        &self,
+        row: usize,
+        offset: f64,
+    ) -> bool {
+        self.workspace
+            .selected_tab()
+            .is_some_and(|tab| tab.compare_scroll_right_to_row_offset_for_tests(row, offset))
+    }
+
+    pub(crate) fn set_left_compare_scroll_value_for_tests(&self, value: f64) {
+        if let Some(tab) = self.workspace.selected_tab() {
+            tab.compare_set_left_scroll_value_for_tests(value);
+        }
+    }
+
+    pub(crate) fn left_compare_scroll_value_for_tests(&self) -> f64 {
+        self.workspace
+            .selected_tab()
+            .map_or(0.0, |tab| tab.compare_left_scroll_value_for_tests())
+    }
+
+    pub(crate) fn compare_scroll_event_counts_for_tests(&self) -> (usize, usize) {
+        self.workspace
+            .selected_tab()
+            .map_or((0, 0), |tab| tab.compare_scroll_event_counts_for_tests())
+    }
+
+    pub(crate) fn reset_compare_scroll_event_counts_for_tests(&self) {
+        if let Some(tab) = self.workspace.selected_tab() {
+            tab.compare_reset_scroll_event_counts_for_tests();
         }
     }
 

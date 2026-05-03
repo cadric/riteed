@@ -33,7 +33,7 @@
     },
     {
       "path": "data/ui/window.ui",
-      "line": 42,
+      "line": 43,
       "match": "<object class=\"AdwWindowTitle\" id=\"window_title\">",
       "smallest_width": 320,
       "adaptive_pattern": "Centered window title reflects the selected tab title while the full file location lives in the bottom status bar.",

@@ -15,7 +15,7 @@ use super::presentation::{DiffPresentation, build_presentation};
 use super::render::{
     CompareTags, apply_current_hunk_tags, apply_model_tags, apply_presentation, clear_tags,
 };
-use super::scroll::{CompareScrollMarks, install_scroll_sync};
+use super::scroll::{CompareScrollEndpoint, install_scroll_sync};
 use super::ui::{compare_toolbar, configure_presentation_view};
 use super::{CompareController, CompareTarget};
 use crate::editor_tab::EditorTab;
@@ -33,10 +33,20 @@ impl CompareController {
         let paned = build_compare_paned(&left.root, &right.root);
         let left_adjustment = left.scrolled.vadjustment();
         let right_adjustment = right.scrolled.vadjustment();
-        let (left_handler, right_handler) =
-            install_scroll_sync(&left_adjustment, &right_adjustment);
+        let scroll_sync = install_scroll_sync(
+            CompareScrollEndpoint {
+                adjustment: &left_adjustment,
+                buffer: &left.buffer,
+                view: &left.view,
+            },
+            CompareScrollEndpoint {
+                adjustment: &right_adjustment,
+                buffer: &right.buffer,
+                view: &right.view,
+            },
+            &row_model,
+        );
         let style_handlers = connect_style_handlers(tab);
-        let scroll_marks = CompareScrollMarks::new(&left.buffer, &right.buffer);
 
         Self {
             target,
@@ -53,13 +63,9 @@ impl CompareController {
             presentation,
             row_model,
             gutters,
-            scroll_marks,
+            scroll_sync,
             current_hunk: None,
             cancellable: None,
-            left_adjustment,
-            right_adjustment,
-            left_handler: Some(left_handler),
-            right_handler: Some(right_handler),
             style_manager: style_handlers.manager,
             style_handler: Some(style_handlers.style_handler),
             high_contrast_handler: Some(style_handlers.high_contrast_handler),
@@ -92,7 +98,7 @@ impl CompareController {
         self.reference_text.push_str(text);
     }
 
-    pub(super) fn recompute(&mut self) {
+    pub(super) fn recompute(&mut self) -> Option<usize> {
         clear_tags(&self.left_buffer, &self.right_buffer, &self.tags);
         let previous = self.current_hunk;
         let model = compute_diff_row_model(&self.reference_text, &self.editable_snapshot);
@@ -109,8 +115,9 @@ impl CompareController {
         self.apply_current_hunk();
         self.update_status();
         if self.current_hunk == Some(0) {
-            self.queue_scroll_current_hunk();
+            return self.current_hunk_row();
         }
+        None
     }
 
     pub(super) fn move_hunk(&mut self, direction: i32) {
@@ -132,7 +139,7 @@ impl CompareController {
         self.current_hunk = Some(next);
         self.apply_current_hunk();
         self.update_status();
-        self.scroll_current_hunk();
+        let _scrolled = self.scroll_current_hunk();
     }
 
     pub(super) fn apply_current_hunk(&self) {
@@ -170,38 +177,20 @@ impl CompareController {
         self.gutters.refresh();
     }
 
-    fn scroll_current_hunk(&self) {
-        let Some(index) = self.current_hunk else {
-            return;
-        };
-        let model = self.row_model.borrow();
-        let Some(hunk) = model.hunks.get(index) else {
-            return;
-        };
-        self.scroll_marks.scroll_to_row(
-            &self.left_buffer,
-            &self.left_view,
-            &self.right_buffer,
-            &self.right_view,
-            hunk.first_row,
-        );
+    pub(super) fn scroll_to_row(&self, row: usize) -> bool {
+        self.scroll_sync.scroll_to_row(row)
     }
 
-    fn queue_scroll_current_hunk(&self) {
-        let Some(index) = self.current_hunk else {
-            return;
-        };
+    fn scroll_current_hunk(&self) -> bool {
+        self.current_hunk_row()
+            .is_some_and(|row| self.scroll_to_row(row))
+    }
+
+    fn current_hunk_row(&self) -> Option<usize> {
+        let index = self.current_hunk?;
         let model = self.row_model.borrow();
-        let Some(hunk) = model.hunks.get(index) else {
-            return;
-        };
-        self.scroll_marks.queue_scroll_to_row(
-            &self.left_buffer,
-            &self.left_view,
-            &self.right_buffer,
-            &self.right_view,
-            hunk.first_row,
-        );
+        let hunk = model.hunks.get(index)?;
+        Some(hunk.first_row)
     }
 
     fn update_status(&self) {
@@ -348,12 +337,7 @@ pub(super) fn sync_reference_language(
 impl Drop for CompareController {
     fn drop(&mut self) {
         self.cancel();
-        if let Some(handler) = self.left_handler.take() {
-            self.left_adjustment.disconnect(handler);
-        }
-        if let Some(handler) = self.right_handler.take() {
-            self.right_adjustment.disconnect(handler);
-        }
+        self.scroll_sync.disconnect();
         if let Some(handler) = self.style_handler.take() {
             self.style_manager.disconnect(handler);
         }

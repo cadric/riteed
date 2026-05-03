@@ -135,6 +135,10 @@ fn exercise_window_tab_flow(test_app: &adw::Application) {
     assert_eq!(window.tab_count_for_tests(), 1);
     assert_eq!(window.size_for_tests(), (840, 620));
     assert!(window.shortcuts_enabled_for_tests());
+    assert_eq!(
+        window.open_button_action_for_tests().as_deref(),
+        Some("app.open")
+    );
 
     let first_path = write_temp_file("riteed-v2-first.txt", b"alpha");
     let second_path = write_temp_file("riteed-v2-second.txt", b"beta");

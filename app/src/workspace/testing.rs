@@ -222,6 +222,18 @@ impl Workspace {
         }
     }
 
+    pub(crate) fn request_selected_guarded_autosave_for_tests(
+        self: &Rc<Self>,
+    ) -> super::autosave::AutosaveRequestForTests {
+        if let Some(tab) = self.selected_tab() {
+            return super::autosave::request_tab_autosave_for_tests(self, &tab);
+        }
+        super::autosave::AutosaveRequestForTests {
+            requested: false,
+            result: Rc::new(std::cell::RefCell::new(None)),
+        }
+    }
+
     pub(crate) fn select_offsets_in_selected(&self, start: i32, end: i32) {
         if let Some(tab) = self.selected_tab() {
             tab.select_offsets_for_tests(start, end);

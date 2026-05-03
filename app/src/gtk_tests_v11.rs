@@ -5,15 +5,21 @@ use std::rc::Rc;
 use gtk4::{gdk, gio, prelude::*};
 use libadwaita as adw;
 
-use crate::gtk_tests::{build_window, drain_events, spin_until, write_temp_file};
-use crate::settings::SourceControlViewMode;
+use crate::editor_tab::{SaveResult, Writability};
+use crate::gtk_tests::{
+    build_window, build_window_with_settings, drain_events, spin_until, write_temp_file,
+};
+use crate::settings::{AppSettings, SourceControlViewMode};
 use crate::workspace::OpenSource;
+
+const SCROLL_OFFSET_TOLERANCE: f64 = 2.0;
 
 pub(crate) fn exercise_v11_diff_surface(test_app: &adw::Application) {
     exercise_manual_compare_surface(test_app);
     exercise_navigation_copy_and_gutter_surface(test_app);
     exercise_asymmetric_gutter_width_surface(test_app);
     exercise_saved_reference_rebuild(test_app);
+    exercise_compare_pauses_guarded_autosave(test_app);
     exercise_git_compare_renderer_path(test_app);
 }
 
@@ -102,12 +108,13 @@ fn exercise_navigation_copy_and_gutter_surface(test_app: &adw::Application) {
     spin_until("v11 gutter compare starts", || {
         window.selected_compare_current_hunk_for_tests() == Some(0)
     });
-    drain_events(16);
-    assert_eq!(
-        window.selected_compare_top_visible_row_for_tests(),
-        79,
-        "compare should open at first changed display row"
-    );
+    spin_until("v11 compare opens at first changed display row", || {
+        compare_positions_match(&window, 79, 0.0)
+    });
+    drain_layout_events(16);
+    assert_compare_positions(&window, 79, 0.0);
+    drain_layout_events(16);
+    assert_compare_positions(&window, 79, 0.0);
     let gutter_widths = window.selected_compare_gutter_widths_for_tests();
     assert_eq!(
         gutter_widths.0, gutter_widths.1,
@@ -119,18 +126,38 @@ fn exercise_navigation_copy_and_gutter_surface(test_app: &adw::Application) {
     );
 
     window.scroll_selected_compare_to_row_for_tests(100);
-    drain_events(8);
+    drain_layout_events(8);
+    assert_compare_positions(&window, 100, 0.0);
+    window.reset_compare_scroll_event_counts_for_tests();
+    assert!(window.scroll_left_compare_to_row_offset_for_tests(100, 7.0));
+    drain_layout_events(8);
+    assert_compare_positions(&window, 100, 7.0);
+    assert_eq!(
+        window.compare_scroll_event_counts_for_tests().1,
+        0,
+        "left-origin scroll should block the right feedback handler"
+    );
+    window.reset_compare_scroll_event_counts_for_tests();
+    assert!(window.scroll_right_compare_to_row_offset_for_tests(108, 5.0));
+    drain_layout_events(8);
+    assert_compare_positions(&window, 108, 5.0);
+    assert_eq!(
+        window.compare_scroll_event_counts_for_tests().0,
+        0,
+        "right-origin scroll should block the left feedback handler"
+    );
+    exercise_smooth_scroll_burst(&window);
     window.next_diff_for_tests();
     spin_until("v11 next diff uses visible row", || {
         window.selected_compare_current_hunk_for_tests() == Some(1)
-            && window.selected_compare_top_visible_row_for_tests() == 119
+            && compare_positions_match(&window, 119, 0.0)
     });
     window.scroll_selected_compare_to_row_for_tests(100);
-    drain_events(8);
+    drain_layout_events(8);
     window.previous_diff_for_tests();
     spin_until("v11 previous diff uses visible row", || {
         window.selected_compare_current_hunk_for_tests() == Some(0)
-            && window.selected_compare_top_visible_row_for_tests() == 79
+            && compare_positions_match(&window, 79, 0.0)
     });
 
     let clipboard = gtk4::prelude::WidgetExt::display(window.widget()).clipboard();
@@ -223,6 +250,75 @@ fn exercise_saved_reference_rebuild(test_app: &adw::Application) {
     let _removed = fs::remove_file(editable_path);
 }
 
+fn exercise_compare_pauses_guarded_autosave(test_app: &adw::Application) {
+    let settings = AppSettings::new_for_tests();
+    settings.set_autosave_enabled(true);
+    let Some(window) = build_window_with_settings(test_app, settings) else {
+        return;
+    };
+    let editable_path = write_temp_file("riteed-v11-autosave-compare.txt", b"before\n");
+    let reference_path = write_temp_file("riteed-v11-autosave-reference.txt", b"reference\n");
+    let editable_file = gio::File::for_path(&editable_path);
+    let reference_file = gio::File::for_path(&reference_path);
+    let editable_uri = editable_file.uri().to_string();
+
+    window.request_open_files(vec![editable_file], OpenSource::AppOpen);
+    spin_until("v11 autosave compare file opened", || {
+        window.selected_saved_uri_for_tests() == editable_uri
+    });
+    spin_until("v11 autosave compare writability resolved", || {
+        window.selected_writability_for_tests() == Some(Writability::Writable)
+    });
+    window.resolve_selected_external_for_tests();
+    window.set_selected_text_for_tests("after compare autosave");
+    window.resolve_selected_external_for_tests();
+    assert_eq!(
+        fs::read_to_string(&editable_path).ok().as_deref(),
+        Some("before\n")
+    );
+
+    window.compare_with_file_for_tests(&reference_file);
+    spin_until("v11 guarded autosave compare starts", || {
+        window.selected_compare_active_for_tests()
+            && window.selected_compare_diff_count_for_tests() > 0
+    });
+    let compare_autosave = window.request_selected_guarded_autosave_for_tests();
+    drain_events(12);
+    assert!(
+        !compare_autosave.requested && compare_autosave.result.borrow().is_none(),
+        "compare mode should block the guarded autosave entry point"
+    );
+    assert_eq!(
+        fs::read_to_string(&editable_path).ok().as_deref(),
+        Some("before\n")
+    );
+    assert!(window.selected_compare_active_for_tests());
+
+    window.exit_compare_for_tests();
+    drain_events(8);
+    assert!(!window.selected_compare_active_for_tests());
+    let exit_autosave = window.request_selected_guarded_autosave_for_tests();
+    assert!(
+        exit_autosave.requested,
+        "compare exit should leave the selected tab autosave-eligible"
+    );
+    spin_until("v11 guarded autosave returns after compare exits", || {
+        exit_autosave.result.borrow().is_some()
+    });
+    let save_result = exit_autosave.result.borrow().clone();
+    assert!(
+        matches!(save_result, Some(SaveResult::Saved(_))),
+        "guarded autosave after compare returned {save_result:?}"
+    );
+    assert_eq!(
+        fs::read_to_string(&editable_path).ok().as_deref(),
+        Some("after compare autosave\n")
+    );
+
+    let _removed = fs::remove_file(editable_path);
+    let _removed = fs::remove_file(reference_path);
+}
+
 fn exercise_git_compare_renderer_path(test_app: &adw::Application) {
     let repo = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("..");
     let marker_name = "000-riteed-v11-git-compare-test.txt";
@@ -293,6 +389,72 @@ fn clipboard_text(clipboard: &gdk::Clipboard) -> Option<String> {
     });
     spin_until("v11 clipboard text arrives", || result.borrow().is_some());
     result.borrow_mut().take().flatten()
+}
+
+fn exercise_smooth_scroll_burst(window: &crate::window::Window) {
+    assert!(window.scroll_left_compare_to_row_offset_for_tests(100, 0.0));
+    drain_layout_events(8);
+    let start = window.left_compare_scroll_value_for_tests();
+    window.reset_compare_scroll_event_counts_for_tests();
+    for step in 0..64 {
+        window.set_left_compare_scroll_value_for_tests(start + f64::from(step) * 0.7);
+        drain_layout_events(1);
+    }
+    let (left_events, right_events) = window.compare_scroll_event_counts_for_tests();
+    assert!(
+        left_events > 0,
+        "smooth-scroll burst should exercise the source handler"
+    );
+    assert_eq!(
+        right_events, 0,
+        "smooth-scroll burst should not bounce through the peer handler"
+    );
+    assert_compare_panes_aligned(window);
+}
+
+fn assert_compare_positions(window: &crate::window::Window, row: usize, offset: f64) {
+    assert_eq!(
+        window.selected_compare_top_visible_rows_for_tests(),
+        (row, row)
+    );
+    assert!(
+        compare_positions_match(window, row, offset),
+        "expected compare panes at row {row} offset {offset}, got {:?}",
+        window.selected_compare_top_visible_positions_for_tests()
+    );
+}
+
+fn compare_positions_match(window: &crate::window::Window, row: usize, offset: f64) -> bool {
+    let (left, right) = window.selected_compare_top_visible_positions_for_tests();
+    position_matches(left, row, offset) && position_matches(right, row, offset)
+}
+
+fn position_matches(position: Option<(usize, f64)>, row: usize, offset: f64) -> bool {
+    position.is_some_and(|(actual_row, actual_offset)| {
+        actual_row == row && (actual_offset - offset).abs() <= SCROLL_OFFSET_TOLERANCE
+    })
+}
+
+fn assert_compare_panes_aligned(window: &crate::window::Window) {
+    let (left, right) = window.selected_compare_top_visible_positions_for_tests();
+    if let (Some((left_row, left_offset)), Some((right_row, right_offset))) = (left, right) {
+        assert_eq!(left_row, right_row);
+        assert!(
+            (left_offset - right_offset).abs() <= SCROLL_OFFSET_TOLERANCE,
+            "compare offsets drifted: left {left_offset}, right {right_offset}"
+        );
+    } else {
+        assert!(
+            left.is_some() && right.is_some(),
+            "expected compare viewport positions, got {left:?} and {right:?}"
+        );
+    }
+}
+
+fn drain_layout_events(rounds: usize) {
+    for _ in 0..rounds {
+        while gtk4::glib::MainContext::default().iteration(false) {}
+    }
 }
 
 fn usize_to_i32(value: usize) -> i32 {

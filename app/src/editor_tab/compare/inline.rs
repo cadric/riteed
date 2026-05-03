@@ -10,6 +10,7 @@ const GRAPHEME_TIMEOUT_MS: u64 = 2;
 const WORD_TIMEOUT_MS: u64 = 1;
 const TOKEN_TIMEOUT_MS: u64 = 4;
 const TOTAL_INLINE_BUDGET_MS: u64 = 12;
+const MIN_INLINE_BUDGET_US: u64 = 500;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(super) struct InlineRange {
@@ -20,18 +21,50 @@ pub(super) struct InlineRange {
 
 #[derive(Debug)]
 pub(super) struct InlineBudget {
-    start: Instant,
+    deadline: Instant,
 }
 
 impl InlineBudget {
     pub(super) fn new() -> Self {
         Self {
-            start: Instant::now(),
+            deadline: Instant::now() + Duration::from_millis(TOTAL_INLINE_BUDGET_MS),
         }
     }
 
-    fn exhausted(&self) -> bool {
-        self.start.elapsed() >= Duration::from_millis(TOTAL_INLINE_BUDGET_MS)
+    #[cfg(test)]
+    fn expired_for_tests() -> Self {
+        Self {
+            deadline: Instant::now(),
+        }
+    }
+
+    #[cfg(test)]
+    fn with_deadline_for_tests(deadline: Instant) -> Self {
+        Self { deadline }
+    }
+
+    fn remaining(&self) -> Duration {
+        self.deadline.saturating_duration_since(Instant::now())
+    }
+
+    fn has_work_budget(&self) -> bool {
+        self.remaining() >= Duration::from_micros(MIN_INLINE_BUDGET_US)
+    }
+
+    fn diff_deadline(&self) -> Option<Instant> {
+        if self.has_work_budget() {
+            Some(self.deadline)
+        } else {
+            None
+        }
+    }
+
+    fn effective_timeout(&self, max_millis: u64) -> Option<Duration> {
+        let remaining = self.remaining();
+        if remaining < Duration::from_micros(MIN_INLINE_BUDGET_US) {
+            return None;
+        }
+        Some(remaining.min(Duration::from_millis(max_millis)))
     }
 }
 
@@ -40,7 +73,7 @@ pub(super) fn ranges_for_modify<'a>(
     current: &'a str,
     budget: &InlineBudget,
 ) -> Vec<InlineRange> {
-    if budget.exhausted() {
+    if !budget.has_work_budget() {
         return Vec::new();
     }
     let reference_len = reference.chars().count();
@@ -49,34 +82,50 @@ pub(super) fn ranges_for_modify<'a>(
         return Vec::new();
     }
     if reference_len <= GRAPHEME_LIMIT && current_len <= GRAPHEME_LIMIT {
-        let ranges = token_ranges(reference, current);
+        let ranges = token_ranges(reference, current, budget);
         if !ranges.is_empty() {
             return ranges;
         }
-        return grapheme_ranges(reference, current);
+        if !budget.has_work_budget() {
+            return Vec::new();
+        }
+        return grapheme_ranges(reference, current, budget);
     }
+    let Some(timeout) = budget.effective_timeout(WORD_TIMEOUT_MS) else {
+        return Vec::new();
+    };
     let diff = TextDiff::configure()
-        .timeout(Duration::from_millis(WORD_TIMEOUT_MS))
+        .timeout(timeout)
         .diff_words(reference, current);
     collect_ranges(&diff)
 }
 
-fn grapheme_ranges<'a>(reference: &'a str, current: &'a str) -> Vec<InlineRange> {
+fn grapheme_ranges<'a>(
+    reference: &'a str,
+    current: &'a str,
+    budget: &InlineBudget,
+) -> Vec<InlineRange> {
+    let Some(timeout) = budget.effective_timeout(GRAPHEME_TIMEOUT_MS) else {
+        return Vec::new();
+    };
     let diff = TextDiff::configure()
-        .timeout(Duration::from_millis(GRAPHEME_TIMEOUT_MS))
+        .timeout(timeout)
         .diff_graphemes(reference, current);
     collect_ranges(&diff)
 }
 
-fn token_ranges(reference: &str, current: &str) -> Vec<InlineRange> {
+fn token_ranges(reference: &str, current: &str, budget: &InlineBudget) -> Vec<InlineRange> {
     let reference_tokens = tokenize_for_inline(reference);
     let current_tokens = tokenize_for_inline(current);
     if reference_tokens.len() <= 1 || current_tokens.len() <= 1 {
         return Vec::new();
     }
+    let Some(deadline) = budget.diff_deadline() else {
+        return Vec::new();
+    };
     let reference_values = token_values(&reference_tokens);
     let current_values = token_values(&current_tokens);
-    let deadline = Instant::now() + Duration::from_millis(TOKEN_TIMEOUT_MS);
+    let deadline = deadline.min(Instant::now() + Duration::from_millis(TOKEN_TIMEOUT_MS));
     let ops = capture_diff_slices_deadline(
         Algorithm::Myers,
         &reference_values,
@@ -322,6 +371,8 @@ fn push_refined_range(
 
 #[cfg(test)]
 mod tests {
+    use std::time::{Duration, Instant};
+
     use super::{DiffSide, InlineBudget, WORD_LIMIT, ranges_for_modify, tokenize_for_inline};
 
     #[test]
@@ -343,6 +394,21 @@ mod tests {
     fn inline_ranges_skip_very_long_lines() {
         let long = "x".repeat(WORD_LIMIT + 1);
         assert!(ranges_for_modify(&long, "y", &InlineBudget::new()).is_empty());
+    }
+
+    #[test]
+    fn inline_ranges_skip_when_budget_expired() {
+        let budget = InlineBudget::expired_for_tests();
+        let ranges = ranges_for_modify("compare.left_buffer\n", "compare.right_buffer\n", &budget);
+        assert!(ranges.is_empty());
+    }
+
+    #[test]
+    fn inline_ranges_skip_when_remaining_budget_is_too_small() {
+        let deadline = Instant::now() + Duration::from_micros(100);
+        let budget = InlineBudget::with_deadline_for_tests(deadline);
+        let ranges = ranges_for_modify("compare.left_buffer\n", "compare.right_buffer\n", &budget);
+        assert!(ranges.is_empty());
     }
 
     #[test]

@@ -78,6 +78,13 @@ impl Window {
         self.workspace.shortcuts_enabled()
     }
 
+    pub(crate) fn open_button_action_for_tests(&self) -> Option<String> {
+        self.shell
+            .open_button
+            .action_name()
+            .map(|action| action.to_string())
+    }
+
     pub(crate) fn tab_chrome_layout_for_tests(&self) -> bool {
         self.workspace.tab_bar_controls_tab_view()
             && self.workspace.top_bar_order_matches(&self.shell.header_bar)
@@ -258,6 +265,12 @@ impl Window {
 
     pub(crate) fn request_selected_autosave_for_tests(&self) {
         self.workspace.request_selected_autosave_for_tests();
+    }
+
+    pub(crate) fn request_selected_guarded_autosave_for_tests(
+        self: &Rc<Self>,
+    ) -> crate::workspace::AutosaveRequestForTests {
+        self.workspace.request_selected_guarded_autosave_for_tests()
     }
 
     pub(crate) fn source_control_status_for_tests(&self) -> String {

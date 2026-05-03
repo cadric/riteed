@@ -7,6 +7,7 @@
     <file preprocess="xml-stripblanks">ui/shortcuts.ui</file>
     <file preprocess="xml-stripblanks">styles/classic-dark.xml</file>
     <file>ui/appearance.css</file>
+    <file>ui/compare.css</file>
     <file>io.github.cadric.Riteed.metainfo.xml</file>
     <file alias="icons/scalable/apps/io.github.cadric.Riteed.svg">icons/hicolor/scalable/apps/io.github.cadric.Riteed.svg</file>
     <file alias="icons/scalable/apps/io.github.cadric.Riteed-about.svg">icons/hicolor/scalable/apps/io.github.cadric.Riteed-about.svg</file>

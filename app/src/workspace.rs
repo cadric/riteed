@@ -17,6 +17,8 @@ mod recent;
 pub(crate) mod tabs;
 #[cfg(test)]
 mod testing;
+#[cfg(test)]
+pub(crate) use autosave::AutosaveRequestForTests;
 
 type FormatPreferencesHandler = Rc<dyn Fn(Option<Rc<EditorTab>>)>;
 type CompareActionSyncHandler = Rc<dyn Fn(Option<Rc<EditorTab>>)>;

@@ -113,6 +113,8 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Fixed V10 polish regressions: Source Control icon registration, first-open Appearance tile sizing, Recent Files bottom actions, animated sidebar show/hide, and status-bar segment dividers.
 - Fixed V10 follow-up regressions where sidebar animation prevented full hiding, automatic Git refreshes repeatedly rebuilt Source Control and Files UI, and compare/Git diff panes drifted out of scroll sync.
 - Fixed V11 compare follow-up regressions by reserving identical measured custom-gutter width for original line numbers, adding visual `-`/`+` gutter markers in a fixed column for reference/current changed rows, making compare copy selection-safe, using strict viewport-based hunk navigation, opening compares at the first changed display row, and removing the previous current-hunk accent overlay so diff colors stay red for reference/old content and green for current/working content.
+- Compare: scroll between panes now stays in sync within the same row, eliminating the one-line drift introduced when row-based sync replaced pixel mirroring.
+- Compare inline diff budget is now a hard total cap, preventing UI jank when many rows have small modifications.
 - Source Control: action buttons no longer reserve inline space; status badges color-coded by Git state.
 - Fixed Window Palette chrome coverage so scoped scheme colors reach the sidebar, tab strip, libadwaita dialogs, primary menu, and card-like dialog content without global theme rebinding.
 

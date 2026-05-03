@@ -2,14 +2,6 @@
   "version": 1,
   "sites": [
     {
-      "path": "src/editor_tab/compare/scroll.rs",
-      "line": 106,
-      "match": "target.set_value(value);",
-      "kind": "gsettings-write",
-      "key": "compare-scroll-adjustment",
-      "trigger": "Compare scroll synchronization writes only to the peer GTK Adjustment during in-tab split scrolling; no preference or GSettings key is touched."
-    },
-    {
       "path": "src/settings/appearance.rs",
       "line": 70,
       "match": "let _changed = settings.set_enum(KEY_THEME, preference.enum_value());",
@@ -216,6 +208,22 @@
       "kind": "gsettings-write",
       "key": "tab-width-or-indent-width",
       "trigger": "Post-commit SpinRow normalization writes the applied sanitized value back into the widget only. The syncing guard prevents this local update from becoming a per-keystroke GSettings write."
+    },
+    {
+      "path": "src/editor_tab/compare/scroll.rs",
+      "line": 178,
+      "match": "pane.adjustment.set_value(target.clamp(lower, upper));",
+      "kind": "gsettings-write",
+      "key": "gtk-adjustment",
+      "trigger": "Compare split-diff scroll synchronization updates the local GtkAdjustment for the peer pane only; this is not a GSettings write."
+    },
+    {
+      "path": "src/editor_tab/compare/scroll.rs",
+      "line": 272,
+      "match": "self.left.adjustment.set_value(value);",
+      "kind": "gsettings-write",
+      "key": "gtk-adjustment-test-helper",
+      "trigger": "GTK regression tests simulate a local scroll adjustment value; this test helper does not touch GSettings."
     }
   ]
 }

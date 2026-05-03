@@ -523,11 +523,19 @@
     },
     {
       "path": "src/workspace.rs",
-      "line": 64,
+      "line": 66,
       "match": "pub(crate) state: RefCell<WorkspaceState>,",
       "kind": "runtime-shared-state",
       "ownership": "The workspace owns tab collection, recent/session caches, restore gating, and active close flow.",
       "justification": "Tabbed document coordination requires shared mutable state across menu rebuilds, session persistence, search/status rebinding, selection changes, and drag-and-drop."
+    },
+    {
+      "path": "src/workspace/autosave.rs",
+      "line": 19,
+      "match": "result: Rc<RefCell<Option<SaveResult>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The guarded autosave test request owns its observed asynchronous save result.",
+      "justification": "GTK regression coverage needs to prove the production autosave gate either skipped the write or returned the real save result without duplicating eligibility logic in the test."
     },
     {
       "path": "src/workspace/tabs.rs",

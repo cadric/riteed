@@ -317,4 +317,52 @@ mod tests {
         assert_eq!(model.hunks[0].first_row, 0);
         assert_eq!(model.hunks[0].rows, vec![0, 4]);
     }
+
+    #[test]
+    fn eof_insert_preserves_prefix_maps() {
+        let model = build_row_model("a\nb\n", "a\nb\nc\n");
+        assert_eq!(model.rows[2].kind, DiffRowKind::CurrentOnly);
+        assert_eq!(model.row_to_reference_line, vec![Some(0), Some(1), None]);
+        assert_eq!(model.row_to_current_line, vec![Some(0), Some(1), Some(2)]);
+        assert_eq!(model.row_for_line(DiffSide::Current, 2), Some(2));
+        assert_eq!(model.line_for_row(DiffSide::Reference, 2), None);
+    }
+
+    #[test]
+    fn eof_delete_preserves_prefix_maps() {
+        let model = build_row_model("a\nb\nc\n", "a\nb\n");
+        assert_eq!(model.rows[2].kind, DiffRowKind::ReferenceOnly);
+        assert_eq!(model.row_to_reference_line, vec![Some(0), Some(1), Some(2)]);
+        assert_eq!(model.row_to_current_line, vec![Some(0), Some(1), None]);
+        assert_eq!(model.row_for_line(DiffSide::Reference, 2), Some(2));
+        assert_eq!(model.line_for_row(DiffSide::Current, 2), None);
+    }
+
+    #[test]
+    fn eof_replace_preserves_prefix_maps() {
+        let model = build_row_model("a\nb\n", "a\nc\n");
+        assert_eq!(model.rows[1].kind, DiffRowKind::Modify);
+        assert_eq!(model.row_to_reference_line, vec![Some(0), Some(1)]);
+        assert_eq!(model.row_to_current_line, vec![Some(0), Some(1)]);
+        assert_eq!(model.row_for_line(DiffSide::Reference, 1), Some(1));
+        assert_eq!(model.line_for_row(DiffSide::Current, 1), Some(1));
+    }
+
+    #[test]
+    fn trailing_newline_boundaries_keep_last_line_maps() {
+        let missing_newline = build_row_model("a\nb\n", "a\nb");
+        assert_eq!(missing_newline.rows.len(), 2);
+        assert_eq!(missing_newline.rows[1].kind, DiffRowKind::Modify);
+        assert_eq!(
+            missing_newline.row_to_reference_line,
+            vec![Some(0), Some(1)]
+        );
+        assert_eq!(missing_newline.row_to_current_line, vec![Some(0), Some(1)]);
+
+        let added_newline = build_row_model("a\nb", "a\nb\n");
+        assert_eq!(added_newline.rows.len(), 2);
+        assert_eq!(added_newline.rows[1].kind, DiffRowKind::Modify);
+        assert_eq!(added_newline.row_to_reference_line, vec![Some(0), Some(1)]);
+        assert_eq!(added_newline.row_to_current_line, vec![Some(0), Some(1)]);
+    }
 }

@@ -4,10 +4,7 @@ use libadwaita as adw;
 use super::model::{DiffRowKind, DiffRowModel, DiffSide};
 use super::presentation::DiffPresentation;
 
-const COLOR_PROBE_CSS: &str = "
-.riteed-diff-reference-color-probe { color: @error_color; }
-.riteed-diff-current-color-probe { color: @success_color; }
-";
+const COLOR_PROBE_CSS_RESOURCE: &str = "/io/github/cadric/Riteed/ui/compare.css";
 
 pub(super) struct CompareTags {
     reference_removed: gtk4::TextTag,
@@ -240,7 +237,7 @@ fn resolve_probe_color(
     let base = view.color();
     let display = view.display();
     let provider = gtk4::CssProvider::new();
-    provider.load_from_data(COLOR_PROBE_CSS);
+    provider.load_from_resource(COLOR_PROBE_CSS_RESOURCE);
     gtk4::style_context_add_provider_for_display(
         &display,
         &provider,

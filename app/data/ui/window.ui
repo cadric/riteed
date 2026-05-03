@@ -19,6 +19,7 @@
             </child>
             <child type="start">
               <object class="AdwSplitButton" id="open_button">
+                <property name="action-name">app.open</property>
                 <property name="icon-name">document-open-symbolic</property>
                 <property name="tooltip-text" translatable="yes">Open Files</property>
                 <property name="dropdown-tooltip" translatable="yes">Open Choices</property>

@@ -1,0 +1,8 @@
+/* Compare color probes: resolve libadwaita semantic colors for transient diff tags. */
+.riteed-diff-reference-color-probe {
+  color: @error_color;
+}
+
+.riteed-diff-current-color-probe {
+  color: @success_color;
+}

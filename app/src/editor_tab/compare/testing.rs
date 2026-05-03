@@ -6,6 +6,12 @@ use super::navigation;
 use super::render::{self, CompareTags};
 use crate::editor_tab::EditorTab;
 
+type CompareViewportPositionForTests = Option<(usize, f64)>;
+type CompareViewportPositionsForTests = (
+    CompareViewportPositionForTests,
+    CompareViewportPositionForTests,
+);
+
 impl EditorTab {
     pub(crate) fn compare_diff_count_for_tests(&self) -> usize {
         self.state
@@ -189,15 +195,35 @@ impl EditorTab {
             .unwrap_or_default()
     }
 
-    pub(crate) fn compare_top_visible_row_for_tests(&self) -> usize {
+    pub(crate) fn compare_top_visible_rows_for_tests(&self) -> (usize, usize) {
         self.state
             .try_borrow()
             .ok()
             .and_then(|state| {
                 state.compare.active.as_ref().map(|compare| {
-                    navigation::top_visible_row(
-                        &compare.left_view,
-                        compare.row_model.borrow().rows.len(),
+                    let row_count = compare.row_model.borrow().rows.len();
+                    (
+                        navigation::top_visible_row(&compare.left_view, row_count),
+                        navigation::top_visible_row(&compare.right_view, row_count),
+                    )
+                })
+            })
+            .unwrap_or_default()
+    }
+
+    pub(crate) fn compare_top_visible_positions_for_tests(
+        &self,
+    ) -> CompareViewportPositionsForTests {
+        self.state
+            .try_borrow()
+            .ok()
+            .and_then(|state| {
+                state.compare.active.as_ref().map(|compare| {
+                    let row_count = compare.row_model.borrow().rows.len();
+                    let (left, right) = compare.scroll_sync.viewport_positions_for_tests(row_count);
+                    (
+                        left.map(|position| (position.row, position.offset)),
+                        right.map(|position| (position.row, position.offset)),
                     )
                 })
             })
@@ -223,13 +249,87 @@ impl EditorTab {
             return;
         };
         if let Some(compare) = state.compare.active.as_ref() {
-            compare.scroll_marks.scroll_to_row(
-                &compare.left_buffer,
-                &compare.left_view,
-                &compare.right_buffer,
-                &compare.right_view,
-                row,
-            );
+            let _scrolled = compare.scroll_to_row(row);
+        }
+    }
+
+    pub(crate) fn compare_scroll_left_to_row_offset_for_tests(
+        &self,
+        row: usize,
+        offset: f64,
+    ) -> bool {
+        self.state
+            .try_borrow()
+            .ok()
+            .and_then(|state| {
+                state.compare.active.as_ref().map(|compare| {
+                    compare
+                        .scroll_sync
+                        .scroll_left_to_row_offset_for_tests(row, offset)
+                })
+            })
+            .unwrap_or(false)
+    }
+
+    pub(crate) fn compare_scroll_right_to_row_offset_for_tests(
+        &self,
+        row: usize,
+        offset: f64,
+    ) -> bool {
+        self.state
+            .try_borrow()
+            .ok()
+            .and_then(|state| {
+                state.compare.active.as_ref().map(|compare| {
+                    compare
+                        .scroll_sync
+                        .scroll_right_to_row_offset_for_tests(row, offset)
+                })
+            })
+            .unwrap_or(false)
+    }
+
+    pub(crate) fn compare_set_left_scroll_value_for_tests(&self, value: f64) {
+        if let Ok(state) = self.state.try_borrow()
+            && let Some(compare) = state.compare.active.as_ref()
+        {
+            compare.scroll_sync.set_left_value_for_tests(value);
+        }
+    }
+
+    pub(crate) fn compare_left_scroll_value_for_tests(&self) -> f64 {
+        self.state
+            .try_borrow()
+            .ok()
+            .and_then(|state| {
+                state
+                    .compare
+                    .active
+                    .as_ref()
+                    .map(|compare| compare.scroll_sync.left_value_for_tests())
+            })
+            .unwrap_or_default()
+    }
+
+    pub(crate) fn compare_scroll_event_counts_for_tests(&self) -> (usize, usize) {
+        self.state
+            .try_borrow()
+            .ok()
+            .and_then(|state| {
+                state
+                    .compare
+                    .active
+                    .as_ref()
+                    .map(|compare| compare.scroll_sync.event_counts_for_tests())
+            })
+            .unwrap_or_default()
+    }
+
+    pub(crate) fn compare_reset_scroll_event_counts_for_tests(&self) {
+        if let Ok(state) = self.state.try_borrow()
+            && let Some(compare) = state.compare.active.as_ref()
+        {
+            compare.scroll_sync.reset_event_counts_for_tests();
         }
     }
 

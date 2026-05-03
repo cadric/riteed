@@ -3,7 +3,7 @@
   "sites": [
     {
       "path": "src/editor_tab/compare.rs",
-      "line": 47,
+      "line": 49,
       "match": "presentation: Rc<std::cell::RefCell<DiffPresentation>>,",
       "kind": "runtime-shared-state",
       "ownership": "The compare controller owns the tab-local rendered presentation rows and custom line-number gutter model.",
@@ -11,7 +11,7 @@
     },
     {
       "path": "src/editor_tab/compare.rs",
-      "line": 48,
+      "line": 50,
       "match": "row_model: Rc<std::cell::RefCell<DiffRowModel>>,",
       "kind": "runtime-shared-state",
       "ownership": "The compare controller owns the tab-local logical diff row model.",
@@ -51,11 +51,75 @@
     },
     {
       "path": "src/editor_tab/compare/scroll.rs",
-      "line": 91,
-      "match": "syncing: &Rc<Cell<bool>>,",
+      "line": 19,
+      "match": "row_model: Rc<RefCell<DiffRowModel>>,",
       "kind": "runtime-shared-state",
-      "ownership": "Compare row scroll synchronization owns its recursive-update guard.",
-      "justification": "Presentation buffers have identical display-row counts, so direct adjustment syncing is sufficient, but setting the peer Adjustment inside a value-changed handler still needs a shared guard to prevent feedback loops."
+      "ownership": "Compare scroll synchronization owns a shared handle to the tab-local logical row model.",
+      "justification": "Programmatic first-hunk and hunk-navigation scrolls verify the target presentation row against the current row count without copying diff state into the scroll helper."
+    },
+    {
+      "path": "src/editor_tab/compare/scroll.rs",
+      "line": 20,
+      "match": "left_handler: Rc<RefCell<Option<glib::SignalHandlerId>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Compare scroll synchronization owns the left pane signal handler id.",
+      "justification": "Peer scroll updates block the opposite value-changed handler while preserving row and intra-row offset, so the handler id must be available to both the installer and the RAII block guard."
+    },
+    {
+      "path": "src/editor_tab/compare/scroll.rs",
+      "line": 21,
+      "match": "right_handler: Rc<RefCell<Option<glib::SignalHandlerId>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Compare scroll synchronization owns the right pane signal handler id.",
+      "justification": "Peer scroll updates block the opposite value-changed handler while preserving row and intra-row offset, so the handler id must be available to both the installer and the RAII block guard."
+    },
+    {
+      "path": "src/editor_tab/compare/scroll.rs",
+      "line": 48,
+      "match": "left: Cell<usize>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Compare scroll regression tests own a left-pane callback counter.",
+      "justification": "The test-only counter verifies smooth-scroll bursts do not bounce through the peer handler after programmatic sync blocks recursive value-changed emissions."
+    },
+    {
+      "path": "src/editor_tab/compare/scroll.rs",
+      "line": 49,
+      "match": "right: Cell<usize>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Compare scroll regression tests own a right-pane callback counter.",
+      "justification": "The test-only counter verifies smooth-scroll bursts do not bounce through the peer handler after programmatic sync blocks recursive value-changed emissions."
+    },
+    {
+      "path": "src/editor_tab/compare/scroll.rs",
+      "line": 55,
+      "match": "row_model: &Rc<RefCell<DiffRowModel>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Compare row scroll synchronization borrows the controller-owned logical row model.",
+      "justification": "Live split-diff scrolling follows the top visible presentation row plus intra-row offset, so value-change callbacks need the current row count from the shared row model."
+    },
+    {
+      "path": "src/editor_tab/compare/scroll.rs",
+      "line": 117,
+      "match": "row_model: &Rc<RefCell<DiffRowModel>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Compare row scroll synchronization reads the controller-owned logical row model during sync.",
+      "justification": "The sync helper clamps top-visible-row lookup to the latest row count while preserving source intra-row offset without copying model state into adjustment callbacks."
+    },
+    {
+      "path": "src/editor_tab/compare/scroll.rs",
+      "line": 118,
+      "match": "target_handler: &Rc<RefCell<Option<glib::SignalHandlerId>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Compare row scroll synchronization borrows the target pane signal handler id.",
+      "justification": "Programmatic peer adjustment writes block the target handler with an RAII guard so row+offset sync cannot recurse during touchpad smooth-scroll bursts."
+    },
+    {
+      "path": "src/editor_tab/compare/scroll.rs",
+      "line": 194,
+      "match": "handler: &'a RefCell<Option<glib::SignalHandlerId>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The scoped signal block borrows one compare pane signal handler id.",
+      "justification": "The RAII guard blocks and unblocks the peer value-changed handler around a direct adjustment write, avoiding recursive sync without leaving handlers muted on early returns."
     },
     {
       "path": "src/source_control/list_view.rs",

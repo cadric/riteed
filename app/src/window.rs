@@ -371,13 +371,6 @@ impl Window {
 
     fn install_document_callbacks(self: &Rc<Self>) {
         let weak = Rc::downgrade(self);
-        self.shell.open_button.connect_clicked(move |_| {
-            if let Some(window) = weak.upgrade() {
-                window.request_open_dialog();
-            }
-        });
-
-        let weak = Rc::downgrade(self);
         self.save_action.connect_activate(move |_, _| {
             if let Some(window) = weak.upgrade() {
                 window.request_save();

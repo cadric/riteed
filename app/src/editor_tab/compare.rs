@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::rc::{Rc, Weak};
 
 use gettextrs::pgettext;
 use gtk4::{gio, glib, prelude::*};
@@ -7,6 +7,8 @@ use libadwaita as adw;
 use super::EditorTab;
 use crate::editor_io::{self, LoadFailure};
 use crate::error::AppError;
+
+const COMPARE_SCROLL_LAYOUT_RETRIES: u8 = 8;
 
 mod controller;
 mod diff;
@@ -47,13 +49,9 @@ pub(crate) struct CompareController {
     presentation: Rc<std::cell::RefCell<DiffPresentation>>,
     row_model: Rc<std::cell::RefCell<DiffRowModel>>,
     gutters: gutter::CompareGutters,
-    scroll_marks: scroll::CompareScrollMarks,
+    scroll_sync: scroll::CompareScrollSync,
     current_hunk: Option<usize>,
     cancellable: Option<gio::Cancellable>,
-    left_adjustment: gtk4::Adjustment,
-    right_adjustment: gtk4::Adjustment,
-    left_handler: Option<glib::SignalHandlerId>,
-    right_handler: Option<glib::SignalHandlerId>,
     style_manager: adw::StyleManager,
     style_handler: Option<glib::SignalHandlerId>,
     high_contrast_handler: Option<glib::SignalHandlerId>,
@@ -208,17 +206,23 @@ impl EditorTab {
         }
     }
 
-    pub(super) fn sync_compare_reference_after_save(&self, saved_uri: &str) {
+    pub(super) fn sync_compare_reference_after_save(self: &Rc<Self>, saved_uri: &str) {
+        let generation = self.compare_generation();
         let Ok(mut state) = self.state.try_borrow_mut() else {
             return;
         };
+        let mut scroll_row = None;
         if let Some(compare) = state.compare.active.as_mut()
             && compare.target.kind == CompareTargetKind::Disk
             && compare.target.uri.as_deref() == Some(saved_uri)
         {
             let snapshot = compare.editable_snapshot.clone();
             compare.set_reference_text(&snapshot, false);
-            compare.recompute();
+            scroll_row = compare.recompute();
+        }
+        drop(state);
+        if let Some(row) = scroll_row {
+            self.queue_compare_scroll_to_row(row, generation);
         }
     }
 
@@ -260,17 +264,19 @@ impl EditorTab {
                 callback(Err(AppError::Cancelled));
                 return;
             };
-            let applied = {
+            let (applied, scroll_row) = {
                 let mut state = self.state.borrow_mut();
                 if let Some(compare) = state.compare.active.as_mut() {
                     compare.set_reference_text(reference_text, target.implicit_trailing_newline);
-                    compare.recompute();
-                    true
+                    (true, compare.recompute())
                 } else {
-                    false
+                    (false, None)
                 }
             };
             self.sync_presentation();
+            if let Some(row) = scroll_row {
+                self.queue_compare_scroll_to_row(row, self.compare_generation());
+            }
             callback(if applied {
                 Ok(())
             } else {
@@ -307,7 +313,7 @@ impl EditorTab {
                 }
                 let outcome = match result {
                     Ok(document) => {
-                        let applied = {
+                        let (applied, scroll_row) = {
                             let mut state = tab.state.borrow_mut();
                             if let Some(compare) = state.compare.active.as_mut()
                                 && compare.target.uri.as_deref() == Some(target_uri.as_str())
@@ -317,12 +323,14 @@ impl EditorTab {
                                     &document.text,
                                     document.format.implicit_trailing_newline(),
                                 );
-                                compare.recompute();
-                                true
+                                (true, compare.recompute())
                             } else {
-                                false
+                                (false, None)
                             }
                         };
+                        if let Some(row) = scroll_row {
+                            tab.queue_compare_scroll_to_row(row, generation);
+                        }
                         if applied {
                             Ok(())
                         } else {
@@ -350,6 +358,36 @@ impl EditorTab {
     fn compare_generation(&self) -> u64 {
         self.state.borrow().compare.request_generation
     }
+
+    fn queue_compare_scroll_to_row(self: &Rc<Self>, row: usize, generation: u64) {
+        queue_compare_scroll_attempt(Rc::downgrade(self), row, generation, 0);
+    }
+}
+
+fn queue_compare_scroll_attempt(weak: Weak<EditorTab>, row: usize, generation: u64, attempt: u8) {
+    let _source = glib::idle_add_local_full(glib::Priority::LOW, move || {
+        let Some(tab) = weak.upgrade() else {
+            return glib::ControlFlow::Break;
+        };
+        if tab.compare_generation() != generation {
+            return glib::ControlFlow::Break;
+        }
+        let scrolled = match tab.state.try_borrow() {
+            Ok(state) => {
+                let Some(compare) = state.compare.active.as_ref() else {
+                    return glib::ControlFlow::Break;
+                };
+                compare.scroll_to_row(row)
+            }
+            Err(_error) => false,
+        };
+        if scrolled || attempt >= COMPARE_SCROLL_LAYOUT_RETRIES {
+            glib::ControlFlow::Break
+        } else {
+            queue_compare_scroll_attempt(Rc::downgrade(&tab), row, generation, attempt + 1);
+            glib::ControlFlow::Break
+        }
+    });
 }
 
 fn map_reference_load_error(error: LoadFailure) -> AppError {
