@@ -224,6 +224,14 @@
       "kind": "gsettings-write",
       "key": "gtk-adjustment-test-helper",
       "trigger": "GTK regression tests simulate a local scroll adjustment value; this test helper does not touch GSettings."
+    },
+    {
+      "path": "src/editor_tab/compare/hatch.rs",
+      "line": 179,
+      "match": "self.handlers.horizontal.adjustment.set_value(value);",
+      "kind": "gsettings-write",
+      "key": "gtk-adjustment-test-helper",
+      "trigger": "GTK regression tests simulate a local horizontal scroll adjustment value so hatch viewport positioning can be verified; this test helper does not touch GSettings."
     }
   ]
 }

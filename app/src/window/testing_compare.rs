@@ -9,6 +9,13 @@ type CompareViewportPositionsForTests = (
     CompareViewportPositionForTests,
     CompareViewportPositionForTests,
 );
+type CompareHatchRegionForTests = (usize, i32, i32, i32, i32);
+type CompareHatchRegionsForTests = (
+    Vec<CompareHatchRegionForTests>,
+    Vec<CompareHatchRegionForTests>,
+);
+type CompareHatchViewportForTests = (i32, i32, i32, i32);
+type CompareHatchViewportsForTests = (CompareHatchViewportForTests, CompareHatchViewportForTests);
 
 impl Window {
     pub(crate) fn compare_action_states_for_tests(&self) -> (bool, bool, bool, bool, bool) {
@@ -164,6 +171,40 @@ impl Window {
         self.workspace
             .selected_tab()
             .map_or((0, 0), |tab| tab.compare_gutter_widths_for_tests())
+    }
+
+    pub(crate) fn selected_compare_hatch_overlay_states_for_tests(
+        &self,
+    ) -> ((bool, bool), (bool, bool)) {
+        self.workspace
+            .selected_tab()
+            .map_or(((false, false), (false, false)), |tab| {
+                tab.compare_hatch_overlay_states_for_tests()
+            })
+    }
+
+    pub(crate) fn selected_compare_hatch_regions_for_tests(&self) -> CompareHatchRegionsForTests {
+        self.workspace
+            .selected_tab()
+            .map_or_else(Default::default, |tab| {
+                tab.compare_hatch_regions_for_tests()
+            })
+    }
+
+    pub(crate) fn selected_compare_hatch_viewports_for_tests(
+        &self,
+    ) -> CompareHatchViewportsForTests {
+        self.workspace
+            .selected_tab()
+            .map_or_else(Default::default, |tab| {
+                tab.compare_hatch_viewports_for_tests()
+            })
+    }
+
+    pub(crate) fn set_left_compare_horizontal_scroll_value_for_tests(&self, value: f64) {
+        if let Some(tab) = self.workspace.selected_tab() {
+            tab.compare_set_left_horizontal_scroll_value_for_tests(value);
+        }
     }
 
     pub(crate) fn scroll_selected_compare_to_row_for_tests(&self, row: usize) {

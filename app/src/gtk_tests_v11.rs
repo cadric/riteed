@@ -27,10 +27,11 @@ fn exercise_manual_compare_surface(test_app: &adw::Application) {
     let Some(window) = build_window(test_app) else {
         return;
     };
+    let long_reference_tail = format!("right tail {}\n", "x".repeat(240));
     let editable_text = "a0\nold\nleft only\nc0\nc1\nc2\nc3\nlast\n";
-    let reference_text = "a0\nnew\nc0\nc1\nc2\nc3\nlast changed\nright tail\n";
+    let reference_text = format!("a0\nnew\nc0\nc1\nc2\nc3\nlast changed\n{long_reference_tail}");
     let expected_rows =
-        crate::editor_tab::compare_row_count_for_texts_for_tests(editable_text, reference_text);
+        crate::editor_tab::compare_row_count_for_texts_for_tests(editable_text, &reference_text);
     let editable_path = write_temp_file("riteed-v11-editable.rs", editable_text.as_bytes());
     let reference_path = write_temp_file("riteed-v11-reference.rs", reference_text.as_bytes());
 
@@ -71,6 +72,7 @@ fn exercise_manual_compare_surface(test_app: &adw::Application) {
         window.selected_compare_syntax_highlight_for_tests(),
         (true, true)
     );
+    assert_compare_hatches_target_placeholders(&window);
     assert_eq!(
         window.selected_compare_wrap_modes_for_tests(),
         Some((gtk4::WrapMode::None, gtk4::WrapMode::None))
@@ -80,6 +82,15 @@ fn exercise_manual_compare_surface(test_app: &adw::Application) {
     assert_eq!(
         window.selected_compare_wrap_modes_for_tests(),
         Some((gtk4::WrapMode::None, gtk4::WrapMode::None))
+    );
+    let before_hscroll = window.selected_compare_hatch_viewports_for_tests();
+    window.set_left_compare_horizontal_scroll_value_for_tests(24.0);
+    spin_until(
+        "v11 hatch left horizontal scroll moves only left pane",
+        || {
+            let after = window.selected_compare_hatch_viewports_for_tests();
+            after.0.0 > before_hscroll.0.0 && after.1.0 == before_hscroll.1.0
+        },
     );
     window.exit_compare_for_tests();
     drain_events(8);
@@ -396,6 +407,50 @@ fn clipboard_text(clipboard: &gdk::Clipboard) -> Option<String> {
     });
     spin_until("v11 clipboard text arrives", || result.borrow().is_some());
     result.borrow_mut().take().flatten()
+}
+
+fn assert_compare_hatches_target_placeholders(window: &crate::window::Window) {
+    assert_eq!(
+        window.selected_compare_hatch_overlay_states_for_tests(),
+        ((false, false), (false, false))
+    );
+    let row_count = window.selected_compare_row_count_for_tests();
+    let left_hatch_row = (0..row_count).find(|row| {
+        let (reference, current) = window.selected_compare_line_numbers_for_tests(*row);
+        reference.is_none() && current.is_some()
+    });
+    let right_hatch_row = (0..row_count).find(|row| {
+        let (reference, current) = window.selected_compare_line_numbers_for_tests(*row);
+        reference.is_some() && current.is_none()
+    });
+    assert!(
+        left_hatch_row.is_some(),
+        "compare fixture should include a current-only filler row"
+    );
+    assert!(
+        right_hatch_row.is_some(),
+        "compare fixture should include a reference-only filler row"
+    );
+    if let Some(row) = left_hatch_row {
+        window.scroll_selected_compare_to_row_for_tests(row);
+        drain_layout_events(8);
+        spin_until("v11 left hatch region becomes visible", || {
+            let (left_regions, _) = window.selected_compare_hatch_regions_for_tests();
+            left_regions
+                .iter()
+                .any(|(region_row, _x, _y, _width, height)| *region_row == row && *height > 0)
+        });
+    }
+    if let Some(row) = right_hatch_row {
+        window.scroll_selected_compare_to_row_for_tests(row);
+        drain_layout_events(8);
+        spin_until("v11 right hatch region becomes visible", || {
+            let (_, right_regions) = window.selected_compare_hatch_regions_for_tests();
+            right_regions
+                .iter()
+                .any(|(region_row, _x, _y, _width, height)| *region_row == row && *height > 0)
+        });
+    }
 }
 
 fn exercise_smooth_scroll_burst(window: &crate::window::Window) {

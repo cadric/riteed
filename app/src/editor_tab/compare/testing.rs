@@ -11,6 +11,13 @@ type CompareViewportPositionsForTests = (
     CompareViewportPositionForTests,
     CompareViewportPositionForTests,
 );
+type CompareHatchRegionForTests = (usize, i32, i32, i32, i32);
+type CompareHatchRegionsForTests = (
+    Vec<CompareHatchRegionForTests>,
+    Vec<CompareHatchRegionForTests>,
+);
+type CompareHatchViewportForTests = (i32, i32, i32, i32);
+type CompareHatchViewportsForTests = (CompareHatchViewportForTests, CompareHatchViewportForTests);
 
 impl EditorTab {
     pub(crate) fn compare_diff_count_for_tests(&self) -> usize {
@@ -257,6 +264,71 @@ impl EditorTab {
                     .map(|compare| compare.gutters.width_requests())
             })
             .unwrap_or_default()
+    }
+
+    pub(crate) fn compare_hatch_overlay_states_for_tests(&self) -> ((bool, bool), (bool, bool)) {
+        self.state
+            .try_borrow()
+            .ok()
+            .and_then(|state| {
+                state.compare.active.as_ref().map(|compare| {
+                    let (left, right) = compare.hatches.overlay_states_for_tests();
+                    (
+                        (left.can_target, left.focusable),
+                        (right.can_target, right.focusable),
+                    )
+                })
+            })
+            .unwrap_or_default()
+    }
+
+    pub(crate) fn compare_hatch_regions_for_tests(&self) -> CompareHatchRegionsForTests {
+        self.state
+            .try_borrow()
+            .ok()
+            .and_then(|state| {
+                state.compare.active.as_ref().map(|compare| {
+                    let (left, right) = compare.hatches.visible_regions_for_tests();
+                    (
+                        left.into_iter()
+                            .map(|region| {
+                                (region.row, region.x, region.y, region.width, region.height)
+                            })
+                            .collect(),
+                        right
+                            .into_iter()
+                            .map(|region| {
+                                (region.row, region.x, region.y, region.width, region.height)
+                            })
+                            .collect(),
+                    )
+                })
+            })
+            .unwrap_or_default()
+    }
+
+    pub(crate) fn compare_hatch_viewports_for_tests(&self) -> CompareHatchViewportsForTests {
+        self.state
+            .try_borrow()
+            .ok()
+            .and_then(|state| {
+                state.compare.active.as_ref().map(|compare| {
+                    let (left, right) = compare.hatches.viewports_for_tests();
+                    (
+                        (left.x, left.y, left.width, left.height),
+                        (right.x, right.y, right.width, right.height),
+                    )
+                })
+            })
+            .unwrap_or_default()
+    }
+
+    pub(crate) fn compare_set_left_horizontal_scroll_value_for_tests(&self, value: f64) {
+        if let Ok(state) = self.state.try_borrow()
+            && let Some(compare) = state.compare.active.as_ref()
+        {
+            compare.hatches.set_left_horizontal_value_for_tests(value);
+        }
     }
 
     pub(crate) fn compare_scroll_to_row_for_tests(&self, row: usize) {

@@ -13,6 +13,7 @@ const COMPARE_SCROLL_LAYOUT_RETRIES: u8 = 8;
 mod controller;
 mod diff;
 mod gutter;
+mod hatch;
 mod inline;
 mod interaction;
 mod model;
@@ -49,6 +50,7 @@ pub(crate) struct CompareController {
     presentation: Rc<std::cell::RefCell<DiffPresentation>>,
     row_model: Rc<std::cell::RefCell<DiffRowModel>>,
     gutters: gutter::CompareGutters,
+    hatches: hatch::CompareHatches,
     scroll_sync: scroll::CompareScrollSync,
     current_hunk: Option<usize>,
     cancellable: Option<gio::Cancellable>,
@@ -151,6 +153,7 @@ impl EditorTab {
         let compare = self.state.borrow_mut().compare.active.take();
         if let Some(mut compare) = compare {
             compare.cancel();
+            compare.detach_visual_layers();
             self.root.remove(&compare.toolbar);
             self.root.remove(&compare.paned);
             compare.paned.set_start_child(Option::<&gtk4::Widget>::None);

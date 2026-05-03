@@ -27,6 +27,17 @@ impl DiffPresentation {
     }
 
     #[must_use]
+    pub(super) fn hatch_side_for_row(&self, row: usize) -> Option<PresentationSide> {
+        let reference = self.reference_line_numbers.get(row)?;
+        let current = self.current_line_numbers.get(row)?;
+        match (reference.is_none(), current.is_none()) {
+            (true, false) => Some(PresentationSide::Reference),
+            (false, true) => Some(PresentationSide::Current),
+            _ => None,
+        }
+    }
+
+    #[must_use]
     pub(super) fn max_line_number(&self, side: PresentationSide) -> usize {
         let numbers = match side {
             PresentationSide::Reference => &self.reference_line_numbers,
@@ -215,5 +226,32 @@ mod tests {
             presentation.reference_line_numbers.len(),
             presentation.current_line_numbers.len()
         );
+    }
+
+    #[test]
+    fn hatch_side_targets_only_placeholder_side() {
+        let left = "same\nold\nleft only\nblank follows\n\n";
+        let right = "same\nnew\nblank follows\n\nright only\n";
+        let model = compute_diff_row_model(left, right);
+        let presentation = build_presentation(&model, left, right);
+
+        let hatch_sides: Vec<Option<PresentationSide>> = (0..presentation.line_count())
+            .map(|row| presentation.hatch_side_for_row(row))
+            .collect();
+
+        assert!(hatch_sides.contains(&Some(PresentationSide::Reference)));
+        assert!(hatch_sides.contains(&Some(PresentationSide::Current)));
+        assert_eq!(presentation.hatch_side_for_row(0), None);
+        for row in 0..presentation.line_count() {
+            if presentation
+                .line_number(PresentationSide::Reference, row)
+                .is_some()
+                && presentation
+                    .line_number(PresentationSide::Current, row)
+                    .is_some()
+            {
+                assert_eq!(presentation.hatch_side_for_row(row), None);
+            }
+        }
     }
 }

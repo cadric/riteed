@@ -3,15 +3,15 @@
   "sites": [
     {
       "path": "src/editor_tab/compare.rs",
-      "line": 49,
+      "line": 50,
       "match": "presentation: Rc<std::cell::RefCell<DiffPresentation>>,",
       "kind": "runtime-shared-state",
       "ownership": "The compare controller owns the tab-local rendered presentation rows and custom line-number gutter model.",
-      "justification": "Read-only compare panes render from ephemeral presentation buffers, so both custom gutters and tests need one shared source of display-row to original-line mapping."
+      "justification": "Read-only compare panes render from ephemeral presentation buffers, so custom gutters, hatch layers, and tests need one shared source of display-row to original-line mapping."
     },
     {
       "path": "src/editor_tab/compare.rs",
-      "line": 50,
+      "line": 51,
       "match": "row_model: Rc<std::cell::RefCell<DiffRowModel>>,",
       "kind": "runtime-shared-state",
       "ownership": "The compare controller owns the tab-local logical diff row model.",
@@ -120,6 +120,62 @@
       "kind": "runtime-shared-state",
       "ownership": "The scoped signal block borrows one compare pane signal handler id.",
       "justification": "The RAII guard blocks and unblocks the peer value-changed handler around a direct adjustment write, avoiding recursive sync without leaving handlers muted on early returns."
+    },
+    {
+      "path": "src/editor_tab/compare/hatch.rs",
+      "line": 24,
+      "match": "presentation: Rc<RefCell<DiffPresentation>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Compare hatch GTK test accessors own a shared handle to the tab-local presentation model.",
+      "justification": "Regression tests inspect visible hatch regions against the latest placeholder row map without copying per-pane presentation state; this field is test-only."
+    },
+    {
+      "path": "src/editor_tab/compare/hatch.rs",
+      "line": 27,
+      "match": "high_contrast: Rc<Cell<bool>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Each compare hatch layer owns the cached high-contrast state shared with its draw callback.",
+      "justification": "Style changes update the cached value once, while the DrawingArea callback can render the high-contrast solid fallback without querying libadwaita on every frame."
+    },
+    {
+      "path": "src/editor_tab/compare/hatch.rs",
+      "line": 29,
+      "match": "detached: Cell<bool>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Each compare hatch layer owns an idempotent detach guard.",
+      "justification": "Compare exit and Drop can both reach overlay cleanup, so the Cell prevents duplicate widget unparenting without introducing a wider controller-level mutable borrow."
+    },
+    {
+      "path": "src/editor_tab/compare/hatch.rs",
+      "line": 61,
+      "match": "presentation: &Rc<RefCell<DiffPresentation>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Compare hatch setup borrows the controller-owned presentation row map.",
+      "justification": "Both pane hatch layers share the same presentation model so ReferenceOnly and CurrentOnly placeholder classification stays aligned with the rendered buffers."
+    },
+    {
+      "path": "src/editor_tab/compare/hatch.rs",
+      "line": 124,
+      "match": "presentation: &Rc<RefCell<DiffPresentation>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "A compare hatch layer borrows the controller-owned presentation row map during setup.",
+      "justification": "The DrawingArea callback receives a shared handle to the latest presentation rows so hatch rendering follows recompute and does not duplicate diff state."
+    },
+    {
+      "path": "src/editor_tab/compare/hatch.rs",
+      "line": 204,
+      "match": "presentation: &Rc<RefCell<DiffPresentation>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The compare hatch draw callback borrows the shared presentation row map.",
+      "justification": "Drawing only visible placeholder rows requires the latest presentation-side classification while keeping the renderer tied to the controller-owned compare state."
+    },
+    {
+      "path": "src/editor_tab/compare/hatch.rs",
+      "line": 206,
+      "match": "high_contrast: &Rc<Cell<bool>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The compare hatch draw callback borrows the shared high-contrast flag.",
+      "justification": "The callback must see style refreshes without per-frame StyleManager queries, and the Cell keeps the cached render mode local to the hatch layer."
     },
     {
       "path": "src/source_control/list_view.rs",

@@ -8,6 +8,7 @@ use sourceview5::prelude::*;
 
 use super::diff::compute_diff_row_model;
 use super::gutter::CompareGutters;
+use super::hatch::{CompareHatchEndpoint, CompareHatches};
 use super::interaction::install_presentation_interaction;
 use super::model::DiffRowModel;
 use super::navigation::{target_hunk_for_navigation, top_visible_row};
@@ -31,20 +32,31 @@ impl CompareController {
         let toolbar = compare_toolbar(&target.title);
         let status_label = toolbar.status_label.clone();
         let paned = build_compare_paned(&left.root, &right.root);
-        let left_adjustment = left.scrolled.vadjustment();
-        let right_adjustment = right.scrolled.vadjustment();
         let scroll_sync = install_scroll_sync(
             CompareScrollEndpoint {
-                adjustment: &left_adjustment,
+                adjustment: &left.scrolled.vadjustment(),
                 buffer: &left.buffer,
                 view: &left.view,
             },
             CompareScrollEndpoint {
-                adjustment: &right_adjustment,
+                adjustment: &right.scrolled.vadjustment(),
                 buffer: &right.buffer,
                 view: &right.view,
             },
             &row_model,
+        );
+        let hatches = CompareHatches::new(
+            CompareHatchEndpoint {
+                view: &left.view,
+                vadjustment: &left.scrolled.vadjustment(),
+                hadjustment: &left.scrolled.hadjustment(),
+            },
+            CompareHatchEndpoint {
+                view: &right.view,
+                vadjustment: &right.scrolled.vadjustment(),
+                hadjustment: &right.scrolled.hadjustment(),
+            },
+            &presentation,
         );
         let style_handlers = connect_style_handlers(tab);
 
@@ -63,6 +75,7 @@ impl CompareController {
             presentation,
             row_model,
             gutters,
+            hatches,
             scroll_sync,
             current_hunk: None,
             cancellable: None,
@@ -111,6 +124,7 @@ impl CompareController {
         self.row_model.borrow_mut().clone_from(&model);
         self.presentation.borrow_mut().clone_from(&presentation);
         self.gutters.refresh();
+        self.hatches.refresh();
         apply_model_tags(&self.left_buffer, &self.right_buffer, &model, &self.tags);
         self.apply_current_hunk();
         self.update_status();
@@ -154,6 +168,7 @@ impl CompareController {
 
     pub(super) fn apply_tag_colors(&self) {
         self.tags.apply_colors(&self.left_view);
+        self.hatches.refresh_style();
     }
 
     pub(crate) fn apply_wrap_override(&self) {
@@ -163,18 +178,25 @@ impl CompareController {
         self.right_view.set_show_line_numbers(false);
         self.left_view.set_show_line_marks(false);
         self.right_view.set_show_line_marks(false);
+        self.hatches.refresh();
     }
 
     pub(super) fn clear_zoom_style(&self) {
         clear_zoom_css_classes(&self.left_view);
         clear_zoom_css_classes(&self.right_view);
         self.gutters.refresh();
+        self.hatches.refresh();
     }
 
     pub(super) fn restore_zoom_style(&self, css_class: &str) {
         restore_zoom_css_class(&self.left_view, css_class);
         restore_zoom_css_class(&self.right_view, css_class);
         self.gutters.refresh();
+        self.hatches.refresh();
+    }
+
+    pub(super) fn detach_visual_layers(&self) {
+        self.hatches.detach();
     }
 
     pub(super) fn scroll_to_row(&self, row: usize) -> bool {
@@ -352,6 +374,7 @@ pub(super) fn sync_reference_language(
 
 impl Drop for CompareController {
     fn drop(&mut self) {
+        self.detach_visual_layers();
         self.cancel();
         self.scroll_sync.disconnect();
         if let Some(handler) = self.style_handler.take() {

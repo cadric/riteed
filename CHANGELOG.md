@@ -73,6 +73,7 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Replaced compare's hunk-only `DiffPlan` with a shared `DiffRowModel` built from full `similar::TextDiff` ops, making row alignment, presentation buffers, custom gutters, intra-line tags, and hunk status one tab-local source of truth.
 - Made Compare views read-only in V11; exit compare to edit. This removes V10's editable compare pane while preserving the original editor widget, undo stack, cursor, selection, and modified state for restore on exit.
 - Standardized Compare panes to the usual diff convention: reference/old content on the left in red and current/working content on the right in green, with token-aware inline ranges strengthening those same side colors.
+- Added subtle diagonal hatch backgrounds to Compare filler rows, marking the empty side of insertions and deletions without changing unchanged context lines.
 - Clarified the Riteed settings model into scoped modules and converted theme and Source Control view mode preferences to GSettings enums.
 - Reduced `EditorTab` pressure by moving document runtime, I/O, external-file, autosave, and compare state into focused internal owners while keeping the public tab workflow unchanged.
 - Polished UI copy by using real ellipses in dialog labels, sentence-style Preferences subtitles, user-first Help pages, and defensive restored-window size clamping.
