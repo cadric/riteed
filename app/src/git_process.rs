@@ -22,6 +22,7 @@ pub(crate) enum GitProcessError {
     InvalidPath,
     InvalidIdentity,
     OutputTooLarge,
+    BinaryContent,
     SpawnFailed(String),
     CommandFailed(String),
     ParseFailed,

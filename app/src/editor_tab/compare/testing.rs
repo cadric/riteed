@@ -142,13 +142,28 @@ impl EditorTab {
             .try_borrow()
             .ok()
             .and_then(|state| {
-                state.compare.active.as_ref().map(|compare| {
-                    CompareTags::semantic_colors_available()
-                        && !compare.left_buffer.is_highlight_syntax()
-                        && !compare.right_buffer.is_highlight_syntax()
-                })
+                state
+                    .compare
+                    .active
+                    .as_ref()
+                    .map(|_compare| CompareTags::semantic_colors_available())
             })
             .unwrap_or(false)
+    }
+
+    pub(crate) fn compare_syntax_highlight_for_tests(&self) -> (bool, bool) {
+        self.state
+            .try_borrow()
+            .ok()
+            .and_then(|state| {
+                state.compare.active.as_ref().map(|compare| {
+                    (
+                        compare.left_buffer.is_highlight_syntax(),
+                        compare.right_buffer.is_highlight_syntax(),
+                    )
+                })
+            })
+            .unwrap_or((false, false))
     }
 
     pub(crate) fn compare_line_counts_for_tests(&self) -> (i32, i32) {

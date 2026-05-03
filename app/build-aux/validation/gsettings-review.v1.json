@@ -19,7 +19,7 @@
     },
     {
       "path": "src/settings/window_session.rs",
-      "line": 59,
+      "line": 71,
       "match": "let _changed_width = settings.set_int(KEY_WINDOW_WIDTH, width);",
       "kind": "gsettings-write",
       "key": "window-width",
@@ -27,7 +27,7 @@
     },
     {
       "path": "src/settings/window_session.rs",
-      "line": 60,
+      "line": 72,
       "match": "let _changed_height = settings.set_int(KEY_WINDOW_HEIGHT, height);",
       "kind": "gsettings-write",
       "key": "window-height",
@@ -35,7 +35,7 @@
     },
     {
       "path": "src/settings/window_session.rs",
-      "line": 90,
+      "line": 102,
       "match": "let _changed = settings.set_strv(KEY_RECENT_FILES, files);",
       "kind": "gsettings-write",
       "key": "recent-files",
@@ -43,7 +43,7 @@
     },
     {
       "path": "src/settings/window_session.rs",
-      "line": 118,
+      "line": 130,
       "match": "let _changed = settings.set_strv(KEY_SESSION_FILES, files);",
       "kind": "gsettings-write",
       "key": "session-files",

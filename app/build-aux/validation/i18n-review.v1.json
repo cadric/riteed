@@ -73,8 +73,8 @@
     },
     {
       "path": "src/editor_tab/compare/controller.rs",
-      "line": 211,
-      "match": "let text = ngettext(\"%d changed line\", \"%d changed lines\", plural_count)",
+      "line": 235,
+      "match": "ngettext(\"%d changed line\", \"%d changed lines\", plural_count).replace(\"%d\", &changed_lines)",
       "kind": "i18n-short-string",
       "resolution": "This plural-sensitive compare status counts changed logical lines while hunk navigation remains visible beside it in the full-width compare toolbar."
     },

@@ -91,7 +91,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 219,
+      "line": 220,
       "match": "let flags = gio::SubprocessFlags::STDIN_PIPE",
       "kind": "runtime-git-subprocess",
       "ownership": "The typed Git process boundary owns the Gio subprocess pipe flags.",
@@ -99,7 +99,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 220,
+      "line": 221,
       "match": "| gio::SubprocessFlags::STDOUT_PIPE",
       "kind": "runtime-git-subprocess",
       "ownership": "The typed Git process boundary owns stdout capture for sandbox Git.",
@@ -107,7 +107,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 221,
+      "line": 222,
       "match": "| gio::SubprocessFlags::STDERR_PIPE;",
       "kind": "runtime-git-subprocess",
       "ownership": "The typed Git process boundary owns stderr capture for sandbox Git.",
@@ -115,7 +115,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 222,
+      "line": 223,
       "match": "let launcher = gio::SubprocessLauncher::new(flags);",
       "kind": "runtime-git-subprocess",
       "ownership": "The typed Git process boundary owns subprocess creation.",

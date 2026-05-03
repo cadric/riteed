@@ -4,13 +4,13 @@ use std::path::PathBuf;
 use gtk4::prelude::FileExt;
 
 use super::{
-    commit_sensitive, discard_state, entry_disabled_reason, mode_for_path, reference_oid,
-    reference_text,
+    commit_sensitive, discard_state, entry_disabled_reason, fallback_mode_for_unknown_stage_click,
+    reference_oid, reference_text, should_stage_delete, stage_mode_for_entry,
 };
 use crate::git_process::GitProcessError;
 use crate::git_status::{
     GitActionState, GitAttrState, GitAttrs, GitFileStatus, GitPath, GitStatusEntry,
-    GitStatusSnapshot,
+    GitStatusSnapshot, GitWorktreeMode,
 };
 
 #[test]
@@ -61,22 +61,22 @@ fn disabled_reasons_cover_unsupported_paths_and_modes() {
         Some("Save the open document before using Git actions.")
     );
 
-    #[cfg(unix)]
-    {
-        let link = repo.join("linked.txt");
-        let _removed = fs::remove_file(&link);
-        assert!(std::os::unix::fs::symlink(repo.join("tracked.txt"), &link).is_ok());
-        assert_eq!(
-            entry_disabled_reason(
-                Some(&repo),
-                &entry("linked.txt", GitFileStatus::Modified, true, true),
-                &known_attrs(),
-                &[],
-            )
-            .as_deref(),
-            Some("Symlinks and unsupported file modes are visible only.")
-        );
-    }
+    assert_eq!(
+        entry_disabled_reason(
+            Some(&repo),
+            &entry_with_mode(
+                "missing-link.txt",
+                GitFileStatus::Modified,
+                true,
+                true,
+                GitWorktreeMode::Symlink,
+            ),
+            &known_attrs(),
+            &[],
+        )
+        .as_deref(),
+        Some("Symlinks and unsupported file modes are visible only.")
+    );
 }
 
 #[test]
@@ -114,7 +114,7 @@ fn file_modes_and_reference_text_are_guarded() {
     assert!(fs::write(&script, b"#!/bin/sh\n").is_ok());
     assert!(fs::create_dir_all(&dir).is_ok());
     assert_eq!(
-        mode_for_path(&repo, &GitPath::from_bytes(b"script.sh")),
+        fallback_mode_for_unknown_stage_click(&repo, &GitPath::from_bytes(b"script.sh")),
         Some("100644")
     );
     #[cfg(unix)]
@@ -129,23 +129,110 @@ fn file_modes_and_reference_text_are_guarded() {
             assert!(fs::set_permissions(&script, permissions).is_ok());
         }
         assert_eq!(
-            mode_for_path(&repo, &GitPath::from_bytes(b"script.sh")),
+            fallback_mode_for_unknown_stage_click(&repo, &GitPath::from_bytes(b"script.sh")),
             Some("100755")
         );
     }
-    assert_eq!(mode_for_path(&repo, &GitPath::from_bytes(b"dir")), None);
+    assert_eq!(
+        fallback_mode_for_unknown_stage_click(&repo, &GitPath::from_bytes(b"dir")),
+        None
+    );
     assert_eq!(
         reference_text(b"hello".to_vec()).ok().as_deref(),
         Some("hello")
     );
+    assert_eq!(reference_text(Vec::new()).ok().as_deref(), Some(""));
     assert!(matches!(
         reference_text(vec![0]),
-        Err(GitProcessError::OutputTooLarge)
+        Err(GitProcessError::BinaryContent)
+    ));
+    let mut boundary_nul = vec![b'a'; 8192];
+    boundary_nul.push(0);
+    assert!(matches!(
+        reference_text(boundary_nul),
+        Err(GitProcessError::BinaryContent)
+    ));
+    let mut trailing_nul = vec![b'a'; 16_384];
+    if let Some(last) = trailing_nul.last_mut() {
+        *last = 0;
+    }
+    assert!(matches!(
+        reference_text(trailing_nul),
+        Err(GitProcessError::BinaryContent)
+    ));
+    assert!(matches!(
+        reference_text(vec![b'a', 0, b'b', 0]),
+        Err(GitProcessError::BinaryContent)
     ));
     assert!(matches!(
         reference_text(vec![0xff]),
         Err(GitProcessError::ParseFailed)
     ));
+}
+
+#[test]
+fn parsed_worktree_modes_drive_action_guards() {
+    let missing_repo = temp_repo("riteed-git-actions-no-stat");
+    let regular = entry_with_mode(
+        "missing.txt",
+        GitFileStatus::Modified,
+        true,
+        true,
+        GitWorktreeMode::Regular("100644"),
+    );
+    assert!(entry_disabled_reason(Some(&missing_repo), &regular, &known_attrs(), &[]).is_none());
+    assert_eq!(stage_mode_for_entry(None, &regular), Some("100644"));
+
+    let absent_delete = entry_with_mode(
+        "deleted.txt",
+        GitFileStatus::Deleted,
+        false,
+        true,
+        GitWorktreeMode::Absent,
+    );
+    assert!(
+        entry_disabled_reason(Some(&missing_repo), &absent_delete, &known_attrs(), &[]).is_none()
+    );
+    assert!(should_stage_delete(&absent_delete));
+
+    let staged_delete = entry_with_mode(
+        "deleted.txt",
+        GitFileStatus::Deleted,
+        true,
+        false,
+        GitWorktreeMode::Absent,
+    );
+    assert!(
+        entry_disabled_reason(Some(&missing_repo), &staged_delete, &known_attrs(), &[]).is_none()
+    );
+    assert!(!should_stage_delete(&staged_delete));
+    assert_eq!(
+        stage_mode_for_entry(Some(&missing_repo), &staged_delete),
+        None
+    );
+
+    let recreated = entry_with_mode(
+        "deleted.txt",
+        GitFileStatus::Deleted,
+        true,
+        true,
+        GitWorktreeMode::Regular("100755"),
+    );
+    assert!(!should_stage_delete(&recreated));
+    assert_eq!(stage_mode_for_entry(None, &recreated), Some("100755"));
+
+    let absent_modified = entry_with_mode(
+        "missing.txt",
+        GitFileStatus::Modified,
+        true,
+        true,
+        GitWorktreeMode::Absent,
+    );
+    assert_eq!(
+        entry_disabled_reason(Some(&missing_repo), &absent_modified, &known_attrs(), &[])
+            .as_deref(),
+        Some("Symlinks and unsupported file modes are visible only.")
+    );
 }
 
 #[test]
@@ -173,13 +260,30 @@ fn known_attrs() -> GitAttrState {
 }
 
 fn entry(path: &str, status: GitFileStatus, staged: bool, unstaged: bool) -> GitStatusEntry {
-    GitStatusEntry::new(
+    entry_with_mode(
+        path,
+        status,
+        staged,
+        unstaged,
+        GitWorktreeMode::Regular("100644"),
+    )
+}
+
+fn entry_with_mode(
+    path: &str,
+    status: GitFileStatus,
+    staged: bool,
+    unstaged: bool,
+    mode: GitWorktreeMode,
+) -> GitStatusEntry {
+    GitStatusEntry::with_worktree_mode(
         GitPath::from_bytes(path.as_bytes()),
         status,
         Some(String::from("head")),
         Some(String::from("index")),
         staged,
         unstaged,
+        mode,
     )
 }
 

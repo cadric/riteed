@@ -31,8 +31,8 @@ fn exercise_manual_compare_surface(test_app: &adw::Application) {
     let reference_text = "a0\nnew\nc0\nc1\nc2\nc3\nlast changed\nright tail\n";
     let expected_rows =
         crate::editor_tab::compare_row_count_for_texts_for_tests(editable_text, reference_text);
-    let editable_path = write_temp_file("riteed-v11-editable.txt", editable_text.as_bytes());
-    let reference_path = write_temp_file("riteed-v11-reference.txt", reference_text.as_bytes());
+    let editable_path = write_temp_file("riteed-v11-editable.rs", editable_text.as_bytes());
+    let reference_path = write_temp_file("riteed-v11-reference.rs", reference_text.as_bytes());
 
     window.request_open_files(
         vec![gio::File::for_path(&editable_path)],
@@ -41,7 +41,10 @@ fn exercise_manual_compare_surface(test_app: &adw::Application) {
     spin_until("v11 editable file opened", || {
         window
             .selected_saved_uri_for_tests()
-            .ends_with("riteed-v11-editable.txt")
+            .ends_with("riteed-v11-editable.rs")
+    });
+    spin_until("v11 editable syntax detected", || {
+        window.selected_language_id_for_tests().as_deref() == Some("rust")
     });
     window.compare_with_file_for_tests(&gio::File::for_path(&reference_path));
     spin_until("v11 compare renders row model", || {
@@ -64,6 +67,10 @@ fn exercise_manual_compare_surface(test_app: &adw::Application) {
         (Some(1), Some(1))
     );
     assert!(window.selected_compare_semantic_colors_for_tests());
+    assert_eq!(
+        window.selected_compare_syntax_highlight_for_tests(),
+        (true, true)
+    );
     assert_eq!(
         window.selected_compare_wrap_modes_for_tests(),
         Some((gtk4::WrapMode::None, gtk4::WrapMode::None))

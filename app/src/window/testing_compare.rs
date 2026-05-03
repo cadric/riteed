@@ -126,6 +126,12 @@ impl Window {
             .is_some_and(|tab| tab.compare_semantic_colors_for_tests())
     }
 
+    pub(crate) fn selected_compare_syntax_highlight_for_tests(&self) -> (bool, bool) {
+        self.workspace.selected_tab().map_or((false, false), |tab| {
+            tab.compare_syntax_highlight_for_tests()
+        })
+    }
+
     pub(crate) fn selected_compare_line_counts_for_tests(&self) -> (i32, i32) {
         self.workspace
             .selected_tab()

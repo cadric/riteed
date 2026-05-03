@@ -416,6 +416,7 @@ pub(super) fn git_error_text(error: &GitProcessError) -> String {
     match error {
         GitProcessError::InvalidIdentity => gettext("The Git identity is not valid."),
         GitProcessError::OutputTooLarge => gettext("Git output was too large to process safely."),
+        GitProcessError::BinaryContent => gettext("Binary files cannot be compared."),
         _ => gettext("The Git operation failed."),
     }
 }

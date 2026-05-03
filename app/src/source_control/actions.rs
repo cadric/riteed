@@ -10,6 +10,7 @@ use crate::editor_tab::EditorTab;
 use crate::git_process::GitProcessError;
 use crate::git_status::{
     GitActionState, GitAttrState, GitFileStatus, GitPath, GitStatusEntry, GitStatusSnapshot,
+    GitWorktreeMode,
 };
 use crate::source_control::{
     SourceControlState, SourceStateRef, git_attrs_unavailable_text, git_error_text,
@@ -119,14 +120,11 @@ fn stage_entry(state: &SourceStateRef, entry: &GitStatusEntry) {
     let Some(process) = process else {
         return;
     };
-    if entry.status == GitFileStatus::Deleted && entry.unstaged {
+    if should_stage_delete(entry) {
         process.remove_from_index(&entry.path, &cancellable, action_callback(state));
         return;
     }
-    let Some(mode) = repo
-        .as_deref()
-        .and_then(|repo| mode_for_path(repo, &entry.path))
-    else {
+    let Some(mode) = stage_mode_for_entry(repo.as_deref(), entry) else {
         finish_error(
             state,
             &gettext("This file type cannot be staged from Riteed."),
@@ -361,6 +359,7 @@ fn entry_matches_snapshot(state: &SourceControlState, entry: &GitStatusEntry) ->
             && current.index_oid == entry.index_oid
             && current.staged == entry.staged
             && current.unstaged == entry.unstaged
+            && current.worktree_mode == entry.worktree_mode
     })
 }
 
@@ -392,12 +391,12 @@ fn entry_disabled_reason(
     let Some((repo, path)) = repo.zip(entry.path.as_utf8()) else {
         return Some(gettext("No Git repository is active."));
     };
-    let full_path = repo.join(path);
-    if symlink_or_unsupported_mode(&full_path) {
+    if entry.worktree_mode.blocks_actions(entry.status) {
         return Some(gettext(
             "Symlinks and unsupported file modes are visible only.",
         ));
     }
+    let full_path = repo.join(path);
     let uri = gio::File::for_path(full_path).uri().to_string();
     if dirty_uris.iter().any(|dirty| dirty == &uri) {
         return Some(gettext("Save the open document before using Git actions."));
@@ -417,7 +416,23 @@ fn dirty_open_uris(state: &SourceControlState) -> Vec<String> {
         .collect()
 }
 
-fn mode_for_path(repo: &Path, path: &GitPath) -> Option<&'static str> {
+fn should_stage_delete(entry: &GitStatusEntry) -> bool {
+    entry.status == GitFileStatus::Deleted
+        && entry.unstaged
+        && entry.worktree_mode == GitWorktreeMode::Absent
+}
+
+fn stage_mode_for_entry(repo: Option<&Path>, entry: &GitStatusEntry) -> Option<&'static str> {
+    if let Some(mode) = entry.worktree_mode.stage_mode() {
+        return Some(mode);
+    }
+    if entry.worktree_mode == GitWorktreeMode::Unknown {
+        return repo.and_then(|repo| fallback_mode_for_unknown_stage_click(repo, &entry.path));
+    }
+    None
+}
+
+fn fallback_mode_for_unknown_stage_click(repo: &Path, path: &GitPath) -> Option<&'static str> {
     let full_path = repo.join(path.as_utf8()?);
     let metadata = std::fs::symlink_metadata(full_path).ok()?;
     if !metadata.file_type().is_file() {
@@ -428,13 +443,6 @@ fn mode_for_path(repo: &Path, path: &GitPath) -> Option<&'static str> {
     } else {
         Some("100755")
     }
-}
-
-fn symlink_or_unsupported_mode(path: &Path) -> bool {
-    let Ok(metadata) = std::fs::symlink_metadata(path) else {
-        return false;
-    };
-    metadata.file_type().is_symlink()
 }
 
 fn workspace_file_for_entry(
@@ -455,8 +463,8 @@ fn reference_oid(entry: &GitStatusEntry) -> Option<String> {
 }
 
 fn reference_text(output: Vec<u8>) -> Result<String, GitProcessError> {
-    if output.iter().take(8192).any(|byte| *byte == 0) {
-        return Err(GitProcessError::OutputTooLarge);
+    if output.contains(&0) {
+        return Err(GitProcessError::BinaryContent);
     }
     String::from_utf8(output).map_err(|_| GitProcessError::ParseFailed)
 }

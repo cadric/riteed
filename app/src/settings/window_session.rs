@@ -13,8 +13,8 @@ const DEFAULT_WINDOW_WIDTH: i32 = 840;
 const DEFAULT_WINDOW_HEIGHT: i32 = 620;
 const MIN_WINDOW_WIDTH: i32 = 360;
 const MIN_WINDOW_HEIGHT: i32 = 320;
-const MAX_WINDOW_WIDTH: i32 = 4096;
-const MAX_WINDOW_HEIGHT: i32 = 2160;
+const MAX_WINDOW_WIDTH: i32 = 8192;
+const MAX_WINDOW_HEIGHT: i32 = 8192;
 
 impl AppSettings {
     #[must_use]
@@ -54,6 +54,18 @@ impl AppSettings {
     }
 
     pub fn set_window_size(&self, width: i32, height: i32) {
+        let width = sanitize_restored_dimension(
+            width,
+            DEFAULT_WINDOW_WIDTH,
+            MIN_WINDOW_WIDTH,
+            MAX_WINDOW_WIDTH,
+        );
+        let height = sanitize_restored_dimension(
+            height,
+            DEFAULT_WINDOW_HEIGHT,
+            MIN_WINDOW_HEIGHT,
+            MAX_WINDOW_HEIGHT,
+        );
         match &self.backend {
             SettingsBackend::GSettings(settings) => {
                 let _changed_width = settings.set_int(KEY_WINDOW_WIDTH, width);

@@ -11,6 +11,10 @@ fn git_errors_map_to_user_copy() {
         "Git output was too large to process safely."
     );
     assert_eq!(
+        git_error_text(&GitProcessError::BinaryContent),
+        "Binary files cannot be compared."
+    );
+    assert_eq!(
         git_error_text(&GitProcessError::ParseFailed),
         "The Git operation failed."
     );

@@ -12,6 +12,30 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+msgid "%1$d changed line - %2$d/%3$d"
+msgid_plural "%1$d changed lines - %2$d/%3$d"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "%d changed line"
+msgid_plural "%d changed lines"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "%d match"
+msgid_plural "%d matches"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "Added syntax highlighting, an optional minimap, and safer handling for files that change on disk while they are open."
+msgstr ""
+
+msgid "Automatic text decoding was not reliable for this file. Choose a text encoding manually and try again."
+msgstr ""
+
+msgid "Automatic text detection or safe conversion was not reliable for this file. Choose an encoding manually to try opening it."
+msgstr ""
+
 msgid "Autosave"
 msgstr ""
 
@@ -27,7 +51,60 @@ msgstr ""
 msgid "Autosave paused because the file could not be written."
 msgstr ""
 
+msgid "Binary files cannot be compared."
+msgstr ""
+
+msgid "Changed files"
+msgstr ""
+
+msgid "Choose Editor Font"
+msgstr ""
+
+msgctxt "compare source placeholder"
+msgid "Choose File or Paste Text"
+msgstr ""
+
+msgctxt "compare toolbar"
+msgid "Read-only - Exit Compare to edit"
+msgstr ""
+
+msgid "Choose a Different Encoding to Save"
+msgstr ""
+
+msgid "Choose a Save Location Before Saving This Document."
+msgstr ""
+
+msgid "Choose a Text Encoding"
+msgstr ""
+
+msgid "Choose the encoding to use for the next save."
+msgstr ""
+
+msgid "Choose the encoding to use when opening this document from disk."
+msgstr ""
+
+msgid "Choose the encoding to use when reopening this document from disk."
+msgstr ""
+
+msgid "Choose the encoding to use when reopening this document."
+msgstr ""
+
+msgid "Choose the encoding to use when saving this document."
+msgstr ""
+
+msgid "Clear Recent Files?"
+msgstr ""
+
+msgid "Close Folder"
+msgstr ""
+
 msgid "Compatibility Window Palette"
+msgstr ""
+
+msgid "Controls how many columns a tab character occupies in the editor."
+msgstr ""
+
+msgid "Controls how many columns automatic indentation and indent actions use in the editor."
 msgstr ""
 
 msgid "Controls the color palette used for editor buffers."
@@ -42,163 +119,61 @@ msgstr ""
 msgid "Controls whether Riteed highlights the active line in editable documents."
 msgstr ""
 
-msgid "Editor Palette"
+msgid "Controls whether Riteed shows a document overview minimap beside the editor."
 msgstr ""
 
-msgid "Highlight Current Line"
+msgid "Controls whether Riteed shows line numbers in the editor gutter."
 msgstr ""
 
-msgid "It provides tabs, find and replace, syntax highlighting, optional line numbers and minimap, format controls for text encoding and line endings, curated editor palettes, and conservative reload prompts when files change on disk."
+msgid "Controls whether Riteed uses the system appearance, a light appearance, or a dark appearance."
 msgstr ""
 
-msgid "Main Menu"
+msgid "Controls whether long lines wrap inside the editor."
 msgstr ""
 
-msgid "New Tab"
+msgid "Controls whether pressing Tab inserts spaces instead of a literal tab character."
 msgstr ""
 
-msgid "Open Files"
+msgid "Controls whether the project sidebar is shown when a project folder is active."
 msgstr ""
 
-msgid "Project Sidebar"
+msgid "Controls whether the project tree shows dot-prefixed hidden files and folders."
 msgstr ""
 
-msgid "Save Current File"
-msgstr ""
-
-msgid "The document contains characters that cannot be saved with the selected encoding."
-msgstr ""
-
-msgid "The file changed on disk."
-msgstr ""
-
-msgctxt "editor palette"
-msgid "Adwaita Dark"
-msgstr ""
-
-msgctxt "editor palette"
-msgid "Adwaita Light"
-msgstr ""
-
-msgctxt "editor palette"
-msgid "Classic Dark"
-msgstr ""
-
-msgctxt "editor palette"
-msgid "Classic Light"
-msgstr ""
-
-msgctxt "editor palette"
-msgid "Auto"
-msgstr ""
-
-msgctxt "editor palette"
-msgid "Kate"
-msgstr ""
-
-msgctxt "editor palette"
-msgid "Kate Dark"
-msgstr ""
-
-msgctxt "editor palette"
-msgid "Solarized Dark"
-msgstr ""
-
-msgctxt "editor palette"
-msgid "Solarized Light"
-msgstr ""
-
-msgctxt "file filter"
-msgid "Folders"
-msgstr ""
-
-msgctxt "menu item"
-msgid "Fullscreen"
-msgstr ""
-
-msgctxt "tab menu item"
-msgid "_Close"
-msgstr "_Luk"
-
-msgctxt "tab menu item"
-msgid "Close _Other Tabs"
-msgstr "Luk _andre faneblade"
-
-msgctxt "tab menu item"
-msgid "Move Tab _Backward"
-msgstr "Flyt faneblad _tilbage"
-
-msgctxt "tab menu item"
-msgid "Move Tab _Forward"
-msgstr "Flyt faneblad _frem"
-
-msgctxt "tab menu item"
-msgid "Move to _New Window"
-msgstr "Flyt til _nyt vindue"
-
-msgctxt "tab menu item"
-msgid "Compare With F_ile"
-msgstr "Sammenlign med f_il"
-
-msgctxt "tab menu item"
-msgid "Compare With _Saved Version"
-msgstr "Sammenlign med _gemt version"
-
-msgctxt "tab menu item"
-msgid "Compare With _Pasted Text"
-msgstr "Sammenlign med ind_sat tekst"
-
-msgctxt "save safety action"
-msgid "Save"
-msgstr ""
-
-msgctxt "save safety action"
-msgid "Save As"
-msgstr ""
-
-msgctxt "save safety banner"
-msgid "This File Is Read-Only."
-msgstr ""
-
-msgid "Appearance"
+msgid "Controls whether the source control changes view uses a folder tree or a flat list."
 msgstr ""
 
 msgid "Current Document Location"
 msgstr ""
 
-msgid "Preview unavailable"
-msgstr ""
-
-msgid "Unavailable"
-msgstr ""
-
-msgctxt "editor palette"
-msgid "Kate Light"
-msgstr ""
-
-msgctxt "window palette"
-msgid "Adwaita"
-msgstr ""
-
-msgctxt "window palette"
-msgid "Classic"
-msgstr ""
-
-msgctxt "window palette"
-msgid "Kate"
-msgstr ""
-
-msgctxt "window palette"
-msgid "Solarized"
-msgstr ""
-
-msgid "Changed files"
+msgid "Cursor Position"
 msgstr ""
 
 msgid "Diff unavailable for this Git state."
 msgstr ""
 
+msgid "Discard stays disabled when open tabs, Git filters, working-tree encodings, or line-ending conversion make an exact restore unsafe."
+msgstr ""
+
+msgid "Discard File Changes?"
+msgstr ""
+
+msgid "Document Format"
+msgstr ""
+
+msgid "Edit Text, Code, and Config Files"
+msgstr ""
+
+msgid "Editor Font"
+msgstr ""
+
+msgid "Editor Palette"
+msgstr ""
+
 msgid "Enter a commit message first."
+msgstr ""
+
+msgid "Files you open will appear here."
 msgstr ""
 
 msgid "Git User Email"
@@ -216,13 +191,79 @@ msgstr ""
 msgid "Git output was too large to process safely."
 msgstr ""
 
+msgid "Highlight Current Line"
+msgstr ""
+
+msgid "Indent Width"
+msgstr ""
+
+msgid "Insert Spaces Instead of Tabs"
+msgstr ""
+
+msgid "It provides tabs, find and replace, syntax highlighting, optional line numbers and minimap, format controls for text encoding and line endings, curated editor palettes, and conservative reload prompts when files change on disk."
+msgstr ""
+
+msgid "Loading recent commits"
+msgstr ""
+
+msgid "Loading"
+msgstr ""
+
+msgid "Main Menu"
+msgstr ""
+
+msgid "Modification State"
+msgstr ""
+
+msgid "Modified"
+msgstr ""
+
+msgid "New Tab"
+msgstr ""
+
 msgid "No Git repository is active."
+msgstr ""
+
+msgid "No Recent Files"
+msgstr ""
+
+msgid "No Save Location Is Available"
 msgstr ""
 
 msgid "No changes."
 msgstr ""
 
+msgid "No commits yet."
+msgstr ""
+
+msgid "No differences were found."
+msgstr ""
+
+msgid "No matches"
+msgstr ""
+
+msgid "Only Local Files Are Supported"
+msgstr ""
+
 msgid "Only local Git folders are supported."
+msgstr ""
+
+msgid "Only monospace fonts are supported"
+msgstr ""
+
+msgid "Only one folder can be opened at a time."
+msgstr ""
+
+msgid "Use the main menu theme selector to switch System, Light, or Dark appearance. Open Preferences to adjust window and editor palettes, current-line highlight, line numbers, and the minimap when you want more structure while reading longer code or markdown files."
+msgstr ""
+
+msgid "Open Keyboard Shortcuts from the main menu to review the available file, tab, find, and app commands."
+msgstr ""
+
+msgid "Open Files"
+msgstr ""
+
+msgid "Open a Git folder to review local changes in the Source Control sidebar. Select a changed file to compare it, or switch between tree and list views when a flat list is easier to scan."
 msgstr ""
 
 msgid "Open a folder to see Git status."
@@ -231,13 +272,90 @@ msgstr ""
 msgid "Open the file before comparing it."
 msgstr ""
 
+msgid "Opening folder links is not supported yet."
+msgstr ""
+
+msgid "Overwrite the Changed File?"
+msgstr ""
+
 msgid "Pre-commit hooks are not run from Riteed."
+msgstr ""
+
+msgid "Press Ctrl+F to find text in the current document, Ctrl+H to show replace, and Ctrl+G or Shift+Ctrl+G to move between matches."
+msgstr ""
+
+msgid "Press Ctrl+T to create another tab, and use Open Files (Ctrl+O) to load local files into separate tabs with their saved encoding and line endings."
+msgstr ""
+
+msgid "Preview unavailable"
+msgstr ""
+
+msgid "Project"
+msgstr ""
+
+msgid "Project Folder Display Name"
+msgstr ""
+
+msgid "Project Folder URI"
+msgstr ""
+
+msgid "Project Sidebar"
+msgstr ""
+
+msgid "Project Sidebar Visible"
+msgstr ""
+
+msgid "Recent Files"
+msgstr ""
+
+msgid "Refresh Project Tree"
 msgstr ""
 
 msgid "Refresh Source Control"
 msgstr ""
 
 msgid "Refreshing Git status"
+msgstr ""
+
+msgid "Reload the Changed File?"
+msgstr ""
+
+msgid "Reopen With a Different Encoding?"
+msgstr ""
+
+msgid "Reopening with another encoding will discard unsaved changes in this tab."
+msgstr ""
+
+msgid "Replaced %d match"
+msgid_plural "Replaced %d matches"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "Riteed"
+msgstr ""
+
+msgid "Riteed Could Not Start"
+msgstr ""
+
+msgid "Riteed Only Supports Local Plain Text Files in This Version."
+msgstr ""
+
+msgid "Riteed is a lightweight GNOME editor for text, code, config, and markdown files, with tabs, find, syntax highlighting, session restore, and encoding-aware open and save behavior."
+msgstr ""
+
+msgid "Riteed is a small GNOME text editor for editing local text, code, config, and markdown files with encoding-aware open and save behavior."
+msgstr ""
+
+msgid "Riteed refreshes Git status after saves and local Git metadata changes. Document-portal folders use periodic polling when native file monitoring is unavailable."
+msgstr ""
+
+msgid "Riteed tracks unsaved changes per tab, restores saved files from your previous session, and warns before external file changes replace your work."
+msgstr ""
+
+msgid "Save Changes Before Continuing?"
+msgstr ""
+
+msgid "Save Current File"
 msgstr ""
 
 msgid "Save the open document before using Git actions."
@@ -249,10 +367,37 @@ msgstr "Søgning er slået fra for meget store filer."
 msgid "Select the reference on the left and the current document or text on the right."
 msgstr ""
 
+msgid "Selected Session File"
+msgstr ""
+
+msgid "Session Files"
+msgstr ""
+
 msgid "Set a Git identity in Preferences before committing."
 msgstr ""
 
+msgid "Show Hidden Files"
+msgstr ""
+
+msgid "Show Line Numbers"
+msgstr ""
+
+msgid "Show Minimap"
+msgstr ""
+
+msgid "Some files could not be opened."
+msgstr ""
+
+msgid "Some files from the last session could not be reopened."
+msgstr ""
+
 msgid "Source Control"
+msgstr ""
+
+msgid "Source Control supports local review, diff, stage, unstage, discard, and simple commits. It does not manage remotes, branches, merges, rebases, conflicts, credentials, or build workflows."
+msgstr ""
+
+msgid "Source Control View Mode"
 msgstr ""
 
 msgid "Stores the Git author email Riteed passes to sandboxed Git commits after explicit user action."
@@ -261,7 +406,46 @@ msgstr ""
 msgid "Stores the Git author name Riteed passes to sandboxed Git commits after explicit user action."
 msgstr ""
 
+msgid "Stores the URI of the selected saved tab. An empty string means no saved tab is selected."
+msgstr ""
+
+msgid "Stores the currently open saved local text files as URIs in tab order."
+msgstr ""
+
+msgid "Stores the display name for the remembered project folder."
+msgstr ""
+
+msgid "Stores the last height used for the main window."
+msgstr ""
+
+msgid "Stores the last selected project folder as a URI. An empty string means no folder is remembered."
+msgstr ""
+
+msgid "Stores the last width used for the main window."
+msgstr ""
+
+msgid "Stores the most recently opened local text files as URIs, newest first."
+msgstr ""
+
+msgid "Stores the preferred monospace font description for editor text and the minimap. An empty value uses the default monospace font."
+msgstr ""
+
 msgid "Symlinks and unsupported file modes are visible only."
+msgstr ""
+
+msgid "Tab Width"
+msgstr ""
+
+msgid "That folder could not be opened."
+msgstr ""
+
+msgid "That link could not be opened."
+msgstr ""
+
+msgid "The Document Was Saved."
+msgstr ""
+
+msgid "The File Was Reloaded."
 msgstr ""
 
 msgid "The Git identity is not valid."
@@ -270,10 +454,43 @@ msgstr ""
 msgid "The Git operation failed."
 msgstr ""
 
+msgid "The Requested Action Was Cancelled."
+msgstr ""
+
+msgid "The document contains characters that cannot be saved with the selected encoding."
+msgstr ""
+
+msgid "The file changed again on disk and could not be overwritten."
+msgstr ""
+
+msgid "The file changed on disk."
+msgstr ""
+
+msgid "The file is too large to open safely."
+msgstr ""
+
+msgid "The previous project folder could not be restored."
+msgstr ""
+
+msgid "Theme Preference"
+msgstr ""
+
 msgid "This Git repository uses unsupported object or EOL settings."
 msgstr ""
 
 msgid "This Git state is visible but not editable in Riteed."
+msgstr ""
+
+msgid "This document contains characters that cannot be saved in the current text encoding."
+msgstr ""
+
+msgid "This document has unsaved changes."
+msgstr ""
+
+msgid "This file changed on disk while you also have unsaved changes."
+msgstr ""
+
+msgid "This file changed on disk. Saving now will replace the external version."
 msgstr ""
 
 msgid "This file type cannot be staged from Riteed."
@@ -285,232 +502,99 @@ msgstr ""
 msgid "This path uses an unsupported encoding."
 msgstr ""
 
-msgid "Unable to read Git repository capabilities."
-msgstr ""
-
-msgid "Unable to refresh Git status."
-msgstr ""
-
-msgid "Unable to open file for compare."
-msgstr ""
-
-msgid "Unable to start Git compare."
-msgstr ""
-
-msgctxt "compare source"
-msgid "Git Version"
-msgstr ""
-
-msgctxt "compare source placeholder"
-msgid "Choose File or Paste Text"
-msgstr ""
-
-msgctxt "compare dialog side"
-msgid "Current"
-msgstr ""
-
-msgctxt "compare dialog side"
-msgid "Reference"
-msgstr ""
-
-msgctxt "compare pane"
-msgid "Current"
-msgstr ""
-
-msgctxt "compare pane"
-msgid "Reference"
-msgstr ""
-
-msgctxt "compare toolbar"
-msgid "Read-only - Exit Compare to edit"
-msgstr ""
-
-msgctxt "git action tooltip"
-msgid "Stage File"
-msgstr ""
-
-msgctxt "git action tooltip"
-msgid "Unstage File"
-msgstr ""
-
-msgctxt "git action disabled"
-msgid "No staged change"
-msgstr ""
-
-msgctxt "git action disabled"
-msgid "No unstaged change"
-msgstr ""
-
-msgctxt "git action disabled"
-msgid "Refresh required"
-msgstr ""
-
-msgctxt "git branch"
-msgid "Detached"
-msgstr ""
-
-msgctxt "git commit"
-msgid "Commit"
-msgstr ""
-
-msgctxt "git commit"
-msgid "Commit Message"
-msgstr ""
-
-msgctxt "git path fallback"
-msgid "Invalid path encoding"
-msgstr ""
-
-msgctxt "git status"
-msgid "Added"
-msgstr ""
-
-msgctxt "git status"
-msgid "Conflict"
-msgstr ""
-
-msgctxt "git status"
-msgid "Deleted"
-msgstr ""
-
-msgctxt "git status"
-msgid "Modified"
-msgstr ""
-
-msgctxt "git status"
-msgid "Staged"
-msgstr ""
-
-msgctxt "git status"
-msgid "Unsupported"
-msgstr ""
-
-msgctxt "git status"
-msgid "Untracked"
-msgstr ""
-
-msgctxt "sidebar mode"
-msgid "Files"
-msgstr ""
-
-msgctxt "sidebar mode"
-msgid "Source Control"
-msgstr ""
-
-msgid "Discard File Changes?"
-msgstr ""
-
-msgid "Discard stays disabled when open tabs, Git filters, working-tree encodings, or line-ending conversion make an exact restore unsafe."
+msgid "This removes all recent file entries."
 msgstr ""
 
 msgid "This will restore the file to the Git index version."
 msgstr ""
 
-msgid "Loading recent commits"
-msgstr ""
-
-msgid "No commits yet."
-msgstr ""
-
-msgid "Use the main menu theme selector to switch System, Light, or Dark appearance. Open Preferences to adjust window and editor palettes, current-line highlight, line numbers, and the minimap when you want more structure while reading longer code or markdown files."
+msgid "Too large to compare differences."
 msgstr ""
 
 msgid "Tracked unstaged files can be discarded after confirmation. Riteed keeps unsafe discard cases disabled when it cannot restore the file predictably."
 msgstr ""
 
-msgid "Use the row actions to stage or unstage files, then write a commit message and commit local staged changes with the Git identity saved in Preferences."
+msgid "Unable to Build the Window"
 msgstr ""
 
-msgid "Riteed refreshes Git status after saves and local Git metadata changes. Document-portal folders use periodic polling when native file monitoring is unavailable."
+msgid "Unable to Open Dropped Files"
 msgstr ""
 
-msgid "Source Control supports local review, diff, stage, unstage, discard, and simple commits. It does not manage remotes, branches, merges, rebases, conflicts, credentials, or build workflows."
+msgid "Unable to Open the File"
 msgstr ""
 
-msgid "Source Control View Mode"
+msgid "Unable to Save the File"
 msgstr ""
 
-msgid "Controls whether the source control changes view uses a folder tree or a flat list."
+msgid "Unable to open file for compare."
+msgstr ""
+
+msgid "Unable to read Git repository capabilities."
 msgstr ""
 
 msgid "Unable to read recent commits."
 msgstr ""
 
-msgid "Open a Git folder to review local changes in the Source Control sidebar. Select a changed file to compare it, or switch between tree and list views when a flat list is easier to scan."
+msgid "Unable to refresh Git status."
 msgstr ""
 
-msgctxt "help row"
-msgid "Changed Files"
+msgid "Unable to start Git compare."
 msgstr ""
 
-msgctxt "help row"
-msgid "Stage and Commit"
+msgid "Unavailable"
 msgstr ""
 
-msgctxt "help row"
-msgid "Discard Changes"
+msgid "Use the row actions to stage or unstage files, then write a commit message and commit local staged changes with the Git identity saved in Preferences."
 msgstr ""
 
-msgctxt "help row"
-msgid "Local Git Only"
+msgid "Window Height"
 msgstr ""
 
-msgctxt "help page"
-msgid "Technical Notes"
+msgid "Window Width"
 msgstr ""
 
-msgctxt "help row"
-msgid "Safe Discard Limits"
+msgid "Word Wrap"
 msgstr ""
 
-msgctxt "help row"
-msgid "Live Refresh"
+msgid "text;editor;code;markdown;config;"
 msgstr ""
 
-msgctxt "help section"
-msgid "Source Control"
+msgctxt "alert response"
+msgid "Cancel"
 msgstr ""
 
-msgctxt "git action tooltip"
-msgid "Discard Changes"
+msgctxt "alert response"
+msgid "Choose Encoding"
 msgstr ""
 
-msgctxt "git action disabled"
-msgid "Untracked file"
+msgctxt "alert response"
+msgid "Clear"
 msgstr ""
 
-msgctxt "git history"
-msgid "Recent Commits"
+msgctxt "alert response"
+msgid "Close"
 msgstr ""
 
-msgctxt "source control view"
-msgid "Tree"
+msgctxt "alert response"
+msgid "Compare"
 msgstr ""
 
-msgctxt "source control view"
-msgid "List"
+msgctxt "alert response"
+msgid "Discard"
 msgstr ""
 
-msgctxt "theme selector accessibility"
-msgid "Dark style"
+msgctxt "alert response"
+msgid "Keep Current"
 msgstr ""
 
-msgctxt "theme selector accessibility"
-msgid "Follow system style"
+msgctxt "alert response"
+msgid "Reload"
 msgstr ""
 
-msgctxt "theme selector accessibility"
-msgid "Light style"
+msgctxt "alert response"
+msgid "Reopen"
 msgstr ""
 
-msgctxt "theme selector tooltip"
-msgid "Dark Style"
-msgstr ""
-
-msgctxt "theme selector tooltip"
-msgid "Follow System Style"
-msgstr ""
-
-msgctxt "theme selector tooltip"
-msgid "Light Style"
+msgctxt "alert response"
+msgid "Save"
 msgstr ""

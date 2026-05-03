@@ -1,3 +1,8 @@
+msgid "%1$d changed line - %2$d/%3$d"
+msgid_plural "%1$d changed lines - %2$d/%3$d"
+msgstr[0] ""
+msgstr[1] ""
+
 msgid "%d changed line"
 msgid_plural "%d changed lines"
 msgstr[0] ""
@@ -30,6 +35,9 @@ msgid "Autosave paused because the file changed on disk."
 msgstr ""
 
 msgid "Autosave paused because the file could not be written."
+msgstr ""
+
+msgid "Binary files cannot be compared."
 msgstr ""
 
 msgid "Changed files"

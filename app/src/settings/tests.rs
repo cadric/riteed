@@ -61,21 +61,35 @@ fn source_control_view_mode_roundtrips_enum_values() {
 
 #[test]
 fn restored_window_dimensions_are_clamped() {
-    assert_eq!(sanitize_restored_dimension(900, 840, 360, 4096), 900);
-    assert_eq!(sanitize_restored_dimension(0, 840, 360, 4096), 840);
-    assert_eq!(sanitize_restored_dimension(-1, 620, 320, 2160), 620);
-    assert_eq!(sanitize_restored_dimension(200, 840, 360, 4096), 360);
-    assert_eq!(sanitize_restored_dimension(5000, 840, 360, 4096), 4096);
+    assert_eq!(sanitize_restored_dimension(900, 840, 360, 8192), 900);
+    assert_eq!(sanitize_restored_dimension(0, 840, 360, 8192), 840);
+    assert_eq!(sanitize_restored_dimension(-1, 620, 320, 8192), 620);
+    assert_eq!(sanitize_restored_dimension(200, 840, 360, 8192), 360);
+    assert_eq!(sanitize_restored_dimension(20_000, 840, 360, 8192), 8192);
 }
 
 #[test]
 fn memory_backend_clamps_restored_window_size() {
     let settings = AppSettings::new_for_tests();
     settings.set_window_size(200, 3000);
-    assert_eq!(settings.window_size(), (360, 2160));
+    assert_eq!(settings.window_size(), (360, 3000));
 
     settings.set_window_size(0, -1);
     assert_eq!(settings.window_size(), (840, 620));
+
+    settings.set_window_size(20_000, 20_000);
+    assert_eq!(settings.window_size(), (8192, 8192));
+}
+
+#[test]
+fn schema_bounds_window_dimensions() {
+    let schema = include_str!("../../data/schemas/io.github.cadric.Riteed.gschema.xml");
+    assert!(schema.contains(
+        "<key name=\"window-width\" type=\"i\">\n      <range min=\"360\" max=\"8192\"/>"
+    ));
+    assert!(schema.contains(
+        "<key name=\"window-height\" type=\"i\">\n      <range min=\"320\" max=\"8192\"/>"
+    ));
 }
 
 #[test]

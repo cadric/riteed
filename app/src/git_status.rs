@@ -51,6 +51,35 @@ impl GitFileStatus {
     }
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum GitWorktreeMode {
+    Regular(&'static str),
+    Symlink,
+    Gitlink,
+    Absent,
+    Unsupported,
+    Unknown,
+}
+
+impl GitWorktreeMode {
+    #[must_use]
+    pub(crate) const fn stage_mode(self) -> Option<&'static str> {
+        match self {
+            Self::Regular(mode) => Some(mode),
+            _ => None,
+        }
+    }
+
+    #[must_use]
+    pub(crate) const fn blocks_actions(self, status: GitFileStatus) -> bool {
+        match self {
+            Self::Symlink | Self::Gitlink | Self::Unsupported => true,
+            Self::Absent => !matches!(status, GitFileStatus::Deleted),
+            Self::Regular(_) | Self::Unknown => false,
+        }
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct GitPath {
     raw: Vec<u8>,
@@ -99,6 +128,8 @@ pub(crate) struct GitStatusEntry {
     pub(crate) index_oid: Option<String>,
     pub(crate) staged: bool,
     pub(crate) unstaged: bool,
+    /// Git porcelain v2 mW at status time; disk mode changes are picked up on refresh.
+    pub(crate) worktree_mode: GitWorktreeMode,
     pub(crate) stage_action: GitActionState,
     pub(crate) unstage_action: GitActionState,
     pub(crate) discard_action: GitActionState,
@@ -115,6 +146,27 @@ impl GitStatusEntry {
         staged: bool,
         unstaged: bool,
     ) -> Self {
+        Self::with_worktree_mode(
+            path,
+            status,
+            head_oid,
+            index_oid,
+            staged,
+            unstaged,
+            GitWorktreeMode::Unknown,
+        )
+    }
+
+    #[must_use]
+    pub(crate) fn with_worktree_mode(
+        path: GitPath,
+        status: GitFileStatus,
+        head_oid: Option<String>,
+        index_oid: Option<String>,
+        staged: bool,
+        unstaged: bool,
+        worktree_mode: GitWorktreeMode,
+    ) -> Self {
         let disabled = pgettext("git action disabled", "Refresh required");
         Self {
             path,
@@ -123,6 +175,7 @@ impl GitStatusEntry {
             index_oid,
             staged,
             unstaged,
+            worktree_mode,
             stage_action: GitActionState::Disabled(disabled.clone()),
             unstage_action: GitActionState::Disabled(disabled.clone()),
             discard_action: GitActionState::Disabled(disabled.clone()),
@@ -316,6 +369,7 @@ fn parse_ordinary_entry(record: &[u8]) -> Option<GitStatusEntry> {
     let fields = split_fields(record, 9);
     let xy = fields.get(1).copied()?;
     let submodule = fields.get(2).copied()?;
+    let worktree_mode = parse_worktree_mode(fields.get(5).copied());
     let head_oid = fields.get(6).and_then(oid_field);
     let index_oid = fields.get(7).and_then(oid_field);
     let path = fields.get(8).copied()?;
@@ -325,13 +379,14 @@ fn parse_ordinary_entry(record: &[u8]) -> Option<GitStatusEntry> {
     } else {
         status
     };
-    Some(GitStatusEntry::new(
+    Some(GitStatusEntry::with_worktree_mode(
         GitPath::from_bytes(path),
         status,
         head_oid,
         index_oid,
         staged,
         unstaged,
+        worktree_mode,
     ))
 }
 
@@ -339,6 +394,7 @@ fn parse_rename_entry(record: &[u8], next_record: Option<&[u8]>) -> Option<GitSt
     let fields = split_fields(record, 10);
     let xy = fields.get(1).copied()?;
     let submodule = fields.get(2).copied()?;
+    let worktree_mode = parse_worktree_mode(fields.get(5).copied());
     let head_oid = fields.get(6).and_then(oid_field);
     let index_oid = fields.get(7).and_then(oid_field);
     let path = fields.get(9).copied().or(next_record)?;
@@ -348,27 +404,42 @@ fn parse_rename_entry(record: &[u8], next_record: Option<&[u8]>) -> Option<GitSt
     } else {
         status
     };
-    Some(GitStatusEntry::new(
+    Some(GitStatusEntry::with_worktree_mode(
         GitPath::from_bytes(path),
         status,
         head_oid,
         index_oid,
         staged,
         unstaged,
+        worktree_mode,
     ))
 }
 
 fn parse_unmerged_entry(record: &[u8]) -> Option<GitStatusEntry> {
     let fields = split_fields(record, 11);
+    let worktree_mode = parse_worktree_mode(fields.get(6).copied());
     let path = fields.get(10).copied()?;
-    Some(GitStatusEntry::new(
+    Some(GitStatusEntry::with_worktree_mode(
         GitPath::from_bytes(path),
         GitFileStatus::Conflicted,
         None,
         None,
         true,
         true,
+        worktree_mode,
     ))
+}
+
+fn parse_worktree_mode(mode: Option<&[u8]>) -> GitWorktreeMode {
+    match mode {
+        Some(b"100644") => GitWorktreeMode::Regular("100644"),
+        Some(b"100755") => GitWorktreeMode::Regular("100755"),
+        Some(b"120000") => GitWorktreeMode::Symlink,
+        Some(b"160000") => GitWorktreeMode::Gitlink,
+        Some(b"000000") => GitWorktreeMode::Absent,
+        Some(_) => GitWorktreeMode::Unsupported,
+        None => GitWorktreeMode::Unknown,
+    }
 }
 
 fn status_from_xy(xy: &[u8]) -> (GitFileStatus, bool, bool) {
@@ -426,101 +497,4 @@ fn split_once(bytes: &[u8], needle: u8) -> Option<(&[u8], &[u8])> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::{
-        GitFileStatus, index_info_line, parse_attrs, parse_ls_tree_entry, parse_status,
-        resolve_capabilities,
-    };
-
-    #[test]
-    fn status_parser_reads_branch_and_entries() {
-        let input = b"# branch.oid abc\0# branch.head main\0# branch.upstream origin/main\0# branch.ab +1 -0\0\
-1 .M N... 100644 100644 100644 abc def src/lib.rs\0? new.txt\0";
-        let snapshot = parse_status(input);
-        assert_eq!(snapshot.branch.as_deref(), Some("main"));
-        assert_eq!(snapshot.head_oid.as_deref(), Some("abc"));
-        assert_eq!(snapshot.entries.len(), 2);
-        assert_eq!(snapshot.entries[0].path.display(), "src/lib.rs");
-        assert!(snapshot.entries[0].unstaged);
-        assert_eq!(snapshot.entries[1].path.display(), "new.txt");
-    }
-
-    #[test]
-    fn status_parser_keeps_unborn_history_without_head_oid() {
-        let snapshot = parse_status(b"# branch.oid (initial)\0# branch.head main\0");
-        assert!(snapshot.unborn);
-        assert_eq!(snapshot.head_oid, None);
-    }
-
-    #[test]
-    fn status_parser_marks_submodules_and_unmerged_unsupported() {
-        let input = b"1 .M S... 160000 160000 160000 abc def module\0u UU N... 100644 100644 100644 100644 abc def ghi jkl conflict.txt\0";
-        let snapshot = parse_status(input);
-        assert_eq!(snapshot.entries.len(), 2);
-        assert_eq!(snapshot.entries[0].status.badge(), "x");
-        assert_eq!(snapshot.entries[1].status.badge(), "!");
-    }
-
-    #[test]
-    fn status_labels_and_badges_cover_all_states() {
-        let states = [
-            (GitFileStatus::Added, "A", "Added"),
-            (GitFileStatus::Modified, "M", "Modified"),
-            (GitFileStatus::Deleted, "D", "Deleted"),
-            (GitFileStatus::Untracked, "U", "Untracked"),
-            (GitFileStatus::Conflicted, "!", "Conflict"),
-            (GitFileStatus::Unsupported, "x", "Unsupported"),
-        ];
-        for (status, badge, label) in states {
-            assert_eq!(status.badge(), badge);
-            assert_eq!(status.label(), label);
-        }
-    }
-
-    #[test]
-    fn attr_parser_blocks_content_conversion() {
-        let attrs =
-            parse_attrs(b"a.bin\0filter\0lfs\0b.txt\0text\0unset\0c.txt\0eol\0unspecified\0");
-        assert!(attrs.is_ok());
-        let attrs = attrs.ok();
-        assert!(attrs.as_ref().is_some_and(|attrs| attrs.blocks(b"a.bin")));
-        assert!(attrs.as_ref().is_some_and(|attrs| !attrs.blocks(b"b.txt")));
-    }
-
-    #[test]
-    fn index_info_includes_stage_zero() {
-        assert_eq!(
-            index_info_line("100644", "abc", b"a,b.txt"),
-            b"100644 abc 0\ta,b.txt\0"
-        );
-    }
-
-    #[test]
-    fn ls_tree_is_reshaped_without_type() {
-        assert_eq!(
-            parse_ls_tree_entry(b"100755 blob abc123\ttool.sh"),
-            Some((String::from("100755"), String::from("abc123")))
-        );
-    }
-
-    #[test]
-    fn capability_guard_allows_only_sha1_without_eol_conversion() {
-        assert!(resolve_capabilities("sha1\n", "false\n", "").object_format_supported);
-        assert!(resolve_capabilities("sha1\n", "false\n", "").eol_supported);
-        assert!(!resolve_capabilities("sha256\n", "false\n", "").object_format_supported);
-        assert!(!resolve_capabilities("sha1\n", "true\n", "").eol_supported);
-        assert!(!resolve_capabilities("sha1\n", "false\n", "lf\n").eol_supported);
-    }
-
-    #[test]
-    fn parsers_do_not_panic_on_pseudo_random_bytes() {
-        let mut data = Vec::new();
-        let mut seed = 0x1234_5678_u32;
-        for _ in 0..512 {
-            seed = seed.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
-            data.push((seed >> 24) as u8);
-        }
-        let _snapshot = parse_status(&data);
-        let _attrs = parse_attrs(&data);
-    }
-}
+mod tests;

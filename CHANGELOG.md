@@ -106,6 +106,10 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Removed synchronous document-portal host-path lookups from display-path rendering by caching host paths and resolving active document names asynchronously.
 - Removed invalid Appearance CSS size properties and added deterministic indentation coverage for tabs, spaces, indent width, and unindent behavior.
 - Guarded Git stage/compare actions for unsupported repository states such as SHA-256 object format, configured EOL conversion, content filters, working-tree encodings, submodules, binary blobs, large blobs, dirty open tabs, and non-UTF-8 paths.
+- Compare: split diff panes now keep syntax highlighting active for code while preserving diff colors.
+- Source Control: Git compare now rejects binary blobs cleanly instead of partially rendering them.
+- Source Control: refresh is significantly faster on large repositories by avoiding per-row filesystem metadata checks.
+- Window: stored window dimensions are now bounded by schema ranges in addition to runtime clamping.
 - Fixed Flatpak Git status refresh for document-portal project folders by running bundled Git from a stable sandbox cwd with explicit `GIT_DIR` and `GIT_WORK_TREE`.
 - Fixed Source Control Git execution and live refresh for worktrees and non-standard Git directories by resolving Git metadata paths instead of assuming `<worktree>/.git`.
 - Trimmed the bundled Flatpak Git module to local plumbing only and explicitly stripped `/app/bin/git`, reducing the installed app size baseline to 7,617,536 bytes while preserving V9 status, stage, unstage, compare, and commit flows.

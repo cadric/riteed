@@ -92,11 +92,13 @@
       <description>Stores the preferred monospace font description for editor text and the minimap. An empty value uses the default monospace font.</description>
     </key>
     <key name="window-width" type="i">
+      <range min="360" max="8192"/>
       <default>840</default>
       <summary>Window Width</summary>
       <description>Stores the last width used for the main window.</description>
     </key>
     <key name="window-height" type="i">
+      <range min="320" max="8192"/>
       <default>620</default>
       <summary>Window Height</summary>
       <description>Stores the last height used for the main window.</description>

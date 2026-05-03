@@ -207,16 +207,32 @@ impl CompareController {
             return;
         }
         let changed_lines = model.changed_row_count();
-        let plural_count = u32::try_from(changed_lines).map_or(u32::MAX, |value| value);
-        let text = ngettext("%d changed line", "%d changed lines", plural_count)
-            .replace("%d", &changed_lines.to_string());
-        if let Some(current) = self.current_hunk {
-            self.status_label
-                .set_label(&format!("{} · {}/{}", text, current + 1, hunk_count));
-        } else {
-            self.status_label.set_label(&text);
-        }
+        self.status_label.set_label(&compare_status_text(
+            changed_lines,
+            self.current_hunk,
+            hunk_count,
+        ));
     }
+}
+
+fn compare_status_text(
+    changed_lines: usize,
+    current_hunk: Option<usize>,
+    hunk_count: usize,
+) -> String {
+    let plural_count = u32::try_from(changed_lines).map_or(u32::MAX, |value| value);
+    let changed_lines = changed_lines.to_string();
+    if let Some(current) = current_hunk {
+        return ngettext(
+            "%1$d changed line - %2$d/%3$d",
+            "%1$d changed lines - %2$d/%3$d",
+            plural_count,
+        )
+        .replace("%1$d", &changed_lines)
+        .replace("%2$d", &(current + 1).to_string())
+        .replace("%3$d", &hunk_count.to_string());
+    }
+    ngettext("%d changed line", "%d changed lines", plural_count).replace("%d", &changed_lines)
 }
 
 struct PresentationPane {
@@ -331,7 +347,7 @@ pub(super) fn sync_reference_language(
 ) {
     let language = editable_buffer.language();
     reference_buffer.set_language(language.as_ref());
-    reference_buffer.set_highlight_syntax(false);
+    reference_buffer.set_highlight_syntax(language.is_some());
 }
 
 impl Drop for CompareController {
@@ -344,5 +360,18 @@ impl Drop for CompareController {
         if let Some(handler) = self.high_contrast_handler.take() {
             self.style_manager.disconnect(handler);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::compare_status_text;
+
+    #[test]
+    fn compare_status_text_keeps_hunk_position_translatable() {
+        assert_eq!(compare_status_text(1, None, 2), "1 changed line");
+        assert_eq!(compare_status_text(2, None, 2), "2 changed lines");
+        assert_eq!(compare_status_text(1, Some(0), 2), "1 changed line - 1/2");
+        assert_eq!(compare_status_text(2, Some(1), 2), "2 changed lines - 2/2");
     }
 }
