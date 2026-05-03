@@ -246,6 +246,9 @@ msgstr ""
 msgid "Search is disabled for very large files."
 msgstr "Søgning er slået fra for meget store filer."
 
+msgid "Select the reference on the left and the current document or text on the right."
+msgstr ""
+
 msgid "Set a Git identity in Preferences before committing."
 msgstr ""
 
@@ -300,6 +303,26 @@ msgstr ""
 
 msgctxt "compare source placeholder"
 msgid "Choose File or Paste Text"
+msgstr ""
+
+msgctxt "compare dialog side"
+msgid "Current"
+msgstr ""
+
+msgctxt "compare dialog side"
+msgid "Reference"
+msgstr ""
+
+msgctxt "compare pane"
+msgid "Current"
+msgstr ""
+
+msgctxt "compare pane"
+msgid "Reference"
+msgstr ""
+
+msgctxt "compare toolbar"
+msgid "Read-only - Exit Compare to edit"
 msgstr ""
 
 msgctxt "git action tooltip"

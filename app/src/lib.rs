@@ -53,6 +53,8 @@ mod gtk_tests_tabs;
 #[cfg(test)]
 mod gtk_tests_v10;
 #[cfg(test)]
+mod gtk_tests_v11;
+#[cfg(test)]
 mod gtk_tests_v4;
 #[cfg(test)]
 mod gtk_tests_v5;

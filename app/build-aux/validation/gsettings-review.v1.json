@@ -2,8 +2,8 @@
   "version": 1,
   "sites": [
     {
-      "path": "src/editor_tab/compare/ui.rs",
-      "line": 306,
+      "path": "src/editor_tab/compare/scroll.rs",
+      "line": 106,
       "match": "target.set_value(value);",
       "kind": "gsettings-write",
       "key": "compare-scroll-adjustment",

@@ -42,6 +42,10 @@ msgctxt "compare source placeholder"
 msgid "Choose File or Paste Text"
 msgstr ""
 
+msgctxt "compare toolbar"
+msgid "Read-only - Exit Compare to edit"
+msgstr ""
+
 msgid "Choose a Different Encoding to Save"
 msgstr ""
 
@@ -338,7 +342,7 @@ msgstr ""
 msgid "Search is disabled for very large files."
 msgstr ""
 
-msgid "Select the editable document on the left and the reference on the right."
+msgid "Select the reference on the left and the current document or text on the right."
 msgstr ""
 
 msgid "Selected Session File"

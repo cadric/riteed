@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::rc::Rc;
 
 use gettextrs::{gettext, ngettext, pgettext};
@@ -5,88 +6,63 @@ use gtk4::{gio, prelude::*};
 use libadwaita as adw;
 use sourceview5::prelude::*;
 
-use super::diff::{DiffPlan, compute_diff_plan};
-use super::ui::{
-    CompareTags, apply_diff_tags, apply_line_tag, buffer_text, clear_tags, compare_toolbar,
-    configure_reference_view, install_scroll_sync, remove_current_tags, scroll_to_line,
+use super::diff::compute_diff_row_model;
+use super::gutter::CompareGutters;
+use super::interaction::install_presentation_interaction;
+use super::model::DiffRowModel;
+use super::navigation::{target_hunk_for_navigation, top_visible_row};
+use super::presentation::{DiffPresentation, build_presentation};
+use super::render::{
+    CompareTags, apply_current_hunk_tags, apply_model_tags, apply_presentation, clear_tags,
 };
+use super::scroll::{CompareScrollMarks, install_scroll_sync};
+use super::ui::{compare_toolbar, configure_presentation_view};
 use super::{CompareController, CompareTarget};
 use crate::editor_tab::EditorTab;
 use crate::editor_zoom::{clear_zoom_css_classes, restore_zoom_css_class};
 
 impl CompareController {
     pub(super) fn new(tab: &Rc<EditorTab>, target: CompareTarget) -> Self {
-        let reference_buffer = sourceview5::Buffer::builder()
-            .enable_undo(false)
-            .implicit_trailing_newline(false)
-            .build();
-        tab.settings.apply_source_style_scheme(&reference_buffer);
-        sync_reference_language(&tab.text_buffer, &reference_buffer);
-        let reference_view = sourceview5::View::with_buffer(&reference_buffer);
-        configure_reference_view(tab, &reference_view);
-        let reference_scrolled = gtk4::ScrolledWindow::builder()
-            .hscrollbar_policy(gtk4::PolicyType::Automatic)
-            .vscrollbar_policy(gtk4::PolicyType::Automatic)
-            .child(&reference_view)
-            .build();
-        reference_scrolled.set_hexpand(true);
-        reference_scrolled.set_vexpand(true);
-        reference_scrolled.set_min_content_width(0);
-
+        let left = build_presentation_pane(tab, &pgettext("compare pane", "Reference"));
+        let right = build_presentation_pane(tab, &pgettext("compare pane", "Current"));
+        let row_model = Rc::new(RefCell::new(DiffRowModel::empty()));
+        let presentation = Rc::new(RefCell::new(DiffPresentation::empty()));
+        let gutters = CompareGutters::new(&left.view, &right.view, &presentation, &row_model);
         let toolbar = compare_toolbar(&target.title);
         let status_label = toolbar.status_label.clone();
-        let paned = gtk4::Paned::new(gtk4::Orientation::Horizontal);
-        paned.set_resize_start_child(true);
-        paned.set_shrink_start_child(false);
-        paned.set_resize_end_child(true);
-        paned.set_shrink_end_child(false);
-        paned.set_end_child(Some(&reference_scrolled));
-        paned.set_hexpand(true);
-        paned.set_vexpand(true);
-
-        let left_adjustment = tab.scrolled.vadjustment();
-        let right_adjustment = reference_scrolled.vadjustment();
-        let scroll_anchors = Rc::new(std::cell::RefCell::new(Vec::new()));
-        let (left_handler, right_handler) = install_scroll_sync(
-            &left_adjustment,
-            &right_adjustment,
-            &tab.text_view,
-            &reference_view,
-            &scroll_anchors,
-        );
-        let style_manager = adw::StyleManager::default();
-        let weak = Rc::downgrade(tab);
-        let style_handler = style_manager.connect_dark_notify(move |_| {
-            if let Some(tab) = weak.upgrade() {
-                tab.apply_compare_style();
-            }
-        });
-        let weak = Rc::downgrade(tab);
-        let high_contrast_handler = style_manager.connect_high_contrast_notify(move |_| {
-            if let Some(tab) = weak.upgrade() {
-                tab.apply_compare_style();
-            }
-        });
+        let paned = build_compare_paned(&left.root, &right.root);
+        let left_adjustment = left.scrolled.vadjustment();
+        let right_adjustment = right.scrolled.vadjustment();
+        let (left_handler, right_handler) =
+            install_scroll_sync(&left_adjustment, &right_adjustment);
+        let style_handlers = connect_style_handlers(tab);
+        let scroll_marks = CompareScrollMarks::new(&left.buffer, &right.buffer);
 
         Self {
             target,
             toolbar: toolbar.root,
             status_label,
             paned,
-            reference_view,
-            reference_buffer: reference_buffer.clone(),
-            tags: CompareTags::new(&tab.text_buffer, &reference_buffer),
-            diff_plan: DiffPlan::empty(),
+            editable_snapshot: tab.buffer_text(),
+            reference_text: String::new(),
+            left_view: left.view,
+            left_buffer: left.buffer.clone(),
+            right_view: right.view,
+            right_buffer: right.buffer.clone(),
+            tags: CompareTags::new(&left.buffer, &right.buffer),
+            presentation,
+            row_model,
+            gutters,
+            scroll_marks,
             current_hunk: None,
             cancellable: None,
             left_adjustment,
             right_adjustment,
-            scroll_anchors,
             left_handler: Some(left_handler),
             right_handler: Some(right_handler),
-            style_manager,
-            style_handler: Some(style_handler),
-            high_contrast_handler: Some(high_contrast_handler),
+            style_manager: style_handlers.manager,
+            style_handler: Some(style_handlers.style_handler),
+            high_contrast_handler: Some(style_handlers.high_contrast_handler),
         }
     }
 
@@ -111,126 +87,137 @@ impl CompareController {
         }
     }
 
-    pub(super) fn set_reference_text(&self, text: &str, implicit_trailing_newline: bool) {
-        self.reference_buffer
-            .set_implicit_trailing_newline(implicit_trailing_newline);
-        self.reference_buffer.set_text(text);
-        self.reference_buffer.set_modified(false);
+    pub(super) fn set_reference_text(&mut self, text: &str, _implicit_trailing_newline: bool) {
+        self.reference_text.clear();
+        self.reference_text.push_str(text);
     }
 
-    pub(super) fn recompute(
-        &mut self,
-        editable_buffer: &sourceview5::Buffer,
-        editable_view: &sourceview5::View,
-        editable_text: &str,
-    ) {
-        clear_tags(editable_buffer, &self.reference_buffer, &self.tags);
-        let reference_text = buffer_text(&self.reference_buffer);
+    pub(super) fn recompute(&mut self) {
+        clear_tags(&self.left_buffer, &self.right_buffer, &self.tags);
         let previous = self.current_hunk;
-        self.diff_plan = compute_diff_plan(editable_text, &reference_text);
-        self.scroll_anchors
-            .borrow_mut()
-            .clone_from(&self.diff_plan.anchors);
-        self.current_hunk = if self.diff_plan.hunks.is_empty() || self.diff_plan.too_large {
-            None
-        } else {
-            Some(previous.unwrap_or(0).min(self.diff_plan.hunks.len() - 1))
-        };
-        apply_diff_tags(
-            editable_buffer,
-            &self.reference_buffer,
-            &self.diff_plan,
-            &self.tags,
-        );
-        self.apply_current_hunk(editable_buffer);
+        let model = compute_diff_row_model(&self.reference_text, &self.editable_snapshot);
+        let hunk_count = model.hunks.len();
+        let too_large = model.too_large;
+        let presentation =
+            build_presentation(&model, &self.reference_text, &self.editable_snapshot);
+        apply_presentation(&self.left_buffer, &self.right_buffer, &presentation);
+        self.current_hunk = current_hunk_after_recompute(previous, hunk_count, too_large);
+        self.row_model.borrow_mut().clone_from(&model);
+        self.presentation.borrow_mut().clone_from(&presentation);
+        self.gutters.refresh();
+        apply_model_tags(&self.left_buffer, &self.right_buffer, &model, &self.tags);
+        self.apply_current_hunk();
         self.update_status();
         if self.current_hunk == Some(0) {
-            self.scroll_current_hunk(editable_buffer, editable_view);
+            self.queue_scroll_current_hunk();
         }
     }
 
-    pub(super) fn move_hunk(
-        &mut self,
-        editable_buffer: &sourceview5::Buffer,
-        editable_view: &sourceview5::View,
-        direction: i32,
-    ) {
-        if self.diff_plan.hunks.is_empty() || self.diff_plan.too_large {
+    pub(super) fn move_hunk(&mut self, direction: i32) {
+        let model = self.row_model.borrow();
+        if model.hunks.is_empty() || model.too_large {
             return;
         }
-        let len = self.diff_plan.hunks.len();
-        let current = self.current_hunk.unwrap_or(0);
-        let next = if direction < 0 {
-            current.checked_sub(1).unwrap_or(len - 1)
-        } else {
-            (current + 1) % len
+        let top_row = top_visible_row(&self.left_view, model.rows.len());
+        let base_row = self
+            .current_hunk
+            .and_then(|index| model.hunks.get(index))
+            .map(|hunk| hunk.first_row)
+            .filter(|first_row| *first_row >= top_row)
+            .unwrap_or(top_row);
+        let Some(next) = target_hunk_for_navigation(&model, base_row, direction) else {
+            return;
         };
+        drop(model);
         self.current_hunk = Some(next);
-        self.apply_current_hunk(editable_buffer);
+        self.apply_current_hunk();
         self.update_status();
-        self.scroll_current_hunk(editable_buffer, editable_view);
+        self.scroll_current_hunk();
     }
 
-    pub(super) fn apply_current_hunk(&self, editable_buffer: &sourceview5::Buffer) {
-        remove_current_tags(editable_buffer, &self.reference_buffer, &self.tags);
-        let Some(index) = self.current_hunk else {
-            return;
-        };
-        let Some(hunk) = self.diff_plan.hunks.get(index) else {
-            return;
-        };
-        for line in &hunk.editable_lines {
-            apply_line_tag(editable_buffer, *line, &self.tags.editable_current);
-        }
-        for line in &hunk.reference_lines {
-            apply_line_tag(&self.reference_buffer, *line, &self.tags.reference_current);
-        }
+    pub(super) fn apply_current_hunk(&self) {
+        apply_current_hunk_tags(
+            &self.left_buffer,
+            &self.right_buffer,
+            &self.row_model.borrow(),
+            self.current_hunk,
+            &self.tags,
+        );
     }
 
-    pub(super) fn apply_tag_colors(&self, dark: bool, high_contrast: bool) {
-        self.tags.apply_colors(dark, high_contrast);
+    pub(super) fn apply_tag_colors(&self) {
+        self.tags.apply_colors(&self.left_view);
+    }
+
+    pub(crate) fn apply_wrap_override(&self) {
+        self.left_view.set_wrap_mode(gtk4::WrapMode::None);
+        self.right_view.set_wrap_mode(gtk4::WrapMode::None);
+        self.left_view.set_show_line_numbers(false);
+        self.right_view.set_show_line_numbers(false);
+        self.left_view.set_show_line_marks(false);
+        self.right_view.set_show_line_marks(false);
     }
 
     pub(super) fn clear_zoom_style(&self) {
-        clear_zoom_css_classes(&self.reference_view);
+        clear_zoom_css_classes(&self.left_view);
+        clear_zoom_css_classes(&self.right_view);
+        self.gutters.refresh();
     }
 
     pub(super) fn restore_zoom_style(&self, css_class: &str) {
-        restore_zoom_css_class(&self.reference_view, css_class);
+        restore_zoom_css_class(&self.left_view, css_class);
+        restore_zoom_css_class(&self.right_view, css_class);
+        self.gutters.refresh();
     }
 
-    fn scroll_current_hunk(
-        &self,
-        editable_buffer: &sourceview5::Buffer,
-        editable_view: &sourceview5::View,
-    ) {
+    fn scroll_current_hunk(&self) {
         let Some(index) = self.current_hunk else {
             return;
         };
-        let Some(hunk) = self.diff_plan.hunks.get(index) else {
+        let model = self.row_model.borrow();
+        let Some(hunk) = model.hunks.get(index) else {
             return;
         };
-        if let Some(line) = hunk.editable_lines.first() {
-            scroll_to_line(editable_buffer, editable_view, *line);
-        }
-        if let Some(line) = hunk.reference_lines.first() {
-            scroll_to_line(&self.reference_buffer, &self.reference_view, *line);
-        }
+        self.scroll_marks.scroll_to_row(
+            &self.left_buffer,
+            &self.left_view,
+            &self.right_buffer,
+            &self.right_view,
+            hunk.first_row,
+        );
+    }
+
+    fn queue_scroll_current_hunk(&self) {
+        let Some(index) = self.current_hunk else {
+            return;
+        };
+        let model = self.row_model.borrow();
+        let Some(hunk) = model.hunks.get(index) else {
+            return;
+        };
+        self.scroll_marks.queue_scroll_to_row(
+            &self.left_buffer,
+            &self.left_view,
+            &self.right_buffer,
+            &self.right_view,
+            hunk.first_row,
+        );
     }
 
     fn update_status(&self) {
-        if self.diff_plan.too_large {
+        let model = self.row_model.borrow();
+        if model.too_large {
             self.status_label
                 .set_label(&gettext("Too large to compare differences."));
             return;
         }
-        let hunk_count = self.diff_plan.hunks.len();
+        let hunk_count = model.hunks.len();
         if hunk_count == 0 {
             self.status_label
                 .set_label(&gettext("No differences were found."));
             return;
         }
-        let changed_lines = self.diff_plan.changed_line_count();
+        let changed_lines = model.changed_row_count();
         let plural_count = u32::try_from(changed_lines).map_or(u32::MAX, |value| value);
         let text = ngettext("%d changed line", "%d changed lines", plural_count)
             .replace("%d", &changed_lines.to_string());
@@ -241,6 +228,107 @@ impl CompareController {
             self.status_label.set_label(&text);
         }
     }
+}
+
+struct PresentationPane {
+    root: gtk4::Box,
+    buffer: sourceview5::Buffer,
+    view: sourceview5::View,
+    scrolled: gtk4::ScrolledWindow,
+}
+
+struct StyleHandlers {
+    manager: adw::StyleManager,
+    style_handler: gtk4::glib::SignalHandlerId,
+    high_contrast_handler: gtk4::glib::SignalHandlerId,
+}
+
+fn build_presentation_pane(tab: &EditorTab, title: &str) -> PresentationPane {
+    let buffer = sourceview5::Buffer::builder()
+        .enable_undo(false)
+        .implicit_trailing_newline(false)
+        .build();
+    tab.settings.apply_source_style_scheme(&buffer);
+    sync_reference_language(&tab.text_buffer, &buffer);
+    let view = sourceview5::View::with_buffer(&buffer);
+    configure_presentation_view(tab, &view);
+    install_presentation_interaction(&view, &buffer);
+    let scrolled = gtk4::ScrolledWindow::builder()
+        .hscrollbar_policy(gtk4::PolicyType::Automatic)
+        .vscrollbar_policy(gtk4::PolicyType::Automatic)
+        .child(&view)
+        .build();
+    scrolled.set_hexpand(true);
+    scrolled.set_vexpand(true);
+    scrolled.set_min_content_width(0);
+    let label = gtk4::Label::builder()
+        .label(title)
+        .xalign(0.0)
+        .margin_start(12)
+        .margin_end(12)
+        .margin_bottom(4)
+        .build();
+    label.add_css_class("dim-label");
+    let root = gtk4::Box::builder()
+        .orientation(gtk4::Orientation::Vertical)
+        .build();
+    root.append(&label);
+    root.append(&scrolled);
+    PresentationPane {
+        root,
+        buffer,
+        view,
+        scrolled,
+    }
+}
+
+fn build_compare_paned(
+    left: &impl IsA<gtk4::Widget>,
+    right: &impl IsA<gtk4::Widget>,
+) -> gtk4::Paned {
+    let paned = gtk4::Paned::new(gtk4::Orientation::Horizontal);
+    paned.set_resize_start_child(true);
+    paned.set_shrink_start_child(false);
+    paned.set_resize_end_child(true);
+    paned.set_shrink_end_child(false);
+    paned.set_start_child(Some(left));
+    paned.set_end_child(Some(right));
+    paned.set_hexpand(true);
+    paned.set_vexpand(true);
+    paned
+}
+
+fn connect_style_handlers(tab: &Rc<EditorTab>) -> StyleHandlers {
+    let manager = adw::StyleManager::default();
+    let weak = Rc::downgrade(tab);
+    let style_handler = manager.connect_dark_notify(move |_| {
+        if let Some(tab) = weak.upgrade() {
+            tab.apply_compare_style();
+        }
+    });
+    let weak = Rc::downgrade(tab);
+    let high_contrast_handler = manager.connect_high_contrast_notify(move |_| {
+        if let Some(tab) = weak.upgrade() {
+            tab.apply_compare_style();
+        }
+    });
+    StyleHandlers {
+        manager,
+        style_handler,
+        high_contrast_handler,
+    }
+}
+
+fn current_hunk_after_recompute(
+    previous: Option<usize>,
+    hunk_count: usize,
+    too_large: bool,
+) -> Option<usize> {
+    if hunk_count == 0 || too_large {
+        return None;
+    }
+    let previous = previous.map_or(0, |previous| previous);
+    Some(previous.min(hunk_count - 1))
 }
 
 fn ellipsis_label(mut label: String) -> String {
@@ -254,7 +342,7 @@ pub(super) fn sync_reference_language(
 ) {
     let language = editable_buffer.language();
     reference_buffer.set_language(language.as_ref());
-    reference_buffer.set_highlight_syntax(language.is_some());
+    reference_buffer.set_highlight_syntax(false);
 }
 
 impl Drop for CompareController {

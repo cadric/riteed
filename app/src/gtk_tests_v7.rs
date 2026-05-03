@@ -124,9 +124,16 @@ fn exercise_compare_with_disk_and_file(test_app: &adw::Application) {
         window.tab_compare_action_states_for_tests(),
         (false, false, false)
     );
+    assert_eq!(
+        window.selected_compare_views_editable_for_tests(),
+        (false, false)
+    );
 
+    window.exit_compare_for_tests();
+    drain_events(8);
     window.set_selected_text_for_tests("a\nchanged\nc");
-    spin_until("v7 compare updates after editing", || {
+    window.compare_with_disk_for_tests();
+    spin_until("v7 dirty disk compare starts read-only", || {
         window.selected_compare_diff_count_for_tests() == 1
     });
     window.request_save();
@@ -216,10 +223,10 @@ fn exercise_compare_two_files(test_app: &adw::Application) {
     let left = write_temp_file("riteed-v7-two-left.txt", b"left\nsame\n");
     let right = write_temp_file("riteed-v7-two-right.txt", b"right\nsame\n");
     window.compare_two_files_for_tests(&gio::File::for_path(&left), &gio::File::for_path(&right));
-    spin_until("v7 compare two files opens left and reference", || {
+    spin_until("v7 compare two files opens current and reference", || {
         window
             .selected_saved_uri_for_tests()
-            .ends_with("riteed-v7-two-left.txt")
+            .ends_with("riteed-v7-two-right.txt")
             && window.selected_compare_active_for_tests()
             && window.selected_compare_diff_count_for_tests() == 1
     });
@@ -290,25 +297,25 @@ fn exercise_compare_dialog_entry(test_app: &adw::Application) {
     wait_for_button(&root_widget, "Saved Version", "v7 compare dialog shown");
     assert!(collect_buttons(&root_widget, "Cancel").is_empty());
 
-    let right_buttons_parent = collect_buttons(&root_widget, "Saved Version")
+    let reference_buttons_parent = collect_buttons(&root_widget, "Saved Version")
         .first()
         .and_then(gtk4::prelude::WidgetExt::parent);
-    let left_buttons_parent = collect_buttons(&root_widget, "Current Document")
+    let current_buttons_parent = collect_buttons(&root_widget, "Current Document")
         .first()
         .and_then(gtk4::prelude::WidgetExt::parent);
-    assert!(right_buttons_parent.is_some());
-    assert!(left_buttons_parent.is_some());
-    let Some(right_buttons_parent) = right_buttons_parent else {
+    assert!(reference_buttons_parent.is_some());
+    assert!(current_buttons_parent.is_some());
+    let Some(reference_buttons_parent) = reference_buttons_parent else {
         return;
     };
-    let Some(left_buttons_parent) = left_buttons_parent else {
+    let Some(current_buttons_parent) = current_buttons_parent else {
         return;
     };
 
-    click_first_button(&right_buttons_parent, "Clear");
+    click_first_button(&reference_buttons_parent, "Clear");
     drain_events(16);
 
-    click_first_button(&left_buttons_parent, "Paste Text…");
+    click_first_button(&reference_buttons_parent, "Paste Text…");
     drain_events(16);
 
     wait_for_sensitive_button(&root_widget, "Compare", "v7 compare paste dialog opened");
@@ -316,7 +323,7 @@ fn exercise_compare_dialog_entry(test_app: &adw::Application) {
     click_first_sensitive_button(&root_widget, "Compare");
     drain_events(16);
 
-    click_first_button(&right_buttons_parent, "Paste Text…");
+    click_first_button(&current_buttons_parent, "Paste Text…");
     drain_events(16);
 
     wait_for_sensitive_button(

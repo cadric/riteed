@@ -128,6 +128,10 @@ fn visible_banner_state(
     is_selected: bool,
     autosave_enabled: bool,
 ) -> (VisibleBannerState, Option<String>, Option<String>) {
+    if state.compare.active.is_some() {
+        return (VisibleBannerState::None, None, None);
+    }
+
     match &state.external.pending {
         PendingExternalState::ContentPossiblyChanged {
             acknowledged: false,

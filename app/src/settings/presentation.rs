@@ -302,14 +302,6 @@ impl AppSettings {
     }
 
     #[must_use]
-    pub(crate) fn editor_palette_is_dark(&self) -> bool {
-        crate::palette_engine::editor_palette_is_dark(
-            self.editor_palette(),
-            adw::StyleManager::default().is_dark(),
-        )
-    }
-
-    #[must_use]
     pub(crate) fn connect_editor_palette_changed(
         &self,
         callback: impl Fn() + 'static,

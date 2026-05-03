@@ -16,6 +16,13 @@ impl EditorTab {
     }
 
     pub fn apply_word_wrap(&self) {
+        if let Ok(state) = self.state.try_borrow()
+            && let Some(compare) = state.compare.active.as_ref()
+        {
+            self.text_view.set_wrap_mode(gtk4::WrapMode::None);
+            compare.apply_wrap_override();
+            return;
+        }
         self.settings.apply_word_wrap(&self.text_view);
     }
 

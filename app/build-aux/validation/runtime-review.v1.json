@@ -91,7 +91,7 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 93,
+      "line": 101,
       "match": "state: RefCell<EditorTabState>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns one shared mutable state cell split into document runtime, IO, external-file, autosave, compare, and UI owner structs.",
@@ -99,7 +99,7 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 95,
+      "line": 103,
       "match": "on_file_drop: RefCell<Option<FileDropHandler>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns its current workspace file-drop callback.",
@@ -107,7 +107,7 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 96,
+      "line": 104,
       "match": "on_visual_change: RefCell<Option<TabCallback>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns its current workspace visual-state callback.",
@@ -115,7 +115,7 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 97,
+      "line": 105,
       "match": "on_external_state_change: RefCell<Option<TabCallback>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns its current external-state callback.",
@@ -123,19 +123,11 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 98,
+      "line": 106,
       "match": "on_external_action: RefCell<Option<TabCallback>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns its current external-action callback.",
       "justification": "Reload, save, and compare banner actions must route to the workspace that currently owns the tab."
-    },
-    {
-      "path": "src/editor_tab/compare/ui.rs",
-      "line": 372,
-      "match": "idle_pending: &Rc<Cell<bool>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "Compare scroll synchronization owns its per-direction idle-sync guard.",
-      "justification": "Scroll updates can arrive in bursts, and setting a peer Adjustment inside the value-changed handler can trigger rendering glitches. The pending flag coalesces updates so the peer scroll is applied once per main-loop idle."
     },
     {
       "path": "src/editor_zoom.rs",

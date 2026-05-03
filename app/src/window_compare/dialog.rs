@@ -48,7 +48,7 @@ pub(super) fn present_compare_dialog(controller: &Rc<WindowCompareController>) {
         swap_button: ui.swap_button.clone(),
         left_clear_button: ui.left_clear_button.clone(),
         right_clear_button: ui.right_clear_button.clone(),
-        right_saved_button: ui.right_saved_button.clone(),
+        left_saved_button: ui.left_saved_button.clone(),
     });
 
     sync_compare_dialog(&state);
@@ -62,11 +62,11 @@ struct CompareDialogUi {
     right_row: adw::ActionRow,
     compare_button: gtk4::Button,
     swap_button: gtk4::Button,
-    left_current_button: gtk4::Button,
+    left_saved_button: gtk4::Button,
     left_choose_file_button: gtk4::Button,
     left_paste_text_button: gtk4::Button,
     left_clear_button: gtk4::Button,
-    right_saved_button: gtk4::Button,
+    right_current_button: gtk4::Button,
     right_choose_file_button: gtk4::Button,
     right_paste_text_button: gtk4::Button,
     right_clear_button: gtk4::Button,
@@ -76,10 +76,10 @@ fn initial_compare_slots(
     controller: &WindowCompareController,
 ) -> (Option<Rc<EditorTab>>, CompareSlot, CompareSlot) {
     let current_document = controller.workspace.selected_tab();
-    let left_initial = current_document.as_ref().map_or(CompareSlot::None, |tab| {
+    let right_initial = current_document.as_ref().map_or(CompareSlot::None, |tab| {
         CompareSlot::CurrentDocument(tab.clone())
     });
-    let right_initial = match &left_initial {
+    let left_initial = match &right_initial {
         CompareSlot::CurrentDocument(tab)
             if tab.has_saved_local_uri()
                 && tab.is_dirty()
@@ -104,19 +104,17 @@ fn build_compare_dialog_ui(show_current_document_button: bool) -> CompareDialogU
         .wrap(true)
         .xalign(0.0)
         .label(gettext(
-            "Select the editable document on the left and the reference on the right.",
+            "Select the reference on the left and the current document or text on the right.",
         ))
         .build();
     let left_row = adw::ActionRow::builder().activatable(false).build();
     let left_group = adw::PreferencesGroup::builder()
-        .title(pgettext("compare dialog side", "Left Side"))
+        .title(pgettext("compare dialog side", "Reference"))
         .build();
     left_group.add(&left_row);
     let left_buttons = compare_source_buttons_row();
-    let left_current_button =
-        gtk4::Button::with_label(&pgettext("compare source", "Current Document"));
-    left_current_button.set_visible(show_current_document_button);
-    left_buttons.append(&left_current_button);
+    let left_saved_button = gtk4::Button::with_label(&pgettext("compare source", "Saved Version"));
+    left_buttons.append(&left_saved_button);
     let left_choose_file_button = gtk4::Button::with_label(&ellipsis_label(pgettext(
         "compare dialog action",
         "Choose File",
@@ -133,12 +131,14 @@ fn build_compare_dialog_ui(show_current_document_button: bool) -> CompareDialogU
     swap_button.set_halign(gtk4::Align::Center);
     let right_row = adw::ActionRow::builder().activatable(false).build();
     let right_group = adw::PreferencesGroup::builder()
-        .title(pgettext("compare dialog side", "Right Side"))
+        .title(pgettext("compare dialog side", "Current"))
         .build();
     right_group.add(&right_row);
     let right_buttons = compare_source_buttons_row();
-    let right_saved_button = gtk4::Button::with_label(&pgettext("compare source", "Saved Version"));
-    right_buttons.append(&right_saved_button);
+    let right_current_button =
+        gtk4::Button::with_label(&pgettext("compare source", "Current Document"));
+    right_current_button.set_visible(show_current_document_button);
+    right_buttons.append(&right_current_button);
     let right_choose_file_button = gtk4::Button::with_label(&ellipsis_label(pgettext(
         "compare dialog action",
         "Choose File",
@@ -174,11 +174,11 @@ fn build_compare_dialog_ui(show_current_document_button: bool) -> CompareDialogU
         right_row,
         compare_button,
         swap_button,
-        left_current_button,
+        left_saved_button,
         left_choose_file_button,
         left_paste_text_button,
         left_clear_button,
-        right_saved_button,
+        right_current_button,
         right_choose_file_button,
         right_paste_text_button,
         right_clear_button,
@@ -201,19 +201,10 @@ fn wire_left_actions(
     state: &Rc<CompareDialogState>,
     ui: &CompareDialogUi,
 ) {
-    let state_for_current = state.clone();
-    ui.left_current_button.connect_clicked(move |_| {
-        if let Some(tab) = state_for_current.current_document.as_ref() {
-            *state_for_current.left.borrow_mut() = CompareSlot::CurrentDocument(tab.clone());
-            if matches!(&*state_for_current.right.borrow(), CompareSlot::None)
-                && tab.has_saved_local_uri()
-                && tab.is_dirty()
-                && !state_for_current.autosave_enabled
-            {
-                *state_for_current.right.borrow_mut() = CompareSlot::SavedVersion;
-            }
-            sync_compare_dialog(&state_for_current);
-        }
+    let state_for_saved = state.clone();
+    ui.left_saved_button.connect_clicked(move |_| {
+        *state_for_saved.left.borrow_mut() = CompareSlot::SavedVersion;
+        sync_compare_dialog(&state_for_saved);
     });
 
     let state_for_file = state.clone();
@@ -260,10 +251,19 @@ fn wire_right_actions(
     state: &Rc<CompareDialogState>,
     ui: &CompareDialogUi,
 ) {
-    let state_for_saved = state.clone();
-    ui.right_saved_button.connect_clicked(move |_| {
-        *state_for_saved.right.borrow_mut() = CompareSlot::SavedVersion;
-        sync_compare_dialog(&state_for_saved);
+    let state_for_current = state.clone();
+    ui.right_current_button.connect_clicked(move |_| {
+        if let Some(tab) = state_for_current.current_document.as_ref() {
+            *state_for_current.right.borrow_mut() = CompareSlot::CurrentDocument(tab.clone());
+            if matches!(&*state_for_current.left.borrow(), CompareSlot::None)
+                && tab.has_saved_local_uri()
+                && tab.is_dirty()
+                && !state_for_current.autosave_enabled
+            {
+                *state_for_current.left.borrow_mut() = CompareSlot::SavedVersion;
+            }
+            sync_compare_dialog(&state_for_current);
+        }
     });
 
     let state_for_file = state.clone();
@@ -359,42 +359,41 @@ struct CompareDialogState {
     swap_button: gtk4::Button,
     left_clear_button: gtk4::Button,
     right_clear_button: gtk4::Button,
-    right_saved_button: gtk4::Button,
+    left_saved_button: gtk4::Button,
 }
 
 fn sync_compare_dialog(state: &Rc<CompareDialogState>) {
     let left_snapshot = state.left.borrow().clone();
     let right_snapshot = state.right.borrow().clone();
-    let saved_version_available = match &left_snapshot {
+    let saved_version_available = match &right_snapshot {
         CompareSlot::CurrentDocument(tab) => {
             tab.has_saved_local_uri() && tab.is_dirty() && !state.autosave_enabled
         }
         _ => false,
     };
-    if matches!(right_snapshot, CompareSlot::SavedVersion) && !saved_version_available {
-        *state.right.borrow_mut() = CompareSlot::None;
+    if matches!(left_snapshot, CompareSlot::SavedVersion) && !saved_version_available {
+        *state.left.borrow_mut() = CompareSlot::None;
     }
 
-    apply_slot_row(&state.left_row, &left_snapshot, false);
     apply_slot_row(
-        &state.right_row,
-        &state.right.borrow(),
+        &state.left_row,
+        &state.left.borrow(),
         saved_version_available,
     );
+    apply_slot_row(&state.right_row, &state.right.borrow(), false);
 
+    let left = state.left.borrow().clone();
     let right = state.right.borrow().clone();
-    let can_compare = left_snapshot.is_set() && right.is_set();
+    let can_compare = left.is_set() && right.is_set();
     state.compare_button.set_sensitive(can_compare);
-    state
-        .left_clear_button
-        .set_sensitive(left_snapshot.is_set());
+    state.left_clear_button.set_sensitive(left.is_set());
     state.right_clear_button.set_sensitive(right.is_set());
     state
-        .right_saved_button
+        .left_saved_button
         .set_sensitive(saved_version_available);
     state
         .swap_button
-        .set_sensitive(left_snapshot.is_plain() && right.is_plain());
+        .set_sensitive(left.is_plain() && right.is_plain());
 }
 
 fn apply_slot_row(row: &adw::ActionRow, slot: &CompareSlot, saved_version_available: bool) {

@@ -104,16 +104,6 @@ pub(crate) fn editor_scheme_id(palette: EditorPalette, app_dark: bool) -> String
 }
 
 #[must_use]
-pub(crate) fn editor_palette_is_dark(palette: EditorPalette, app_dark: bool) -> bool {
-    let scheme_id = editor_scheme_id(palette, app_dark);
-    sourceview5::StyleSchemeManager::default()
-        .scheme(&scheme_id)
-        .map_or(app_dark, |scheme| {
-            scheme_polarity(&scheme) == SchemePolarity::Dark
-        })
-}
-
-#[must_use]
 pub(crate) fn editor_palette_family(palette: EditorPalette) -> PaletteFamily {
     match palette {
         EditorPalette::ClassicLight | EditorPalette::ClassicDark => PaletteFamily::Classic,

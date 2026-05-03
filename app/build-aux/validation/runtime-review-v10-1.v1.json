@@ -3,35 +3,59 @@
   "sites": [
     {
       "path": "src/editor_tab/compare.rs",
-      "line": 34,
-      "match": "scroll_anchors: Rc<std::cell::RefCell<Vec<diff::CompareLineAnchor>>>,",
+      "line": 47,
+      "match": "presentation: Rc<std::cell::RefCell<DiffPresentation>>,",
       "kind": "runtime-shared-state",
-      "ownership": "The compare controller owns tab-local anchor and scroll synchronization state.",
-      "justification": "Anchor-based split scrolling needs shared guards and pending values to avoid recursive Adjustment updates while preserving line mapping."
+      "ownership": "The compare controller owns the tab-local rendered presentation rows and custom line-number gutter model.",
+      "justification": "Read-only compare panes render from ephemeral presentation buffers, so both custom gutters and tests need one shared source of display-row to original-line mapping."
     },
     {
-      "path": "src/editor_tab/compare/ui.rs",
-      "line": 162,
-      "match": "anchors: &Rc<RefCell<Vec<CompareLineAnchor>>>,",
+      "path": "src/editor_tab/compare.rs",
+      "line": 48,
+      "match": "row_model: Rc<std::cell::RefCell<DiffRowModel>>,",
       "kind": "runtime-shared-state",
-      "ownership": "The compare controller owns tab-local anchor and scroll synchronization state.",
-      "justification": "Anchor-based split scrolling needs shared guards and pending values to avoid recursive Adjustment updates while preserving line mapping."
+      "ownership": "The compare controller owns the tab-local logical diff row model.",
+      "justification": "Presentation rendering, hunk navigation, status, and test accessors must share one ephemeral row model so manual Compare and Git compare cannot drift into parallel diff states."
     },
     {
-      "path": "src/editor_tab/compare/ui.rs",
-      "line": 283,
-      "match": "anchors: Rc<RefCell<Vec<CompareLineAnchor>>>,",
+      "path": "src/editor_tab/compare/gutter.rs",
+      "line": 24,
+      "match": "presentation: Rc<RefCell<DiffPresentation>>,",
       "kind": "runtime-shared-state",
-      "ownership": "The compare controller owns tab-local anchor and scroll synchronization state.",
-      "justification": "Anchor-based split scrolling needs shared guards to avoid recursive Adjustment updates while preserving line mapping."
+      "ownership": "Compare gutter state owns a shared handle to the tab-local presentation line-number model.",
+      "justification": "Refreshing both gutters after compare recompute, zoom, and style changes needs the latest row map without copying per-pane line-number state."
     },
     {
-      "path": "src/editor_tab/compare/ui.rs",
-      "line": 285,
-      "match": "syncing: Rc<Cell<bool>>,",
+      "path": "src/editor_tab/compare/gutter.rs",
+      "line": 25,
+      "match": "row_model: Rc<RefCell<DiffRowModel>>,",
       "kind": "runtime-shared-state",
-      "ownership": "The compare controller owns tab-local anchor and scroll synchronization state.",
-      "justification": "Anchor-based split scrolling needs shared guards to avoid recursive Adjustment updates while preserving line mapping."
+      "ownership": "Compare gutter state owns a shared handle to the tab-local logical row model.",
+      "justification": "Custom gutter marker cells need the current row kind so equal rows reserve a blank marker column while reference/current changes render visual -/+ markers after recompute."
+    },
+    {
+      "path": "src/editor_tab/compare/gutter.rs",
+      "line": 32,
+      "match": "presentation: &Rc<RefCell<DiffPresentation>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Compare gutter setup borrows the controller-owned presentation line-number model.",
+      "justification": "Both gutter renderers need read-only access to the same presentation row map so placeholder rows stay blank without copying per-pane line-number state."
+    },
+    {
+      "path": "src/editor_tab/compare/gutter.rs",
+      "line": 33,
+      "match": "row_model: &Rc<RefCell<DiffRowModel>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Compare gutter setup borrows the controller-owned logical row model.",
+      "justification": "GtkSourceView queries gutter marker text per visible line, so the renderer callback must read the latest row kind after every recompute and keep visual +/- markers aligned with the active row model."
+    },
+    {
+      "path": "src/editor_tab/compare/scroll.rs",
+      "line": 91,
+      "match": "syncing: &Rc<Cell<bool>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Compare row scroll synchronization owns its recursive-update guard.",
+      "justification": "Presentation buffers have identical display-row counts, so direct adjustment syncing is sufficient, but setting the peer Adjustment inside a value-changed handler still needs a shared guard to prevent feedback loops."
     },
     {
       "path": "src/source_control/list_view.rs",

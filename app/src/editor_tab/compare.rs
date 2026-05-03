@@ -10,28 +10,48 @@ use crate::error::AppError;
 
 mod controller;
 mod diff;
+mod gutter;
+mod inline;
+mod interaction;
+mod model;
+mod navigation;
+mod presentation;
+mod render;
+mod scroll;
 mod target;
+#[cfg(test)]
+mod testing;
 mod ui;
 
 use controller::sync_reference_language;
-use diff::DiffPlan;
+use model::DiffRowModel;
+use presentation::DiffPresentation;
+use render::CompareTags;
 use target::{CompareTarget, CompareTargetKind};
-use ui::{CompareTags, clear_tags};
+
+#[cfg(test)]
+pub(crate) use testing::row_count_for_texts_for_tests;
 
 pub(crate) struct CompareController {
     target: CompareTarget,
     toolbar: gtk4::Box,
     status_label: gtk4::Label,
     paned: gtk4::Paned,
-    reference_view: sourceview5::View,
-    reference_buffer: sourceview5::Buffer,
+    editable_snapshot: String,
+    reference_text: String,
+    left_view: sourceview5::View,
+    left_buffer: sourceview5::Buffer,
+    right_view: sourceview5::View,
+    right_buffer: sourceview5::Buffer,
     tags: CompareTags,
-    diff_plan: DiffPlan,
+    presentation: Rc<std::cell::RefCell<DiffPresentation>>,
+    row_model: Rc<std::cell::RefCell<DiffRowModel>>,
+    gutters: gutter::CompareGutters,
+    scroll_marks: scroll::CompareScrollMarks,
     current_hunk: Option<usize>,
     cancellable: Option<gio::Cancellable>,
     left_adjustment: gtk4::Adjustment,
     right_adjustment: gtk4::Adjustment,
-    scroll_anchors: Rc<std::cell::RefCell<Vec<diff::CompareLineAnchor>>>,
     left_handler: Option<glib::SignalHandlerId>,
     right_handler: Option<glib::SignalHandlerId>,
     style_manager: adw::StyleManager,
@@ -133,7 +153,6 @@ impl EditorTab {
         let compare = self.state.borrow_mut().compare.active.take();
         if let Some(mut compare) = compare {
             compare.cancel();
-            clear_tags(&self.text_buffer, &compare.reference_buffer, &compare.tags);
             self.root.remove(&compare.toolbar);
             self.root.remove(&compare.paned);
             compare.paned.set_start_child(Option::<&gtk4::Widget>::None);
@@ -141,6 +160,7 @@ impl EditorTab {
             drop(compare);
             self.root.append(&self.content);
             self.apply_minimap_visibility();
+            self.apply_word_wrap();
             self.sync_presentation();
         }
     }
@@ -153,29 +173,20 @@ impl EditorTab {
         self.move_compare_hunk(-1);
     }
 
-    pub(super) fn recompute_compare_from_editable(&self) {
-        let text = self.buffer_text();
-        let Ok(mut state) = self.state.try_borrow_mut() else {
-            return;
-        };
-        if let Some(compare) = state.compare.active.as_mut() {
-            compare.recompute(&self.text_buffer, &self.text_view, &text);
-        }
-    }
-
     pub(crate) fn apply_compare_style(&self) {
         let Ok(state) = self.state.try_borrow() else {
             return;
         };
         if let Some(compare) = state.compare.active.as_ref() {
             self.settings
-                .apply_source_style_scheme(&compare.reference_buffer);
-            sync_reference_language(&self.text_buffer, &compare.reference_buffer);
-            compare.apply_tag_colors(
-                self.settings.editor_palette_is_dark(),
-                compare.style_manager.is_high_contrast(),
-            );
-            compare.apply_current_hunk(&self.text_buffer);
+                .apply_source_style_scheme(&compare.left_buffer);
+            self.settings
+                .apply_source_style_scheme(&compare.right_buffer);
+            sync_reference_language(&self.text_buffer, &compare.left_buffer);
+            sync_reference_language(&self.text_buffer, &compare.right_buffer);
+            compare.apply_tag_colors();
+            compare.apply_current_hunk();
+            compare.gutters.refresh();
         }
     }
 
@@ -198,7 +209,6 @@ impl EditorTab {
     }
 
     pub(super) fn sync_compare_reference_after_save(&self, saved_uri: &str) {
-        let text = self.buffer_text();
         let Ok(mut state) = self.state.try_borrow_mut() else {
             return;
         };
@@ -206,55 +216,10 @@ impl EditorTab {
             && compare.target.kind == CompareTargetKind::Disk
             && compare.target.uri.as_deref() == Some(saved_uri)
         {
-            compare.set_reference_text(&text, false);
-            compare.recompute(&self.text_buffer, &self.text_view, &text);
+            let snapshot = compare.editable_snapshot.clone();
+            compare.set_reference_text(&snapshot, false);
+            compare.recompute();
         }
-    }
-
-    #[cfg(test)]
-    pub(crate) fn compare_diff_count_for_tests(&self) -> usize {
-        self.state
-            .try_borrow()
-            .ok()
-            .and_then(|state| {
-                state
-                    .compare
-                    .active
-                    .as_ref()
-                    .map(|compare| compare.diff_plan.hunks.len())
-            })
-            .unwrap_or_default()
-    }
-
-    #[cfg(test)]
-    pub(crate) fn compare_status_for_tests(&self) -> String {
-        self.state
-            .try_borrow()
-            .ok()
-            .and_then(|state| {
-                state
-                    .compare
-                    .active
-                    .as_ref()
-                    .map(|compare| compare.status_label.text().to_string())
-            })
-            .unwrap_or_default()
-    }
-
-    #[cfg(test)]
-    pub(crate) fn compare_current_hunk_for_tests(&self) -> Option<usize> {
-        self.state.try_borrow().ok().and_then(|state| {
-            state
-                .compare
-                .active
-                .as_ref()
-                .and_then(|compare| compare.current_hunk)
-        })
-    }
-
-    #[cfg(test)]
-    pub(crate) fn compare_editable_highlight_count_for_tests(&self) -> usize {
-        compare_highlight_count(&self.text_buffer)
     }
 
     fn start_compare_with_target(
@@ -277,14 +242,11 @@ impl EditorTab {
         self.scrolled
             .set_vscrollbar_policy(gtk4::PolicyType::Automatic);
         let compare = CompareController::new(self, target.clone());
-        compare.paned.set_start_child(Some(&self.content));
         self.root.append(&compare.toolbar);
         self.root.append(&compare.paned);
-        compare.apply_tag_colors(
-            self.settings.editor_palette_is_dark(),
-            compare.style_manager.is_high_contrast(),
-        );
+        compare.apply_tag_colors();
         self.state.borrow_mut().compare.active = Some(compare);
+        self.text_view.set_wrap_mode(gtk4::WrapMode::None);
         self.sync_presentation();
     }
 
@@ -298,12 +260,11 @@ impl EditorTab {
                 callback(Err(AppError::Cancelled));
                 return;
             };
-            let editable_text = self.buffer_text();
             let applied = {
                 let mut state = self.state.borrow_mut();
                 if let Some(compare) = state.compare.active.as_mut() {
                     compare.set_reference_text(reference_text, target.implicit_trailing_newline);
-                    compare.recompute(&self.text_buffer, &self.text_view, &editable_text);
+                    compare.recompute();
                     true
                 } else {
                     false
@@ -346,7 +307,6 @@ impl EditorTab {
                 }
                 let outcome = match result {
                     Ok(document) => {
-                        let editable_text = tab.buffer_text();
                         let applied = {
                             let mut state = tab.state.borrow_mut();
                             if let Some(compare) = state.compare.active.as_mut()
@@ -357,7 +317,7 @@ impl EditorTab {
                                     &document.text,
                                     document.format.implicit_trailing_newline(),
                                 );
-                                compare.recompute(&tab.text_buffer, &tab.text_view, &editable_text);
+                                compare.recompute();
                                 true
                             } else {
                                 false
@@ -379,7 +339,7 @@ impl EditorTab {
 
     fn move_compare_hunk(&self, direction: i32) {
         if let Some(compare) = self.state.borrow_mut().compare.active.as_mut() {
-            compare.move_hunk(&self.text_buffer, &self.text_view, direction);
+            compare.move_hunk(direction);
         }
     }
 
@@ -398,22 +358,4 @@ fn map_reference_load_error(error: LoadFailure) -> AppError {
         LoadFailure::TooBig(path) => AppError::FileTooBig(path),
         LoadFailure::Failed(error) => error,
     }
-}
-
-#[cfg(test)]
-fn compare_highlight_count(buffer: &sourceview5::Buffer) -> usize {
-    let mut iter = buffer.start_iter();
-    let end = buffer.end_iter();
-    let mut count = 0;
-    while iter < end {
-        count += iter
-            .tags()
-            .iter()
-            .filter(|tag| tag.background_rgba().is_some())
-            .count();
-        if !iter.forward_char() {
-            break;
-        }
-    }
-    count
 }

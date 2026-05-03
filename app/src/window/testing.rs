@@ -169,6 +169,10 @@ impl Window {
         self.shell.line_numbers_row.set_active(enabled);
     }
 
+    pub(crate) fn set_word_wrap_for_tests(&self, enabled: bool) {
+        self.shell.word_wrap_row.set_active(enabled);
+    }
+
     pub(crate) fn set_minimap_for_tests(&self, enabled: bool) {
         self.shell.minimap_row.set_active(enabled);
     }
@@ -435,80 +439,10 @@ impl Window {
         self.project.resolve_symlink_for_tests(file);
     }
 
-    pub(crate) fn compare_action_states_for_tests(&self) -> (bool, bool, bool, bool, bool) {
-        self.compare.action_states_for_tests()
-    }
-
-    pub(crate) fn tab_compare_action_states_for_tests(&self) -> (bool, bool, bool) {
-        self.compare.tab_compare_action_states_for_tests()
-    }
-
-    pub(crate) fn compare_with_disk_for_tests(self: &Rc<Self>) {
-        if let Some(tab) = self.workspace.selected_tab() {
-            tab.start_compare_with_disk(Rc::new(|_result| {}));
-            self.workspace.refresh_selected_state();
-        }
-    }
-
-    pub(crate) fn compare_with_file_for_tests(&self, file: &gio::File) {
-        if let Some(tab) = self.workspace.selected_tab() {
-            tab.start_compare_with_file(file, Rc::new(|_result| {}));
-            self.workspace.refresh_selected_state();
-        }
-    }
-
-    pub(crate) fn compare_two_files_for_tests(
-        self: &Rc<Self>,
-        left: &gio::File,
-        right: &gio::File,
-    ) {
-        self.compare.compare_two_files_for_tests(left, right);
-    }
-
-    pub(crate) fn refresh_compare_reference_for_tests(self: &Rc<Self>) {
-        self.compare.refresh_reference();
-    }
-
-    pub(crate) fn exit_compare_for_tests(&self) {
-        self.compare.exit_compare();
-    }
-
-    pub(crate) fn next_diff_for_tests(&self) {
-        self.compare.next_diff();
-    }
-
-    pub(crate) fn previous_diff_for_tests(&self) {
-        self.compare.previous_diff();
-    }
-
-    pub(crate) fn selected_compare_active_for_tests(&self) -> bool {
+    pub(crate) fn selected_wrap_mode_for_tests(&self) -> Option<gtk4::WrapMode> {
         self.workspace
             .selected_tab()
-            .is_some_and(|tab| tab.is_compare_active())
-    }
-
-    pub(crate) fn selected_compare_diff_count_for_tests(&self) -> usize {
-        self.workspace
-            .selected_tab()
-            .map_or(0, |tab| tab.compare_diff_count_for_tests())
-    }
-
-    pub(crate) fn selected_compare_status_for_tests(&self) -> String {
-        self.workspace
-            .selected_tab()
-            .map_or_else(String::new, |tab| tab.compare_status_for_tests())
-    }
-
-    pub(crate) fn selected_compare_current_hunk_for_tests(&self) -> Option<usize> {
-        self.workspace
-            .selected_tab()
-            .and_then(|tab| tab.compare_current_hunk_for_tests())
-    }
-
-    pub(crate) fn selected_compare_highlight_count_for_tests(&self) -> usize {
-        self.workspace
-            .selected_tab()
-            .map_or(0, |tab| tab.compare_editable_highlight_count_for_tests())
+            .map(|tab| tab.text_view().wrap_mode())
     }
 
     pub(crate) fn project_monitor_count_for_tests(&self) -> usize {

@@ -100,11 +100,11 @@ impl WindowCompareController {
     #[cfg(test)]
     pub(crate) fn compare_two_files_for_tests(
         self: &Rc<Self>,
-        editable: &gio::File,
         reference: &gio::File,
+        current: &gio::File,
     ) {
         let callback: Rc<dyn Fn(Result<(), AppError>)> = Rc::new(|_result| {});
-        self.open_two_file_compare(editable, reference, &callback);
+        self.open_two_file_compare(current, reference, &callback);
     }
 
     #[cfg(test)]
@@ -282,12 +282,12 @@ impl WindowCompareController {
         );
     }
 
-    fn start_compare_for_selected_tab(self: &Rc<Self>, right: CompareSlot) {
+    fn start_compare_for_selected_tab(self: &Rc<Self>, reference: CompareSlot) {
         let Some(tab) = self.workspace.selected_tab() else {
             return;
         };
         let callback = self.wrap_compare_callback(Rc::new(|_result| {}));
-        self.start_compare_for_current_document(&tab, right, &callback);
+        self.start_compare_for_current_document(&tab, reference, &callback);
     }
 
     fn start_compare_from_dialog(
@@ -297,15 +297,15 @@ impl WindowCompareController {
         callback: Rc<dyn Fn(Result<(), AppError>)>,
     ) {
         let callback = self.wrap_compare_callback(callback);
-        match left {
+        match right {
             CompareSlot::CurrentDocument(tab) => {
-                self.start_compare_for_current_document(&tab, right, &callback);
+                self.start_compare_for_current_document(&tab, left, &callback);
             }
             CompareSlot::File(file) => {
-                self.start_compare_for_file(&file, right, &callback);
+                self.start_compare_for_file(&file, left, &callback);
             }
             CompareSlot::Text(text) => {
-                self.start_compare_for_text(&text, right, &callback);
+                self.start_compare_for_text(&text, left, &callback);
             }
             CompareSlot::None | CompareSlot::SavedVersion => {
                 callback(Err(AppError::Cancelled));
@@ -316,13 +316,13 @@ impl WindowCompareController {
     fn start_compare_for_current_document(
         self: &Rc<Self>,
         tab: &Rc<EditorTab>,
-        right: CompareSlot,
+        reference: CompareSlot,
         callback: &Rc<dyn Fn(Result<(), AppError>)>,
     ) {
         if let Some(page) = tab.page() {
             self.workspace.tab_view.set_selected_page(&page);
         }
-        match right {
+        match reference {
             CompareSlot::SavedVersion => tab.start_compare_with_disk(Rc::clone(callback)),
             CompareSlot::File(file) => tab.start_compare_with_file(&file, Rc::clone(callback)),
             CompareSlot::Text(text) => tab.start_compare_with_text(&text, Rc::clone(callback)),
@@ -335,16 +335,16 @@ impl WindowCompareController {
 
     fn start_compare_for_file(
         self: &Rc<Self>,
-        editable: &gio::File,
-        right: CompareSlot,
+        current: &gio::File,
+        reference: CompareSlot,
         callback: &Rc<dyn Fn(Result<(), AppError>)>,
     ) {
-        match right {
+        match reference {
             CompareSlot::File(reference) => {
-                self.open_two_file_compare(editable, &reference, callback);
+                self.open_two_file_compare(current, &reference, callback);
             }
             CompareSlot::Text(text) => {
-                self.open_file_text_compare(editable, &text, callback);
+                self.open_file_text_compare(current, &text, callback);
             }
             _ => {
                 callback(Err(AppError::Cancelled));
@@ -354,8 +354,8 @@ impl WindowCompareController {
 
     fn start_compare_for_text(
         self: &Rc<Self>,
-        editable_text: &str,
-        right: CompareSlot,
+        current_text: &str,
+        reference: CompareSlot,
         callback: &Rc<dyn Fn(Result<(), AppError>)>,
     ) {
         let tab = self
@@ -363,12 +363,12 @@ impl WindowCompareController {
             .selected_tab()
             .filter(|tab| tab.is_clean_untitled())
             .unwrap_or_else(|| self.workspace.add_empty_tab(true));
-        tab.text_buffer().set_text(editable_text);
+        tab.text_buffer().set_text(current_text);
         if let Some(page) = tab.page() {
             self.workspace.tab_view.set_selected_page(&page);
         }
         self.workspace.refresh_selected_state();
-        match right {
+        match reference {
             CompareSlot::File(file) => tab.start_compare_with_file(&file, Rc::clone(callback)),
             CompareSlot::Text(text) => tab.start_compare_with_text(&text, Rc::clone(callback)),
             _ => callback(Err(AppError::Cancelled)),
@@ -378,7 +378,7 @@ impl WindowCompareController {
 
     fn open_two_file_compare(
         self: &Rc<Self>,
-        editable: &gio::File,
+        current: &gio::File,
         reference: &gio::File,
         callback: &Rc<dyn Fn(Result<(), AppError>)>,
     ) {
@@ -401,7 +401,7 @@ impl WindowCompareController {
         let callback_for_open = Rc::clone(callback);
         tab.clone().load_file(
             &self.shell,
-            editable,
+            current,
             Rc::new(move |result| {
                 let Some(controller) = weak.upgrade() else {
                     return;
@@ -427,7 +427,7 @@ impl WindowCompareController {
 
     fn open_file_text_compare(
         self: &Rc<Self>,
-        editable: &gio::File,
+        current: &gio::File,
         reference_text: &str,
         callback: &Rc<dyn Fn(Result<(), AppError>)>,
     ) {
@@ -441,7 +441,7 @@ impl WindowCompareController {
         let callback_for_open = Rc::clone(callback);
         tab.clone().load_file(
             &self.shell,
-            editable,
+            current,
             Rc::new(move |result| {
                 let Some(controller) = weak.upgrade() else {
                     return;

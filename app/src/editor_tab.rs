@@ -21,6 +21,14 @@ mod view;
 
 use state::EditorTabState;
 
+#[cfg(test)]
+pub(crate) fn compare_row_count_for_texts_for_tests(
+    editable_text: &str,
+    reference_text: &str,
+) -> usize {
+    compare::row_count_for_texts_for_tests(editable_text, reference_text)
+}
+
 type FileDropHandler = Rc<dyn Fn(Vec<gio::File>)>;
 type TabCallback = Rc<dyn Fn()>;
 
@@ -373,7 +381,6 @@ impl EditorTab {
     }
 
     fn sync_presentation(&self) {
-        self.recompute_compare_from_editable();
         if let Some(page) = self.page() {
             page.set_title(&self.title());
             page.set_tooltip(&self.subtitle());

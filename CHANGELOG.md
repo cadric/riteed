@@ -1,6 +1,6 @@
 ---
 created: 2026-04-19
-updated: 2026-05-02
+updated: 2026-05-03
 status: current
 priority: high
 type: release
@@ -24,6 +24,7 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Extended the embedded Riteed app to a v8 polish layer with editor palette selection, current-line highlight preferences, fullscreen support, F9 project-sidebar focus, and conservative autosave for already-saved writable files.
 - Extended the embedded Riteed app to a v9 lightweight source-control workflow with a Git sidebar, project-tree file status badges, per-file Git compare, stage/unstage actions, and local commits.
 - Extended the embedded Riteed app to a v10 source-control completion pass with tree/list view modes, recent commit history, per-file discard for safe unstaged tracked changes, and coalesced live Git refresh.
+- Extended the embedded Riteed app to a v11 split-diff polish pass with logical row alignment, blank presentation placeholder rows, token-aware intra-line highlighting, hunk navigation, and the same renderer for manual Compare and Git compare.
 - Added a sandbox-bundled `/app/bin/git` Flatpak module with source checksum and maintainer-signature verification, avoiding host Git and `flatpak-spawn`.
 - Added Git identity preferences backed by GSettings and applied only on explicit user action for local commit support.
 - Added a GSettings-backed Source Control view-mode preference and a packaged Source Control symbolic icon.
@@ -50,7 +51,7 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Fixed the modified-tab indicator so dirty tabs use an available Adwaita symbolic icon instead of showing a missing-icon placeholder.
 - Preserved extensionless filenames during Save As instead of appending `.txt`, so code-oriented names such as `Makefile`, `LICENSE`, and `.gitignore` stay unchanged.
 - Refreshed the pinned Kernel.org `sha256sums.asc` checksum used by the bundled Git Flatpak module after verifying the new signed checksum file.
-- Reworked Compare into a single-entry flow: Compare… opens a dedicated compare dialog where the user chooses sources (current document, saved version, file, or pasted text), with left as the editable side and right as the reference.
+- Reworked Compare into a single-entry flow: Compare… opens a dedicated compare dialog where the user chooses sources (current document, saved version, file, or pasted text), with reference on the left and current content on the right.
 - Moved Compare entry points into the tab context menu with file, saved-version, and pasted-text actions, hiding Saved Version when autosave makes it irrelevant.
 - Polished the pasted-text Compare dialog with a standard header close button, a bottom-aligned primary Compare action, and an expanding text area.
 - Hardened Source Control safety so unreadable Git attributes disable Git actions and commits instead of being treated as no attributes, while compare highlighting now uses neutral high-contrast colors.
@@ -69,6 +70,9 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Grouped the primary menu into native `GMenu` sections so theme choices, workflow actions, and standard GNOME items render with clear separators.
 - Reworked compare scroll synchronization to use diff anchors instead of normalized ratios, and applied active document language highlighting to reference buffers.
 - Refactored compare controller plumbing into smaller modules so Git-backed compare could reuse the existing split-diff engine without growing the compare file past policy limits.
+- Replaced compare's hunk-only `DiffPlan` with a shared `DiffRowModel` built from full `similar::TextDiff` ops, making row alignment, presentation buffers, custom gutters, intra-line tags, and hunk status one tab-local source of truth.
+- Made Compare views read-only in V11; exit compare to edit. This removes V10's editable compare pane while preserving the original editor widget, undo stack, cursor, selection, and modified state for restore on exit.
+- Standardized Compare panes to the usual diff convention: reference/old content on the left in red and current/working content on the right in green, with token-aware inline ranges strengthening those same side colors.
 - Clarified the Riteed settings model into scoped modules and converted theme and Source Control view mode preferences to GSettings enums.
 - Reduced `EditorTab` pressure by moving document runtime, I/O, external-file, autosave, and compare state into focused internal owners while keeping the public tab workflow unchanged.
 - Polished UI copy by using real ellipses in dialog labels, sentence-style Preferences subtitles, user-first Help pages, and defensive restored-window size clamping.
@@ -108,6 +112,7 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Restored the resizable sidebar to the left side, kept Files and Source Control inside one switchable sidebar, and clamped drag resizing so the sidebar cannot be hidden permanently by the handle.
 - Fixed V10 polish regressions: Source Control icon registration, first-open Appearance tile sizing, Recent Files bottom actions, animated sidebar show/hide, and status-bar segment dividers.
 - Fixed V10 follow-up regressions where sidebar animation prevented full hiding, automatic Git refreshes repeatedly rebuilt Source Control and Files UI, and compare/Git diff panes drifted out of scroll sync.
+- Fixed V11 compare follow-up regressions by reserving identical measured custom-gutter width for original line numbers, adding visual `-`/`+` gutter markers in a fixed column for reference/current changed rows, making compare copy selection-safe, using strict viewport-based hunk navigation, opening compares at the first changed display row, and removing the previous current-hunk accent overlay so diff colors stay red for reference/old content and green for current/working content.
 - Source Control: action buttons no longer reserve inline space; status badges color-coded by Git state.
 - Fixed Window Palette chrome coverage so scoped scheme colors reach the sidebar, tab strip, libadwaita dialogs, primary menu, and card-like dialog content without global theme rebinding.
 

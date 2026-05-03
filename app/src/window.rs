@@ -23,6 +23,8 @@ use crate::workspace::{OpenSource, Workspace, WorkspaceParts};
 
 #[cfg(test)]
 mod testing;
+#[cfg(test)]
+mod testing_compare;
 
 #[derive(Clone, Copy, Debug)]
 pub struct WindowInit {

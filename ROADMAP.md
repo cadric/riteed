@@ -4,8 +4,8 @@ updated: 2026-05-02
 status: active
 priority: high
 type: roadmap
-completed_through: v10
-next_version: v11
+completed_through: v11
+next_version: v12
 final_scheduled_version: v12
 ---
 
@@ -1125,10 +1125,10 @@ Implement a working v10 of the app with the local source control workflows compl
 
 > created: 2026-05-02
 > updated: 2026-05-02
-> status: planned
+> status: complete
 > priority: high
 > type: roadmap-milestone
-> implementation: pending
+> implementation: shipped
 
 ## Purpose
 
@@ -1144,6 +1144,22 @@ This is a focused readability release. It keeps the existing compare model, but 
 * Clearer diff status and hunk navigation behavior
 * The same improved diff surface for manual Compare and Git compare
 
+## Implementation notes
+
+V11 is implemented as a focused polish pass on the existing tab-local compare architecture. `DiffRowModel` is now the single compare model source of truth under `app/src/editor_tab/compare/`, with row kinds `Equal`, `ReferenceOnly`, `CurrentOnly`, and `Modify` built from full `similar::TextDiff::from_lines(...).ops()` output.
+
+Compare renders into two read-only presentation buffers rather than the live editor buffer. Those buffers contain ephemeral blank display lines for placeholders, so both panes have the same row count and scroll together naturally. The original editor widget stays alive offscreen and is restored on exit, preserving cursor, selection, undo, modified state, and the real document buffer.
+
+Built-in SourceView line numbers are disabled for compare panes. A custom `GtkSourceGutterRendererText` gutter reads the presentation row map and shows original one-based line numbers while blank placeholder rows remain unnumbered. The renderer reserves measured width for the largest original line number in each pane so three-digit and wider line numbers are not clipped.
+
+Compare mode forces `WrapMode::None` as a view-local override on both presentation panes. Settings changes while compare is active are guarded so the panes remain aligned, and exiting compare restores the latest user wrap preference through the normal presentation sync path without writing GSettings from compare mode. Compare panes are intentionally read-only in V11; the toolbar shows "Read-only - Exit Compare to edit" so users know edits happen after leaving compare mode.
+
+Intra-line ranges use token-aware code splitting for normal modified rows, keep `snake_case` identifiers together, refine identifier changes with character offsets, fall back to grapheme/word diffing only for simple or longer rows, and skip inline ranges past the configured cap or budget. Manual Compare entry points and Source Control Git compare now render through the same row model and renderer path.
+
+The compare color language is intentionally narrow and follows standard diff orientation: reference/old content is on the left in red, current/working content is on the right in green, and intra-line ranges use stronger versions of those same side colors. Syntax highlighting is disabled inside presentation buffers so code token colors do not compete with the diff meaning.
+
+Hunk navigation is strict and viewport-based: Next chooses the first hunk after the top visible display row and Previous chooses the last hunk before it, both wrapping at the ends. Compare entry and refresh queue a mark-backed scroll to the first changed display row after layout settles. The read-only presentation panes still allow normal text selection and guarded copy; empty selections do not clear the clipboard.
+
 ## Why this version matters
 
 V10 made Source Control useful enough that diff readability is now the main friction in daily review. Riteed already has compare entry points and Git-backed diffs, but the current split view is still too hard to read when inserted, deleted, and modified lines drift apart. V11 prioritizes this over broader editing power tools because changed-file review is one of the product's core reasons to exist.
@@ -1151,67 +1167,111 @@ V10 made Source Control useful enough that diff readability is now the main fric
 ## Prompt for V11
 
 ```text
-Build v11 of the GNOME desktop application in Rust by polishing the existing split diff and compare workflow.
+  Build v11 of the GNOME desktop application in Rust by polishing the existing split diff and compare workflow.
 
-The goal of v11 is to make Compare and Git compare genuinely practical for daily changed-file review. The app already has manual compare actions, Git-backed compare, hunk navigation, and side-by-side panes. This version should keep that architecture, but make the diff output readable enough that users can quickly understand what changed without opening a heavier editor.
+  The goal of v11 is to make Compare and Git compare genuinely practical for daily changed-file review. The app
+  already has manual compare actions, Git-backed compare, hunk navigation, and side-by-side panes. This version should
+   keep that architecture, but make the diff output readable enough that users can quickly understand what changed
+  without opening a heavier editor.
 
-What v11 adds:
-- Logical row alignment for side-by-side diffs
-- Placeholder rows for insertions and deletions
-- Intra-line highlighting for changed regions inside modified lines
-- Clearer diff status and hunk navigation behavior
-- The same improved diff surface for manual Compare and Git compare
+  What v11 adds:
+  - Logical row alignment for side-by-side diffs
+  - Placeholder rows for insertions and deletions
+  - Intra-line highlighting for changed regions inside modified lines
+  - Clearer diff status and hunk navigation behavior
+  - The same improved diff surface for manual Compare and Git compare
 
-Scope for v11:
-- Improve the existing compare implementation rather than creating a separate diff application
-- Build a shared logical diff-row model for the left and right panes
-- Align both panes by logical diff rows, not just by independent scroll position
-- Represent inserted and deleted lines with blank or placeholder rows on the opposite side
-- Highlight changed regions inside modified lines, not only whole changed lines
-- Introduce or preserve scroll sync so both panes follow the same logical diff-row position
-- Keep existing hunk navigation working with the new row model
-- Keep source style, high-contrast behavior, and tab-local compare state working
-- Apply the same improved diff surface to:
-  - Compare With File
-  - Compare With Saved Version
-  - Compare Pasted Text
-  - Git compare from Source Control
-- Keep the advanced compare dialog implementation available behind the simpler tab actions
+  Scope for v11:
+  - Improve the existing compare implementation rather than creating a separate diff application
+    - Tab-local compare lives under `app/src/editor_tab/compare/` (controller.rs, diff.rs, target.rs, ui.rs)
+    - The advanced compare dialog lives under `app/src/window_compare/dialog.rs` and remains accessible from the
+  workspace; v11 must not remove or hide it
+  - Build a shared logical diff-row model
+    - Define a single row-list type where each row pairs an optional left line with an optional right line plus a
+  change-kind tag (Equal, Insert, Delete, Modify)
+    - Both panes render from this row-list so row N on the left always corresponds to row N on the right
+    - Verify whether the four entry points below already share a renderer; if not, extracting a shared module is the
+  first task
+  - Align both panes by logical diff rows, not just by independent scroll position
+  - Represent inserted and deleted lines with blank or placeholder rows on the opposite side
+    - Use read-only presentation buffers with ephemeral blank display rows so the live editor buffer and reference
+  text are never used as placeholder storage
+    - Disable built-in line numbers on the presentation panes and use a custom gutter renderer so original line
+  numbers are preserved
+    - Keep the real editor widget alive and restore it on exit so undo, cursor, selection, modified state, and
+  line-number truth remain tied to the real document
+  - Highlight changed regions inside modified lines, not only whole changed lines
+    - Use character-level intra-line diff (preferred) for accuracy on small edits
+    - Word-level via simple whitespace tokenization is acceptable as a fallback if character-level performance is poor
+   on long lines; document the choice
+    - Reuse the existing diff computation from `editor_tab/compare/diff.rs`; do not introduce a new diff library or
+  replace the current algorithm in v11
+  - Introduce or preserve scroll sync so both panes follow the same logical diff-row position
+    - Sync via the shared row index, not raw vadjustment values, so insertions on one side do not desync the panes
+    - Document the chosen sync mechanism in the module
+  - Keep existing hunk navigation working with the new row model; next/prev hunk must move both panes to the same
+  logical row
+  - Keep source style, high-contrast behavior, and tab-local compare state working
+  - Apply the same improved diff surface to:
+    - Compare With File
+    - Compare With Saved Version
+    - Compare Pasted Text
+    - Git compare from Source Control
+  - Respect the existing editor large-file safety guard
+    - Compare must refuse or degrade gracefully on inputs that exceed the editor's safety size threshold; do not
+  bypass the guard for compare
 
-Behavior expectations:
-- The app should remain a lightweight GNOME editor
-- Diffs should be readable at a glance, with corresponding left/right lines visually aligned
-- Insertions and deletions should not make the opposite pane appear to drift
-- Modified lines should show the changed region clearly enough to distinguish small edits from full-line replacements
-- Hunk navigation should move to the same logical change in both panes
-- Manual compare and Git compare should feel like one feature, not two separate implementations
+  Behavior expectations:
+  - The app should remain a lightweight GNOME editor
+  - Diffs should be readable at a glance, with corresponding left/right lines visually aligned
+  - Insertions and deletions should not make the opposite pane appear to drift
+  - Modified lines should show the changed region clearly enough to distinguish small edits from full-line
+  replacements
+  - Hunk navigation should move to the same logical change in both panes
+  - Manual compare and Git compare should feel like one feature, not two separate implementations
+  - Original line numbers must remain truthful in both panes (placeholder rows do not consume line numbers)
 
-Technical expectations:
-- Extend the existing Rust + GTK4 + Libadwaita + GtkSourceView codebase
-- Reuse the current compare and source-control entry points
-- Keep diff state tab-local and ephemeral
-- Avoid adding a merge engine or conflict-resolution model
-- Keep all user-facing strings ready for gettext localization
-- Preserve hard limits: 600-line files, no `unsafe`/`unwrap`/`expect`, no broad permissions
-- Add tests for row alignment, insertion/deletion placeholders, intra-line changes, hunk navigation, and Git compare reuse
+  Technical expectations:
+  - Extend the existing Rust + GTK4 + Libadwaita + GtkSourceView codebase
+  - Reuse the current compare and source-control entry points
+  - Reuse the current diff algorithm; v11 changes presentation, not computation
+  - Keep diff state tab-local and ephemeral; do not persist compare state across session restore
+  - Avoid adding a merge engine or conflict-resolution model
+  - Keep all user-facing strings ready for gettext localization
+  - Preserve hard limits: 600-line files, no `unsafe`/`unwrap`/`expect`, no broad permissions
+  - Tests:
+    - Unit tests for the shared diff-row model: insertion-only, deletion-only, modification-only, mixed,
+  empty-vs-non-empty, and intra-line cases
+    - Widget-level tests under a new `gtk_tests_v11.rs` covering at least one entry point end-to-end (rendered row
+  count matches the row model; hunk-next moves both panes; placeholder rows render without consuming line numbers)
+    - Verify Git compare reuses the same renderer path
 
-Non-goals for v11:
-- No merge editor
-- No conflict resolver
-- No three-way diff
-- No standalone Git client behavior
-- No branch, push, pull, stash, rebase, or remote workflow
-- No large-file streaming or huge-file viewer
+  Non-goals for v11:
+  - No merge editor
+  - No conflict resolver
+  - No three-way diff
+  - No standalone Git client behavior
+  - No branch, push, pull, stash, rebase, or remote workflow
+  - No large-file streaming or huge-file viewer
+  - No replacement of the existing diff algorithm
+  - No removal of the advanced compare dialog
 
-Implementation guidance:
-- Treat v11 as a polish pass on the existing compare architecture
-- Prefer a small shared diff-row model over ad hoc scroll compensation
-- Keep the visual treatment GNOME-native and restrained
-- Make the test cases small and explicit so future compare changes do not regress alignment
-- Refresh help and translations only if user-visible strings change
+  Implementation guidance:
+  - Treat v11 as a polish pass on the existing compare architecture
+  - Prefer a small shared diff-row model over ad hoc scroll compensation
+  - Use presentation buffers for placeholder display rows; never mutate the live editor buffer to create compare
+  placeholders
+  - Choose the intra-line granularity (character vs word) explicitly and document the choice
+  - Keep the visual treatment GNOME-native and restrained; reuse Adwaita named colors for added/removed/modified
+  emphasis instead of hard-coded palette values
+  - Make the test cases small and explicit so future compare changes do not regress alignment
+  - Refresh help and translations only if user-visible strings change
 
-Deliverable:
-Implement a working v11 of the app where manual Compare and Git compare use a clearer, aligned side-by-side diff surface with placeholder rows, intra-line highlighting, reliable hunk navigation, and preserved GNOME-native behavior.
+  Deliverable:
+  Implement a working v11 of the app where manual Compare and Git compare share an aligned side-by-side diff surface
+  backed by a single logical diff-row model, with placeholder rows that preserve line numbers, intra-line highlighting
+   on modified lines, row-index-based scroll sync, reliable hunk navigation, and preserved GNOME-native behavior. The
+  advanced compare dialog remains available unchanged.
 ```
 
 ---
@@ -1355,7 +1415,7 @@ If any of these items is promoted to a real version later, the promoting change 
 
 # Summary of the full progression
 
-V1–V10 are complete as of 2026-04-26. V10 closed V9's deferred local items (recent commit history, discard) and cleared the polish regressions accumulated since V8. V11 is a focused split-diff polish milestone. V12 is the final scheduled release: an editing-power-tools milestone (replace, find in files, statistics, print). Anything beyond V12 — spell check, Markdown preview, large-file streaming, git push and the bundled Git network expansion it requires — sits in the "Post-V12 — Unscheduled candidates" section and only earns a version number once one of them has a concrete reason to ship next.
+V1–V11 are complete as of 2026-05-02. V11 closed the split-diff polish milestone with aligned presentation buffers for manual Compare and Git compare. V12 is the final scheduled release: an editing-power-tools milestone (replace, find in files, statistics, print). Anything beyond V12 — spell check, Markdown preview, large-file streaming, git push and the bundled Git network expansion it requires — sits in the "Post-V12 — Unscheduled candidates" section and only earns a version number once one of them has a concrete reason to ship next.
 
 ## V1
 

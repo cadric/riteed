@@ -35,11 +35,19 @@ msgid "Swap"
 msgstr ""
 
 msgctxt "compare dialog side"
-msgid "Left Side"
+msgid "Current"
 msgstr ""
 
 msgctxt "compare dialog side"
-msgid "Right Side"
+msgid "Reference"
+msgstr ""
+
+msgctxt "compare pane"
+msgid "Current"
+msgstr ""
+
+msgctxt "compare pane"
+msgid "Reference"
 msgstr ""
 
 msgctxt "compare dialog title"
