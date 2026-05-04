@@ -1,4 +1,4 @@
-use std::cell::{Cell, RefCell};
+use std::cell::RefCell;
 use std::rc::Rc;
 
 use gettextrs::{gettext, pgettext};
@@ -12,6 +12,7 @@ use crate::editor_tab::EditorTab;
 use crate::error::AppError;
 
 use super::WindowCompareController;
+use super::paste_text::show_paste_text_dialog;
 
 #[derive(Clone)]
 pub(super) enum CompareSlot {
@@ -37,7 +38,7 @@ pub(super) fn present_compare_dialog(controller: &Rc<WindowCompareController>) {
     let ui = build_compare_dialog_ui(current_document.is_some());
     let state = Rc::new(CompareDialogState {
         controller: Rc::downgrade(controller),
-        dialog: ui.dialog.clone(),
+        dialog: ui.dialog.downgrade(),
         current_document,
         autosave_enabled: controller.workspace.settings.autosave_enabled(),
         left: RefCell::new(left_initial),
@@ -49,11 +50,54 @@ pub(super) fn present_compare_dialog(controller: &Rc<WindowCompareController>) {
         left_clear_button: ui.left_clear_button.clone(),
         right_clear_button: ui.right_clear_button.clone(),
         left_saved_button: ui.left_saved_button.clone(),
+        #[cfg(test)]
+        _leak_canary: crate::dialogs::lifecycle::DialogLeakCanary::new(
+            crate::dialogs::lifecycle::DialogLeakKind::Compare,
+        ),
     });
 
     sync_compare_dialog(&state);
     wire_compare_dialog(controller, &state, &ui);
+    let state_for_closed = Rc::clone(&state);
+    ui.dialog.connect_closed(move |_| {
+        let _state = &state_for_closed;
+    });
     ui.dialog.present(Some(&controller.shell));
+}
+
+#[cfg(test)]
+pub(super) fn present_compare_dialog_for_tests(
+    controller: &Rc<WindowCompareController>,
+) -> adw::Dialog {
+    let (current_document, left_initial, right_initial) = initial_compare_slots(controller);
+    let ui = build_compare_dialog_ui(current_document.is_some());
+    let state = Rc::new(CompareDialogState {
+        controller: Rc::downgrade(controller),
+        dialog: ui.dialog.downgrade(),
+        current_document,
+        autosave_enabled: controller.workspace.settings.autosave_enabled(),
+        left: RefCell::new(left_initial),
+        right: RefCell::new(right_initial),
+        left_row: ui.left_row.clone(),
+        right_row: ui.right_row.clone(),
+        compare_button: ui.compare_button.clone(),
+        swap_button: ui.swap_button.clone(),
+        left_clear_button: ui.left_clear_button.clone(),
+        right_clear_button: ui.right_clear_button.clone(),
+        left_saved_button: ui.left_saved_button.clone(),
+        _leak_canary: crate::dialogs::lifecycle::DialogLeakCanary::new(
+            crate::dialogs::lifecycle::DialogLeakKind::Compare,
+        ),
+    });
+
+    sync_compare_dialog(&state);
+    wire_compare_dialog(controller, &state, &ui);
+    let state_for_closed = Rc::clone(&state);
+    ui.dialog.connect_closed(move |_| {
+        let _state = &state_for_closed;
+    });
+    ui.dialog.present(Some(&controller.shell));
+    ui.dialog
 }
 
 struct CompareDialogUi {
@@ -201,13 +245,16 @@ fn wire_left_actions(
     state: &Rc<CompareDialogState>,
     ui: &CompareDialogUi,
 ) {
-    let state_for_saved = state.clone();
+    let state_for_saved = Rc::downgrade(state);
     ui.left_saved_button.connect_clicked(move |_| {
-        *state_for_saved.left.borrow_mut() = CompareSlot::SavedVersion;
-        sync_compare_dialog(&state_for_saved);
+        let Some(state) = state_for_saved.upgrade() else {
+            return;
+        };
+        *state.left.borrow_mut() = CompareSlot::SavedVersion;
+        sync_compare_dialog(&state);
     });
 
-    let state_for_file = state.clone();
+    let state_for_file = Rc::downgrade(state);
     let parent = controller.shell.clone();
     ui.left_choose_file_button.connect_clicked(move |_| {
         let state = state_for_file.clone();
@@ -215,7 +262,9 @@ fn wire_left_actions(
             &parent,
             &pgettext("file dialog title", "Choose a File"),
             Rc::new(move |file| {
-                if let Some(file) = file {
+                if let Some(state) = state.upgrade()
+                    && let Some(file) = file
+                {
                     *state.left.borrow_mut() = CompareSlot::File(file);
                     sync_compare_dialog(&state);
                 }
@@ -223,15 +272,22 @@ fn wire_left_actions(
         );
     });
 
-    let state_for_paste = state.clone();
+    let state_for_paste = Rc::downgrade(state);
     ui.left_paste_text_button.connect_clicked(move |_| {
-        let dialog = state_for_paste.dialog.clone();
-        let state = state_for_paste.clone();
+        let Some(state) = state_for_paste.upgrade() else {
+            return;
+        };
+        let Some(dialog) = state.dialog() else {
+            return;
+        };
+        let state = Rc::downgrade(&state);
         show_paste_text_dialog(
             &dialog,
             None,
             Rc::new(move |text| {
-                if let Some(text) = text {
+                if let Some(state) = state.upgrade()
+                    && let Some(text) = text
+                {
                     *state.left.borrow_mut() = CompareSlot::Text(text);
                     sync_compare_dialog(&state);
                 }
@@ -239,10 +295,13 @@ fn wire_left_actions(
         );
     });
 
-    let state_for_clear = state.clone();
+    let state_for_clear = Rc::downgrade(state);
     ui.left_clear_button.connect_clicked(move |_| {
-        *state_for_clear.left.borrow_mut() = CompareSlot::None;
-        sync_compare_dialog(&state_for_clear);
+        let Some(state) = state_for_clear.upgrade() else {
+            return;
+        };
+        *state.left.borrow_mut() = CompareSlot::None;
+        sync_compare_dialog(&state);
     });
 }
 
@@ -251,22 +310,25 @@ fn wire_right_actions(
     state: &Rc<CompareDialogState>,
     ui: &CompareDialogUi,
 ) {
-    let state_for_current = state.clone();
+    let state_for_current = Rc::downgrade(state);
     ui.right_current_button.connect_clicked(move |_| {
-        if let Some(tab) = state_for_current.current_document.as_ref() {
-            *state_for_current.right.borrow_mut() = CompareSlot::CurrentDocument(tab.clone());
-            if matches!(&*state_for_current.left.borrow(), CompareSlot::None)
+        let Some(state) = state_for_current.upgrade() else {
+            return;
+        };
+        if let Some(tab) = state.current_document.as_ref() {
+            *state.right.borrow_mut() = CompareSlot::CurrentDocument(tab.clone());
+            if matches!(&*state.left.borrow(), CompareSlot::None)
                 && tab.has_saved_local_uri()
                 && tab.is_dirty()
-                && !state_for_current.autosave_enabled
+                && !state.autosave_enabled
             {
-                *state_for_current.left.borrow_mut() = CompareSlot::SavedVersion;
+                *state.left.borrow_mut() = CompareSlot::SavedVersion;
             }
-            sync_compare_dialog(&state_for_current);
+            sync_compare_dialog(&state);
         }
     });
 
-    let state_for_file = state.clone();
+    let state_for_file = Rc::downgrade(state);
     let parent = controller.shell.clone();
     ui.right_choose_file_button.connect_clicked(move |_| {
         let state = state_for_file.clone();
@@ -274,7 +336,9 @@ fn wire_right_actions(
             &parent,
             &pgettext("file dialog title", "Choose a File"),
             Rc::new(move |file| {
-                if let Some(file) = file {
+                if let Some(state) = state.upgrade()
+                    && let Some(file) = file
+                {
                     *state.right.borrow_mut() = CompareSlot::File(file);
                     sync_compare_dialog(&state);
                 }
@@ -282,15 +346,22 @@ fn wire_right_actions(
         );
     });
 
-    let state_for_paste = state.clone();
+    let state_for_paste = Rc::downgrade(state);
     ui.right_paste_text_button.connect_clicked(move |_| {
-        let dialog = state_for_paste.dialog.clone();
-        let state = state_for_paste.clone();
+        let Some(state) = state_for_paste.upgrade() else {
+            return;
+        };
+        let Some(dialog) = state.dialog() else {
+            return;
+        };
+        let state = Rc::downgrade(&state);
         show_paste_text_dialog(
             &dialog,
             None,
             Rc::new(move |text| {
-                if let Some(text) = text {
+                if let Some(state) = state.upgrade()
+                    && let Some(text) = text
+                {
                     *state.right.borrow_mut() = CompareSlot::Text(text);
                     sync_compare_dialog(&state);
                 }
@@ -298,16 +369,22 @@ fn wire_right_actions(
         );
     });
 
-    let state_for_clear = state.clone();
+    let state_for_clear = Rc::downgrade(state);
     ui.right_clear_button.connect_clicked(move |_| {
-        *state_for_clear.right.borrow_mut() = CompareSlot::None;
-        sync_compare_dialog(&state_for_clear);
+        let Some(state) = state_for_clear.upgrade() else {
+            return;
+        };
+        *state.right.borrow_mut() = CompareSlot::None;
+        sync_compare_dialog(&state);
     });
 }
 
 fn wire_swap_action(state: &Rc<CompareDialogState>, button: &gtk4::Button) {
-    let state = state.clone();
+    let state = Rc::downgrade(state);
     button.connect_clicked(move |_| {
+        let Some(state) = state.upgrade() else {
+            return;
+        };
         if !state.swap_button.is_sensitive() {
             return;
         }
@@ -320,8 +397,11 @@ fn wire_swap_action(state: &Rc<CompareDialogState>, button: &gtk4::Button) {
 }
 
 fn wire_compare_action(state: &Rc<CompareDialogState>, button: &gtk4::Button) {
-    let state = state.clone();
+    let state = Rc::downgrade(state);
     button.connect_clicked(move |_| {
+        let Some(state) = state.upgrade() else {
+            return;
+        };
         if !state.compare_button.is_sensitive() {
             return;
         }
@@ -333,11 +413,13 @@ fn wire_compare_action(state: &Rc<CompareDialogState>, button: &gtk4::Button) {
                 left,
                 right,
                 Rc::new({
-                    let state = state.clone();
+                    let state = Rc::downgrade(&state);
                     move |result| {
-                        sync_compare_dialog(&state);
-                        if result.is_ok() {
-                            let _closed = state.dialog.close();
+                        if let Some(state) = state.upgrade() {
+                            sync_compare_dialog(&state);
+                            if result.is_ok() {
+                                state.close_dialog();
+                            }
                         }
                     }
                 }),
@@ -348,7 +430,7 @@ fn wire_compare_action(state: &Rc<CompareDialogState>, button: &gtk4::Button) {
 
 struct CompareDialogState {
     controller: std::rc::Weak<WindowCompareController>,
-    dialog: adw::Dialog,
+    dialog: gtk4::glib::WeakRef<adw::Dialog>,
     current_document: Option<Rc<EditorTab>>,
     autosave_enabled: bool,
     left: RefCell<CompareSlot>,
@@ -360,6 +442,20 @@ struct CompareDialogState {
     left_clear_button: gtk4::Button,
     right_clear_button: gtk4::Button,
     left_saved_button: gtk4::Button,
+    #[cfg(test)]
+    _leak_canary: crate::dialogs::lifecycle::DialogLeakCanary,
+}
+
+impl CompareDialogState {
+    fn dialog(&self) -> Option<adw::Dialog> {
+        self.dialog.upgrade()
+    }
+
+    fn close_dialog(&self) {
+        if let Some(dialog) = self.dialog() {
+            let _closed = dialog.close();
+        }
+    }
 }
 
 fn sync_compare_dialog(state: &Rc<CompareDialogState>) {
@@ -470,84 +566,6 @@ pub(super) fn choose_file(
             }
         },
     );
-}
-
-pub(super) fn show_paste_text_dialog(
-    parent: &impl IsA<gtk4::Widget>,
-    initial: Option<&str>,
-    on_text: Rc<dyn Fn(Option<String>)>,
-) {
-    let shell = build_dialog_shell(
-        &pgettext("paste dialog title", "Paste Text"),
-        540,
-        Some(420),
-        false,
-    );
-    let dialog = shell.dialog;
-
-    let text_view = gtk4::TextView::builder()
-        .monospace(true)
-        .wrap_mode(gtk4::WrapMode::WordChar)
-        .build();
-    if let Some(initial) = initial {
-        text_view.buffer().set_text(initial);
-    }
-    let scrolled = gtk4::ScrolledWindow::builder()
-        .child(&text_view)
-        .vexpand(true)
-        .hscrollbar_policy(gtk4::PolicyType::Never)
-        .vscrollbar_policy(gtk4::PolicyType::Automatic)
-        .build();
-
-    let button_box = gtk4::Box::builder()
-        .orientation(gtk4::Orientation::Horizontal)
-        .halign(gtk4::Align::End)
-        .spacing(12)
-        .build();
-    let accept_button = gtk4::Button::with_label(&pgettext("dialog button", "Compare"));
-    accept_button.add_css_class("suggested-action");
-    button_box.append(&accept_button);
-
-    let content = shell.content;
-    content.append(&scrolled);
-    content.append(&button_box);
-    dialog.set_default_widget(Some(&accept_button));
-
-    let handled = Rc::new(Cell::new(false));
-    let callback = Rc::new(RefCell::new(Some(on_text)));
-
-    {
-        let dialog = dialog.clone();
-        let handled = handled.clone();
-        let callback = callback.clone();
-        accept_button.connect_clicked(move |_| {
-            handled.set(true);
-            let buffer = text_view.buffer();
-            let text = buffer
-                .text(&buffer.start_iter(), &buffer.end_iter(), true)
-                .to_string();
-            if let Some(callback) = callback.borrow_mut().take() {
-                callback(Some(text));
-            }
-            let _closed = dialog.close();
-        });
-    }
-
-    {
-        let handled = handled.clone();
-        let callback = callback.clone();
-        dialog.connect_closed(move |_| {
-            if handled.get() {
-                return;
-            }
-            handled.set(true);
-            if let Some(callback) = callback.borrow_mut().take() {
-                callback(None);
-            }
-        });
-    }
-
-    dialog.present(Some(parent));
 }
 
 fn apply_text_filters(dialog: &gtk4::FileDialog) {

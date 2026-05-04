@@ -108,9 +108,7 @@
     "data/**/*.metainfo.xml.in.in",
     "data/**/*.gresource.xml",
     "data/**/*.desktop",
-    "data/**/*.metainfo.xml",
-    "po/*.po",
-    "po/*.pot"
+    "data/**/*.metainfo.xml"
   ],
   "dependency_policy": {
     "required_runtime_crates": [

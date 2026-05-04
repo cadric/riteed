@@ -1,4 +1,4 @@
-use similar::{DiffTag, TextDiff};
+use std::ops::Range;
 
 use super::inline::{InlineBudget, InlineRange, ranges_for_modify};
 
@@ -41,6 +41,21 @@ pub(super) struct DiffRowModel {
     pub(super) reference_line_to_row: Vec<Option<usize>>,
     pub(super) current_line_to_row: Vec<Option<usize>>,
     pub(super) hunks: Vec<DiffHunk>,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum DiffLineTag {
+    Equal,
+    Delete,
+    Insert,
+    Replace,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(super) struct DiffLineOp {
+    pub(super) tag: DiffLineTag,
+    pub(super) reference_range: Range<usize>,
+    pub(super) current_range: Range<usize>,
 }
 
 impl DiffRow {
@@ -110,17 +125,19 @@ impl DiffRowModel {
     }
 }
 
-pub(super) fn build_row_model(reference_text: &str, current_text: &str) -> DiffRowModel {
-    let diff = TextDiff::from_lines(reference_text, current_text);
-    let reference = diff.old_slices();
-    let current = diff.new_slices();
+pub(super) fn build_row_model(
+    ops: &[DiffLineOp],
+    reference: &[&str],
+    current: &[&str],
+) -> DiffRowModel {
     let mut rows = Vec::new();
     let inline_budget = InlineBudget::new();
-    for op in diff.ops() {
-        let (tag, old_range, new_range) = op.as_tag_tuple();
-        match tag {
-            DiffTag::Equal => {
-                for (reference_line, current_line) in old_range.zip(new_range) {
+    for op in ops {
+        match op.tag {
+            DiffLineTag::Equal => {
+                for (reference_line, current_line) in
+                    op.reference_range.clone().zip(op.current_range.clone())
+                {
                     rows.push(DiffRow::new(
                         Some(reference_line),
                         Some(current_line),
@@ -128,8 +145,8 @@ pub(super) fn build_row_model(reference_text: &str, current_text: &str) -> DiffR
                     ));
                 }
             }
-            DiffTag::Delete => {
-                for reference_line in old_range {
+            DiffLineTag::Delete => {
+                for reference_line in op.reference_range.clone() {
                     rows.push(DiffRow::new(
                         Some(reference_line),
                         None,
@@ -137,8 +154,8 @@ pub(super) fn build_row_model(reference_text: &str, current_text: &str) -> DiffR
                     ));
                 }
             }
-            DiffTag::Insert => {
-                for current_line in new_range {
+            DiffLineTag::Insert => {
+                for current_line in op.current_range.clone() {
                     rows.push(DiffRow::new(
                         None,
                         Some(current_line),
@@ -146,10 +163,10 @@ pub(super) fn build_row_model(reference_text: &str, current_text: &str) -> DiffR
                     ));
                 }
             }
-            DiffTag::Replace => push_replace_rows(
+            DiffLineTag::Replace => push_replace_rows(
                 &mut rows,
-                &old_range.collect::<Vec<_>>(),
-                &new_range.collect::<Vec<_>>(),
+                &op.reference_range.clone().collect::<Vec<_>>(),
+                &op.current_range.clone().collect::<Vec<_>>(),
                 reference,
                 current,
                 &inline_budget,
@@ -262,11 +279,12 @@ fn push_hunk(hunks: &mut Vec<DiffHunk>, rows: &[usize]) {
 
 #[cfg(test)]
 mod tests {
-    use super::{DiffRowKind, DiffSide, build_row_model};
+    use super::{DiffRowKind, DiffSide};
+    use crate::editor_tab::compare::diff::compute_diff_row_model;
 
     #[test]
     fn insertion_only_builds_current_only_rows() {
-        let model = build_row_model("", "a\nb\n");
+        let model = compute_diff_row_model("", "a\nb\n");
         assert_eq!(model.rows.len(), 2);
         assert!(
             model
@@ -280,7 +298,7 @@ mod tests {
 
     #[test]
     fn deletion_only_builds_reference_only_rows() {
-        let model = build_row_model("a\nb\n", "");
+        let model = compute_diff_row_model("a\nb\n", "");
         assert_eq!(model.rows.len(), 2);
         assert!(
             model
@@ -294,7 +312,7 @@ mod tests {
 
     #[test]
     fn replacement_pairs_modify_and_surplus_rows() {
-        let model = build_row_model("a\nb\nc\n", "x\ny\nz\nq\n");
+        let model = compute_diff_row_model("a\nb\nc\n", "x\ny\nz\nq\n");
         assert_eq!(model.rows[0].kind, DiffRowKind::Modify);
         assert_eq!(model.rows[1].kind, DiffRowKind::Modify);
         assert_eq!(model.rows[2].kind, DiffRowKind::Modify);
@@ -303,7 +321,7 @@ mod tests {
 
     #[test]
     fn dense_line_maps_roundtrip() {
-        let model = build_row_model("a\nb\nc\n", "a\nx\nc\n");
+        let model = compute_diff_row_model("a\nb\nc\n", "a\nx\nc\n");
         assert_eq!(model.row_for_line(DiffSide::Reference, 1), Some(1));
         assert_eq!(model.row_for_line(DiffSide::Current, 1), Some(1));
         assert_eq!(model.line_for_row(DiffSide::Reference, 1), Some(1));
@@ -312,7 +330,7 @@ mod tests {
 
     #[test]
     fn nearby_changes_merge_with_three_context_rows() {
-        let model = build_row_model("0\n1\n2\n3\n4\n5\n", "x\n1\n2\n3\ny\n5\n");
+        let model = compute_diff_row_model("0\n1\n2\n3\n4\n5\n", "x\n1\n2\n3\ny\n5\n");
         assert_eq!(model.hunks.len(), 1);
         assert_eq!(model.hunks[0].first_row, 0);
         assert_eq!(model.hunks[0].rows, vec![0, 4]);
@@ -320,7 +338,7 @@ mod tests {
 
     #[test]
     fn eof_insert_preserves_prefix_maps() {
-        let model = build_row_model("a\nb\n", "a\nb\nc\n");
+        let model = compute_diff_row_model("a\nb\n", "a\nb\nc\n");
         assert_eq!(model.rows[2].kind, DiffRowKind::CurrentOnly);
         assert_eq!(model.row_to_reference_line, vec![Some(0), Some(1), None]);
         assert_eq!(model.row_to_current_line, vec![Some(0), Some(1), Some(2)]);
@@ -330,7 +348,7 @@ mod tests {
 
     #[test]
     fn eof_delete_preserves_prefix_maps() {
-        let model = build_row_model("a\nb\nc\n", "a\nb\n");
+        let model = compute_diff_row_model("a\nb\nc\n", "a\nb\n");
         assert_eq!(model.rows[2].kind, DiffRowKind::ReferenceOnly);
         assert_eq!(model.row_to_reference_line, vec![Some(0), Some(1), Some(2)]);
         assert_eq!(model.row_to_current_line, vec![Some(0), Some(1), None]);
@@ -340,7 +358,7 @@ mod tests {
 
     #[test]
     fn eof_replace_preserves_prefix_maps() {
-        let model = build_row_model("a\nb\n", "a\nc\n");
+        let model = compute_diff_row_model("a\nb\n", "a\nc\n");
         assert_eq!(model.rows[1].kind, DiffRowKind::Modify);
         assert_eq!(model.row_to_reference_line, vec![Some(0), Some(1)]);
         assert_eq!(model.row_to_current_line, vec![Some(0), Some(1)]);
@@ -350,7 +368,7 @@ mod tests {
 
     #[test]
     fn trailing_newline_boundaries_keep_last_line_maps() {
-        let missing_newline = build_row_model("a\nb\n", "a\nb");
+        let missing_newline = compute_diff_row_model("a\nb\n", "a\nb");
         assert_eq!(missing_newline.rows.len(), 2);
         assert_eq!(missing_newline.rows[1].kind, DiffRowKind::Modify);
         assert_eq!(
@@ -359,7 +377,7 @@ mod tests {
         );
         assert_eq!(missing_newline.row_to_current_line, vec![Some(0), Some(1)]);
 
-        let added_newline = build_row_model("a\nb", "a\nb\n");
+        let added_newline = compute_diff_row_model("a\nb", "a\nb\n");
         assert_eq!(added_newline.rows.len(), 2);
         assert_eq!(added_newline.rows[1].kind, DiffRowKind::Modify);
         assert_eq!(added_newline.row_to_reference_line, vec![Some(0), Some(1)]);

@@ -565,6 +565,7 @@ fn gtk_surfaces_and_editor_flow_work() {
     let _registered = test_app.register(None::<&gio::Cancellable>);
 
     exercise_window_tab_flow(&test_app);
+    crate::gtk_tests_dialog_lifecycle::exercise_dialog_lifecycle(&test_app);
     exercise_restore_and_recent_pruning(&test_app);
     exercise_close_flows(&test_app);
     exercise_app_open_actions();

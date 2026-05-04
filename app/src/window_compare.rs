@@ -1,4 +1,5 @@
 mod dialog;
+mod paste_text;
 
 use std::cell::Cell;
 use std::rc::Rc;
@@ -269,7 +270,7 @@ impl WindowCompareController {
             return;
         }
         let weak = Rc::downgrade(self);
-        dialog::show_paste_text_dialog(
+        paste_text::show_paste_text_dialog(
             &self.shell,
             None,
             Rc::new(move |text| {
@@ -280,6 +281,16 @@ impl WindowCompareController {
                 }
             }),
         );
+    }
+
+    #[cfg(test)]
+    pub(crate) fn present_compare_dialog_for_tests(self: &Rc<Self>) -> adw::Dialog {
+        dialog::present_compare_dialog_for_tests(self)
+    }
+
+    #[cfg(test)]
+    pub(crate) fn present_paste_text_dialog_for_tests(&self) -> adw::Dialog {
+        paste_text::show_paste_text_dialog_for_tests(&self.shell)
     }
 
     fn start_compare_for_selected_tab(self: &Rc<Self>, reference: CompareSlot) {

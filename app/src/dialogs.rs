@@ -7,6 +7,8 @@ use crate::error::AppError;
 use crate::{APP_NAME, REPO_URL};
 
 pub(crate) mod encoding;
+#[cfg(test)]
+pub(crate) mod lifecycle;
 pub(crate) mod recent_files;
 
 pub use encoding::{

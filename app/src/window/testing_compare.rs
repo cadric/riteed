@@ -16,6 +16,7 @@ type CompareHatchRegionsForTests = (
 );
 type CompareHatchViewportForTests = (i32, i32, i32, i32);
 type CompareHatchViewportsForTests = (CompareHatchViewportForTests, CompareHatchViewportForTests);
+type ComparePlaceholderMarkersForTests = (Vec<(usize, usize)>, Vec<(usize, usize)>);
 
 impl Window {
     pub(crate) fn compare_action_states_for_tests(&self) -> (bool, bool, bool, bool, bool) {
@@ -50,6 +51,14 @@ impl Window {
 
     pub(crate) fn refresh_compare_reference_for_tests(self: &Rc<Self>) {
         self.compare.refresh_reference();
+    }
+
+    pub(crate) fn present_compare_dialog_for_tests(self: &Rc<Self>) -> libadwaita::Dialog {
+        self.compare.present_compare_dialog_for_tests()
+    }
+
+    pub(crate) fn present_compare_paste_text_dialog_for_tests(&self) -> libadwaita::Dialog {
+        self.compare.present_paste_text_dialog_for_tests()
     }
 
     pub(crate) fn exit_compare_for_tests(&self) {
@@ -106,6 +115,16 @@ impl Window {
             .map_or(0, |tab| tab.compare_placeholder_count_for_tests())
     }
 
+    pub(crate) fn selected_compare_placeholder_markers_for_tests(
+        &self,
+    ) -> ComparePlaceholderMarkersForTests {
+        self.workspace
+            .selected_tab()
+            .map_or_else(Default::default, |tab| {
+                tab.compare_placeholder_markers_for_tests()
+            })
+    }
+
     pub(crate) fn selected_compare_inline_range_count_for_tests(&self) -> usize {
         self.workspace
             .selected_tab()
@@ -143,6 +162,20 @@ impl Window {
         self.workspace
             .selected_tab()
             .map_or((0, 0), |tab| tab.compare_line_counts_for_tests())
+    }
+
+    pub(crate) fn selected_left_compare_line_text_for_tests(&self, row: usize) -> String {
+        self.workspace
+            .selected_tab()
+            .map_or_else(String::new, |tab| tab.compare_left_line_text_for_tests(row))
+    }
+
+    pub(crate) fn selected_right_compare_line_text_for_tests(&self, row: usize) -> String {
+        self.workspace
+            .selected_tab()
+            .map_or_else(String::new, |tab| {
+                tab.compare_right_line_text_for_tests(row)
+            })
     }
 
     pub(crate) fn selected_compare_wrap_modes_for_tests(
@@ -267,6 +300,17 @@ impl Window {
         if let Some(tab) = self.workspace.selected_tab() {
             tab.compare_select_right_for_tests(start, end);
         }
+    }
+
+    pub(crate) fn select_left_compare_line_offsets_for_tests(
+        &self,
+        row: usize,
+        start: i32,
+        end: i32,
+    ) -> bool {
+        self.workspace
+            .selected_tab()
+            .is_some_and(|tab| tab.compare_select_left_line_offsets_for_tests(row, start, end))
     }
 
     pub(crate) fn copy_left_compare_selection_for_tests(&self) -> bool {

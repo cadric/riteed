@@ -108,6 +108,8 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Removed invalid Appearance CSS size properties and added deterministic indentation coverage for tabs, spaces, indent width, and unindent behavior.
 - Guarded Git stage/compare actions for unsupported repository states such as SHA-256 object format, configured EOL conversion, content filters, working-tree encodings, submodules, binary blobs, large blobs, dirty open tabs, and non-UTF-8 paths.
 - Compare: split diff panes now keep syntax highlighting active for code while preserving diff colors.
+- Compare filler runs now expose one localized placeholder marker for the empty side, while copy keeps generated markers out of the clipboard.
+- Compare, Paste Text, Recent Files, and Encoding dialogs no longer leak state when opened and closed repeatedly.
 - Source Control: Git compare now rejects binary blobs cleanly instead of partially rendering them.
 - Source Control: refresh is significantly faster on large repositories by avoiding per-row filesystem metadata checks.
 - Window: stored window dimensions are now bounded by schema ranges in addition to runtime clamping.
@@ -120,6 +122,7 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Fixed V11 compare follow-up regressions by reserving identical measured custom-gutter width for original line numbers, adding visual `-`/`+` gutter markers in a fixed column for reference/current changed rows, making compare copy selection-safe, using strict viewport-based hunk navigation, opening compares at the first changed display row, and removing the previous current-hunk accent overlay so diff colors stay red for reference/old content and green for current/working content.
 - Compare: scroll between panes now stays in sync within the same row, eliminating the one-line drift introduced when row-based sync replaced pixel mirroring.
 - Compare inline diff budget is now a hard total cap, preventing UI jank when many rows have small modifications.
+- Compare recompute now reuses one line diff for both row alignment and presentation buffers, reducing duplicate work on large compares.
 - Source Control: action buttons no longer reserve inline space; status badges color-coded by Git state.
 - Fixed Window Palette chrome coverage so scoped scheme colors reach the sidebar, tab strip, libadwaita dialogs, primary menu, and card-like dialog content without global theme rebinding.
 

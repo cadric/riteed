@@ -73,6 +73,17 @@ fn exercise_manual_compare_surface(test_app: &adw::Application) {
         (true, true)
     );
     assert_compare_hatches_target_placeholders(&window);
+    let (_, right_markers) = window.selected_compare_placeholder_markers_for_tests();
+    let right_marker_text = window.selected_right_compare_line_text_for_tests(right_markers[0].0);
+    let right_marker_start = usize_to_i32("a0\nold\nleft only\nc0\nc1\nc2\nc3\nlast\n".len());
+    let right_real_start = usize_to_i32("a0\nold\nleft only\nc0\nc1\nc2\nc3\n".len());
+    let clipboard = gtk4::prelude::WidgetExt::display(window.widget()).clipboard();
+    window.select_right_compare_range_for_tests(
+        right_real_start,
+        right_marker_start + usize_to_i32(right_marker_text.len()),
+    );
+    assert!(window.copy_right_compare_selection_for_tests());
+    assert_eq!(clipboard_text(&clipboard).as_deref(), Some("last\n"));
     assert_eq!(
         window.selected_compare_wrap_modes_for_tests(),
         Some((gtk4::WrapMode::None, gtk4::WrapMode::None))
@@ -230,6 +241,34 @@ fn exercise_asymmetric_gutter_width_surface(test_app: &adw::Application) {
         gutter_widths.0 >= 58,
         "gutter widths should include the marker column, got {gutter_widths:?}"
     );
+    let (left_markers, right_markers) = window.selected_compare_placeholder_markers_for_tests();
+    assert_eq!(right_markers.len(), 0);
+    assert_eq!(left_markers.len(), 1);
+    let (marker_row, marker_len) = left_markers[0];
+    assert!(marker_len >= 100);
+    let marker_text = window.selected_left_compare_line_text_for_tests(marker_row);
+    assert!(marker_text.contains("lines only in current"));
+    assert_eq!(
+        window.selected_left_compare_line_text_for_tests(marker_row + 1),
+        ""
+    );
+    let clipboard = gtk4::prelude::WidgetExt::display(window.widget()).clipboard();
+    clipboard.set_text("marker-sentinel");
+    assert!(window.select_left_compare_line_offsets_for_tests(marker_row, 1, 5));
+    assert!(window.copy_left_compare_selection_for_tests());
+    assert_eq!(clipboard_text(&clipboard).as_deref(), Some(""));
+    clipboard.set_text("newline-sentinel");
+    let marker_start = usize_to_i32("line 001\n".len());
+    let marker_end = marker_start + usize_to_i32(marker_text.len()) + 2;
+    window.select_left_compare_range_for_tests(marker_start, marker_end);
+    assert!(window.copy_left_compare_selection_for_tests());
+    assert_eq!(clipboard_text(&clipboard).as_deref(), Some("\n\n"));
+    window.select_left_compare_range_for_tests(0, marker_end);
+    assert!(window.copy_left_compare_selection_for_tests());
+    assert_eq!(
+        clipboard_text(&clipboard).as_deref(),
+        Some("line 001\n\n\n")
+    );
 
     let _removed = fs::remove_file(editable_path);
     let _removed = fs::remove_file(reference_path);
@@ -342,10 +381,11 @@ fn exercise_git_compare_renderer_path(test_app: &adw::Application) {
     let marker_name = "000-riteed-v11-git-compare-test.txt";
     let marker = repo.join(marker_name);
     let _removed = fs::remove_file(&marker);
-    assert!(fs::write(&marker, b"git renderer path\n").is_ok());
+    let Some(_cleanup) = CleanupPath::create(marker, b"git renderer path\n") else {
+        return;
+    };
 
     let Some(window) = build_window(test_app) else {
-        let _removed = fs::remove_file(marker);
         return;
     };
     window.handle_application_open(vec![gio::File::for_path(&repo)]);
@@ -361,8 +401,22 @@ fn exercise_git_compare_renderer_path(test_app: &adw::Application) {
             && window.selected_compare_row_count_for_tests() > 0
             && window.selected_compare_placeholder_count_for_tests() > 0
     });
+}
 
-    let _removed = fs::remove_file(marker);
+struct CleanupPath(std::path::PathBuf);
+
+impl CleanupPath {
+    fn create(path: std::path::PathBuf, contents: &[u8]) -> Option<Self> {
+        let _removed = fs::remove_file(&path);
+        fs::write(&path, contents).ok()?;
+        Some(Self(path))
+    }
+}
+
+impl Drop for CleanupPath {
+    fn drop(&mut self) {
+        let _removed = fs::remove_file(&self.0);
+    }
 }
 
 fn numbered_lines(count: usize) -> String {
@@ -432,6 +486,17 @@ fn assert_compare_hatches_target_placeholders(window: &crate::window::Window) {
         "compare fixture should include a reference-only filler row"
     );
     if let Some(row) = left_hatch_row {
+        let (left_markers, _) = window.selected_compare_placeholder_markers_for_tests();
+        assert!(
+            left_markers
+                .iter()
+                .any(|(marker_row, _len)| *marker_row == row)
+        );
+        assert!(
+            !window
+                .selected_left_compare_line_text_for_tests(row)
+                .is_empty()
+        );
         window.scroll_selected_compare_to_row_for_tests(row);
         drain_layout_events(8);
         spin_until("v11 left hatch region becomes visible", || {
@@ -442,6 +507,17 @@ fn assert_compare_hatches_target_placeholders(window: &crate::window::Window) {
         });
     }
     if let Some(row) = right_hatch_row {
+        let (_, right_markers) = window.selected_compare_placeholder_markers_for_tests();
+        assert!(
+            right_markers
+                .iter()
+                .any(|(marker_row, _len)| *marker_row == row)
+        );
+        assert!(
+            !window
+                .selected_right_compare_line_text_for_tests(row)
+                .is_empty()
+        );
         window.scroll_selected_compare_to_row_for_tests(row);
         drain_layout_events(8);
         spin_until("v11 right hatch region becomes visible", || {

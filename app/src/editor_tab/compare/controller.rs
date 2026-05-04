@@ -6,15 +6,16 @@ use gtk4::{gio, prelude::*};
 use libadwaita as adw;
 use sourceview5::prelude::*;
 
-use super::diff::compute_diff_row_model;
+use super::diff::compute_diff;
 use super::gutter::CompareGutters;
 use super::hatch::{CompareHatchEndpoint, CompareHatches};
 use super::interaction::install_presentation_interaction;
 use super::model::DiffRowModel;
 use super::navigation::{target_hunk_for_navigation, top_visible_row};
-use super::presentation::{DiffPresentation, build_presentation};
+use super::presentation::{DiffPresentation, PresentationSide};
 use super::render::{
-    CompareTags, apply_current_hunk_tags, apply_model_tags, apply_presentation, clear_tags,
+    CompareTags, apply_current_hunk_tags, apply_model_tags, apply_placeholder_tags,
+    apply_presentation, clear_tags,
 };
 use super::scroll::{CompareScrollEndpoint, install_scroll_sync};
 use super::ui::{compare_toolbar, configure_presentation_view};
@@ -24,10 +25,20 @@ use crate::editor_zoom::{clear_zoom_css_classes, restore_zoom_css_class};
 
 impl CompareController {
     pub(super) fn new(tab: &Rc<EditorTab>, target: CompareTarget) -> Self {
-        let left = build_presentation_pane(tab, &pgettext("compare pane", "Reference"));
-        let right = build_presentation_pane(tab, &pgettext("compare pane", "Current"));
         let row_model = Rc::new(RefCell::new(DiffRowModel::empty()));
         let presentation = Rc::new(RefCell::new(DiffPresentation::empty()));
+        let left = build_presentation_pane(
+            tab,
+            &pgettext("compare pane", "Reference"),
+            &presentation,
+            PresentationSide::Reference,
+        );
+        let right = build_presentation_pane(
+            tab,
+            &pgettext("compare pane", "Current"),
+            &presentation,
+            PresentationSide::Current,
+        );
         let gutters = CompareGutters::new(&left.view, &right.view, &presentation, &row_model);
         let toolbar = compare_toolbar(&target.title);
         let status_label = toolbar.status_label.clone();
@@ -114,11 +125,11 @@ impl CompareController {
     pub(super) fn recompute(&mut self) -> Option<usize> {
         clear_tags(&self.left_buffer, &self.right_buffer, &self.tags);
         let previous = self.current_hunk;
-        let model = compute_diff_row_model(&self.reference_text, &self.editable_snapshot);
+        let computation = compute_diff(&self.reference_text, &self.editable_snapshot);
+        let model = computation.model;
+        let presentation = computation.presentation;
         let hunk_count = model.hunks.len();
         let too_large = model.too_large;
-        let presentation =
-            build_presentation(&model, &self.reference_text, &self.editable_snapshot);
         apply_presentation(&self.left_buffer, &self.right_buffer, &presentation);
         self.current_hunk = current_hunk_after_recompute(previous, hunk_count, too_large);
         self.row_model.borrow_mut().clone_from(&model);
@@ -126,6 +137,12 @@ impl CompareController {
         self.gutters.refresh();
         self.hatches.refresh();
         apply_model_tags(&self.left_buffer, &self.right_buffer, &model, &self.tags);
+        apply_placeholder_tags(
+            &self.left_buffer,
+            &self.right_buffer,
+            &presentation,
+            &self.tags,
+        );
         self.apply_current_hunk();
         self.update_status();
         if self.current_hunk == Some(0) {
@@ -270,7 +287,12 @@ struct StyleHandlers {
     high_contrast_handler: gtk4::glib::SignalHandlerId,
 }
 
-fn build_presentation_pane(tab: &EditorTab, title: &str) -> PresentationPane {
+fn build_presentation_pane(
+    tab: &EditorTab,
+    title: &str,
+    presentation: &Rc<RefCell<DiffPresentation>>,
+    side: PresentationSide,
+) -> PresentationPane {
     let buffer = sourceview5::Buffer::builder()
         .enable_undo(false)
         .implicit_trailing_newline(false)
@@ -279,7 +301,7 @@ fn build_presentation_pane(tab: &EditorTab, title: &str) -> PresentationPane {
     sync_reference_language(&tab.text_buffer, &buffer);
     let view = sourceview5::View::with_buffer(&buffer);
     configure_presentation_view(tab, &view);
-    install_presentation_interaction(&view, &buffer);
+    install_presentation_interaction(&view, &buffer, presentation, side);
     let scrolled = gtk4::ScrolledWindow::builder()
         .hscrollbar_policy(gtk4::PolicyType::Automatic)
         .vscrollbar_policy(gtk4::PolicyType::Automatic)

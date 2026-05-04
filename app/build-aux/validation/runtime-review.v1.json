@@ -130,6 +130,22 @@
       "justification": "Reload, save, and compare banner actions must route to the workspace that currently owns the tab."
     },
     {
+      "path": "src/editor_tab/compare/controller.rs",
+      "line": 293,
+      "match": "presentation: &Rc<RefCell<DiffPresentation>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Each compare controller owns the presentation metadata shared with its two read-only presentation panes.",
+      "justification": "Copy handlers need the current placeholder marker metadata after every recompute so generated marker text can be filtered without string matching."
+    },
+    {
+      "path": "src/editor_tab/compare/interaction.rs",
+      "line": 11,
+      "match": "presentation: &Rc<RefCell<DiffPresentation>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Presentation pane interactions borrow the controller-owned presentation metadata.",
+      "justification": "Selection copy must replace generated placeholder marker rows with blank text while preserving clipboard line layout."
+    },
+    {
       "path": "src/editor_zoom.rs",
       "line": 34,
       "match": "base_font: RefCell<pango::FontDescription>,",
@@ -240,30 +256,6 @@
       "kind": "runtime-shared-state",
       "ownership": "The directory snapshot transition helper mutates shared polling state.",
       "justification": "Snapshot comparison is centralized so root and loaded-dir polling trigger refreshes only on visible structural changes."
-    },
-    {
-      "path": "src/window_compare.rs",
-      "line": 28,
-      "match": "compare_action_installed: Cell<bool>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The compare controller owns its action-installed guard.",
-      "justification": "Compare is hidden from the main menu during active compare sessions by removing the window action, so a mutable guard tracks whether the action is currently installed."
-    },
-    {
-      "path": "src/window_compare/dialog.rs",
-      "line": 354,
-      "match": "left: RefCell<CompareSlot>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The compare dialog owns the mutable left-side source selection.",
-      "justification": "Button callbacks update the left compare source while keeping the dialog responsive without spreading selection state across window code."
-    },
-    {
-      "path": "src/window_compare/dialog.rs",
-      "line": 355,
-      "match": "right: RefCell<CompareSlot>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The compare dialog owns the mutable right-side source selection.",
-      "justification": "Button callbacks update the right compare source and keep the Compare button sensitivity in sync with the current selection."
     },
     {
       "path": "src/window_preferences.rs",

@@ -253,8 +253,8 @@ mod tests {
         marker_width_request, marker_width_samples, number_width_request_for_digits,
         number_width_samples, shared_max_line_number,
     };
-    use crate::editor_tab::compare::model::build_row_model;
-    use crate::editor_tab::compare::presentation::{PresentationSide, build_presentation};
+    use crate::editor_tab::compare::diff::compute_diff;
+    use crate::editor_tab::compare::presentation::PresentationSide;
 
     #[test]
     fn line_number_digits_track_max_line() {
@@ -283,8 +283,8 @@ mod tests {
 
     #[test]
     fn shared_width_uses_largest_line_number_on_either_side() {
-        let model = build_row_model("a\n", &numbered_lines(120));
-        let presentation = build_presentation(&model, "a\n", &numbered_lines(120));
+        let current = numbered_lines(120);
+        let presentation = compute_diff("a\n", &current).presentation;
 
         assert_eq!(shared_max_line_number(&presentation), 120);
         assert_eq!(line_number_digits(shared_max_line_number(&presentation)), 3);
@@ -292,8 +292,9 @@ mod tests {
 
     #[test]
     fn gutter_cells_keep_numbers_and_markers_separate() {
-        let model = build_row_model("same\nold\n", "same\nnew\ncurrent\n");
-        let presentation = build_presentation(&model, "same\nold\n", "same\nnew\ncurrent\n");
+        let computation = compute_diff("same\nold\n", "same\nnew\ncurrent\n");
+        let model = computation.model;
+        let presentation = computation.presentation;
 
         assert_eq!(
             gutter_number_for_row(&presentation, PresentationSide::Reference, 0),
@@ -336,8 +337,9 @@ mod tests {
             "+"
         );
 
-        let model = build_row_model("same\nremoved\n", "same\n");
-        let presentation = build_presentation(&model, "same\nremoved\n", "same\n");
+        let computation = compute_diff("same\nremoved\n", "same\n");
+        let model = computation.model;
+        let presentation = computation.presentation;
         assert_eq!(
             gutter_number_for_row(&presentation, PresentationSide::Reference, 1),
             "2"

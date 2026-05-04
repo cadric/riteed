@@ -14,6 +14,23 @@ pub fn show_recent_files_dialog(
     settings: &AppSettings,
     on_open_uri: &Rc<dyn Fn(String)>,
 ) {
+    let _dialog = present_recent_files_dialog(parent, settings, on_open_uri);
+}
+
+#[cfg(test)]
+pub(crate) fn show_recent_files_dialog_for_tests(
+    parent: &adw::ApplicationWindow,
+    settings: &AppSettings,
+) -> adw::Dialog {
+    let on_open_uri: Rc<dyn Fn(String)> = Rc::new(|_uri| {});
+    present_recent_files_dialog(parent, settings, &on_open_uri)
+}
+
+fn present_recent_files_dialog(
+    parent: &adw::ApplicationWindow,
+    settings: &AppSettings,
+    on_open_uri: &Rc<dyn Fn(String)>,
+) -> adw::Dialog {
     let shell = build_dialog_shell(
         &pgettext("recent files dialog title", "Recent Files"),
         620,
@@ -59,70 +76,98 @@ pub fn show_recent_files_dialog(
     button_box.append(&clear_all_button);
     content.append(&button_box);
 
-    {
-        let dialog = dialog.clone();
-        let settings = settings.clone();
-        let list_box = list_box.clone();
-        let stack = stack.clone();
-        clear_all_button.connect_clicked(move |_| {
-            if settings.recent_files().is_empty() {
-                return;
-            }
-            let alert = adw::AlertDialog::builder()
-                .heading(gettext("Clear Recent Files?"))
-                .body(gettext("This removes all recent file entries."))
-                .build();
-            alert.add_responses(&[
-                ("cancel", &pgettext("alert response", "Cancel")),
-                ("clear", &pgettext("alert response", "Clear")),
-            ]);
-            alert.set_response_appearance("clear", adw::ResponseAppearance::Destructive);
-            alert.set_default_response(Some("cancel"));
-            alert.set_close_response("cancel");
-            let settings_for_choice = settings.clone();
-            let list_box_for_choice = list_box.clone();
-            let stack_for_choice = stack.clone();
-            let dialog_for_parent = dialog.clone();
-            let dialog_for_choice = dialog.clone();
-            alert.choose(
-                Some(&dialog_for_parent),
-                None::<&gio::Cancellable>,
-                move |response| {
-                    if response != "clear" {
-                        return;
-                    }
-                    settings_for_choice.set_recent_files(&[]);
-                    rebuild_recent_files(
-                        &dialog_for_choice,
-                        &settings_for_choice,
-                        &list_box_for_choice,
-                        &stack_for_choice,
-                        None,
-                    );
-                },
-            );
-        });
-    }
+    let state = Rc::new(RecentFilesDialogState {
+        dialog: dialog.downgrade(),
+        settings: settings.clone(),
+        list_box,
+        stack,
+        on_open_uri: Rc::clone(on_open_uri),
+        #[cfg(test)]
+        _leak_canary: crate::dialogs::lifecycle::DialogLeakCanary::new(
+            crate::dialogs::lifecycle::DialogLeakKind::RecentFiles,
+        ),
+    });
 
-    rebuild_recent_files(&dialog, settings, &list_box, &stack, Some(on_open_uri));
+    let weak = Rc::downgrade(&state);
+    clear_all_button.connect_clicked(move |_| {
+        let Some(state) = weak.upgrade() else {
+            return;
+        };
+        state.confirm_clear_all();
+    });
+
+    rebuild_recent_files(&state);
+
+    let state_for_closed = Rc::clone(&state);
+    dialog.connect_closed(move |_| {
+        let _state = &state_for_closed;
+    });
 
     dialog.present(Some(parent));
+    dialog
 }
 
-fn rebuild_recent_files(
-    dialog: &adw::Dialog,
-    settings: &AppSettings,
-    list_box: &gtk4::ListBox,
-    stack: &gtk4::Stack,
-    on_open_uri: Option<&Rc<dyn Fn(String)>>,
-) {
-    while let Some(child) = list_box.first_child() {
-        list_box.remove(&child);
+struct RecentFilesDialogState {
+    dialog: gtk4::glib::WeakRef<adw::Dialog>,
+    settings: AppSettings,
+    list_box: gtk4::ListBox,
+    stack: gtk4::Stack,
+    on_open_uri: Rc<dyn Fn(String)>,
+    #[cfg(test)]
+    _leak_canary: crate::dialogs::lifecycle::DialogLeakCanary,
+}
+
+impl RecentFilesDialogState {
+    fn dialog(&self) -> Option<adw::Dialog> {
+        self.dialog.upgrade()
     }
 
-    let recent_files = settings.recent_files();
+    fn close_dialog(&self) {
+        if let Some(dialog) = self.dialog() {
+            let _closed = dialog.close();
+        }
+    }
+
+    fn confirm_clear_all(self: &Rc<Self>) {
+        if self.settings.recent_files().is_empty() {
+            return;
+        }
+        let Some(dialog) = self.dialog() else {
+            return;
+        };
+        let alert = adw::AlertDialog::builder()
+            .heading(gettext("Clear Recent Files?"))
+            .body(gettext("This removes all recent file entries."))
+            .build();
+        alert.add_responses(&[
+            ("cancel", &pgettext("alert response", "Cancel")),
+            ("clear", &pgettext("alert response", "Clear")),
+        ]);
+        alert.set_response_appearance("clear", adw::ResponseAppearance::Destructive);
+        alert.set_default_response(Some("cancel"));
+        alert.set_close_response("cancel");
+        let weak = Rc::downgrade(self);
+        alert.choose(Some(&dialog), None::<&gio::Cancellable>, move |response| {
+            if response != "clear" {
+                return;
+            }
+            let Some(state) = weak.upgrade() else {
+                return;
+            };
+            state.settings.set_recent_files(&[]);
+            rebuild_recent_files(&state);
+        });
+    }
+}
+
+fn rebuild_recent_files(state: &Rc<RecentFilesDialogState>) {
+    while let Some(child) = state.list_box.first_child() {
+        state.list_box.remove(&child);
+    }
+
+    let recent_files = state.settings.recent_files();
     if recent_files.is_empty() {
-        stack.set_visible_child_name("empty");
+        state.stack.set_visible_child_name("empty");
         return;
     }
 
@@ -134,17 +179,17 @@ fn rebuild_recent_files(
             .activatable(true)
             .build();
         let uri_for_row = uri.clone();
-        if let Some(on_open_uri) = on_open_uri {
-            let on_open_uri = Rc::clone(on_open_uri);
-            let dialog = dialog.clone();
-            row.connect_activated(move |_| {
-                on_open_uri(uri_for_row.clone());
-                let _closed = dialog.close();
-            });
-        }
-        list_box.append(&row);
+        let weak = Rc::downgrade(state);
+        row.connect_activated(move |_| {
+            let Some(state) = weak.upgrade() else {
+                return;
+            };
+            (state.on_open_uri)(uri_for_row.clone());
+            state.close_dialog();
+        });
+        state.list_box.append(&row);
     }
-    stack.set_visible_child_name("list");
+    state.stack.set_visible_child_name("list");
 }
 
 fn recent_labels(uri: &str) -> (String, String) {

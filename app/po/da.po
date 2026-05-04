@@ -27,6 +27,18 @@ msgid_plural "%d matches"
 msgstr[0] ""
 msgstr[1] ""
 
+msgctxt "compare placeholder"
+msgid "%d line only in current"
+msgid_plural "%d lines only in current"
+msgstr[0] ""
+msgstr[1] ""
+
+msgctxt "compare placeholder"
+msgid "%d line only in reference"
+msgid_plural "%d lines only in reference"
+msgstr[0] ""
+msgstr[1] ""
+
 msgid "Added syntax highlighting, an optional minimap, and safer handling for files that change on disk while they are open."
 msgstr ""
 
@@ -66,6 +78,14 @@ msgstr ""
 
 msgctxt "compare toolbar"
 msgid "Read-only - Exit Compare to edit"
+msgstr ""
+
+msgctxt "compare placeholder"
+msgid "Only in current"
+msgstr ""
+
+msgctxt "compare placeholder"
+msgid "Only in reference"
 msgstr ""
 
 msgid "Choose a Different Encoding to Save"

@@ -232,6 +232,15 @@ class PolicyCheckTests(unittest.TestCase):
         self.assertTrue(re.search(patterns[0]["pattern"], '#![forbid(unsafe_code, clippy::unwrap_used)]'))
         self.assertTrue(re.search(patterns[1]["pattern"], '#![deny(unsafe_op_in_unsafe_fn, warnings)]'))
 
+    def test_gettext_catalogs_are_only_exempt_from_line_limits(self) -> None:
+        policy = foundation.validation_policy(REPO_ROOT)
+        self.assertNotIn("po/*.po", policy["line_limit_globs"])
+        self.assertNotIn("po/*.pot", policy["line_limit_globs"])
+        self.assertIn("po/**", policy["applies_to"])
+        self.assertTrue(
+            any(rule.get("when_glob") == "po/*.po" for rule in policy["conditional_validators"])
+        )
+
     def test_find_flatpak_manifest_ignores_non_manifest_json(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

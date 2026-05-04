@@ -18,6 +18,14 @@
       "justification": "Presentation rendering, hunk navigation, status, and test accessors must share one ephemeral row model so manual Compare and Git compare cannot drift into parallel diff states."
     },
     {
+      "path": "src/editor_tab/compare/diff.rs",
+      "line": 14,
+      "match": "static LINE_DIFF_CALLS: Cell<usize> = const { Cell::new(0) };",
+      "kind": "runtime-shared-state",
+      "ownership": "The compare diff unit tests own one thread-local line-diff call counter.",
+      "justification": "The Finding 5.1 regression test must prove each non-large compare path uses one full line diff while avoiding cross-test interference under parallel cargo test execution."
+    },
+    {
       "path": "src/editor_tab/compare/gutter.rs",
       "line": 24,
       "match": "presentation: Rc<RefCell<DiffPresentation>>,",

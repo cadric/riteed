@@ -3,6 +3,7 @@ use sourceview5::prelude::BufferExt;
 
 use super::interaction;
 use super::navigation;
+use super::presentation::PresentationSide;
 use super::render::{self, CompareTags};
 use crate::editor_tab::EditorTab;
 
@@ -18,6 +19,7 @@ type CompareHatchRegionsForTests = (
 );
 type CompareHatchViewportForTests = (i32, i32, i32, i32);
 type CompareHatchViewportsForTests = (CompareHatchViewportForTests, CompareHatchViewportForTests);
+type ComparePlaceholderMarkersForTests = (Vec<(usize, usize)>, Vec<(usize, usize)>);
 
 impl EditorTab {
     pub(crate) fn compare_diff_count_for_tests(&self) -> usize {
@@ -82,6 +84,24 @@ impl EditorTab {
                     .active
                     .as_ref()
                     .map(|compare| compare.presentation.borrow().placeholder_count)
+            })
+            .unwrap_or_default()
+    }
+
+    pub(crate) fn compare_placeholder_markers_for_tests(
+        &self,
+    ) -> ComparePlaceholderMarkersForTests {
+        self.state
+            .try_borrow()
+            .ok()
+            .and_then(|state| {
+                state.compare.active.as_ref().map(|compare| {
+                    let presentation = compare.presentation.borrow();
+                    (
+                        placeholder_markers_for_tests(&presentation, PresentationSide::Reference),
+                        placeholder_markers_for_tests(&presentation, PresentationSide::Current),
+                    )
+                })
             })
             .unwrap_or_default()
     }
@@ -186,6 +206,14 @@ impl EditorTab {
                 })
             })
             .unwrap_or_default()
+    }
+
+    pub(crate) fn compare_left_line_text_for_tests(&self, row: usize) -> String {
+        self.compare_line_text_for_tests(true, row)
+    }
+
+    pub(crate) fn compare_right_line_text_for_tests(&self, row: usize) -> String {
+        self.compare_line_text_for_tests(false, row)
     }
 
     pub(crate) fn compare_wrap_modes_for_tests(&self) -> (gtk4::WrapMode, gtk4::WrapMode) {
@@ -428,6 +456,15 @@ impl EditorTab {
         self.select_compare_range_for_tests(false, start, end);
     }
 
+    pub(crate) fn compare_select_left_line_offsets_for_tests(
+        &self,
+        row: usize,
+        start: i32,
+        end: i32,
+    ) -> bool {
+        self.select_compare_line_offsets_for_tests(true, row, start, end)
+    }
+
     pub(crate) fn compare_copy_left_for_tests(&self) -> bool {
         self.copy_compare_selection_for_tests(true)
     }
@@ -453,6 +490,53 @@ impl EditorTab {
         buffer.select_range(&start, &end);
     }
 
+    fn select_compare_line_offsets_for_tests(
+        &self,
+        left: bool,
+        row: usize,
+        start: i32,
+        end: i32,
+    ) -> bool {
+        let Ok(state) = self.state.try_borrow() else {
+            return false;
+        };
+        let Some(compare) = state.compare.active.as_ref() else {
+            return false;
+        };
+        let buffer = if left {
+            &compare.left_buffer
+        } else {
+            &compare.right_buffer
+        };
+        let Some(row) = i32::try_from(row).ok() else {
+            return false;
+        };
+        let Some(start) = buffer.iter_at_line_offset(row, start) else {
+            return false;
+        };
+        let Some(end) = buffer.iter_at_line_offset(row, end) else {
+            return false;
+        };
+        buffer.select_range(&start, &end);
+        true
+    }
+
+    fn compare_line_text_for_tests(&self, left: bool, row: usize) -> String {
+        self.state
+            .try_borrow()
+            .ok()
+            .and_then(|state| {
+                state.compare.active.as_ref().map(|compare| {
+                    if left {
+                        line_text_for_tests(&compare.left_buffer, row)
+                    } else {
+                        line_text_for_tests(&compare.right_buffer, row)
+                    }
+                })
+            })
+            .unwrap_or_default()
+    }
+
     fn copy_compare_selection_for_tests(&self, left: bool) -> bool {
         self.state
             .try_borrow()
@@ -463,17 +547,47 @@ impl EditorTab {
                         interaction::copy_selection_for_tests(
                             &compare.left_buffer,
                             &compare.left_view,
+                            &compare.presentation.borrow(),
+                            PresentationSide::Reference,
                         )
                     } else {
                         interaction::copy_selection_for_tests(
                             &compare.right_buffer,
                             &compare.right_view,
+                            &compare.presentation.borrow(),
+                            PresentationSide::Current,
                         )
                     }
                 })
             })
             .unwrap_or(false)
     }
+}
+
+fn placeholder_markers_for_tests(
+    presentation: &super::presentation::DiffPresentation,
+    side: PresentationSide,
+) -> Vec<(usize, usize)> {
+    (0..presentation.reference_line_numbers.len())
+        .filter_map(|row| {
+            presentation
+                .placeholder_marker(side, row)
+                .map(|marker| (row, marker.run_len))
+        })
+        .collect()
+}
+
+fn line_text_for_tests(buffer: &sourceview5::Buffer, row: usize) -> String {
+    let Some(row) = i32::try_from(row).ok() else {
+        return String::new();
+    };
+    let Some(start) = buffer.iter_at_line(row) else {
+        return String::new();
+    };
+    let mut end = start;
+    let _found = end.forward_to_line_end();
+    let text = buffer.text(&start, &end, false).to_string();
+    text.strip_suffix('\n').unwrap_or(&text).to_string()
 }
 
 pub(crate) fn row_count_for_texts_for_tests(current_text: &str, reference_text: &str) -> usize {

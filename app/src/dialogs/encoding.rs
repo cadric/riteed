@@ -156,6 +156,40 @@ pub fn choose_encoding(
         return;
     }
 
+    present_encoding_dialog(
+        parent,
+        title,
+        description,
+        encodings,
+        current,
+        accept_label,
+        on_response,
+    );
+}
+
+#[cfg(test)]
+pub(crate) fn choose_encoding_dialog_for_tests(parent: &adw::ApplicationWindow) -> adw::Dialog {
+    let candidates = sourceview5::Encoding::default_candidates();
+    present_encoding_dialog(
+        parent,
+        "Choose",
+        "Body",
+        &candidates,
+        None,
+        "Apply",
+        |_encoding| {},
+    )
+}
+
+fn present_encoding_dialog(
+    parent: &adw::ApplicationWindow,
+    title: &str,
+    description: &str,
+    encodings: &[sourceview5::Encoding],
+    current: Option<&sourceview5::Encoding>,
+    accept_label: &str,
+    on_response: impl FnOnce(Option<sourceview5::Encoding>) + 'static,
+) -> adw::Dialog {
     let model = encodings
         .iter()
         .map(|encoding| encoding.to_str().to_string())
@@ -209,54 +243,89 @@ pub fn choose_encoding(
         .child(&content)
         .build();
 
-    let callback = Rc::new(RefCell::new(Some(
-        Box::new(on_response) as Box<dyn FnOnce(Option<sourceview5::Encoding>)>
-    )));
-    let handled = Rc::new(Cell::new(false));
+    let state = Rc::new(EncodingDialogState {
+        dialog: dialog.downgrade(),
+        dropdown,
+        encodings: encodings.to_vec(),
+        callback: RefCell::new(Some(Box::new(on_response))),
+        handled: Cell::new(false),
+        #[cfg(test)]
+        _leak_canary: crate::dialogs::lifecycle::DialogLeakCanary::new(
+            crate::dialogs::lifecycle::DialogLeakKind::Encoding,
+        ),
+    });
 
-    {
-        let dialog = dialog.clone();
-        let callback = callback.clone();
-        let handled = handled.clone();
-        cancel_button.connect_clicked(move |_| {
-            handled.set(true);
-            if let Some(callback) = callback.borrow_mut().take() {
-                callback(None);
-            }
-            let _closed = dialog.close();
-        });
-    }
+    let weak = Rc::downgrade(&state);
+    cancel_button.connect_clicked(move |_| {
+        let Some(state) = weak.upgrade() else {
+            return;
+        };
+        state.cancel();
+    });
 
-    {
-        let dialog = dialog.clone();
-        let callback = callback.clone();
-        let handled = handled.clone();
-        let encodings = encodings.to_vec();
-        accept_button.connect_clicked(move |_| {
-            handled.set(true);
-            let selected_index = dropdown.selected() as usize;
-            let selection = encodings.get(selected_index).cloned();
-            if let Some(callback) = callback.borrow_mut().take() {
-                callback(selection);
-            }
-            let _closed = dialog.close();
-        });
-    }
+    let weak = Rc::downgrade(&state);
+    accept_button.connect_clicked(move |_| {
+        let Some(state) = weak.upgrade() else {
+            return;
+        };
+        state.accept();
+    });
 
-    {
-        let callback = callback.clone();
-        dialog.connect_closed(move |_| {
-            if handled.get() {
-                return;
-            }
-            handled.set(true);
-            if let Some(callback) = callback.borrow_mut().take() {
-                callback(None);
-            }
-        });
-    }
+    let state_for_closed = Rc::clone(&state);
+    dialog.connect_closed(move |_| {
+        state_for_closed.cancel_if_unhandled();
+    });
 
     dialog.present(Some(parent));
+    dialog
+}
+
+type EncodingCallback = Box<dyn FnOnce(Option<sourceview5::Encoding>)>;
+
+struct EncodingDialogState {
+    dialog: gtk4::glib::WeakRef<adw::Dialog>,
+    dropdown: gtk4::DropDown,
+    encodings: Vec<sourceview5::Encoding>,
+    callback: RefCell<Option<EncodingCallback>>,
+    handled: Cell<bool>,
+    #[cfg(test)]
+    _leak_canary: crate::dialogs::lifecycle::DialogLeakCanary,
+}
+
+impl EncodingDialogState {
+    fn accept(&self) {
+        let selected_index = self.dropdown.selected() as usize;
+        let selection = self.encodings.get(selected_index).cloned();
+        self.handled.set(true);
+        self.respond(selection);
+        self.close_dialog();
+    }
+
+    fn cancel(&self) {
+        self.handled.set(true);
+        self.respond(None);
+        self.close_dialog();
+    }
+
+    fn cancel_if_unhandled(&self) {
+        if self.handled.get() {
+            return;
+        }
+        self.handled.set(true);
+        self.respond(None);
+    }
+
+    fn respond(&self, encoding: Option<sourceview5::Encoding>) {
+        if let Some(callback) = self.callback.borrow_mut().take() {
+            callback(encoding);
+        }
+    }
+
+    fn close_dialog(&self) {
+        if let Some(dialog) = self.dialog.upgrade() {
+            let _closed = dialog.close();
+        }
+    }
 }
 
 fn ellipsis_label(mut label: String) -> String {

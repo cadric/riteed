@@ -49,6 +49,8 @@ mod workspace_open;
 #[cfg(test)]
 mod gtk_tests;
 #[cfg(test)]
+mod gtk_tests_dialog_lifecycle;
+#[cfg(test)]
 mod gtk_tests_tabs;
 #[cfg(test)]
 mod gtk_tests_v10;

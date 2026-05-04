@@ -3,14 +3,14 @@
   "strings": [
     {
       "path": "src/dialogs/recent_files.rs",
-      "line": 39,
+      "line": 56,
       "match": ".title(gettext(\"No Recent Files\"))",
       "kind": "i18n-short-string",
       "resolution": "This short empty-state title appears in the Recent Files dialog directly above the explanatory body text."
     },
     {
       "path": "src/dialogs/recent_files.rs",
-      "line": 72,
+      "line": 139,
       "match": ".heading(gettext(\"Clear Recent Files?\"))",
       "kind": "i18n-short-string",
       "resolution": "This short confirmation heading is shown in the Clear All confirmation dialog, where the body text explains the irreversible action."
@@ -73,7 +73,7 @@
     },
     {
       "path": "src/editor_tab/compare/controller.rs",
-      "line": 257,
+      "line": 274,
       "match": "ngettext(\"%d changed line\", \"%d changed lines\", plural_count).replace(\"%d\", &changed_lines)",
       "kind": "i18n-short-string",
       "resolution": "This plural-sensitive compare status is used only when no active hunk position is appended; the full active-hunk status uses a separate positional-argument string."
@@ -192,7 +192,7 @@
     },
     {
       "path": "src/window_compare/dialog.rs",
-      "line": 414,
+      "line": 510,
       "match": "row.set_subtitle(&gettext(\"Unavailable\"));",
       "kind": "i18n-short-string",
       "resolution": "This short subtitle appears in the Compare dialog when the Saved Version source is not available for the current left-side selection."

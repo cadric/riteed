@@ -2,15 +2,17 @@ use gtk4::{gdk, prelude::*};
 use libadwaita as adw;
 
 use super::model::{DiffRowKind, DiffRowModel, DiffSide};
-use super::presentation::DiffPresentation;
+use super::presentation::{DiffPresentation, PresentationSide};
 
 const COLOR_PROBE_CSS_RESOURCE: &str = "/io/github/cadric/Riteed/ui/compare.css";
 
 pub(super) struct CompareTags {
     reference_removed: gtk4::TextTag,
     reference_inline: gtk4::TextTag,
+    reference_placeholder: gtk4::TextTag,
     current_added: gtk4::TextTag,
     current_inline: gtk4::TextTag,
+    current_placeholder: gtk4::TextTag,
 }
 
 impl CompareTags {
@@ -21,15 +23,19 @@ impl CompareTags {
         let tags = Self {
             reference_removed: gtk4::TextTag::new(None),
             reference_inline: gtk4::TextTag::new(None),
+            reference_placeholder: gtk4::TextTag::new(None),
             current_added: gtk4::TextTag::new(None),
             current_inline: gtk4::TextTag::new(None),
+            current_placeholder: gtk4::TextTag::new(None),
         };
         let left_table = left_buffer.tag_table();
         let right_table = right_buffer.tag_table();
         let _added = left_table.add(&tags.reference_removed);
         let _added = left_table.add(&tags.reference_inline);
+        let _added = left_table.add(&tags.reference_placeholder);
         let _added = right_table.add(&tags.current_added);
         let _added = right_table.add(&tags.current_inline);
+        let _added = right_table.add(&tags.current_placeholder);
         tags
     }
 
@@ -42,6 +48,10 @@ impl CompareTags {
             .set_background_rgba(Some(&palette.reference_inline));
         self.current_inline
             .set_background_rgba(Some(&palette.current_inline));
+        self.reference_placeholder
+            .set_foreground_rgba(Some(&palette.placeholder));
+        self.current_placeholder
+            .set_foreground_rgba(Some(&palette.placeholder));
     }
 
     #[cfg(test)]
@@ -97,6 +107,30 @@ pub(super) fn apply_presentation(
     right_buffer.set_modified(false);
 }
 
+pub(super) fn apply_placeholder_tags(
+    left_buffer: &sourceview5::Buffer,
+    right_buffer: &sourceview5::Buffer,
+    presentation: &DiffPresentation,
+    tags: &CompareTags,
+) {
+    raise_tag_priority(left_buffer, &tags.reference_placeholder);
+    raise_tag_priority(right_buffer, &tags.current_placeholder);
+    for row in 0..presentation.reference_line_numbers.len() {
+        if presentation
+            .placeholder_marker(PresentationSide::Reference, row)
+            .is_some()
+        {
+            apply_line_tag(left_buffer, row, &tags.reference_placeholder);
+        }
+        if presentation
+            .placeholder_marker(PresentationSide::Current, row)
+            .is_some()
+        {
+            apply_line_tag(right_buffer, row, &tags.current_placeholder);
+        }
+    }
+}
+
 pub(super) fn clear_tags(
     left_buffer: &sourceview5::Buffer,
     right_buffer: &sourceview5::Buffer,
@@ -104,8 +138,10 @@ pub(super) fn clear_tags(
 ) {
     remove_buffer_tag(left_buffer, &tags.reference_removed);
     remove_buffer_tag(left_buffer, &tags.reference_inline);
+    remove_buffer_tag(left_buffer, &tags.reference_placeholder);
     remove_buffer_tag(right_buffer, &tags.current_added);
     remove_buffer_tag(right_buffer, &tags.current_inline);
+    remove_buffer_tag(right_buffer, &tags.current_placeholder);
 }
 
 #[cfg(test)]
@@ -153,6 +189,10 @@ fn apply_line_tag(buffer: &sourceview5::Buffer, row: usize, tag: &gtk4::TextTag)
     buffer.apply_tag(tag, &start, &end);
 }
 
+fn raise_tag_priority(buffer: &sourceview5::Buffer, tag: &gtk4::TextTag) {
+    tag.set_priority(buffer.tag_table().size().saturating_sub(1));
+}
+
 fn remove_buffer_tag(buffer: &sourceview5::Buffer, tag: &gtk4::TextTag) {
     let start = buffer.start_iter();
     let end = buffer.end_iter();
@@ -191,25 +231,29 @@ struct ComparePalette {
     removed: gdk::RGBA,
     reference_inline: gdk::RGBA,
     current_inline: gdk::RGBA,
+    placeholder: gdk::RGBA,
 }
 
 impl ComparePalette {
     fn from_view(view: &sourceview5::View) -> Self {
         let fallback = Self::fallback();
+        let foreground = view.color();
         let removed =
             resolve_probe_color(view, "riteed-diff-reference-color-probe", &fallback.removed);
         let added = resolve_probe_color(view, "riteed-diff-current-color-probe", &fallback.added);
-        Self::from_semantic(&removed, &added)
+        Self::from_semantic(&removed, &added, &foreground)
     }
 
     fn fallback() -> Self {
+        let foreground = gdk::RGBA::new(0.0, 0.0, 0.0, 1.0);
         Self::from_semantic(
             &adw::AccentColor::Red.to_rgba(),
             &adw::AccentColor::Green.to_rgba(),
+            &foreground,
         )
     }
 
-    fn from_semantic(removed: &gdk::RGBA, added: &gdk::RGBA) -> Self {
+    fn from_semantic(removed: &gdk::RGBA, added: &gdk::RGBA, foreground: &gdk::RGBA) -> Self {
         let manager = adw::StyleManager::default();
         let (line_alpha, inline_alpha) = if manager.is_high_contrast() {
             (0.30, 0.55)
@@ -221,8 +265,19 @@ impl ComparePalette {
             removed: with_alpha(removed, line_alpha),
             reference_inline: with_alpha(removed, inline_alpha),
             current_inline: with_alpha(added, inline_alpha),
+            placeholder: placeholder_color(foreground),
         }
     }
+}
+
+fn placeholder_color(foreground: &gdk::RGBA) -> gdk::RGBA {
+    let manager = adw::StyleManager::default();
+    let alpha = if manager.is_high_contrast() {
+        1.0
+    } else {
+        0.74
+    };
+    with_alpha(foreground, alpha)
 }
 
 fn with_alpha(color: &gdk::RGBA, alpha: f32) -> gdk::RGBA {
