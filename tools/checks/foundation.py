@@ -181,6 +181,24 @@ def _check_lint_table(root: Path, lints: dict[str, Any], label: str, errors: lis
             add(errors, f"{label}: clippy lint {key!r} must be {expected!r}, found {actual!r}")
 
 
+def _gettext_system_feature_required(root: Path) -> bool:
+    linking = gettext_policy(root).get("linking_and_distribution", {})
+    return bool(linking.get("gettext_system_feature_required_on_linux_and_flatpak_targets"))
+
+
+def _check_gettext_system_feature(root_deps: list[dict[str, Any]], errors: list[str]) -> None:
+    gettext_deps = [
+        dep
+        for dep in root_deps
+        if dep.get("name") == "gettext-rs" and dep.get("kind") is None
+    ]
+    if not gettext_deps:
+        return
+    if any("gettext-system" in dep.get("features", []) for dep in gettext_deps):
+        return
+    add(errors, "gettext-rs must enable feature 'gettext-system' because system gettext is required by policy")
+
+
 def check_manifests(root: Path, errors: list[str]) -> None:
     cargo_toml = _safe_load_toml(root / "Cargo.toml", errors, "Cargo.toml")
     if cargo_toml is None:
@@ -201,6 +219,7 @@ def check_manifests(root: Path, errors: list[str]) -> None:
         return
 
     root_deps: set[str] = set()
+    root_dependency_entries: list[dict[str, Any]] = []
     root_manifest = (root / "Cargo.toml").resolve()
     for pkg in packages:
         edition = str(pkg.get("edition", ""))
@@ -211,6 +230,7 @@ def check_manifests(root: Path, errors: list[str]) -> None:
             for dep in pkg.get("dependencies", []):
                 if isinstance(dep, dict) and dep.get("name"):
                     root_deps.add(str(dep["name"]))
+                    root_dependency_entries.append(dep)
         data = _safe_load_toml(manifest_path, errors, relpath(manifest_path, root))
         if data is None:
             continue
@@ -231,6 +251,8 @@ def check_manifests(root: Path, errors: list[str]) -> None:
     for forbidden in dep_policy["forbidden_crates"]:
         if forbidden in root_deps:
             add(errors, f"Forbidden crate dependency present in root application package: {forbidden}")
+    if _gettext_system_feature_required(root):
+        _check_gettext_system_feature(root_dependency_entries, errors)
 
 
 def check_crate_roots(root: Path, errors: list[str]) -> None:

@@ -1,7 +1,7 @@
 use gtk4::prelude::*;
 use gtk4::{gio, glib::variant::ToVariant};
 
-use super::{WindowProjectController, auto_refresh, close_root, symlink};
+use super::{WindowProjectController, auto_refresh, close_root, reveal, symlink};
 
 impl WindowProjectController {
     pub(crate) fn root_uri_for_tests(&self) -> Option<String> {
@@ -54,6 +54,22 @@ impl WindowProjectController {
 
     pub(crate) fn selected_tree_uri_for_tests(&self) -> Option<String> {
         self.state.borrow().browser.tree().selected_uri_for_tests()
+    }
+
+    pub(crate) fn reveal_pending_for_tests(&self) -> bool {
+        reveal::reveal_pending_for_tests(&self.state)
+    }
+
+    pub(crate) fn reveal_file_for_tests(&self, file: &gio::File) {
+        reveal::reveal_file_for_tests(&self.state, file);
+    }
+
+    pub(crate) fn reset_reveal_scan_count_for_tests() {
+        reveal::reset_visible_row_scan_count_for_tests();
+    }
+
+    pub(crate) fn reveal_scan_count_for_tests() -> usize {
+        reveal::visible_row_scan_count_for_tests()
     }
 
     pub(crate) fn close_for_tests(&self) {

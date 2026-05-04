@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
 use gettextrs::{gettext, pgettext};
-use gtk4::{gio, prelude::*};
+use gtk4::{gio, glib, prelude::*};
 
 use crate::dialogs::{self, GitDiscardResponse};
 use crate::editor_tab::EditorTab;
@@ -254,7 +254,13 @@ fn compare_with_text(
                     return;
                 }
                 match result {
-                    Ok(tab) => start_git_compare(&tab, (*text).clone(), &state, generation),
+                    Ok(tab) => queue_start_git_compare(
+                        &tab,
+                        (*text).clone(),
+                        &state,
+                        generation,
+                        entry.clone(),
+                    ),
                     Err(_error) => {
                         finish_error(&state, &gettext("Unable to open file for compare."));
                     }
@@ -263,7 +269,7 @@ fn compare_with_text(
         );
         return;
     };
-    start_git_compare(&tab, text, state, generation);
+    queue_start_git_compare(&tab, text, state, generation, entry.clone());
 }
 
 fn start_git_compare(tab: &Rc<EditorTab>, text: String, state: &SourceStateRef, generation: u64) {
@@ -280,6 +286,28 @@ fn start_git_compare(tab: &Rc<EditorTab>, text: String, state: &SourceStateRef, 
             }
         }),
     );
+}
+
+fn queue_start_git_compare(
+    tab: &Rc<EditorTab>,
+    text: String,
+    state: &SourceStateRef,
+    generation: u64,
+    entry: GitStatusEntry,
+) {
+    let weak_state = Rc::downgrade(state);
+    let weak_tab = Rc::downgrade(tab);
+    let _source = glib::idle_add_local_once(move || {
+        let (Some(state), Some(tab)) = (weak_state.upgrade(), weak_tab.upgrade()) else {
+            return;
+        };
+        if !generation_matches(&state, generation)
+            || !entry_matches_snapshot(&state.borrow(), &entry)
+        {
+            return;
+        }
+        start_git_compare(&tab, text, &state, generation);
+    });
 }
 
 fn begin_action(

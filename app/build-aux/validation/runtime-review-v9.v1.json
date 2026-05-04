@@ -91,7 +91,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 220,
+      "line": 222,
       "match": "let flags = gio::SubprocessFlags::STDIN_PIPE",
       "kind": "runtime-git-subprocess",
       "ownership": "The typed Git process boundary owns the Gio subprocess pipe flags.",
@@ -99,7 +99,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 221,
+      "line": 223,
       "match": "| gio::SubprocessFlags::STDOUT_PIPE",
       "kind": "runtime-git-subprocess",
       "ownership": "The typed Git process boundary owns stdout capture for sandbox Git.",
@@ -107,7 +107,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 222,
+      "line": 224,
       "match": "| gio::SubprocessFlags::STDERR_PIPE;",
       "kind": "runtime-git-subprocess",
       "ownership": "The typed Git process boundary owns stderr capture for sandbox Git.",
@@ -115,7 +115,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 223,
+      "line": 225,
       "match": "let launcher = gio::SubprocessLauncher::new(flags);",
       "kind": "runtime-git-subprocess",
       "ownership": "The typed Git process boundary owns subprocess creation.",
@@ -136,6 +136,14 @@
       "kind": "runtime-shared-state",
       "ownership": "The Git process async tests own a one-shot callback result slot.",
       "justification": "The helper pumps the GLib main context until the typed Git callback completes and removes pending timeout sources before leaving the test."
+    },
+    {
+      "path": "src/git_process/test_support.rs",
+      "line": 47,
+      "match": "let slot: Rc<RefCell<Option<Result<T, GitProcessError>>>> = Rc::new(RefCell::new(None));",
+      "kind": "runtime-shared-state",
+      "ownership": "The Git process test support owns a one-shot callback result slot.",
+      "justification": "GTK Git fixture setup runs through the typed Git subprocess boundary and pumps the GLib main context until each setup command callback completes."
     }
   ]
 }

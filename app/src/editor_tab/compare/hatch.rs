@@ -105,7 +105,7 @@ impl CompareHatches {
         self.left.set_horizontal_value_for_tests(value);
     }
 
-    pub(super) fn detach(&self) {
+    pub(super) fn detach(&mut self) {
         self.left.detach();
         self.right.detach();
     }
@@ -164,11 +164,11 @@ impl CompareHatchLayer {
         self.refresh();
     }
 
-    fn detach(&self) {
+    fn detach(&mut self) {
         if self.detached.replace(true) {
             return;
         }
-        self.area.unset_draw_func();
+        self.handlers.disconnect();
         if self.area.parent().is_some() {
             self.area.unparent();
         }
@@ -441,7 +441,6 @@ impl Drop for AdjustmentHandlers {
 
 impl Drop for CompareHatchLayer {
     fn drop(&mut self) {
-        self.handlers.disconnect();
         self.detach();
     }
 }

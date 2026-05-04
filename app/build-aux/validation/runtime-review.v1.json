@@ -19,67 +19,19 @@
     },
     {
       "path": "src/editor_monitor.rs",
-      "line": 71,
+      "line": 75,
       "match": "poll_source: RefCell<Option<glib::SourceId>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each document monitor owns the removable polling source.",
       "justification": "File-monitor events can be unreliable on portal-backed paths, so the binding keeps one cancellable polling source that is removed with the GIO monitor."
     },
     {
-      "path": "src/editor_monitor.rs",
-      "line": 73,
-      "match": "poll_cancelled: Rc<Cell<bool>>,",
+      "path": "src/editor_monitor/stamp.rs",
+      "line": 277,
+      "match": "machine: RefCell<StampMachine>,",
       "kind": "runtime-shared-state",
-      "ownership": "Each document monitor owns a shared polling cancellation flag.",
-      "justification": "Async query callbacks need a cheap stale guard after the monitor binding has been cleared or replaced."
-    },
-    {
-      "path": "src/editor_monitor.rs",
-      "line": 231,
-      "match": "poll_state: Rc<RefCell<Option<FileStamp>>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The file polling loop shares the last observed file stamp.",
-      "justification": "Polling callbacks compare the current GIO metadata stamp with the previous stamp without global state or background threads."
-    },
-    {
-      "path": "src/editor_monitor.rs",
-      "line": 234,
-      "match": "cancelled: Rc<Cell<bool>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The file polling loop shares its cancellation flag.",
-      "justification": "Timeout and async query callbacks must stop mutating state after the monitor binding is cancelled."
-    },
-    {
-      "path": "src/editor_monitor.rs",
-      "line": 260,
-      "match": "poll_state: Rc<RefCell<Option<FileStamp>>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The file-stamp query callback owns shared polling state.",
-      "justification": "Async GIO query completion must update the last observed stamp before raising a document external-change event."
-    },
-    {
-      "path": "src/editor_monitor.rs",
-      "line": 263,
-      "match": "cancelled: Rc<Cell<bool>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The file-stamp query callback reads the shared cancellation flag.",
-      "justification": "Cancelled monitor bindings must ignore late GIO query completions from portal or filesystem backends."
-    },
-    {
-      "path": "src/editor_monitor.rs",
-      "line": 264,
-      "match": "query_in_flight: Rc<Cell<bool>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The file polling loop shares its in-flight query guard.",
-      "justification": "The timeout source must not stack overlapping metadata queries when a backend responds slowly."
-    },
-    {
-      "path": "src/editor_monitor.rs",
-      "line": 285,
-      "match": "poll_state: &Rc<RefCell<Option<FileStamp>>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The file-stamp transition helper mutates shared polling state.",
-      "justification": "The helper centralizes missing/changed detection so monitor and polling fallback keep document external-state transitions deterministic."
+      "ownership": "Each document monitor owns one async file-stamp state machine.",
+      "justification": "GIO metadata queries complete asynchronously, so monitor events, polling fallback, cancellation, and stale-result guards must coalesce through one mutable state cell without blocking the GTK main loop."
     },
     {
       "path": "src/editor_search.rs",
@@ -403,7 +355,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 511,
+      "line": 509,
       "match": "fn close_root(state: &Rc<RefCell<ProjectState>>) {",
       "kind": "runtime-shared-state",
       "ownership": "Close-folder handling mutates shared project state.",
@@ -411,7 +363,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 538,
+      "line": 534,
       "match": "fn sync_root_none(state: &Rc<RefCell<ProjectState>>, clear_settings: bool) {",
       "kind": "runtime-shared-state",
       "ownership": "No-root synchronization mutates shared project state.",
@@ -472,38 +424,6 @@
       "kind": "runtime-shared-state",
       "ownership": "Refresh handling borrows shared project state.",
       "justification": "Manual and monitor-triggered refresh need the active root, expansion snapshotting, and reveal coordination without spawning background threads."
-    },
-    {
-      "path": "src/window_project/reveal.rs",
-      "line": 19,
-      "match": "pub(super) fn cancel_reveal(state: &Rc<RefCell<ProjectState>>) {",
-      "kind": "runtime-shared-state",
-      "ownership": "Reveal cancellation borrows shared project state.",
-      "justification": "Tab→tree synchronization needs a cancellable, generation-checked reveal path so selection changes cannot race root changes."
-    },
-    {
-      "path": "src/window_project/reveal.rs",
-      "line": 26,
-      "match": "pub(super) fn schedule_restore_expanded(state: &Rc<RefCell<ProjectState>>, expanded: Vec<String>) {",
-      "kind": "runtime-shared-state",
-      "ownership": "Expanded-row restore borrows shared project state.",
-      "justification": "Refresh and show-hidden toggles need to restore expansion state opportunistically while the lazy model repopulates."
-    },
-    {
-      "path": "src/window_project/reveal.rs",
-      "line": 48,
-      "match": "pub(super) fn sync_reveal_for_selection(state: &Rc<RefCell<ProjectState>>) {",
-      "kind": "runtime-shared-state",
-      "ownership": "Reveal synchronization borrows shared project state.",
-      "justification": "Selected-tab changes need one coordinated place to start/cancel reveal and to clear selection when files are outside the active root."
-    },
-    {
-      "path": "src/window_project/reveal.rs",
-      "line": 80,
-      "match": "fn start_reveal(state: &Rc<RefCell<ProjectState>>, root: &gio::File, target: &gio::File) {",
-      "kind": "runtime-shared-state",
-      "ownership": "Reveal polling mutates shared project state.",
-      "justification": "Lazy directory expansion requires a generation-checked, cancellable reveal loop that can be interrupted by root changes and refreshes."
     },
     {
       "path": "src/window_project/symlink.rs",

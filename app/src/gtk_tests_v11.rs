@@ -9,7 +9,7 @@ use crate::editor_tab::{SaveResult, Writability};
 use crate::gtk_tests::{
     build_window, build_window_with_settings, drain_events, spin_until, write_temp_file,
 };
-use crate::settings::{AppSettings, SourceControlViewMode};
+use crate::settings::AppSettings;
 use crate::workspace::OpenSource;
 
 const SCROLL_OFFSET_TOLERANCE: f64 = 2.0;
@@ -20,7 +20,6 @@ pub(crate) fn exercise_v11_diff_surface(test_app: &adw::Application) {
     exercise_asymmetric_gutter_width_surface(test_app);
     exercise_saved_reference_rebuild(test_app);
     exercise_compare_pauses_guarded_autosave(test_app);
-    exercise_git_compare_renderer_path(test_app);
 }
 
 fn exercise_manual_compare_surface(test_app: &adw::Application) {
@@ -374,49 +373,6 @@ fn exercise_compare_pauses_guarded_autosave(test_app: &adw::Application) {
 
     let _removed = fs::remove_file(editable_path);
     let _removed = fs::remove_file(reference_path);
-}
-
-fn exercise_git_compare_renderer_path(test_app: &adw::Application) {
-    let repo = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("..");
-    let marker_name = "000-riteed-v11-git-compare-test.txt";
-    let marker = repo.join(marker_name);
-    let _removed = fs::remove_file(&marker);
-    let Some(_cleanup) = CleanupPath::create(marker, b"git renderer path\n") else {
-        return;
-    };
-
-    let Some(window) = build_window(test_app) else {
-        return;
-    };
-    window.handle_application_open(vec![gio::File::for_path(&repo)]);
-    window.set_source_control_view_mode_for_tests(SourceControlViewMode::List);
-    spin_until("v11 source control lists marker", || {
-        window
-            .source_control_row_state_for_tests(marker_name)
-            .is_some()
-    });
-    assert!(window.source_control_activate_path_for_tests(marker_name));
-    spin_until("v11 git compare uses row renderer", || {
-        window.selected_compare_active_for_tests()
-            && window.selected_compare_row_count_for_tests() > 0
-            && window.selected_compare_placeholder_count_for_tests() > 0
-    });
-}
-
-struct CleanupPath(std::path::PathBuf);
-
-impl CleanupPath {
-    fn create(path: std::path::PathBuf, contents: &[u8]) -> Option<Self> {
-        let _removed = fs::remove_file(&path);
-        fs::write(&path, contents).ok()?;
-        Some(Self(path))
-    }
-}
-
-impl Drop for CleanupPath {
-    fn drop(&mut self) {
-        let _removed = fs::remove_file(&self.0);
-    }
 }
 
 fn numbered_lines(count: usize) -> String {

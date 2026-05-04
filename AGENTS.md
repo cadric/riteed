@@ -56,6 +56,7 @@ Coverage gate for the in-tree app:
 2. `python3 -m tools.coverage_check --root app`
 
 Direct fallback commands:
+System gettext is encoded through the `gettext-rs/gettext-system` Cargo feature in `app/Cargo.toml`; keep these direct Cargo commands usable without manual environment overrides.
 - `cd app && cargo fmt --all --check`
 - `cd app && cargo check --workspace --all-targets --all-features`
 - `cd app && cargo clippy --workspace --all-targets --all-features -- -D warnings`

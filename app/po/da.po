@@ -178,6 +178,10 @@ msgstr ""
 msgid "Discard File Changes?"
 msgstr ""
 
+msgctxt "source control discard dialog"
+msgid "Unstaged changes to \"%s\" will be permanently lost and replaced with the version from the Git index. This cannot be undone."
+msgstr "Ikke-stageede ændringer i \"%s\" går permanent tabt og erstattes med versionen fra Git-indekset. Dette kan ikke fortrydes."
+
 msgid "Document Format"
 msgstr ""
 
@@ -523,9 +527,6 @@ msgid "This path uses an unsupported encoding."
 msgstr ""
 
 msgid "This removes all recent file entries."
-msgstr ""
-
-msgid "This will restore the file to the Git index version."
 msgstr ""
 
 msgid "Too large to compare differences."

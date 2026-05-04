@@ -473,4 +473,22 @@ impl Window {
     pub(crate) fn selected_project_tree_uri_for_tests(&self) -> Option<String> {
         self.project.selected_tree_uri_for_tests()
     }
+
+    pub(crate) fn project_reveal_pending_for_tests(&self) -> bool {
+        self.project.reveal_pending_for_tests()
+    }
+
+    pub(crate) fn reveal_project_file_for_tests(&self, file: &gio::File) {
+        self.project.reveal_file_for_tests(file);
+    }
+
+    pub(crate) fn reset_project_reveal_scan_count_for_tests(&self) {
+        let _root = self.project.root_uri_for_tests();
+        crate::window_project::WindowProjectController::reset_reveal_scan_count_for_tests();
+    }
+
+    pub(crate) fn project_reveal_scan_count_for_tests(&self) -> usize {
+        let _root = self.project.root_uri_for_tests();
+        crate::window_project::WindowProjectController::reveal_scan_count_for_tests()
+    }
 }

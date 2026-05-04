@@ -10,6 +10,7 @@ use crate::sidebar_host::SOURCE_CONTROL_ICON;
 
 pub(crate) fn exercise_v9_source_control(test_app: &adw::Application) {
     exercise_non_git_folder(test_app);
+    exercise_tracked_source_control_compare_after_open(test_app);
 
     let repo = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("..");
     let marker_name = "000-riteed-v9-source-control-test.txt";
@@ -56,6 +57,36 @@ pub(crate) fn exercise_v9_source_control(test_app: &adw::Application) {
     let _removed = fs::remove_file(marker);
 }
 
+fn exercise_tracked_source_control_compare_after_open(test_app: &adw::Application) {
+    let repo = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("..");
+    let tracked_name = "VERSIONS.md";
+    let tracked_path = repo.join(tracked_name);
+    let Some(_restore) = RestoreFile::append(
+        &tracked_path,
+        b"\nriteed source-control tracked compare smoke\n",
+    ) else {
+        return;
+    };
+
+    let Some(window) = build_window(test_app) else {
+        return;
+    };
+    window.handle_application_open(vec![gio::File::for_path(&repo)]);
+    window.set_source_control_view_mode_for_tests(SourceControlViewMode::List);
+    spin_until("v9 source control lists tracked modified file", || {
+        window
+            .source_control_row_state_for_tests(tracked_name)
+            .is_some()
+    });
+    assert!(window.source_control_activate_path_for_tests(tracked_name));
+    let tracked_uri = gio::File::for_path(&tracked_path).uri().to_string();
+    spin_until("v9 tracked source control activation opens compare", || {
+        window.selected_saved_uri_for_tests() == tracked_uri
+            && window.selected_compare_active_for_tests()
+    });
+    drain_events(16);
+}
+
 fn exercise_non_git_folder(test_app: &adw::Application) {
     let folder = std::env::temp_dir().join("riteed-v9-non-git-folder");
     let _removed = fs::remove_dir_all(&folder);
@@ -74,4 +105,28 @@ fn exercise_non_git_folder(test_app: &adw::Application) {
     });
     assert_eq!(window.source_control_row_count_for_tests(), 0);
     let _removed = fs::remove_dir_all(folder);
+}
+
+struct RestoreFile {
+    path: std::path::PathBuf,
+    contents: Vec<u8>,
+}
+
+impl RestoreFile {
+    fn append(path: &std::path::Path, suffix: &[u8]) -> Option<Self> {
+        let contents = fs::read(path).ok()?;
+        let mut updated = contents.clone();
+        updated.extend_from_slice(suffix);
+        fs::write(path, &updated).ok()?;
+        Some(Self {
+            path: path.to_path_buf(),
+            contents,
+        })
+    }
+}
+
+impl Drop for RestoreFile {
+    fn drop(&mut self) {
+        let _restored = fs::write(&self.path, &self.contents);
+    }
 }

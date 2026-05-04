@@ -187,11 +187,7 @@ pub fn confirm_git_discard(
 
     let dialog = adw::AlertDialog::builder()
         .heading(gettext("Discard File Changes?"))
-        .body(format!(
-            "{}\n\n{}",
-            gettext("This will restore the file to the Git index version."),
-            file_name
-        ))
+        .body(git_discard_body(file_name))
         .build();
     dialog.add_responses(&[
         ("cancel", &pgettext("alert response", "Cancel")),
@@ -208,6 +204,20 @@ pub fn confirm_git_discard(
         };
         on_response(outcome);
     });
+}
+
+fn git_discard_body(file_name: &str) -> String {
+    git_discard_body_from_template(
+        &pgettext(
+            "source control discard dialog",
+            "Unstaged changes to \"%s\" will be permanently lost and replaced with the version from the Git index. This cannot be undone.",
+        ),
+        file_name,
+    )
+}
+
+fn git_discard_body_from_template(template: &str, file_name: &str) -> String {
+    template.replace("%s", file_name)
 }
 
 pub fn show_about(parent: &impl IsA<gtk4::Widget>) {
@@ -490,11 +500,18 @@ pub(crate) fn queue_git_discard_responses_for_tests(responses: &[GitDiscardRespo
 mod tests {
     use super::{
         ExternalReloadResponse, GitDiscardResponse, StaleSaveResponse, UnsavedResponse,
-        queue_external_reload_responses_for_tests, queue_git_discard_responses_for_tests,
-        queue_stale_save_responses_for_tests, queue_unsaved_responses_for_tests,
-        take_external_reload_response_for_tests, take_git_discard_response_for_tests,
-        take_stale_save_response_for_tests, take_unsaved_response_for_tests,
+        git_discard_body_from_template, queue_external_reload_responses_for_tests,
+        queue_git_discard_responses_for_tests, queue_stale_save_responses_for_tests,
+        queue_unsaved_responses_for_tests, take_external_reload_response_for_tests,
+        take_git_discard_response_for_tests, take_stale_save_response_for_tests,
+        take_unsaved_response_for_tests,
     };
+
+    #[test]
+    fn git_discard_body_formats_file_name() {
+        let body = git_discard_body_from_template("Discard %s now.", "tracked.rs");
+        assert_eq!(body, "Discard tracked.rs now.");
+    }
 
     #[test]
     fn git_discard_response_queue_preserves_order() {

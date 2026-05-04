@@ -7,6 +7,8 @@ mod log;
 mod ops;
 mod repo;
 mod support;
+#[cfg(test)]
+pub(crate) mod test_support;
 pub(crate) use log::{GitCommitSummary, GitLogState};
 pub(crate) use repo::GitRepoContext;
 use repo::fallback_base;

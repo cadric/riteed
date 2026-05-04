@@ -378,13 +378,11 @@ fn begin_root_change(
     folder: &gio::File,
     origin: RootChangeOrigin,
 ) {
+    reveal::cancel_reveal(state);
     let (generation, cancellable) = {
         let mut state_mut = state.borrow_mut();
         if let Some(cancellable) = state_mut.root_cancellable.take() {
             cancellable.cancel();
-        }
-        if let Some(pending) = state_mut.pending_reveal.take() {
-            pending.cancellable.cancel();
         }
         if let Some(cancellable) = state_mut.symlink_cancellable.take() {
             cancellable.cancel();
@@ -509,13 +507,11 @@ fn resolve_display_name(folder: &gio::File, info: &gio::FileInfo) -> String {
 }
 
 fn close_root(state: &Rc<RefCell<ProjectState>>) {
+    reveal::cancel_reveal(state);
     {
         let mut state = state.borrow_mut();
         if let Some(cancellable) = state.root_cancellable.take() {
             cancellable.cancel();
-        }
-        if let Some(pending) = state.pending_reveal.take() {
-            pending.cancellable.cancel();
         }
         if let Some(cancellable) = state.symlink_cancellable.take() {
             cancellable.cancel();
@@ -536,11 +532,9 @@ fn close_root(state: &Rc<RefCell<ProjectState>>) {
 }
 
 fn sync_root_none(state: &Rc<RefCell<ProjectState>>, clear_settings: bool) {
+    reveal::cancel_reveal(state);
     {
         let mut state = state.borrow_mut();
-        if let Some(pending) = state.pending_reveal.take() {
-            pending.cancellable.cancel();
-        }
         if let Some(cancellable) = state.symlink_cancellable.take() {
             cancellable.cancel();
         }

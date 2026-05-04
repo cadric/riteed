@@ -1,6 +1,6 @@
 ---
 created: 2026-04-19
-updated: 2026-05-03
+updated: 2026-05-04
 status: current
 priority: high
 type: release
@@ -36,6 +36,7 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Refactored the embedded Riteed window controller into smaller workspace, tab, close-flow, session, and I/O modules so the GNOME app remains policy-compliant and maintainable as features grow.
 - Migrated the embedded Riteed editor core from `GtkTextView` to `GtkSourceView`, moving dirty-state tracking onto the buffer modified flag for better performance on longer text files.
 - Made the embedded Riteed editor more code-friendly by auto-detecting languages for highlighting, keeping the minimap optional, and surfacing external file changes through in-tab banners and guarded save/reload flows.
+- Moved document file-stamp checks onto async GIO queries, avoiding GTK-side metadata stalls on portal, FUSE, and network-backed files while preserving guarded reload/missing-file prompts.
 - Extended the embedded Riteed editor to a v5a format-aware IO contract with `GtkSourceFileLoader/FileSaver`, deterministic line-ending state in the status bar, recoverable encoding-reopen flows, and guarded non-UTF-8 save/load handling.
 - Extended the embedded Riteed editor to a v5b controls layer with staged indentation preferences, monospace-only editor font selection, window-scoped zoom controls, and updated status/menu/shortcuts surfaces.
 - Extended the embedded Riteed editor to a v5c polish layer with direct status-bar zoom controls, document format controls in Preferences, fixed-size minimap rendering during zoom, and scroll-past-end editor padding.
@@ -112,6 +113,7 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Compare, Paste Text, Recent Files, and Encoding dialogs no longer leak state when opened and closed repeatedly.
 - Source Control: Git compare now rejects binary blobs cleanly instead of partially rendering them.
 - Source Control: refresh is significantly faster on large repositories by avoiding per-row filesystem metadata checks.
+- Source Control: discard dialog now clearly states unstaged changes will be permanently lost.
 - Window: stored window dimensions are now bounded by schema ranges in addition to runtime clamping.
 - Fixed Flatpak Git status refresh for document-portal project folders by running bundled Git from a stable sandbox cwd with explicit `GIT_DIR` and `GIT_WORK_TREE`.
 - Fixed Source Control Git execution and live refresh for worktrees and non-standard Git directories by resolving Git metadata paths instead of assuming `<worktree>/.git`.
@@ -123,6 +125,10 @@ The format follows Keep a Changelog and the repository follows Semantic Versioni
 - Compare: scroll between panes now stays in sync within the same row, eliminating the one-line drift introduced when row-based sync replaced pixel mirroring.
 - Compare inline diff budget is now a hard total cap, preventing UI jank when many rows have small modifications.
 - Compare recompute now reuses one line diff for both row alignment and presentation buffers, reducing duplicate work on large compares.
+- Source Control compare now defers the compare layout switch after opening a file, avoiding a first-activation crash when starting from an empty window.
+- Project sidebar reveal no longer polls every 20ms; reveal now coalesces work on model changes.
+- AppStream metadata: modernized developer info using the current `<developer>` element, added content rating, and removed deprecated `<developer_name>`.
+- Internal: system gettext is now enforced through the Cargo dependency feature, so maintainer validation no longer depends on a manual environment override.
 - Source Control: action buttons no longer reserve inline space; status badges color-coded by Git state.
 - Fixed Window Palette chrome coverage so scoped scheme colors reach the sidebar, tab strip, libadwaita dialogs, primary menu, and card-like dialog content without global theme rebinding.
 

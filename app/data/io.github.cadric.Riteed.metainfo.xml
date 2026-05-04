@@ -6,7 +6,9 @@
   <metadata_license>MIT</metadata_license>
   <project_license>MIT AND LGPL-2.1-or-later</project_license>
   <launchable type="desktop-id">io.github.cadric.Riteed.desktop</launchable>
-  <developer_name>cadric</developer_name>
+  <developer id="io.github.cadric">
+    <name translate="no">cadric</name>
+  </developer>
   <url type="homepage">https://github.com/cadric/riteed</url>
   <url type="bugtracker">https://github.com/cadric/riteed/issues</url>
   <description>
@@ -21,4 +23,5 @@
       </description>
     </release>
   </releases>
+  <content_rating type="oars-1.1"/>
 </component>

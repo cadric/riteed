@@ -79,6 +79,8 @@ def _metainfo_messages(root: Path) -> set[tuple[str | None, str, str | None]]:
             tag = node.tag.rsplit("}", 1)[-1]
             if tag not in {"name", "summary", "p", "li", "caption"}:
                 continue
+            if node.attrib.get("translate") == "no":
+                continue
             text = (node.text or "").strip()
             if text:
                 messages.add((None, text, None))

@@ -60,6 +60,9 @@
 - V10 keeps Source Control local-only: no push, pull, branch UI, remotes, full log browser, merge conflict editor, Markdown preview, or new language catalogs.
 - V11 keeps compare tab-local and presentation-only. `DiffRowModel` replaces the old hunk/anchor `DiffPlan`; the live editor widget stays hidden and intact while read-only presentation buffers carry ephemeral placeholder rows and metadata-backed run markers, and compare wrap is a view-local override that does not write GSettings.
 - V11 compare recompute uses one full `similar::TextDiff::from_lines` source for both the logical row model and presentation buffers; runtime callers should go through `compare::diff::compute_diff` to avoid duplicate large-compare work.
+- System gettext is enforced through the `gettext-rs/gettext-system` Cargo dependency feature; host and Flatpak validation should not depend on a manual environment override for gettext linking.
+- AppStream keeps the uppercase `io.github.cadric.Riteed` component id to match the app-id contract, while the developer id uses lowercase `io.github.cadric` because AppStream validates developer ids as rDNS-style identifiers.
+- Document monitor file stamps are queried through `src/editor_monitor/stamp.rs` with async GIO metadata calls. Monitor events, portal polling, missing-file settle checks, cancellation, and stale async results coalesce through the stamp state machine instead of synchronous `query_info()`.
 - `.agent/CONTINUITY.md` is local continuity state and is ignored by Git unless explicitly force-added.
 
 ## DISCOVERIES

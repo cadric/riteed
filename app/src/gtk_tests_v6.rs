@@ -4,7 +4,7 @@ use gtk4::gio;
 use gtk4::prelude::*;
 use libadwaita as adw;
 
-use crate::gtk_tests::{build_window, spin_until, wait_millis, write_temp_file};
+use crate::gtk_tests::{build_window, drain_events, spin_until, wait_millis, write_temp_file};
 use crate::project_tree_model::ProjectTreeModel;
 use crate::settings::AppSettings;
 use crate::window::Window;
@@ -124,6 +124,65 @@ fn exercise_project_auto_refresh(window: &Window, root: &std::path::Path, projec
     assert!(window.project_monitor_count_for_tests() <= 2);
 }
 
+fn exercise_project_reveal_state_machine(window: &Window, root: &std::path::Path) {
+    let nested_file = root.join("folder").join("nested.txt");
+    let nested_uri = gio::File::for_path(&nested_file).uri().to_string();
+    window.reset_project_reveal_scan_count_for_tests();
+    window.reveal_project_file_for_tests(&gio::File::for_path(&nested_file));
+    spin_until("project reveal selects nested lazy file", || {
+        window.selected_project_tree_uri_for_tests().as_deref() == Some(nested_uri.as_str())
+            && !window.project_reveal_pending_for_tests()
+    });
+    assert!(window.project_reveal_scan_count_for_tests() <= 12);
+
+    let root_file = root.join("A.txt");
+    let root_uri = gio::File::for_path(&root_file).uri().to_string();
+    window.reset_project_reveal_scan_count_for_tests();
+    window.reveal_project_file_for_tests(&gio::File::for_path(&nested_file));
+    window.reveal_project_file_for_tests(&gio::File::for_path(&root_file));
+    spin_until("project reveal restart keeps newest target", || {
+        window.selected_project_tree_uri_for_tests().as_deref() == Some(root_uri.as_str())
+            && !window.project_reveal_pending_for_tests()
+    });
+    drain_events(12);
+    assert_eq!(
+        window.selected_project_tree_uri_for_tests().as_deref(),
+        Some(root_uri.as_str())
+    );
+
+    let missing_file = root.join("folder").join("missing.txt");
+    window.reveal_project_file_for_tests(&gio::File::for_path(&missing_file));
+    spin_until("project reveal watchdog clears missing target", || {
+        !window.project_reveal_pending_for_tests()
+            && window.selected_project_tree_uri_for_tests().is_none()
+    });
+}
+
+#[cfg(unix)]
+fn exercise_project_symlink_resolution(window: &Window, root: &std::path::Path) {
+    let link = root.join("linked.txt");
+    create_symlink(&root.join("b.txt"), &link);
+    window.resolve_project_symlink_for_tests(&gio::File::for_path(&link));
+    spin_until("project symlink opens target contents", || {
+        window.selected_text_for_tests() == "bravo"
+    });
+    let folder_link = root.join("linked-folder");
+    create_symlink(&root.join("folder"), &folder_link);
+    window.resolve_project_symlink_for_tests(&gio::File::for_path(&folder_link));
+    wait_millis("project folder symlink settles", 80);
+
+    let device_link = root.join("linked-device");
+    create_symlink(std::path::Path::new("/dev/null"), &device_link);
+    window.resolve_project_symlink_for_tests(&gio::File::for_path(&device_link));
+    wait_millis("project device symlink settles", 80);
+
+    let broken_link = root.join("broken-link");
+    create_symlink(&root.join("missing.txt"), &broken_link);
+    window.resolve_project_symlink_for_tests(&gio::File::for_path(&broken_link));
+    wait_millis("project broken symlink settles", 80);
+    assert_eq!(window.selected_text_for_tests(), "bravo");
+}
+
 pub(crate) fn exercise_v6_project_navigation(test_app: &adw::Application) {
     let (root, extra, open_file) = create_project_tree();
     exercise_tree_model_expansion(&root);
@@ -182,6 +241,7 @@ pub(crate) fn exercise_v6_project_navigation(test_app: &adw::Application) {
             .project_tree_entry_names_for_tests()
             .contains(&String::from("A.txt"))
     });
+    exercise_project_reveal_state_machine(&window, &root);
     let project_file = root.join("A.txt");
     let project_uri = gio::File::for_path(&project_file).uri().to_string();
     window.request_open_files(
@@ -193,33 +253,13 @@ pub(crate) fn exercise_v6_project_navigation(test_app: &adw::Application) {
     });
     assert_eq!(window.selected_saved_uri_for_tests(), project_uri);
     window.refresh_project_for_tests();
-    wait_millis("project reveal timer drains", 80);
+    spin_until("project reveal after refresh selects opened file", || {
+        window.selected_project_tree_uri_for_tests().as_deref() == Some(project_uri.as_str())
+    });
     exercise_project_auto_refresh(&window, &root, &project_uri);
 
     #[cfg(unix)]
-    {
-        let link = root.join("linked.txt");
-        create_symlink(&root.join("b.txt"), &link);
-        window.resolve_project_symlink_for_tests(&gio::File::for_path(&link));
-        spin_until("project symlink opens target contents", || {
-            window.selected_text_for_tests() == "bravo"
-        });
-        let folder_link = root.join("linked-folder");
-        create_symlink(&root.join("folder"), &folder_link);
-        window.resolve_project_symlink_for_tests(&gio::File::for_path(&folder_link));
-        wait_millis("project folder symlink settles", 80);
-
-        let device_link = root.join("linked-device");
-        create_symlink(std::path::Path::new("/dev/null"), &device_link);
-        window.resolve_project_symlink_for_tests(&gio::File::for_path(&device_link));
-        wait_millis("project device symlink settles", 80);
-
-        let broken_link = root.join("broken-link");
-        create_symlink(&root.join("missing.txt"), &broken_link);
-        window.resolve_project_symlink_for_tests(&gio::File::for_path(&broken_link));
-        wait_millis("project broken symlink settles", 80);
-        assert_eq!(window.selected_text_for_tests(), "bravo");
-    }
+    exercise_project_symlink_resolution(&window, &root);
 
     window.close_project_for_tests();
     assert_eq!(window.project_root_uri_for_tests(), None);

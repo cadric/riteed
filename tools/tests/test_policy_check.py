@@ -241,6 +241,68 @@ class PolicyCheckTests(unittest.TestCase):
             any(rule.get("when_glob") == "po/*.po" for rule in policy["conditional_validators"])
         )
 
+    def test_gettext_system_feature_is_required_by_manifest_policy(self) -> None:
+        cases = [
+            ({}, True),
+            ({"features": []}, True),
+            ({"features": ["other-feature"]}, True),
+            ({"features": ["gettext-system"]}, False),
+        ]
+        for gettext_extra, should_error in cases:
+            with self.subTest(gettext_extra=gettext_extra):
+                errors = self._manifest_errors_for_gettext_dep(gettext_extra)
+                found = any("gettext-system" in item for item in errors)
+                self.assertEqual(found, should_error)
+
+    def _manifest_errors_for_gettext_dep(self, gettext_extra: dict[str, object]) -> list[str]:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            _write(
+                root / "Cargo.toml",
+                '[package]\nname = "demo"\nversion = "0.1.0"\nedition = "2024"\n\n[lints.rust]\nwarnings = "deny"\n',
+            )
+            deps = [
+                {"name": "gettext-rs", "kind": None, **gettext_extra},
+                {"name": "gtk4", "kind": None, "features": []},
+                {"name": "libadwaita", "kind": None, "features": []},
+            ]
+            packages = [
+                {
+                    "name": "demo",
+                    "edition": "2024",
+                    "manifest_path": str(root / "Cargo.toml"),
+                    "dependencies": deps,
+                }
+            ]
+            with patch.object(foundation, "cargo_packages", return_value=packages):
+                with patch.object(
+                    foundation,
+                    "validation_policy",
+                    return_value={
+                        "dependency_policy": {
+                            "required_runtime_crates": ["gtk4", "libadwaita", "gettext-rs"],
+                            "forbidden_crates": [],
+                        }
+                    },
+                ):
+                    with patch.object(
+                        foundation,
+                        "rust_policy",
+                        return_value={"lint_baseline": {"rust_lints_required": {}, "clippy_lints_required": {}}},
+                    ):
+                        with patch.object(
+                            foundation,
+                            "gettext_policy",
+                            return_value={
+                                "linking_and_distribution": {
+                                    "gettext_system_feature_required_on_linux_and_flatpak_targets": True
+                                }
+                            },
+                        ):
+                            errors: list[str] = []
+                            foundation.check_manifests(root, errors)
+                            return errors
+
     def test_find_flatpak_manifest_ignores_non_manifest_json(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -303,6 +365,38 @@ class PolicyCheckTests(unittest.TestCase):
                 errors: list[str] = []
                 commands.check_xgettext_completeness(REPO_ROOT, errors)
                 self.assertTrue(errors)
+
+    def test_metainfo_messages_respect_translate_no(self) -> None:
+        from tools.checks import commands
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "data").mkdir()
+            _write(
+                root / "data" / "demo.metainfo.xml",
+                """<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>org.example.Demo</id>
+  <name>cadric</name>
+  <summary translate="yes">Visible summary</summary>
+  <description>
+    <p translate="">Visible paragraph</p>
+    <p translate="no">Hidden paragraph</p>
+  </description>
+  <developer>
+    <name translate="no">Hidden developer</name>
+  </developer>
+</component>
+""",
+            )
+
+            messages = commands._metainfo_messages(root)
+
+        self.assertIn((None, "cadric", None), messages)
+        self.assertIn((None, "Visible summary", None), messages)
+        self.assertIn((None, "Visible paragraph", None), messages)
+        self.assertNotIn((None, "Hidden paragraph", None), messages)
+        self.assertNotIn((None, "Hidden developer", None), messages)
 
     def test_required_commands_use_headless_gtk_environment(self) -> None:
         from tools.checks import commands

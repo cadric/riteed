@@ -212,7 +212,7 @@ impl CompareController {
         self.hatches.refresh();
     }
 
-    pub(super) fn detach_visual_layers(&self) {
+    pub(super) fn detach_visual_layers(&mut self) {
         self.hatches.detach();
     }
 
