@@ -232,9 +232,18 @@ def run_capture(cmd: Sequence[str], cwd: Path, env: dict[str, str] | None = None
 def run_checked(cmd: Sequence[str], cwd: Path, label: str | None = None, env: dict[str, str] | None = None) -> str:
     result = run_capture(cmd, cwd, env=env)
     if result.returncode != 0:
-        detail = result.stderr.strip() or result.stdout.strip() or "unknown error"
+        detail = failure_detail(result.stdout, result.stderr)
         fail(f"[validation] {label or 'command failed'}: {' '.join(cmd)} :: {detail}")
     return result.stdout
+
+
+def failure_detail(stdout: str, stderr: str) -> str:
+    streams = []
+    if stdout.strip():
+        streams.append(f"stdout:\n{stdout.strip()}")
+    if stderr.strip():
+        streams.append(f"stderr:\n{stderr.strip()}")
+    return "\n".join(streams) or "unknown error"
 
 
 def grep_lines(root: Path, paths: Sequence[Path], pattern: str) -> list[str]:

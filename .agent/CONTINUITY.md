@@ -1,6 +1,8 @@
 # Continuity
 
 ## OUTCOMES
+- Investigated the 2026-05-05 GitHub Actions `app` job failure from `logs.txt`; the failure occurred during `python3 -m tools.policy_check --root app --strict` when GTK tests entered xdg-desktop-portal inside the unprivileged Fedora Docker container and document-portal FUSE could not mount, while validator failure reporting hid cargo-test stdout behind GTK stderr warnings.
+- Stabilized the CI path by stopping the GTK smoke test from launching a real file chooser, running the Fedora validation container privileged with deterministic GTK test environment variables, and making `run_checked` report both stdout and stderr on command failure.
 - Implemented v6 lightweight folder navigation for Riteed: Open Folder, Close Folder, project sidebar, lazy file tree, hidden-file toggle, refresh, tab/tree reveal sync, symlink handling, and mixed file/folder `GApplication::open`.
 - Added portal-aware fallback polling for document and project-tree monitors so Flatpak/document-portal paths detect external edits and structural folder changes even when native GIO monitor events are missed.
 - Implemented v7 compare and advanced split workflows: compare-with-disk, compare-with-file, compare-two-files, in-tab split diff UI, manual reference refresh, F8/Shift+F8 hunk navigation, external-reload Compare response, and ephemeral compare state.
@@ -85,6 +87,7 @@
 - V11 compare gutter `-`/`+` markers are visual and not part of the document text; line numbers and markers are separate gutter renderers so marker glyph widths cannot shift the number column.
 
 ## PROGRESS
+- CI/Flatpak stabilization validation passed for the 0.2.0 beta: `git diff --check`, `python3 -m unittest tools.tests.test_policy_check -v`, `scripts/policy-check --root app --strict`, and `python3 -m tools.coverage_check --root app` (84.4% line coverage). Local user Flatpak rebuild/install passed with app commit `7e2d5f9a39d6a5891cdad882fa33407f7e4ab961d52e73e2a9b8a072c7981b57`, installed size 8.1 MB on `org.gnome.Platform//50`, and `/app/bin/git` reports `git version 2.54.0`.
 - Source Control virtual tree refactor validation passed: `cargo test --workspace --all-targets --all-features -- --nocapture`, `python3 -m tools.policy_check --root app --strict`, and `python3 -m tools.coverage_check --root app` (80.3% line coverage).
 - Local user Flatpak rebuild/install passed with commit `aaf46011e751d64dfd7fd0cb448fef9bcc29693ae9a05c77bf4ba417001c6917`; `flatpak info --user io.github.cadric.Riteed` reports 7.7 MB installed size and `/app/bin/git` reports `git version 2.54.0`.
 - Sidebar layout fix validation passed: `GTK_A11Y=none GSK_RENDERER=cairo cargo test --workspace --all-targets --all-features`, `python3 -m tools.policy_check --root app --strict`, `python3 -m tools.coverage_check --root app`, and `python3 -m unittest tools.tests.test_policy_check -v`.

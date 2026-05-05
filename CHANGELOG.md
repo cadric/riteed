@@ -95,6 +95,7 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 - Revised the runtime policy to allow only typed Gio subprocess Git operations in `src/git_process.rs`; `std::process::Command` and `flatpak-spawn` remain forbidden.
 
 ### Fixed
+- Stabilized GitHub Actions app validation by avoiding real portal-backed file chooser launches in GTK smoke tests, running the Fedora validation container with the device access expected by GNOME/Flatpak CI, and preserving both stdout and stderr when validator commands fail.
 - Aligned policy IDs, bundle metadata, and artifact indexing with the shipped policy files.
 - Corrected validator behavior for Flatpak manifest filenames, JSON source pinning checks, permission justifications, gettext bootstrap detection, conditional GSettings enforcement, and conditional gresource requirements.
 - Tightened machine-readability by enforcing line limits on AGENTS/policy/tooling files, removing unused required tools, adding missing required tools, and replacing overbroad glob and regex matching.

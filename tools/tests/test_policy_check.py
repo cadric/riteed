@@ -7,13 +7,15 @@ import shutil
 import subprocess
 import tempfile
 import unittest
+from contextlib import redirect_stderr
+from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
 from tools.checks import foundation, hig, libadwaita, runtime
 from tools.scanners.rust import runtime_review_hits
 from tools.scanners.sites import ReviewEntry, ScanHit, validate_review_links
-from tools.validation_tooling import contract_root, repo_root
+from tools.validation_tooling import contract_root, repo_root, run_checked
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -440,6 +442,24 @@ class PolicyCheckTests(unittest.TestCase):
                 "GTK_A11Y": os.environ.get("GTK_A11Y", "none"),
             },
         )
+
+    def test_run_checked_reports_stdout_and_stderr_on_failure(self) -> None:
+        stderr = StringIO()
+        with redirect_stderr(stderr):
+            with self.assertRaises(SystemExit):
+                run_checked(
+                    [
+                        "python3",
+                        "-c",
+                        "import sys; print('visible stdout'); print('visible stderr', file=sys.stderr); sys.exit(7)",
+                    ],
+                    REPO_ROOT,
+                    "failing command",
+                )
+
+        output = stderr.getvalue()
+        self.assertIn("stdout:\nvisible stdout", output)
+        self.assertIn("stderr:\nvisible stderr", output)
 
 
 if __name__ == "__main__":

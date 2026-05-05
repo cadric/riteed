@@ -25,6 +25,11 @@ jobs:
       - name: Validate app subtree
         run: |
           docker run --rm \
+            --privileged \
+            -e GSK_RENDERER=cairo \
+            -e GTK_A11Y=none \
+            -e NO_AT_BRIDGE=1 \
+            -e RUST_TEST_THREADS=1 \
             -v "$PWD:/workspace" \
             -w /workspace \
             fedora:42 \

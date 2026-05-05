@@ -434,7 +434,6 @@ fn exercise_app_actions_more() {
     test_app.activate_action("preferences", None);
     test_app.activate_action("about", None);
     test_app.activate_action("help", None);
-    test_app.activate_action("open", None);
     drain_events(12);
 
     test_app.activate();
