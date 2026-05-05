@@ -1,9 +1,12 @@
 use std::fs;
+use std::path::PathBuf;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use gtk4::gio;
 use gtk4::prelude::*;
 use libadwaita as adw;
 
+use crate::git_process::test_support::init_modified_fixture_repo_for_tests;
 use crate::gtk_tests::{build_window, drain_events, spin_until};
 use crate::settings::SourceControlViewMode;
 use crate::sidebar_host::SOURCE_CONTROL_ICON;
@@ -12,14 +15,20 @@ pub(crate) fn exercise_v9_source_control(test_app: &adw::Application) {
     exercise_non_git_folder(test_app);
     exercise_tracked_source_control_compare_after_open(test_app);
 
-    let repo = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("..");
-    let marker_name = "000-riteed-v9-source-control-test.txt";
+    let repo = unique_temp_repo("source-control-untracked");
+    let Some(_cleanup) = CleanupDir::create(repo.clone()) else {
+        return;
+    };
+    if init_modified_fixture_repo_for_tests(&repo, "baseline.txt", b"baseline\n", b"baseline\n")
+        .is_err()
+    {
+        return;
+    }
+    let marker_name = "untracked.txt";
     let marker = repo.join(marker_name);
-    let _removed = fs::remove_file(&marker);
     assert!(fs::write(&marker, b"source control test").is_ok());
 
     let Some(window) = build_window(test_app) else {
-        let _removed = fs::remove_file(&marker);
         return;
     };
     assert_eq!(
@@ -53,20 +62,25 @@ pub(crate) fn exercise_v9_source_control(test_app: &adw::Application) {
             && window.selected_compare_active_for_tests()
     });
     drain_events(12);
-
-    let _removed = fs::remove_file(marker);
 }
 
 fn exercise_tracked_source_control_compare_after_open(test_app: &adw::Application) {
-    let repo = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("..");
-    let tracked_name = "VERSIONS.md";
-    let tracked_path = repo.join(tracked_name);
-    let Some(_restore) = RestoreFile::append(
-        &tracked_path,
-        b"\nriteed source-control tracked compare smoke\n",
-    ) else {
+    let repo = unique_temp_repo("source-control-tracked");
+    let Some(_cleanup) = CleanupDir::create(repo.clone()) else {
         return;
     };
+    let tracked_name = "tracked.txt";
+    let tracked_path = repo.join(tracked_name);
+    if init_modified_fixture_repo_for_tests(
+        &repo,
+        tracked_name,
+        b"baseline\n",
+        b"baseline\nchanged\n",
+    )
+    .is_err()
+    {
+        return;
+    }
 
     let Some(window) = build_window(test_app) else {
         return;
@@ -107,26 +121,27 @@ fn exercise_non_git_folder(test_app: &adw::Application) {
     let _removed = fs::remove_dir_all(folder);
 }
 
-struct RestoreFile {
-    path: std::path::PathBuf,
-    contents: Vec<u8>,
-}
+struct CleanupDir(PathBuf);
 
-impl RestoreFile {
-    fn append(path: &std::path::Path, suffix: &[u8]) -> Option<Self> {
-        let contents = fs::read(path).ok()?;
-        let mut updated = contents.clone();
-        updated.extend_from_slice(suffix);
-        fs::write(path, &updated).ok()?;
-        Some(Self {
-            path: path.to_path_buf(),
-            contents,
-        })
+impl CleanupDir {
+    fn create(path: PathBuf) -> Option<Self> {
+        let _removed = fs::remove_dir_all(&path);
+        fs::create_dir_all(&path).ok()?;
+        Some(Self(path))
     }
 }
 
-impl Drop for RestoreFile {
+impl Drop for CleanupDir {
     fn drop(&mut self) {
-        let _restored = fs::write(&self.path, &self.contents);
+        let _removed = fs::remove_dir_all(&self.0);
     }
+}
+
+fn unique_temp_repo(label: &str) -> PathBuf {
+    let base =
+        std::env::var_os("CARGO_TARGET_TMPDIR").map_or_else(std::env::temp_dir, PathBuf::from);
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |duration| duration.as_nanos());
+    base.join(format!("riteed-v9-{label}-{}-{nanos}", std::process::id()))
 }
