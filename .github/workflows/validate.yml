@@ -43,6 +43,7 @@ jobs:
             libgtksourceview-5-dev \
             llvm \
             pkg-config \
+            xauth \
             xvfb
       - name: Install cargo-llvm-cov
         run: cargo install cargo-llvm-cov --locked
