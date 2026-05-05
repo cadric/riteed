@@ -7,4 +7,4 @@
 - Vendor review: `unicode-segmentation`, `bstr`, and `serde` are vendored because Cargo resolves `similar`'s feature graph from local sources. `cargo tree -e normal -i bstr --target all` and `cargo tree -e normal -i serde --target all` print no active runtime dependency path for the current Riteed feature set.
 - Security review: this adds no network capability, no sandbox expansion, no file-system access, and no command execution surface.
 - Supply-chain review: pinned exact crate version, committed `Cargo.lock`, committed vendored dependencies, and no git dependencies.
-- License review: `similar`, `unicode-segmentation`, `bstr`, and `serde` use permissive licenses compatible with the repository MIT license.
+- License review: `similar` is Apache-2.0; `unicode-segmentation`, `bstr`, and `serde` use permissive MIT/Apache-compatible licenses. The Flatpak build installs the active `similar` license text alongside Riteed's own license notes.

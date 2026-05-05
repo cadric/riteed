@@ -67,6 +67,7 @@ fn exercise_manual_compare_surface(test_app: &adw::Application) {
         (Some(1), Some(1))
     );
     assert!(window.selected_compare_semantic_colors_for_tests());
+    assert!(window.selected_compare_uses_full_row_backgrounds_for_tests());
     assert_eq!(
         window.selected_compare_syntax_highlight_for_tests(),
         (true, true)

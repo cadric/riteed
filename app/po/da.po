@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: io.github.cadric.Riteed 0.1.0\n"
+"Project-Id-Version: io.github.cadric.Riteed 0.2.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-04-26 00:00+0200\n"
 "PO-Revision-Date: 2026-04-19 00:00+0000\n"
@@ -39,8 +39,8 @@ msgid_plural "%d lines only in reference"
 msgstr[0] ""
 msgstr[1] ""
 
-msgid "Added syntax highlighting, an optional minimap, and safer handling for files that change on disk while they are open."
-msgstr ""
+msgid "First public beta with tabs, syntax highlighting, folder navigation, split diffs, lightweight local Git source control, autosave, and guarded file monitoring."
+msgstr "Første offentlige beta med faner, syntaksfremhævning, mappenavigation, delt diff-visning, let lokal Git-kildekontrol, autosave og beskyttet filovervågning."
 
 msgid "Automatic text decoding was not reliable for this file. Choose a text encoding manually and try again."
 msgstr ""
@@ -224,7 +224,7 @@ msgstr ""
 msgid "Insert Spaces Instead of Tabs"
 msgstr ""
 
-msgid "It provides tabs, find and replace, syntax highlighting, optional line numbers and minimap, format controls for text encoding and line endings, curated editor palettes, and conservative reload prompts when files change on disk."
+msgid "It provides tabs, find and replace, syntax highlighting, optional line numbers and minimap, folder navigation, split diffs, lightweight local Git source control, format controls for text encoding and line endings, curated editor palettes, and conservative reload prompts when files change on disk."
 msgstr ""
 
 msgid "Loading recent commits"
@@ -367,7 +367,7 @@ msgstr ""
 msgid "Riteed is a lightweight GNOME editor for text, code, config, and markdown files, with tabs, find, syntax highlighting, session restore, and encoding-aware open and save behavior."
 msgstr ""
 
-msgid "Riteed is a small GNOME text editor for editing local text, code, config, and markdown files with encoding-aware open and save behavior."
+msgid "Riteed is an early beta GNOME text editor for editing local text, code, config, and markdown files with encoding-aware open and save behavior."
 msgstr ""
 
 msgid "Riteed refreshes Git status after saves and local Git metadata changes. Document-portal folders use periodic polling when native file monitoring is unavailable."

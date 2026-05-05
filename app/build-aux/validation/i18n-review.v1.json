@@ -206,14 +206,14 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 524,
+      "line": 531,
       "match": "state.browser.set_title(&gettext(\"Project\"));",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
     },
     {
       "path": "src/window_project.rs",
-      "line": 543,
+      "line": 550,
       "match": "state.browser.set_title(&gettext(\"Project\"));",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."

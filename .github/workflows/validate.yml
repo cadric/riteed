@@ -4,6 +4,9 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   policy-pack:
     runs-on: ubuntu-latest
@@ -48,3 +51,24 @@ jobs:
         run: |
           xvfb-run -a python3 -m tools.policy_check --root app --strict
           xvfb-run -a python3 -m tools.coverage_check --root app
+
+  flatpak:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install Flatpak builder
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flatpak flatpak-builder
+      - name: Add Flathub user remote
+        run: flatpak --user remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+      - name: Build Flatpak
+        run: |
+          flatpak-builder \
+            --user \
+            --assumeyes \
+            --install-deps-from=flathub \
+            --force-clean \
+            --repo=flatpak-repo \
+            app/build-dir \
+            app/build-aux/io.github.cadric.Riteed.yml

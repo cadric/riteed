@@ -16,4 +16,6 @@ Riteed may invoke only these Git operations through `src/git_process.rs`: `rev-p
 
 The module intentionally disables curl, expat, Perl, Python, Tcl/Tk, and gettext support, then removes unused helper entrypoints from both `/app/bin` and `/app/libexec/git-core`. Helper cleanup uses `rm -f` and tolerates absent paths because Git build flags can suppress different aliases across releases. Re-enabling network, scripting, GUI, or remote-helper features leaves the local-plumbing-only contract and requires explicit review.
 
+The Flatpak build installs Git's top-level GPL-2.0-only license text plus the LGPL, BSD, and MIT-compatible license files for bundled Git subcomponents under `/app/share/licenses/io.github.cadric.Riteed/git/`.
+
 If a future Git release fails signature verification with the vendored key, audit and rotate this key file with verified provenance. Do not bypass `gpg --verify` to unblock a build.

@@ -95,22 +95,31 @@ fn finish_app_open_request(
             request.regular_files.clone(),
         )
     };
+    let toast_overlay = if has_extra_directories {
+        Some({
+            let state = state.borrow();
+            state.toast_overlay.clone()
+        })
+    } else {
+        None
+    };
+    let workspace = if regular_files.is_empty() {
+        None
+    } else {
+        let state = state.borrow();
+        state.workspace.upgrade()
+    };
 
     if let Some(directory) = directory {
         begin_root_change(state, &directory, RootChangeOrigin::AppOpen);
-        if has_extra_directories {
-            state
-                .borrow()
-                .toast_overlay
-                .add_toast(adw::Toast::new(&gettext(
-                    "Only one folder can be opened at a time.",
-                )));
+        if let Some(toast_overlay) = toast_overlay {
+            toast_overlay.add_toast(adw::Toast::new(&gettext(
+                "Only one folder can be opened at a time.",
+            )));
         }
     }
 
-    if !regular_files.is_empty()
-        && let Some(workspace) = state.borrow().workspace.upgrade()
-    {
+    if let Some(workspace) = workspace {
         workspace.request_open_files(regular_files, OpenSource::AppOpen);
     }
 }

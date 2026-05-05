@@ -21,6 +21,10 @@ modules:
       - tar -xf git-2.54.0.tar.xz
       - make -C git-2.54.0 prefix=/app NO_TCLTK=YesPlease NO_GETTEXT=YesPlease NO_PERL=YesPlease NO_PYTHON=YesPlease NO_CURL=YesPlease NO_EXPAT=YesPlease NO_OPENSSL=YesPlease BLK_SHA1=YesPlease INSTALL_SYMLINKS=YesPlease SKIP_DASHED_BUILT_INS=YesPlease all
       - make -C git-2.54.0 prefix=/app NO_TCLTK=YesPlease NO_GETTEXT=YesPlease NO_PERL=YesPlease NO_PYTHON=YesPlease NO_CURL=YesPlease NO_EXPAT=YesPlease NO_OPENSSL=YesPlease BLK_SHA1=YesPlease INSTALL_SYMLINKS=YesPlease SKIP_DASHED_BUILT_INS=YesPlease install
+      - install -Dm644 git-2.54.0/COPYING /app/share/licenses/io.github.cadric.Riteed/git/COPYING
+      - install -Dm644 git-2.54.0/LGPL-2.1 /app/share/licenses/io.github.cadric.Riteed/git/LGPL-2.1
+      - install -Dm644 git-2.54.0/reftable/LICENSE /app/share/licenses/io.github.cadric.Riteed/git/reftable-LICENSE
+      - install -Dm644 git-2.54.0/sha1dc/LICENSE.txt /app/share/licenses/io.github.cadric.Riteed/git/sha1dc-LICENSE.txt
       - rm -f /app/bin/scalar /app/bin/git-shell /app/bin/git-cvsserver /app/bin/git-receive-pack /app/bin/git-upload-pack /app/bin/git-upload-archive /app/libexec/git-core/git /app/libexec/git-core/git-* /app/libexec/git-core/scalar
       - rm -rf /app/libexec/git-core/mergetools /app/share/git-core /app/share/bash-completion /app/share/man /app/share/doc/git*
       - strip --strip-unneeded /app/bin/git
@@ -39,6 +43,9 @@ modules:
       - cargo --offline --locked build --release
       - msgfmt -o po/da.gmo po/da.po
       - install -Dm755 target/release/riteed /app/bin/riteed
+      - install -Dm644 LICENSE /app/share/licenses/io.github.cadric.Riteed/Riteed-MIT.txt
+      - install -Dm644 THIRD_PARTY_LICENSES.md /app/share/licenses/io.github.cadric.Riteed/THIRD_PARTY_LICENSES.md
+      - install -Dm644 vendor/similar/LICENSE /app/share/licenses/io.github.cadric.Riteed/cargo/similar-Apache-2.0.txt
       - install -Dm644 data/io.github.cadric.Riteed.desktop /app/share/applications/io.github.cadric.Riteed.desktop
       - install -Dm644 data/io.github.cadric.Riteed.metainfo.xml /app/share/metainfo/io.github.cadric.Riteed.metainfo.xml
       - install -Dm644 data/icons/hicolor/scalable/apps/io.github.cadric.Riteed-about.svg /app/share/icons/hicolor/scalable/apps/io.github.cadric.Riteed-about.svg
@@ -50,3 +57,7 @@ modules:
     sources:
       - type: dir
         path: ..
+      - type: file
+        path: ../../LICENSE
+      - type: file
+        path: ../../THIRD_PARTY_LICENSES.md

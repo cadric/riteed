@@ -152,6 +152,12 @@ impl Window {
             .is_some_and(|tab| tab.compare_semantic_colors_for_tests())
     }
 
+    pub(crate) fn selected_compare_uses_full_row_backgrounds_for_tests(&self) -> bool {
+        self.workspace
+            .selected_tab()
+            .is_some_and(|tab| tab.compare_uses_full_row_backgrounds_for_tests())
+    }
+
     pub(crate) fn selected_compare_syntax_highlight_for_tests(&self) -> (bool, bool) {
         self.workspace.selected_tab().map_or((false, false), |tab| {
             tab.compare_syntax_highlight_for_tests()

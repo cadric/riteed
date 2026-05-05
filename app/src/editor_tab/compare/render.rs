@@ -41,9 +41,16 @@ impl CompareTags {
 
     pub(super) fn apply_colors(&self, view: &sourceview5::View) {
         let palette = ComparePalette::from_view(view);
+        self.apply_palette(&palette);
+    }
+
+    fn apply_palette(&self, palette: &ComparePalette) {
+        self.reference_removed.set_background_rgba(None);
         self.reference_removed
-            .set_background_rgba(Some(&palette.removed));
-        self.current_added.set_background_rgba(Some(&palette.added));
+            .set_paragraph_background_rgba(Some(&palette.removed));
+        self.current_added.set_background_rgba(None);
+        self.current_added
+            .set_paragraph_background_rgba(Some(&palette.added));
         self.reference_inline
             .set_background_rgba(Some(&palette.reference_inline));
         self.current_inline
@@ -57,6 +64,18 @@ impl CompareTags {
     #[cfg(test)]
     pub(super) fn semantic_colors_available() -> bool {
         ComparePalette::fallback().added != ComparePalette::fallback().removed
+    }
+
+    #[cfg(test)]
+    pub(super) fn uses_full_row_backgrounds_for_tests(&self) -> bool {
+        self.reference_removed.paragraph_background_rgba().is_some()
+            && self.reference_removed.background_rgba().is_none()
+            && self.current_added.paragraph_background_rgba().is_some()
+            && self.current_added.background_rgba().is_none()
+            && self.reference_inline.background_rgba().is_some()
+            && self.reference_inline.paragraph_background_rgba().is_none()
+            && self.current_inline.background_rgba().is_some()
+            && self.current_inline.paragraph_background_rgba().is_none()
     }
 }
 
@@ -153,7 +172,9 @@ pub(super) fn highlight_count(buffer: &sourceview5::Buffer) -> usize {
         count += iter
             .tags()
             .iter()
-            .filter(|tag| tag.background_rgba().is_some())
+            .filter(|tag| {
+                tag.background_rgba().is_some() || tag.paragraph_background_rgba().is_some()
+            })
             .count();
         if !iter.forward_char() {
             break;

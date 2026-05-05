@@ -39,6 +39,7 @@ struct ModelState {
     on_structural_change: Option<Rc<dyn Fn()>>,
 }
 
+#[derive(Clone)]
 pub(crate) struct ProjectTreeModel {
     state: Rc<RefCell<ModelState>>,
     tree_model: gtk4::TreeListModel,

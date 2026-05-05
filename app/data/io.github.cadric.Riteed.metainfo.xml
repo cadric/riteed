@@ -4,7 +4,7 @@
   <name>Riteed</name>
   <summary>Edit Text, Code, and Config Files</summary>
   <metadata_license>MIT</metadata_license>
-  <project_license>MIT AND LGPL-2.1-or-later</project_license>
+  <project_license>MIT AND Apache-2.0 AND GPL-2.0-only AND LGPL-2.1-or-later AND BSD-3-Clause</project_license>
   <launchable type="desktop-id">io.github.cadric.Riteed.desktop</launchable>
   <developer id="io.github.cadric">
     <name translate="no">cadric</name>
@@ -12,14 +12,14 @@
   <url type="homepage">https://github.com/cadric/riteed</url>
   <url type="bugtracker">https://github.com/cadric/riteed/issues</url>
   <description>
-    <p>Riteed is a small GNOME text editor for editing local text, code, config, and markdown files with encoding-aware open and save behavior.</p>
-    <p>It provides tabs, find and replace, syntax highlighting, optional line numbers and minimap, format controls for text encoding and line endings, curated editor palettes, and conservative reload prompts when files change on disk.</p>
+    <p>Riteed is an early beta GNOME text editor for editing local text, code, config, and markdown files with encoding-aware open and save behavior.</p>
+    <p>It provides tabs, find and replace, syntax highlighting, optional line numbers and minimap, folder navigation, split diffs, lightweight local Git source control, format controls for text encoding and line endings, curated editor palettes, and conservative reload prompts when files change on disk.</p>
     <p>Autosave is available for already-saved writable files, while read-only and externally changed files stay guarded by explicit user choices.</p>
   </description>
   <releases>
-    <release version="0.1.0" date="2026-04-19">
+    <release version="0.2.0" type="development" date="2026-05-05">
       <description>
-        <p>Added syntax highlighting, an optional minimap, and safer handling for files that change on disk while they are open.</p>
+        <p>First public beta with tabs, syntax highlighting, folder navigation, split diffs, lightweight local Git source control, autosave, and guarded file monitoring.</p>
       </description>
     </release>
   </releases>

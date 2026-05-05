@@ -33,6 +33,7 @@
 /.idea/
 /.vscode/
 /.agent/
+/AUDIT*.md
 
 # Coverage and temporary files
 /coverage/

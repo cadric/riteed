@@ -158,6 +158,37 @@ fn exercise_project_reveal_state_machine(window: &Window, root: &std::path::Path
     });
 }
 
+fn exercise_back_to_back_application_opens(test_app: &adw::Application) {
+    let window = build_window(test_app);
+    assert!(window.is_some());
+    let Some(window) = window else {
+        return;
+    };
+    window.ensure_default_tab();
+    let first_path = write_temp_file("riteed-v6-app-open-first.txt", b"first");
+    let second_path = write_temp_file("riteed-v6-app-open-second.txt", b"second");
+    let first_file = gio::File::for_path(&first_path);
+    let second_file = gio::File::for_path(&second_path);
+    let first_uri = first_file.uri().to_string();
+    let second_uri = second_file.uri().to_string();
+
+    window.handle_application_open(vec![first_file]);
+    spin_until("first application-open file loads", || {
+        window.selected_saved_uri_for_tests() == first_uri
+    });
+    window.handle_application_open(vec![second_file]);
+    spin_until("second application-open file loads without crash", || {
+        window.selected_saved_uri_for_tests() == second_uri
+            && window.text_for_uri_for_tests(&first_uri).is_some()
+            && window.text_for_uri_for_tests(&second_uri).as_deref() == Some("second")
+    });
+
+    window.widget().close();
+    drain_events(4);
+    let _removed = fs::remove_file(first_path);
+    let _removed = fs::remove_file(second_path);
+}
+
 #[cfg(unix)]
 fn exercise_project_symlink_resolution(window: &Window, root: &std::path::Path) {
     let link = root.join("linked.txt");
@@ -184,6 +215,7 @@ fn exercise_project_symlink_resolution(window: &Window, root: &std::path::Path) 
 }
 
 pub(crate) fn exercise_v6_project_navigation(test_app: &adw::Application) {
+    exercise_back_to_back_application_opens(test_app);
     let (root, extra, open_file) = create_project_tree();
     exercise_tree_model_expansion(&root);
     let window = build_window(test_app);

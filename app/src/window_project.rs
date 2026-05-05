@@ -291,17 +291,20 @@ impl WindowProjectController {
                     return;
                 };
                 action.set_state(&value.to_variant());
-                if state.borrow().root.is_none() {
+                let Some((settings, model, expanded)) = ({
+                    let state = state.borrow();
+                    if state.root.is_none() {
+                        None
+                    } else {
+                        let model = state.browser.tree().model().clone();
+                        let expanded = model.snapshot_expanded_uris();
+                        Some((state.settings.clone(), model, expanded))
+                    }
+                }) else {
                     return;
-                }
-                let expanded = state
-                    .borrow()
-                    .browser
-                    .tree()
-                    .model()
-                    .snapshot_expanded_uris();
-                state.borrow().settings.set_project_show_hidden(value);
-                state.borrow().browser.tree().model().set_show_hidden(value);
+                };
+                settings.set_project_show_hidden(value);
+                model.set_show_hidden(value);
                 reveal::schedule_restore_expanded(&state, expanded);
                 reveal::sync_reveal_for_selection(&state);
             });
@@ -343,7 +346,11 @@ impl WindowProjectController {
             });
 
         let state = Rc::downgrade(&self.state);
-        if let Some(workspace) = self.state.borrow().workspace.upgrade() {
+        let workspace = {
+            let state = self.state.borrow();
+            state.workspace.upgrade()
+        };
+        if let Some(workspace) = workspace {
             workspace.tab_view.connect_selected_page_notify(move |_| {
                 if let Some(state) = state.upgrade() {
                     reveal::sync_reveal_for_selection(&state);

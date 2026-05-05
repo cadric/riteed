@@ -115,7 +115,7 @@
     },
     {
       "path": "src/project_tree_model.rs",
-      "line": 43,
+      "line": 44,
       "match": "state: Rc<RefCell<ModelState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The project tree model owns shared lazy-loading state.",
@@ -123,7 +123,7 @@
     },
     {
       "path": "src/project_tree_model.rs",
-      "line": 286,
+      "line": 287,
       "match": "state: Rc<RefCell<ModelState>>,",
       "kind": "runtime-shared-state",
       "ownership": "Enumerator batching carries shared tree state across async callbacks.",
@@ -131,7 +131,7 @@
     },
     {
       "path": "src/project_tree_model.rs",
-      "line": 296,
+      "line": 297,
       "match": "state: &Rc<RefCell<ModelState>>,",
       "kind": "runtime-shared-state",
       "ownership": "Directory-load helpers borrow shared tree model state.",
@@ -139,7 +139,7 @@
     },
     {
       "path": "src/project_tree_model.rs",
-      "line": 470,
+      "line": 471,
       "match": "state: &Rc<RefCell<ModelState>>,",
       "kind": "runtime-shared-state",
       "ownership": "Enumeration error handling uses shared tree state.",
@@ -331,7 +331,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 369,
+      "line": 376,
       "match": "fn open_file_from_tree(state: &Rc<RefCell<ProjectState>>, file: gio::File) {",
       "kind": "runtime-shared-state",
       "ownership": "Tree activation routing borrows shared project state.",
@@ -339,7 +339,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 377,
+      "line": 384,
       "match": "state: &Rc<RefCell<ProjectState>>,",
       "kind": "runtime-shared-state",
       "ownership": "Project root transition helpers borrow shared project state.",
@@ -355,7 +355,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 509,
+      "line": 516,
       "match": "fn close_root(state: &Rc<RefCell<ProjectState>>) {",
       "kind": "runtime-shared-state",
       "ownership": "Close-folder handling mutates shared project state.",
@@ -363,7 +363,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 534,
+      "line": 541,
       "match": "fn sync_root_none(state: &Rc<RefCell<ProjectState>>, clear_settings: bool) {",
       "kind": "runtime-shared-state",
       "ownership": "No-root synchronization mutates shared project state.",

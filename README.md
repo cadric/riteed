@@ -1,29 +1,69 @@
 # Riteed
 
-Riteed is a native GNOME plain-text editor written in Rust. The application lives under `app/`.
+Riteed is a small native GNOME text editor written in Rust. The current source
+version is `0.2.0`, an early public beta. It is useful for daily local editing
+and compare work, but it is not feature complete and has only been tested by the
+primary maintainer so far.
 
-This repository also keeps the authoritative policy and validation tooling at the root so the app can be validated without maintaining duplicate copies of `AGENTS.md`, `policy/`, `tools/`, or `scripts/`.
+The application lives under `app/`. The repository root also contains the
+policy and validation tooling used to keep the app strict, native, and
+Flatpak-first.
+
+## Status
+
+- Early beta: expect rough edges and missing features.
+- First public source push: no stable release has been published.
+- Target platform: GNOME on Linux, packaged through Flatpak.
+- Current tester base: the maintainer only.
+
+## Features
+
+- Tabbed editing for local text, code, config, and markdown files.
+- GtkSourceView syntax highlighting with editor palette selection.
+- Find and replace, optional line numbers, optional minimap, and zoom controls.
+- Encoding-aware open/save behavior with line-ending controls.
+- Session restore, recent files, guarded reload prompts, and large-file safety
+  limits.
+- Optional autosave for already-saved writable files.
+- Lightweight folder sidebar with lazy file browsing, hidden-file toggle,
+  refresh, and tab/tree reveal.
+- Split compare workflows for saved versions, files, pasted text, and Git
+  changes.
+- Polished split diffs with syntax highlighting, original-line gutters,
+  inline token highlights, full-row changed backgrounds, and filler hatching.
+- Local-only Source Control sidebar with Git status, file badges,
+  stage/unstage, safe discard, Git compare, recent commit history, and commits.
+- Bundled sandbox-local Git for Flatpak builds; Riteed does not call host Git.
+
+## What Riteed Is Not Yet
+
+- Not a full IDE.
+- No push, pull, branch management, merge editor, terminal, debugger, or LSP.
+- No external beta program yet.
+- No stable API or release promise before `1.0`.
 
 ## Layout
 
-- `app/` — the Riteed application source, resources, metadata, tests, and vendored Cargo dependencies
-- `AGENTS.md` — repository-wide contract for app and policy work
-- `policy/` — machine-readable policy files used to validate the app
-- `policy/README.md` — scope mapping and review-artifact contract
-- `tools/` — hard-fail validation tooling
-- `scripts/` — thin wrappers around the root tooling
-- `VERSIONS.md` — versioning rules for this repository
-- `CHANGELOG.md` — notable repository changes
+- `app/` - Riteed application source, resources, metadata, tests, and vendored
+  Cargo dependencies.
+- `AGENTS.md` - repository-wide contract for app and policy work.
+- `policy/` - machine-readable policy files used to validate the app.
+- `tools/` - hard-fail validation tooling.
+- `scripts/` - thin wrappers around the root tooling.
+- `VERSIONS.md` - versioning rules for this repository.
+- `CHANGELOG.md` - notable repository changes.
+- `THIRD_PARTY_LICENSES.md` - license notes for vendored and bundled
+  third-party components.
 
-## Application stack
+## Application Stack
 
 Riteed is intentionally narrow and GNOME-native:
 
-- Rust
+- Rust 1.95
 - GTK 4 bindings for Rust
 - libadwaita
-- GNOME HIG alignment
-- gettext-based localization
+- GtkSourceView
+- GNU gettext localization
 - GSettings-backed preferences
 - Flatpak-first packaging and sandboxing
 
@@ -46,8 +86,29 @@ cargo clippy --workspace --all-targets --all-features -- -D warnings
 cargo test --workspace --all-targets --all-features
 ```
 
-## Notes
+Build the local Flatpak from the repository root:
 
-- The root policy files are the only authoritative contract copy in this repository.
-- Review-required evidence for the app lives under `app/build-aux/validation/`; `.agent/CONTINUITY.md` is continuity only and never validator evidence.
-- `app/scripts/dev-run` is the app-local helper that remains under `app/`.
+```bash
+flatpak-builder --user --install --force-clean app/build-dir app/build-aux/io.github.cadric.Riteed.yml
+flatpak run io.github.cadric.Riteed
+```
+
+GitHub Actions validates the root tooling, the app subtree, and a full Flatpak
+build.
+
+## License
+
+Riteed's own source code and repository policy/tooling are licensed under the
+MIT License; see `LICENSE`.
+
+The repository vendors Cargo dependency sources for deterministic Flatpak
+builds. Those dependencies keep their upstream license files under
+`app/vendor/`.
+
+The Flatpak manifest also bundles a trimmed local-plumbing Git binary for the
+Source Control sidebar. Git is distributed under GPL-2.0-only overall and
+contains some files under LGPL-2.1-or-later, BSD-3-Clause, and MIT-compatible
+terms. The Flatpak build installs the relevant Git license texts under
+`/app/share/licenses/io.github.cadric.Riteed/`.
+
+See `THIRD_PARTY_LICENSES.md` for the current license review.

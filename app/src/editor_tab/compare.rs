@@ -24,6 +24,8 @@ mod scroll;
 mod target;
 #[cfg(test)]
 mod testing;
+#[cfg(test)]
+mod testing_render;
 mod ui;
 
 use controller::sync_reference_language;

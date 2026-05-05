@@ -3,7 +3,7 @@
   "sites": [
     {
       "path": "src/editor_tab/compare.rs",
-      "line": 50,
+      "line": 52,
       "match": "presentation: Rc<std::cell::RefCell<DiffPresentation>>,",
       "kind": "runtime-shared-state",
       "ownership": "The compare controller owns the tab-local rendered presentation rows and custom line-number gutter model.",
@@ -11,7 +11,7 @@
     },
     {
       "path": "src/editor_tab/compare.rs",
-      "line": 51,
+      "line": 53,
       "match": "row_model: Rc<std::cell::RefCell<DiffRowModel>>,",
       "kind": "runtime-shared-state",
       "ownership": "The compare controller owns the tab-local logical diff row model.",
