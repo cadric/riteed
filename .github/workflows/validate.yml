@@ -27,12 +27,13 @@ jobs:
           python-version: "3.12"
       - uses: dtolnay/rust-toolchain@1.95.0
         with:
-          components: rustfmt, clippy
+          components: rustfmt, clippy, llvm-tools-preview
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             appstream \
+            dbus-x11 \
             desktop-file-utils \
             flatpak-builder \
             gettext \
@@ -45,12 +46,14 @@ jobs:
             xvfb
       - name: Install cargo-llvm-cov
         run: cargo install cargo-llvm-cov --locked
-      - name: Validate app subtree
+      - name: Validate app policy
         env:
           GDK_BACKEND: x11
-        run: |
-          xvfb-run -a python3 -m tools.policy_check --root app --strict
-          xvfb-run -a python3 -m tools.coverage_check --root app
+        run: xvfb-run -a dbus-run-session -- python3 -m tools.policy_check --root app --strict
+      - name: Validate app coverage
+        env:
+          GDK_BACKEND: x11
+        run: xvfb-run -a dbus-run-session -- python3 -m tools.coverage_check --root app
 
   flatpak:
     runs-on: ubuntu-latest
