@@ -40,7 +40,7 @@ fn read_only_git_ops_work_against_current_repo() {
     let Ok(repo) = detected else {
         return;
     };
-    assert!(repo.work_tree.ends_with("riteed"));
+    assert!(repo.work_tree.join("app/Cargo.toml").is_file());
     let process = GitProcess::new(repo);
 
     let status = wait_git(|cancellable, callback| process.status(cancellable, callback));
