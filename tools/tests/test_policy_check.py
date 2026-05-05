@@ -368,6 +368,32 @@ class PolicyCheckTests(unittest.TestCase):
                 commands.check_xgettext_completeness(REPO_ROOT, errors)
                 self.assertTrue(errors)
 
+    def test_rust_extraction_falls_back_to_xtr_when_xgettext_lacks_rust(self) -> None:
+        from tools.checks import commands
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            rust_path = root / "src" / "lib.rs"
+            _write(rust_path, 'fn demo() { gettext("Hello"); }\n')
+            with patch.object(commands, "rust_files", return_value=[rust_path]):
+                with patch.object(commands, "scoped_files", return_value=[]):
+                    with patch.object(
+                        commands,
+                        "run_capture",
+                        return_value=subprocess.CompletedProcess(["xgettext", "--help"], 0, "C\n", ""),
+                    ):
+                        with patch.object(commands, "require_tool") as require_tool:
+                            with patch.object(commands, "run_checked") as run_checked:
+                                run_checked.side_effect = lambda cmd, root, label: Path(
+                                    cmd[cmd.index("--output") + 1]
+                                ).write_text("", encoding="utf-8")
+                                with patch.object(commands, "message_keys", return_value={(None, "Hello", None)}):
+                                    self.assertEqual(commands._xgettext_messages(root), {(None, "Hello", None)})
+
+        require_tool.assert_called_once_with("xtr")
+        self.assertEqual(run_checked.call_args.args[0][0], "xtr")
+        self.assertIn("gettext", run_checked.call_args.args[0])
+
     def test_metainfo_messages_respect_translate_no(self) -> None:
         from tools.checks import commands
 

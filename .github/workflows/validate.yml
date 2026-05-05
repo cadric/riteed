@@ -47,6 +47,7 @@ jobs:
                 gcc \
                 gcc-c++ \
                 gettext \
+                gettext-devel \
                 git \
                 glib2-devel \
                 gtk4-devel \
@@ -63,6 +64,7 @@ jobs:
                   --component rustfmt --component clippy --component llvm-tools-preview
               . "$HOME/.cargo/env"
               cargo install cargo-llvm-cov --locked
+              cargo install xtr --version 0.1.11 --locked
               Xvfb :99 -screen 0 1280x1024x24 >/tmp/riteed-xvfb.log 2>&1 &
               xvfb_pid=$!
               trap "kill $xvfb_pid" EXIT

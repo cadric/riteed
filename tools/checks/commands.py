@@ -17,7 +17,23 @@ from tools.checks.foundation import (
 from tools.checks.i18n import normalized_pot_messages
 from tools.scanners.pot import message_keys
 from tools.scanners.rust import rust_files
-from tools.validation_tooling import relpath, read_text, require_tool, run_checked, scoped_files
+from tools.validation_tooling import (
+    fail,
+    relpath,
+    read_text,
+    require_tool,
+    run_capture,
+    run_checked,
+    scoped_files,
+)
+
+RUST_GETTEXT_KEYWORDS = [
+    "gettext",
+    "ngettext:1,2",
+    "pgettext:1c,2",
+    "npgettext:1c,2,3",
+    "_",
+]
 
 
 def _xgettext_messages(root: Path) -> set[tuple[str | None, str, str | None]]:
@@ -25,13 +41,7 @@ def _xgettext_messages(root: Path) -> set[tuple[str | None, str, str | None]]:
         (
             "Rust",
             rust_files(root),
-            [
-                "--keyword=gettext",
-                "--keyword=ngettext:1,2",
-                "--keyword=pgettext:1c,2",
-                "--keyword=npgettext:1c,2,3",
-                "--keyword=_",
-            ],
+            [f"--keyword={keyword}" for keyword in RUST_GETTEXT_KEYWORDS],
         ),
         (
             "Desktop",
@@ -47,6 +57,9 @@ def _xgettext_messages(root: Path) -> set[tuple[str | None, str, str | None]]:
     generated: set[tuple[str | None, str, str | None]] = set()
     for language, paths, keywords in files_by_language:
         if not paths:
+            continue
+        if language == "Rust" and not _xgettext_supports_rust(root):
+            generated |= _xtr_rust_messages(root, paths)
             continue
         with tempfile.TemporaryDirectory(prefix=f"xgettext-{language.lower()}-") as tmpdir:
             out = Path(tmpdir) / f"{language.lower()}.pot"
@@ -66,6 +79,32 @@ def _xgettext_messages(root: Path) -> set[tuple[str | None, str, str | None]]:
             run_checked(cmd, root, f"xgettext {language}")
             generated |= message_keys(out)
     return generated
+
+
+def _xgettext_supports_rust(root: Path) -> bool:
+    result = run_capture(["xgettext", "--help"], root)
+    return result.returncode == 0 and "Rust" in result.stdout
+
+
+def _xtr_rust_messages(root: Path, paths: list[Path]) -> set[tuple[str | None, str, str | None]]:
+    require_tool("xtr")
+    with tempfile.TemporaryDirectory(prefix="xtr-rust-") as tmpdir:
+        out = Path(tmpdir) / "rust.pot"
+        keyword_args = [item for keyword in RUST_GETTEXT_KEYWORDS for item in ("-k", keyword)]
+        cmd = [
+            "xtr",
+            "--omit-header",
+            "-n",
+            "never",
+            "--output",
+            str(out),
+            *keyword_args,
+            *[str(path) for path in sorted(paths)],
+        ]
+        run_checked(cmd, root, "xtr Rust gettext extraction")
+        if not out.exists():
+            fail("[validation] xtr did not create Rust gettext extraction output")
+        return message_keys(out)
 
 
 def _metainfo_messages(root: Path) -> set[tuple[str | None, str, str | None]]:

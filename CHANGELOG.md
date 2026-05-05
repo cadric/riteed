@@ -98,6 +98,7 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 - Stabilized GitHub Actions app validation by avoiding real portal-backed file chooser launches in GTK smoke tests, running the Fedora validation container with the device access expected by GNOME/Flatpak CI, and preserving both stdout and stderr when validator commands fail.
 - Switched the GitHub Actions Flatpak job to Flatpak's official builder action and GNOME 50 container, avoiding host apt-install hangs while preserving the beta Flatpak build artifact.
 - Made document display-path tests independent of the maintainer home directory so local and CI `$HOME` values validate the same behavior.
+- Added an `xtr` Rust gettext extraction fallback for CI images whose packaged `xgettext` is older than the policy's Rust-aware GNU gettext baseline.
 - Aligned policy IDs, bundle metadata, and artifact indexing with the shipped policy files.
 - Corrected validator behavior for Flatpak manifest filenames, JSON source pinning checks, permission justifications, gettext bootstrap detection, conditional GSettings enforcement, and conditional gresource requirements.
 - Tightened machine-readability by enforcing line limits on AGENTS/policy/tooling files, removing unused required tools, adding missing required tools, and replacing overbroad glob and regex matching.
