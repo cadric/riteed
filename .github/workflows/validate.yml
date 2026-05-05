@@ -74,21 +74,14 @@ jobs:
 
   flatpak:
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-50
+      options: --privileged
     steps:
       - uses: actions/checkout@v5
-      - name: Install Flatpak builder
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y flatpak flatpak-builder
-      - name: Add Flathub user remote
-        run: flatpak --user remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
       - name: Build Flatpak
-        run: |
-          flatpak-builder \
-            --user \
-            --assumeyes \
-            --install-deps-from=flathub \
-            --force-clean \
-            --repo=flatpak-repo \
-            app/build-dir \
-            app/build-aux/io.github.cadric.Riteed.yml
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          bundle: riteed-0.2.0.flatpak
+          manifest-path: app/build-aux/io.github.cadric.Riteed.yml
+          cache-key: flatpak-builder-${{ github.sha }}
