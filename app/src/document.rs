@@ -239,7 +239,14 @@ fn tilde_path(relative: &Path) -> String {
 mod tests {
     use super::{DocumentState, display_path_with_home};
     use crate::editor_format::{EncodingInfo, LineEndingMode, SavedTextFormat};
-    use std::path::Path;
+    use std::path::{Path, PathBuf};
+
+    fn test_home_path(relative: &str) -> PathBuf {
+        std::env::var_os("HOME").map_or_else(
+            || PathBuf::from("/home/cadric").join(relative),
+            |home| PathBuf::from(home).join(relative),
+        )
+    }
 
     #[test]
     fn empty_document_has_no_saved_identity() {
@@ -272,10 +279,9 @@ mod tests {
     fn loaded_document_can_display_host_path_for_portal_access_path() {
         let document = DocumentState::from_loaded_with_display_path(
             "/run/user/1000/doc/bafc6e7f/docs.policy.json".into(),
-            Some(
-                "/home/cadric/Drives/Samsung970/home/cadric/Dokumenter/CoreOS_Server/policy/docs.policy.json"
-                    .into(),
-            ),
+            Some(test_home_path(
+                "Drives/Samsung970/home/cadric/Dokumenter/CoreOS_Server/policy/docs.policy.json",
+            )),
             SavedTextFormat::new_document_defaults(),
         );
         assert_eq!(document.file_name().as_deref(), Some("docs.policy.json"));
@@ -301,7 +307,7 @@ mod tests {
         );
         assert!(!document.set_display_path_for_access_path(
             Path::new("/run/user/1000/doc/other/docs.policy.json"),
-            Some("/home/cadric/docs.policy.json".into()),
+            Some(test_home_path("docs.policy.json")),
         ));
         assert_eq!(
             document.path_display().as_deref(),
@@ -310,7 +316,7 @@ mod tests {
 
         assert!(document.set_display_path_for_access_path(
             Path::new("/run/user/1000/doc/bafc6e7f/docs.policy.json"),
-            Some("/home/cadric/docs.policy.json".into()),
+            Some(test_home_path("docs.policy.json")),
         ));
         assert_eq!(
             document.path_display().as_deref(),
