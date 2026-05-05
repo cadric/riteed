@@ -267,7 +267,7 @@
     },
     {
       "path": "src/source_control/live.rs",
-      "line": 209,
+      "line": 219,
       "match": "pending: Rc<Cell<bool>>,",
       "kind": "runtime-shared-state",
       "ownership": "The Source Control live-refresh scheduler owns debounce and last-refresh state.",
@@ -275,7 +275,7 @@
     },
     {
       "path": "src/source_control/live.rs",
-      "line": 210,
+      "line": 221,
       "match": "last_refresh: Rc<RefCell<Option<Instant>>>,",
       "kind": "runtime-shared-state",
       "ownership": "The Source Control live-refresh scheduler owns debounce and last-refresh state.",
@@ -323,11 +323,27 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 62,
+      "line": 71,
       "match": "sidebar_position_guard: Rc<Cell<bool>>,",
       "kind": "runtime-shared-state",
       "ownership": "The project sidebar owns a shared programmatic-position guard.",
       "justification": "Animated GtkPaned position updates must bypass drag clamping in both directions while user drag input can still cancel the animation."
+    },
+    {
+      "path": "src/source_control/live.rs",
+      "line": 220,
+      "match": "cancelled: Rc<Cell<bool>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control live-refresh scheduler owns timeout cancellation state.",
+      "justification": "GLib timeout one-shots have no Gio cancellable, so stale scheduler clones share a small cancellation flag before probing Git metadata or refreshing UI."
+    },
+    {
+      "path": "src/source_control/live.rs",
+      "line": 489,
+      "match": "fn counted_scheduler(check_index_lock: bool) -> (LiveScheduler, Rc<Cell<i32>>, Rc<Cell<i32>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control live-refresh tests own counters for scheduler probe and refresh callbacks.",
+      "justification": "The test-only counters prove cancelled and polling schedulers return before sync lock probes without sharing state outside the unit test."
     }
   ]
 }

@@ -311,8 +311,8 @@
   "artifact_index": [
     {
       "file": "rust.policy.json",
-      "sha256": "19d6cc71a69689ab2b4d610a5d3ae8efd5db17fe1f3d6cf355e1c8b4ce3ff8e5",
-      "bytes": 11708
+      "sha256": "1ff524176f498b6c5a90cbbad101d2b5b275d14d97c9874da7bf01e2a3234e93",
+      "bytes": 12203
     },
     {
       "file": "gtk4-rs.policy.json",

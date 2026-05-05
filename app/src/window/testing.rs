@@ -303,6 +303,17 @@ impl Window {
         self.source_control.recent_commit_count_for_tests()
     }
 
+    pub(crate) fn set_source_control_detect_repo_for_tests(
+        &self,
+        detect_repo: crate::source_control::DetectRepoForTests,
+    ) {
+        self.source_control.set_detect_repo_for_tests(detect_repo);
+    }
+
+    pub(crate) fn set_source_control_project_root_for_tests(&self, file: gio::File) {
+        self.source_control.set_project_root(Some(file));
+    }
+
     pub(crate) fn inject_external_event_for_tests(
         self: &Rc<Self>,
         uri: &str,

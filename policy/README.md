@@ -55,7 +55,8 @@ Review artifacts use fixed semantic tags where a field would otherwise be ambigu
 - `ui.surfaces[].smallest_width` is the reviewed narrowest supported window width in logical pixels.
 - `gsettings.sites[].kind` must match the scanner kinds `gsettings-write` or `gsettings-bind`.
 - GSettings schema keys satisfy the schema-type check with exactly one of `type`, `enum`, or `flags`, matching `glib-compile-schemas`.
-- `runtime.sites[].kind` must match the scanner kinds emitted from policy, currently `runtime-strong-capture`, `runtime-shared-state`, and `runtime-git-subprocess`.
+- `runtime.sites[].kind` must match the scanner kinds emitted from policy, currently `runtime-strong-capture`, `runtime-shared-state`, `runtime-git-subprocess`, and `runtime-sync-fs`.
+- `runtime-sync-fs` covers synchronous runtime filesystem probes in `src/**/*.rs`; test-only files and `#[cfg(test)]` ranges are ignored, and reviewed entries must explain the native-only guard.
 
 Template-source note:
 

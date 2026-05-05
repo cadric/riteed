@@ -16,6 +16,44 @@ def rust_files(root: Path) -> list[Path]:
     return scoped_files(root, RUST_GLOBS)
 
 
+def _test_only_file(rel: str) -> bool:
+    return (
+        rel.endswith("/tests.rs")
+        or rel.endswith("/test_support.rs")
+        or rel.startswith("src/gtk_tests")
+    )
+
+
+def _cfg_test_lines(lines: list[str]) -> set[int]:
+    ignored: set[int] = set()
+    pending = False
+    depth: int | None = None
+    for index, line in enumerate(lines, start=1):
+        stripped = line.strip()
+        if "#[cfg(test)]" in stripped or "#[cfg(any(test" in stripped:
+            ignored.add(index)
+            pending = True
+            continue
+        if pending:
+            ignored.add(index)
+            if not stripped or stripped.startswith("#["):
+                continue
+            delta = line.count("{") - line.count("}")
+            if "{" in line and delta > 0:
+                depth = delta
+                pending = False
+            else:
+                pending = False
+                depth = None
+            continue
+        if depth is not None:
+            ignored.add(index)
+            depth += line.count("{") - line.count("}")
+            if depth <= 0:
+                depth = None
+    return ignored
+
+
 def source_regex_hits(root: Path, patterns: list[dict[str, object]]) -> list[str]:
     findings: list[str] = []
     for item in patterns:
@@ -45,13 +83,20 @@ def runtime_review_hits(root: Path, patterns: list[dict[str, object]]) -> list[S
         regex = re.compile(str(item["pattern"]))
         kind = str(item["kind"])
         message = str(item["message"])
+        ignore_test_only = bool(item.get("ignore_test_only"))
         for path in scoped_files(root, item.get("paths", RUST_GLOBS)):
+            rel = normalize_path(path.relative_to(root).as_posix())
+            if ignore_test_only and _test_only_file(rel):
+                continue
             lines = read_text(path).splitlines()
+            ignored = _cfg_test_lines(lines) if ignore_test_only else set()
             for index, line in enumerate(lines, start=1):
+                if index in ignored:
+                    continue
                 if regex.search(line):
                     hits.append(
                         ScanHit(
-                            path=normalize_path(path.relative_to(root).as_posix()),
+                            path=rel,
                             line=index,
                             kind=kind,
                             match=line.strip(),

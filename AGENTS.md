@@ -71,6 +71,7 @@ System gettext is encoded through the `gettext-rs/gettext-system` Cargo feature 
 ## Hard Limits
 - No source or enforced metadata file may exceed `600` total lines, except gettext `po/*.po` and `po/*.pot` catalogs/templates, which remain covered by gettext extraction, i18n review, and `msgfmt`.
 - No runtime Rust path may use `unsafe`, `unwrap`, `expect`, `panic!`, `todo!`, `unimplemented!`, `dbg!`, or external command spawning, except the reviewed typed `/app/bin/git` Gio subprocess boundary in `src/git_process.rs`.
+- Synchronous runtime filesystem probes require `runtime-sync-fs` review evidence and must stay native-only; portal, FUSE, and user-selected project/document paths should use async Gio APIs.
 - No broad Flatpak permissions.
 - No non-GNOME UI framework.
 - No gettext bypass for user-visible strings.

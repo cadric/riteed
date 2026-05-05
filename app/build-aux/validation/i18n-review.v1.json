@@ -115,28 +115,28 @@
     },
     {
       "path": "src/source_control.rs",
-      "line": 82,
+      "line": 89,
       "match": "let title = adw::WindowTitle::new(&gettext(\"Source Control\"), \"\");",
       "kind": "i18n-short-string",
       "resolution": "This short title labels the Source Control sidebar header above the changed-file tree and commit controls."
     },
     {
       "path": "src/source_control/refresh.rs",
-      "line": 202,
+      "line": 227,
       "match": "state.status_label.set_label(&gettext(\"No changes.\"));",
       "kind": "i18n-short-string",
       "resolution": "This compact status appears in the Source Control panel when the repository has no changed files."
     },
     {
       "path": "src/source_control/refresh.rs",
-      "line": 204,
+      "line": 229,
       "match": "state.status_label.set_label(&gettext(\"Changed files\"));",
       "kind": "i18n-short-string",
       "resolution": "This short Source Control string appears inside the Git sidebar where the changed-file, history, or action context is visible."
     },
     {
       "path": "src/source_control/history.rs",
-      "line": 167,
+      "line": 172,
       "match": "self.status.set_label(&gettext(\"No commits yet.\"));",
       "kind": "i18n-short-string",
       "resolution": "This short Source Control string appears inside the Git sidebar where the changed-file, history, or action context is visible."
@@ -206,14 +206,14 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 531,
+      "line": 558,
       "match": "state.browser.set_title(&gettext(\"Project\"));",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
     },
     {
       "path": "src/window_project.rs",
-      "line": 550,
+      "line": 577,
       "match": "state.browser.set_title(&gettext(\"Project\"));",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."

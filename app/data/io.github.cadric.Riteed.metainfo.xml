@@ -16,6 +16,24 @@
     <p>It provides tabs, find and replace, syntax highlighting, optional line numbers and minimap, folder navigation, split diffs, lightweight local Git source control, format controls for text encoding and line endings, curated editor palettes, and conservative reload prompts when files change on disk.</p>
     <p>Autosave is available for already-saved writable files, while read-only and externally changed files stay guarded by explicit user choices.</p>
   </description>
+  <screenshots>
+    <screenshot type="default">
+      <image width="930" height="700">https://raw.githubusercontent.com/cadric/riteed/main/docs/screenshots/4.png</image>
+      <caption>Edit code with syntax highlighting and a project sidebar</caption>
+    </screenshot>
+    <screenshot>
+      <image width="930" height="700">https://raw.githubusercontent.com/cadric/riteed/main/docs/screenshots/3.png</image>
+      <caption>Review local Git changes with source control and split diffs</caption>
+    </screenshot>
+    <screenshot>
+      <image width="930" height="700">https://raw.githubusercontent.com/cadric/riteed/main/docs/screenshots/2.png</image>
+      <caption>Browse project folders from the integrated sidebar</caption>
+    </screenshot>
+    <screenshot>
+      <image width="930" height="700">https://raw.githubusercontent.com/cadric/riteed/main/docs/screenshots/1.png</image>
+      <caption>Start from a clean editor window for local files</caption>
+    </screenshot>
+  </screenshots>
   <releases>
     <release version="0.2.0" type="development" date="2026-05-05">
       <description>

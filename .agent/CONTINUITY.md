@@ -1,6 +1,10 @@
 # Continuity
 
 ## OUTCOMES
+- Fixed the project A -> B switch freeze class by removing Source Control's synchronous `.git` preflight, moving project-tree/root-change handling outside the `ProjectState` mutable borrow, and cancelling stale Git/live-refresh callbacks before they can touch UI.
+- Added `runtime-sync-fs` policy coverage for synchronous runtime filesystem probes under `app/src`; approved remaining probes are limited to native-only Source Control live monitoring and the developer-only runtime icon override.
+- Document open size checks and recent-file missing checks now use async Gio queries, so user-selected document paths do not run Rust `std::fs` probes on the GTK main loop.
+- Added four optimized 930x700 AppStream screenshots under `docs/screenshots/` and wired them into the metainfo with GitHub raw URLs for the Software listing.
 - Investigated the 2026-05-05 GitHub Actions `app` job failure from `logs.txt`; the failure occurred during `python3 -m tools.policy_check --root app --strict` when GTK tests entered xdg-desktop-portal inside the unprivileged Fedora Docker container and document-portal FUSE could not mount, while validator failure reporting hid cargo-test stdout behind GTK stderr warnings.
 - Stabilized the CI path by stopping the GTK smoke test from launching a real file chooser, running the Fedora validation container privileged with deterministic GTK test environment variables, and making `run_checked` report both stdout and stderr on command failure.
 - Implemented v6 lightweight folder navigation for Riteed: Open Folder, Close Folder, project sidebar, lazy file tree, hidden-file toggle, refresh, tab/tree reveal sync, symlink handling, and mixed file/folder `GApplication::open`.
@@ -65,6 +69,8 @@
 - System gettext is enforced through the `gettext-rs/gettext-system` Cargo dependency feature; host and Flatpak validation should not depend on a manual environment override for gettext linking.
 - AppStream keeps the uppercase `io.github.cadric.Riteed` component id to match the app-id contract, while the developer id uses lowercase `io.github.cadric` because AppStream validates developer ids as rDNS-style identifiers.
 - Document monitor file stamps are queried through `src/editor_monitor/stamp.rs` with async GIO metadata calls. Monitor events, portal polling, missing-file settle checks, cancellation, and stale async results coalesce through the stamp state machine instead of synchronous `query_info()`.
+- Source Control index-lock checks are disabled for portal/polling contexts. The native-only lock check is a UI-jank deferral, not correctness: `git status` tolerates concurrent index writes.
+- Project switch is an atomic `Some(new)` Source Control transition, not a visible `None -> Some(new)` close/open sequence; user-close remains the path that emits `handler(None)` and clears close-specific UI/settings.
 - `.agent/CONTINUITY.md` is local continuity state and is ignored by Git unless explicitly force-added.
 
 ## DISCOVERIES

@@ -307,15 +307,15 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 76,
+      "line": 85,
       "match": "state: Rc<RefCell<ProjectState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The window project controller owns shared project sidebar state.",
-      "justification": "Sidebar actions, async folder open/restore, refresh, and tab→tree reveal must coordinate through one mutable state cell."
+      "justification": "Sidebar actions, async folder open/restore, refresh, and tab\u2192tree reveal must coordinate through one mutable state cell."
     },
     {
       "path": "src/window_project.rs",
-      "line": 102,
+      "line": 111,
       "match": "let tree_activation_handler: Rc<RefCell<Option<TreeActivationHandler>>> =",
       "kind": "runtime-shared-state",
       "ownership": "Tree activation wiring stores one late-bound handler closure.",
@@ -331,7 +331,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 376,
+      "line": 385,
       "match": "fn open_file_from_tree(state: &Rc<RefCell<ProjectState>>, file: gio::File) {",
       "kind": "runtime-shared-state",
       "ownership": "Tree activation routing borrows shared project state.",
@@ -339,7 +339,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 384,
+      "line": 393,
       "match": "state: &Rc<RefCell<ProjectState>>,",
       "kind": "runtime-shared-state",
       "ownership": "Project root transition helpers borrow shared project state.",
@@ -355,7 +355,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 516,
+      "line": 543,
       "match": "fn close_root(state: &Rc<RefCell<ProjectState>>) {",
       "kind": "runtime-shared-state",
       "ownership": "Close-folder handling mutates shared project state.",
@@ -363,7 +363,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 541,
+      "line": 568,
       "match": "fn sync_root_none(state: &Rc<RefCell<ProjectState>>, clear_settings: bool) {",
       "kind": "runtime-shared-state",
       "ownership": "No-root synchronization mutates shared project state.",
@@ -480,6 +480,14 @@
       "kind": "runtime-shared-state",
       "ownership": "The open-request finisher reads shared batch state.",
       "justification": "Completion handling needs the accumulated batch results to decide between restore selection, aggregated toasts, and fallback UI state."
+    },
+    {
+      "path": "src/window_project.rs",
+      "line": 501,
+      "match": "state: &Rc<RefCell<ProjectState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Project root finish helpers borrow shared project state after the mutable root update is released.",
+      "justification": "Finishing a root replacement must update the project tree outside the ProjectState mutable borrow while still reading the current browser owner."
     }
   ]
 }

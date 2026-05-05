@@ -1,5 +1,7 @@
+use std::cell::{Cell, RefCell};
 use std::fs;
 use std::path::PathBuf;
+use std::rc::Rc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use gtk4::gio;
@@ -13,6 +15,7 @@ use crate::sidebar_host::SOURCE_CONTROL_ICON;
 
 pub(crate) fn exercise_v9_source_control(test_app: &adw::Application) {
     exercise_non_git_folder(test_app);
+    exercise_portal_like_root_detect_starts_without_preflight(test_app);
     exercise_tracked_source_control_compare_after_open(test_app);
 
     let repo = unique_temp_repo("source-control-untracked");
@@ -62,6 +65,31 @@ pub(crate) fn exercise_v9_source_control(test_app: &adw::Application) {
             && window.selected_compare_active_for_tests()
     });
     drain_events(12);
+}
+
+fn exercise_portal_like_root_detect_starts_without_preflight(test_app: &adw::Application) {
+    let Some(window) = build_window(test_app) else {
+        return;
+    };
+    let calls = Rc::new(Cell::new(0));
+    let captured_path = Rc::new(RefCell::new(String::new()));
+    let calls_for_detect = calls.clone();
+    let path_for_detect = captured_path.clone();
+    window.set_source_control_detect_repo_for_tests(Rc::new(
+        move |path, _cancellable, _callback| {
+            calls_for_detect.set(calls_for_detect.get() + 1);
+            *path_for_detect.borrow_mut() = path.to_string_lossy().to_string();
+        },
+    ));
+    let portal_path = "/run/user/1000/doc/abcdef/test";
+    window.set_source_control_project_root_for_tests(gio::File::for_path(portal_path));
+    assert_eq!(calls.get(), 1);
+    assert_eq!(captured_path.borrow().as_str(), portal_path);
+    assert!(
+        window
+            .source_control_status_for_tests()
+            .starts_with("Refreshing Git status")
+    );
 }
 
 fn exercise_tracked_source_control_compare_after_open(test_app: &adw::Application) {

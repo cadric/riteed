@@ -246,6 +246,15 @@
         "paths": [
           "src/git_process.rs"
         ]
+      },
+      {
+        "kind": "runtime-sync-fs",
+        "message": "Synchronous filesystem probes in runtime Rust require native-only review coverage.",
+        "pattern": "(\\.\\s*(exists|is_dir|is_file|symlink_metadata|canonicalize)\\s*\\(|\\bPath::(exists|is_dir|is_file|metadata|symlink_metadata|canonicalize)\\b|\\b(?:std::)?fs::(metadata|symlink_metadata|read_dir|read_link|canonicalize)\\s*\\()",
+        "paths": [
+          "src/**/*.rs"
+        ],
+        "ignore_test_only": true
       }
     ]
   },

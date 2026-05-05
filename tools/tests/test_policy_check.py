@@ -145,6 +145,56 @@ class PolicyCheckTests(unittest.TestCase):
             runtime.check_runtime(root, errors)
             self.assertTrue(any("owned or supervised" in item for item in errors))
 
+    def test_runtime_sync_fs_requires_review(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            shutil.copytree(REPO_ROOT / "policy", root / "policy")
+            _write(root / "src" / "main.rs", "fn main() {\n    let _exists = path.exists();\n}\n")
+            errors: list[str] = []
+            runtime.check_runtime(root, errors)
+            self.assertTrue(any("runtime-sync-fs" in item for item in errors))
+
+    def test_runtime_sync_fs_review_artifact_passes(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            shutil.copytree(REPO_ROOT / "policy", root / "policy")
+            _write(root / "src" / "main.rs", "fn main() {\n    let _exists = path.exists();\n}\n")
+            _write(
+                root / "build-aux" / "validation" / "runtime-review-sync-fs.v1.json",
+                json.dumps(
+                    {
+                        "version": 1,
+                        "sites": [
+                            {
+                                "path": "src/main.rs",
+                                "line": 2,
+                                "match": "let _exists = path.exists();",
+                                "kind": "runtime-sync-fs",
+                                "ownership": "A native-only reviewed runtime path owns this probe.",
+                                "justification": "The path is guarded away from portal and other FUSE roots.",
+                            }
+                        ],
+                    }
+                )
+                + "\n",
+            )
+            errors: list[str] = []
+            runtime.check_runtime(root, errors)
+            self.assertEqual(errors, [])
+
+    def test_runtime_sync_fs_ignores_test_only_sites(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            shutil.copytree(REPO_ROOT / "policy", root / "policy")
+            _write(root / "src" / "tests.rs", "fn test_probe() {\n    let _exists = path.exists();\n}\n")
+            _write(
+                root / "src" / "main.rs",
+                "#[cfg(test)]\nmod tests {\n    fn probe() {\n        let _exists = path.exists();\n    }\n}\n",
+            )
+            errors: list[str] = []
+            runtime.check_runtime(root, errors)
+            self.assertFalse(any("runtime-sync-fs" in item for item in errors))
+
     def test_git_subprocess_exception_is_path_scoped(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

@@ -6,7 +6,7 @@ use gtk4::prelude::*;
 use libadwaita as adw;
 
 use crate::git_process::{GitCommitSummary, GitLogState};
-use crate::source_control::SourceStateRef;
+use crate::source_control::{SourceStateRef, git_error_is_cancelled};
 
 const RECENT_COMMIT_LIMIT: usize = 25;
 
@@ -40,10 +40,14 @@ pub(super) fn refresh(state: &SourceStateRef, head_oid: Option<&str>) {
         return;
     }
     let weak = Rc::downgrade(state);
+    let cancellable_for_callback = cancellable.clone();
     process.recent_commits(
         RECENT_COMMIT_LIMIT,
         &cancellable,
         Rc::new(move |result| {
+            if cancellable_for_callback.is_cancelled() {
+                return;
+            }
             let Some(state) = weak.upgrade() else {
                 return;
             };
@@ -52,6 +56,7 @@ pub(super) fn refresh(state: &SourceStateRef, head_oid: Option<&str>) {
                     .borrow()
                     .history
                     .set_state(&log_state, head_oid_owned.clone()),
+                Err(error) if git_error_is_cancelled(&error) => {}
                 Err(_error) => state.borrow().history.set_error(),
             }
         }),

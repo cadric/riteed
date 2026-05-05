@@ -3,7 +3,7 @@
   "sites": [
     {
       "path": "src/source_control.rs",
-      "line": 38,
+      "line": 40,
       "match": "pub(super) type SourceStateRef = Rc<RefCell<SourceControlState>>;",
       "kind": "runtime-shared-state",
       "ownership": "The Source Control controller owns the sidebar state behind one Rc<RefCell>.",

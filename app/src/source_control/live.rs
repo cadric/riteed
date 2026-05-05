@@ -28,8 +28,10 @@ pub(crate) struct SourceControlLiveRefresh {
 
 impl SourceControlLiveRefresh {
     pub(super) fn new(context: GitRepoContext, on_refresh: Rc<dyn Fn()>) -> Self {
-        let scheduler = LiveScheduler::new(context.index_lock_path.clone(), on_refresh);
-        let poll_source = if use_polling(&context) {
+        let use_polling = use_polling(&context);
+        let scheduler =
+            LiveScheduler::new(context.index_lock_path.clone(), !use_polling, on_refresh);
+        let poll_source = if use_polling {
             Some(start_polling(&scheduler))
         } else {
             None
@@ -53,7 +55,7 @@ impl SourceControlLiveRefresh {
     }
 
     pub(super) fn index_lock_exists(&self) -> bool {
-        self.context.index_lock_path.exists()
+        self.scheduler.index_lock_exists()
     }
 
     pub(super) fn refresh_metadata_monitors(&mut self) {
@@ -93,6 +95,7 @@ impl SourceControlLiveRefresh {
     }
 
     pub(super) fn cancel(&mut self) {
+        self.scheduler.cancel();
         if let Some(source) = self.poll_source.take() {
             source.remove();
         }
@@ -166,14 +169,20 @@ pub(super) fn sync_branch_monitor(state: &SourceStateRef, snapshot: &GitStatusSn
         let Some(process) = state.process.clone() else {
             return;
         };
-        let cancellable = state.cancellable.clone().unwrap_or_default();
+        let Some(cancellable) = state.cancellable.clone() else {
+            return;
+        };
         (process, cancellable)
     };
     let weak = Rc::downgrade(state);
+    let cancellable_for_callback = cancellable.clone();
     process.resolve_branch_ref_path(
         &branch,
         &cancellable,
         Rc::new(move |result| {
+            if cancellable_for_callback.is_cancelled() {
+                return;
+            }
             let Some(state) = weak.upgrade() else {
                 return;
             };
@@ -206,22 +215,45 @@ impl Drop for SourceControlLiveRefresh {
 #[derive(Clone)]
 struct LiveScheduler {
     index_lock_path: PathBuf,
+    check_index_lock: bool,
     pending: Rc<Cell<bool>>,
+    cancelled: Rc<Cell<bool>>,
     last_refresh: Rc<RefCell<Option<Instant>>>,
+    lock_probe: Rc<dyn Fn(&Path) -> bool>,
     on_refresh: Rc<dyn Fn()>,
 }
 
 impl LiveScheduler {
-    fn new(index_lock_path: PathBuf, on_refresh: Rc<dyn Fn()>) -> Self {
+    fn new(index_lock_path: PathBuf, check_index_lock: bool, on_refresh: Rc<dyn Fn()>) -> Self {
+        Self::new_with_lock_probe(
+            index_lock_path,
+            check_index_lock,
+            Rc::new(Path::exists),
+            on_refresh,
+        )
+    }
+
+    fn new_with_lock_probe(
+        index_lock_path: PathBuf,
+        check_index_lock: bool,
+        lock_probe: Rc<dyn Fn(&Path) -> bool>,
+        on_refresh: Rc<dyn Fn()>,
+    ) -> Self {
         Self {
             index_lock_path,
+            check_index_lock,
             pending: Rc::new(Cell::new(false)),
+            cancelled: Rc::new(Cell::new(false)),
             last_refresh: Rc::new(RefCell::new(None)),
+            lock_probe,
             on_refresh,
         }
     }
 
     fn schedule(&self) {
+        if self.cancelled.get() {
+            return;
+        }
         if self.pending.replace(true) {
             return;
         }
@@ -232,12 +264,24 @@ impl LiveScheduler {
 
     fn fire(&self) {
         self.pending.set(false);
-        if self.index_lock_path.exists() {
+        if self.cancelled.get() {
+            return;
+        }
+        if self.index_lock_exists() {
             self.schedule();
             return;
         }
         *self.last_refresh.borrow_mut() = Some(Instant::now());
         (self.on_refresh)();
+    }
+
+    fn cancel(&self) {
+        self.cancelled.set(true);
+        self.pending.set(false);
+    }
+
+    fn index_lock_exists(&self) -> bool {
+        self.check_index_lock && !self.cancelled.get() && (self.lock_probe)(&self.index_lock_path)
     }
 
     fn delay(&self) -> Duration {
@@ -382,6 +426,7 @@ fn refresh_event(event: gio::FileMonitorEvent) -> bool {
 
 #[cfg(test)]
 mod tests {
+    use std::cell::Cell;
     use std::fs;
     use std::path::{Path, PathBuf};
     use std::rc::Rc;
@@ -417,12 +462,52 @@ mod tests {
     fn live_scheduler_delay_uses_debounce_and_minimum_interval() {
         let scheduler = LiveScheduler::new(
             std::path::PathBuf::from("/tmp/repo/.git/index.lock"),
+            true,
             Rc::new(|| {}),
         );
         assert_eq!(scheduler.delay(), DEBOUNCE);
 
         *scheduler.last_refresh.borrow_mut() = Some(Instant::now());
         assert!(scheduler.delay() >= DEBOUNCE);
+    }
+
+    #[test]
+    fn live_scheduler_cancel_and_polling_skip_lock_probes() {
+        let (scheduler, probes, refreshes) = counted_scheduler(true);
+        scheduler.pending.set(true);
+        scheduler.cancel();
+        scheduler.fire();
+        assert_eq!(probes.get(), 0);
+        assert_eq!(refreshes.get(), 0);
+
+        let (scheduler, probes, refreshes) = counted_scheduler(false);
+        scheduler.fire();
+        assert_eq!(probes.get(), 0);
+        assert_eq!(refreshes.get(), 1);
+    }
+
+    fn counted_scheduler(check_index_lock: bool) -> (LiveScheduler, Rc<Cell<i32>>, Rc<Cell<i32>>) {
+        let probes = Rc::new(Cell::new(0));
+        let refreshes = Rc::new(Cell::new(0));
+        let probes_for_scheduler = probes.clone();
+        let refreshes_for_scheduler = refreshes.clone();
+        let path = if check_index_lock {
+            "/tmp/repo/.git/index.lock"
+        } else {
+            "/run/user/1000/doc/repo/.git/index.lock"
+        };
+        let scheduler = LiveScheduler::new_with_lock_probe(
+            PathBuf::from(path),
+            check_index_lock,
+            Rc::new(move |_path| {
+                probes_for_scheduler.set(probes_for_scheduler.get() + 1);
+                true
+            }),
+            Rc::new(move || {
+                refreshes_for_scheduler.set(refreshes_for_scheduler.get() + 1);
+            }),
+        );
+        (scheduler, probes, refreshes)
     }
 
     #[test]

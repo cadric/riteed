@@ -1,4 +1,3 @@
-use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
@@ -9,11 +8,11 @@ use crate::dialogs::{self, GitDiscardResponse};
 use crate::editor_tab::EditorTab;
 use crate::git_process::GitProcessError;
 use crate::git_status::{
-    GitActionState, GitAttrState, GitFileStatus, GitPath, GitStatusEntry, GitStatusSnapshot,
-    GitWorktreeMode,
+    GitActionState, GitAttrState, GitFileStatus, GitStatusEntry, GitStatusSnapshot, GitWorktreeMode,
 };
 use crate::source_control::{
-    SourceControlState, SourceStateRef, git_attrs_unavailable_text, git_error_text,
+    SourceControlState, SourceStateRef, git_attrs_unavailable_text, git_error_is_cancelled,
+    git_error_text,
 };
 use crate::workspace::{OpenSource, Workspace};
 
@@ -116,7 +115,7 @@ fn action_disabled_reason(entry: &GitStatusEntry, action: GitRowAction) -> Optio
 }
 
 fn stage_entry(state: &SourceStateRef, entry: &GitStatusEntry) {
-    let (process, repo, cancellable, _generation) = begin_action(state);
+    let (process, _repo, cancellable, _generation) = begin_action(state);
     let Some(process) = process else {
         return;
     };
@@ -124,7 +123,7 @@ fn stage_entry(state: &SourceStateRef, entry: &GitStatusEntry) {
         process.remove_from_index(&entry.path, &cancellable, action_callback(state));
         return;
     }
-    let Some(mode) = stage_mode_for_entry(repo.as_deref(), entry) else {
+    let Some(mode) = stage_mode_for_entry(entry) else {
         finish_error(
             state,
             &gettext("This file type cannot be staged from Riteed."),
@@ -142,6 +141,9 @@ fn stage_entry(state: &SourceStateRef, entry: &GitStatusEntry) {
             let Some(state) = weak.upgrade() else {
                 return;
             };
+            if cancellable_for_index.is_cancelled() {
+                return;
+            }
             match result {
                 Ok(oid) => process_for_index.stage_blob_index_info(
                     mode,
@@ -200,10 +202,14 @@ fn diff_entry(state: &SourceStateRef, entry: GitStatusEntry) {
         return;
     };
     let weak = Rc::downgrade(state);
+    let cancellable_for_callback = cancellable.clone();
     process.cat_blob(
         &oid,
         &cancellable,
         Rc::new(move |result| {
+            if cancellable_for_callback.is_cancelled() {
+                return;
+            }
             let Some(state) = weak.upgrade() else {
                 return;
             };
@@ -212,6 +218,7 @@ fn diff_entry(state: &SourceStateRef, entry: GitStatusEntry) {
             }
             match result.and_then(reference_text) {
                 Ok(text) => compare_with_text(&state, &entry, text, generation),
+                Err(error) if git_error_is_cancelled(&error) => {}
                 Err(error) => finish_error(&state, &git_error_text(&error)),
             }
         }),
@@ -370,6 +377,7 @@ fn action_callback(state: &SourceStateRef) -> Rc<dyn Fn(Result<(), GitProcessErr
         };
         match result {
             Ok(()) => refresh_status(&state),
+            Err(error) if git_error_is_cancelled(&error) => {}
             Err(error) => finish_error(&state, &git_error_text(&error)),
         }
     })
@@ -450,27 +458,8 @@ fn should_stage_delete(entry: &GitStatusEntry) -> bool {
         && entry.worktree_mode == GitWorktreeMode::Absent
 }
 
-fn stage_mode_for_entry(repo: Option<&Path>, entry: &GitStatusEntry) -> Option<&'static str> {
-    if let Some(mode) = entry.worktree_mode.stage_mode() {
-        return Some(mode);
-    }
-    if entry.worktree_mode == GitWorktreeMode::Unknown {
-        return repo.and_then(|repo| fallback_mode_for_unknown_stage_click(repo, &entry.path));
-    }
-    None
-}
-
-fn fallback_mode_for_unknown_stage_click(repo: &Path, path: &GitPath) -> Option<&'static str> {
-    let full_path = repo.join(path.as_utf8()?);
-    let metadata = std::fs::symlink_metadata(full_path).ok()?;
-    if !metadata.file_type().is_file() {
-        return None;
-    }
-    if metadata.permissions().mode() & 0o111 == 0 {
-        Some("100644")
-    } else {
-        Some("100755")
-    }
+fn stage_mode_for_entry(entry: &GitStatusEntry) -> Option<&'static str> {
+    entry.worktree_mode.stage_mode()
 }
 
 fn workspace_file_for_entry(

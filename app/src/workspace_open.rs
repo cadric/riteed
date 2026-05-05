@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use gettextrs::{gettext, pgettext};
-use gtk4::{gio, prelude::*};
+use gtk4::{gio, glib, prelude::*};
 use libadwaita as adw;
 
 use crate::dialogs;
@@ -288,7 +288,7 @@ fn acquire_open_target(workspace: &Rc<Workspace>) -> (Rc<crate::editor_tab::Edit
 }
 
 fn handle_open_failure(
-    workspace: &Workspace,
+    workspace: &Rc<Workspace>,
     source: OpenSource,
     file: &gio::File,
     error: &AppError,
@@ -296,15 +296,35 @@ fn handle_open_failure(
     match source {
         OpenSource::Recent => {
             dialogs::present_error(&workspace.shell, error);
-            if file.path().as_ref().is_some_and(|path| !path.exists()) {
-                workspace.prune_recent_uri(&file.uri());
-            }
+            prune_recent_if_missing(workspace, file);
         }
         OpenSource::Dialog | OpenSource::AppOpen | OpenSource::ProjectTree => {
             dialogs::present_error(&workspace.shell, error);
         }
         OpenSource::SourceControl | OpenSource::SessionRestore | OpenSource::Drop => {}
     }
+}
+
+fn prune_recent_if_missing(workspace: &Rc<Workspace>, file: &gio::File) {
+    let weak = Rc::downgrade(workspace);
+    let uri = file.uri().to_string();
+    file.query_info_async(
+        "standard::type",
+        gio::FileQueryInfoFlags::NONE,
+        glib::Priority::default(),
+        None::<&gio::Cancellable>,
+        move |result| {
+            let Err(error) = result else {
+                return;
+            };
+            if !error.matches(gio::IOErrorEnum::NotFound) {
+                return;
+            }
+            if let Some(workspace) = weak.upgrade() {
+                workspace.prune_recent_uri(&uri);
+            }
+        },
+    );
 }
 
 fn find_tab_by_file(

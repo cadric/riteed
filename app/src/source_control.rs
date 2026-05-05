@@ -1,5 +1,7 @@
 use std::cell::RefCell;
-use std::path::{Path, PathBuf};
+#[cfg(test)]
+use std::path::Path;
+use std::path::PathBuf;
 use std::rc::{Rc, Weak};
 
 use gettextrs::{gettext, pgettext};
@@ -7,7 +9,7 @@ use gtk4::accessible::Property;
 use gtk4::{gio, prelude::*};
 use libadwaita as adw;
 
-use crate::git_process::{GitIdentity, GitProcess, GitProcessError};
+use crate::git_process::{GitCallback, GitIdentity, GitProcess, GitProcessError, GitRepoContext};
 use crate::git_status::{GitAttrState, GitCapabilities, GitStatusSnapshot};
 use crate::settings::AppSettings;
 #[cfg(test)]
@@ -30,12 +32,15 @@ mod view_mode;
 use history::SourceControlHistory;
 use live::SourceControlLiveRefresh;
 use refresh::{
-    RefreshOrigin, emit_project_statuses, finish_error, rebuild_views, refresh_status,
-    refresh_status_with_origin,
+    RefreshOrigin, ellipsis_label, emit_project_statuses, finish_error, rebuild_views,
+    refresh_status, refresh_status_with_origin,
 };
 use view_mode::SourceControlViews;
 
 pub(super) type SourceStateRef = Rc<RefCell<SourceControlState>>;
+#[cfg(test)]
+pub(crate) type DetectRepoForTests =
+    Rc<dyn Fn(&Path, &gio::Cancellable, GitCallback<GitRepoContext>)>;
 type GitStatusHandler = Rc<dyn Fn(Vec<(String, String)>)>;
 
 #[derive(Clone)]
@@ -62,6 +67,8 @@ pub(super) struct SourceControlState {
     pub(super) live_refresh: Option<SourceControlLiveRefresh>,
     pub(super) status_stale: bool,
     pub(super) action_generation: u64,
+    #[cfg(test)]
+    detect_repo: DetectRepoForTests,
     status_handler: Option<GitStatusHandler>,
 }
 
@@ -151,6 +158,10 @@ impl SourceControlController {
             live_refresh: None,
             status_stale: true,
             action_generation: 0,
+            #[cfg(test)]
+            detect_repo: Rc::new(|path, cancellable, callback| {
+                GitProcess::detect_repo(path, cancellable, callback);
+            }),
             status_handler: None,
         }));
         state
@@ -255,64 +266,56 @@ impl SourceControlController {
     pub(crate) fn recent_commit_count_for_tests(&self) -> usize {
         self.state.borrow().history.row_count_for_tests()
     }
+
+    #[cfg(test)]
+    pub(crate) fn set_detect_repo_for_tests(&self, detect_repo: DetectRepoForTests) {
+        self.state.borrow_mut().detect_repo = detect_repo;
+    }
 }
 
 fn set_project_root(state: &SourceStateRef, folder: Option<gio::File>) {
     cancel_refresh(state);
     live::cancel(state);
     let Some(folder) = folder else {
-        let mut state = state.borrow_mut();
-        state.repo = None;
-        state.process = None;
-        state.attrs = GitAttrState::default();
-        state.snapshot = GitStatusSnapshot::default();
-        state
-            .status_label
-            .set_label(&gettext("Open a folder to see Git status."));
-        emit_project_statuses(&state);
-        state.history.clear();
-        rebuild_views(&state);
+        reset_project_state(state, &gettext("Open a folder to see Git status."), false);
         return;
     };
     let Some(path) = folder.path() else {
-        let mut state = state.borrow_mut();
-        state.repo = None;
-        state.process = None;
-        state.attrs = GitAttrState::default();
-        state.snapshot = GitStatusSnapshot::default();
-        state
-            .status_label
-            .set_label(&gettext("Only local Git folders are supported."));
-        emit_project_statuses(&state);
-        state.history.clear();
-        rebuild_views(&state);
+        reset_project_state(
+            state,
+            &gettext("Only local Git folders are supported."),
+            false,
+        );
         return;
     };
-    if !has_git_metadata_candidate(&path) {
+    let cancellable = gio::Cancellable::new();
+    {
         let mut state = state.borrow_mut();
+        state.cancellable = Some(cancellable.clone());
         state.repo = None;
         state.process = None;
         state.attrs = GitAttrState::default();
         state.snapshot = GitStatusSnapshot::default();
+        state.status_stale = true;
+        state.action_generation = state.action_generation.wrapping_add(1);
         state
             .status_label
-            .set_label(&gettext("This folder is not a Git repository."));
+            .set_label(&ellipsis_label(gettext("Refreshing Git status")));
         emit_project_statuses(&state);
         state.history.clear();
         rebuild_views(&state);
-        return;
     }
-    let cancellable = gio::Cancellable::new();
-    state.borrow_mut().cancellable = Some(cancellable.clone());
     let weak = Rc::downgrade(state);
-    GitProcess::detect_repo(
-        &path,
-        &cancellable,
-        Rc::new(move |result| {
-            let Some(state) = weak.upgrade() else {
-                return;
-            };
-            if let Ok(repo_context) = result {
+    let cancellable_for_callback = cancellable.clone();
+    let callback: GitCallback<GitRepoContext> = Rc::new(move |result| {
+        if cancellable_for_callback.is_cancelled() {
+            return;
+        }
+        let Some(state) = weak.upgrade() else {
+            return;
+        };
+        match result {
+            Ok(repo_context) => {
                 {
                     let mut state = state.borrow_mut();
                     state.repo = Some(repo_context.work_tree.clone());
@@ -323,26 +326,42 @@ fn set_project_root(state: &SourceStateRef, folder: Option<gio::File>) {
                 }
                 live::install(&state);
                 refresh_status_with_origin(&state, RefreshOrigin::Initial);
-            } else {
-                let mut state = state.borrow_mut();
-                state.repo = None;
-                state.process = None;
-                state.attrs = GitAttrState::default();
-                state.snapshot = GitStatusSnapshot::default();
-                state
-                    .status_label
-                    .set_label(&gettext("This folder is not a Git repository."));
-                emit_project_statuses(&state);
-                state.history.clear();
-                rebuild_views(&state);
             }
-        }),
-    );
+            Err(error) if git_error_is_cancelled(&error) => {}
+            Err(_error) => {
+                reset_project_state(
+                    &state,
+                    &gettext("This folder is not a Git repository."),
+                    false,
+                );
+            }
+        }
+    });
+    #[cfg(test)]
+    {
+        let detect_repo = state.borrow().detect_repo.clone();
+        detect_repo(&path, &cancellable, callback);
+    }
+    #[cfg(not(test))]
+    GitProcess::detect_repo(&path, &cancellable, callback);
 }
 
-fn has_git_metadata_candidate(path: &Path) -> bool {
-    path.ancestors()
-        .any(|ancestor| ancestor.join(".git").exists())
+fn reset_project_state(state: &SourceStateRef, label: &str, mark_stale: bool) {
+    let mut state = state.borrow_mut();
+    state.repo = None;
+    state.process = None;
+    state.attrs = GitAttrState::default();
+    state.snapshot = GitStatusSnapshot::default();
+    state.status_stale = mark_stale;
+    state.action_generation = state.action_generation.wrapping_add(1);
+    state.status_label.set_label(label);
+    emit_project_statuses(&state);
+    state.history.clear();
+    rebuild_views(&state);
+}
+
+pub(super) fn git_error_is_cancelled(error: &GitProcessError) -> bool {
+    matches!(error, GitProcessError::Cancelled)
 }
 
 fn commit(state: &SourceStateRef) {
@@ -377,6 +396,9 @@ fn commit(state: &SourceStateRef) {
     process.read_git_identity(
         &cancellable,
         Rc::new(move |identity| {
+            if cancellable_for_commit.is_cancelled() {
+                return;
+            }
             let Some(state) = weak.upgrade() else {
                 return;
             };
@@ -391,11 +413,15 @@ fn commit(state: &SourceStateRef) {
                 return;
             };
             let weak = Rc::downgrade(&state);
+            let cancellable_for_callback = cancellable_for_commit.clone();
             process_for_commit.commit(
                 &identity,
                 &message,
                 &cancellable_for_commit,
                 Rc::new(move |result| {
+                    if cancellable_for_callback.is_cancelled() {
+                        return;
+                    }
                     let Some(state) = weak.upgrade() else {
                         return;
                     };
@@ -404,6 +430,7 @@ fn commit(state: &SourceStateRef) {
                             state.borrow().commit_entry.set_text("");
                             refresh_status(&state);
                         }
+                        Err(error) if git_error_is_cancelled(&error) => {}
                         Err(error) => finish_error(&state, &git_error_text(&error)),
                     }
                 }),

@@ -4,8 +4,8 @@ use std::path::PathBuf;
 use gtk4::prelude::FileExt;
 
 use super::{
-    commit_sensitive, discard_state, entry_disabled_reason, fallback_mode_for_unknown_stage_click,
-    reference_oid, reference_text, should_stage_delete, stage_mode_for_entry,
+    commit_sensitive, discard_state, entry_disabled_reason, reference_oid, reference_text,
+    should_stage_delete, stage_mode_for_entry,
 };
 use crate::git_process::GitProcessError;
 use crate::git_status::{
@@ -108,35 +108,14 @@ fn unavailable_attrs_disable_git_actions_and_commit() {
 
 #[test]
 fn file_modes_and_reference_text_are_guarded() {
-    let repo = temp_repo("riteed-git-actions-modes");
-    let script = repo.join("script.sh");
-    let dir = repo.join("dir");
-    assert!(fs::write(&script, b"#!/bin/sh\n").is_ok());
-    assert!(fs::create_dir_all(&dir).is_ok());
-    assert_eq!(
-        fallback_mode_for_unknown_stage_click(&repo, &GitPath::from_bytes(b"script.sh")),
-        Some("100644")
+    let unknown = entry_with_mode(
+        "script.sh",
+        GitFileStatus::Modified,
+        true,
+        true,
+        GitWorktreeMode::Unknown,
     );
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-
-        let metadata = fs::metadata(&script);
-        assert!(metadata.is_ok());
-        if let Ok(metadata) = metadata {
-            let mut permissions = metadata.permissions();
-            permissions.set_mode(0o755);
-            assert!(fs::set_permissions(&script, permissions).is_ok());
-        }
-        assert_eq!(
-            fallback_mode_for_unknown_stage_click(&repo, &GitPath::from_bytes(b"script.sh")),
-            Some("100755")
-        );
-    }
-    assert_eq!(
-        fallback_mode_for_unknown_stage_click(&repo, &GitPath::from_bytes(b"dir")),
-        None
-    );
+    assert_eq!(stage_mode_for_entry(&unknown), None);
     assert_eq!(
         reference_text(b"hello".to_vec()).ok().as_deref(),
         Some("hello")
@@ -181,7 +160,7 @@ fn parsed_worktree_modes_drive_action_guards() {
         GitWorktreeMode::Regular("100644"),
     );
     assert!(entry_disabled_reason(Some(&missing_repo), &regular, &known_attrs(), &[]).is_none());
-    assert_eq!(stage_mode_for_entry(None, &regular), Some("100644"));
+    assert_eq!(stage_mode_for_entry(&regular), Some("100644"));
 
     let absent_delete = entry_with_mode(
         "deleted.txt",
@@ -206,10 +185,7 @@ fn parsed_worktree_modes_drive_action_guards() {
         entry_disabled_reason(Some(&missing_repo), &staged_delete, &known_attrs(), &[]).is_none()
     );
     assert!(!should_stage_delete(&staged_delete));
-    assert_eq!(
-        stage_mode_for_entry(Some(&missing_repo), &staged_delete),
-        None
-    );
+    assert_eq!(stage_mode_for_entry(&staged_delete), None);
 
     let recreated = entry_with_mode(
         "deleted.txt",
@@ -219,7 +195,7 @@ fn parsed_worktree_modes_drive_action_guards() {
         GitWorktreeMode::Regular("100755"),
     );
     assert!(!should_stage_delete(&recreated));
-    assert_eq!(stage_mode_for_entry(None, &recreated), Some("100755"));
+    assert_eq!(stage_mode_for_entry(&recreated), Some("100755"));
 
     let absent_modified = entry_with_mode(
         "missing.txt",

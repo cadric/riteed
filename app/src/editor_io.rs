@@ -32,6 +32,17 @@ pub struct LocalPathInfo {
     pub display_path: Option<PathBuf>,
 }
 
+struct TextLoadRequest {
+    loader: sourceview5::FileLoader,
+    scratch_buffer: sourceview5::Buffer,
+    source_file: sourceview5::File,
+    file: gio::File,
+    path: PathBuf,
+    display_path: Option<PathBuf>,
+    cancellable: Option<gio::Cancellable>,
+    callback: Rc<dyn Fn(Result<LoadedDocument, LoadFailure>)>,
+}
+
 #[derive(Clone, Debug)]
 pub enum LoadFailure {
     DecodeFailed(PathBuf),
@@ -52,15 +63,14 @@ pub fn load_text_file(
     cancellable: Option<&gio::Cancellable>,
     callback: Rc<dyn Fn(Result<LoadedDocument, LoadFailure>)>,
 ) {
-    let path_info = match validate_text_file_open(file) {
+    let path_info = match local_path_info(file) {
         Ok(path_info) => path_info,
         Err(error) => {
-            callback(Err(error));
+            callback(Err(LoadFailure::Failed(error)));
             return;
         }
     };
     let path = path_info.path;
-
     let source_file = sourceview5::File::builder().location(file).build();
     let scratch_buffer = sourceview5::Buffer::builder()
         .enable_undo(false)
@@ -70,46 +80,86 @@ pub fn load_text_file(
     if let Some(candidate_encodings) = candidate_encodings {
         loader.set_candidate_encodings(Some(candidate_encodings));
     }
-    let callback_loader = loader.clone();
 
-    let callback_path = path.clone();
-    let callback_display_path = path_info.display_path.clone();
-    let callback_file = file.clone();
-    loader.load_async(
-        glib::Priority::DEFAULT,
+    let path_for_query = path.clone();
+    let callback_for_query = callback;
+    let cancellable_for_load = cancellable.cloned();
+    let file_for_load = file.clone();
+    crate::document_limits::query_file_supports_open(
+        file,
         cancellable,
-        move |result| match result {
-            Ok(()) => {
-                let start = scratch_buffer.start_iter();
-                let end = scratch_buffer.end_iter();
-                let loaded_format = LoadedTextFormat::from_disk_text(
-                    scratch_buffer.text(&start, &end, true).to_string(),
-                    LineEndingMode::from_source(callback_loader.newline_type()),
-                    EncodingInfo::from_encoding(&callback_loader.encoding()),
-                );
-                callback(Ok(LoadedDocument {
-                    path: callback_path.clone(),
-                    display_path: callback_display_path.clone(),
-                    text: loaded_format.text,
-                    uri: callback_file.uri().to_string(),
-                    format: loaded_format.format,
-                    source_file: source_file.clone(),
-                }));
+        Rc::new(move |result| {
+            let supports_open = match result {
+                Ok(supports_open) => supports_open,
+                Err(error) => {
+                    callback_for_query(Err(map_load_failure(&path_for_query, &error)));
+                    return;
+                }
+            };
+            if !supports_open {
+                callback_for_query(Err(LoadFailure::TooBig(path_for_query.clone())));
+                return;
             }
-            Err(error) => callback(Err(map_load_failure(&callback_path, &error))),
-        },
+            TextLoadRequest {
+                loader: loader.clone(),
+                scratch_buffer: scratch_buffer.clone(),
+                source_file: source_file.clone(),
+                file: file_for_load.clone(),
+                path: path.clone(),
+                display_path: path_info.display_path.clone(),
+                cancellable: cancellable_for_load.clone(),
+                callback: callback_for_query.clone(),
+            }
+            .start();
+        }),
     );
+}
+
+impl TextLoadRequest {
+    fn start(self) {
+        let Self {
+            loader,
+            scratch_buffer,
+            source_file,
+            file,
+            path,
+            display_path,
+            cancellable,
+            callback,
+        } = self;
+        let callback_loader = loader.clone();
+        loader.load_async(
+            glib::Priority::DEFAULT,
+            cancellable.as_ref(),
+            move |result| match result {
+                Ok(()) => {
+                    let start = scratch_buffer.start_iter();
+                    let end = scratch_buffer.end_iter();
+                    let loaded_format = LoadedTextFormat::from_disk_text(
+                        scratch_buffer.text(&start, &end, true).to_string(),
+                        LineEndingMode::from_source(callback_loader.newline_type()),
+                        EncodingInfo::from_encoding(&callback_loader.encoding()),
+                    );
+                    callback(Ok(LoadedDocument {
+                        path: path.clone(),
+                        display_path: display_path.clone(),
+                        text: loaded_format.text,
+                        uri: file.uri().to_string(),
+                        format: loaded_format.format,
+                        source_file: source_file.clone(),
+                    }));
+                }
+                Err(error) => callback(Err(map_load_failure(&path, &error))),
+            },
+        );
+    }
 }
 
 /// # Errors
 ///
-/// Returns an error when the file is not local or exceeds Riteed's normal editor open limit.
+/// Returns an error when the file is not local.
 pub fn validate_text_file_open(file: &gio::File) -> Result<LocalPathInfo, LoadFailure> {
-    let path_info = local_path_info(file).map_err(LoadFailure::Failed)?;
-    if !crate::document_limits::path_supports_open(&path_info.path) {
-        return Err(LoadFailure::TooBig(path_info.path));
-    }
-    Ok(path_info)
+    local_path_info(file).map_err(LoadFailure::Failed)
 }
 
 pub fn save_text_file(
@@ -165,6 +215,9 @@ pub fn save_text_file(
 }
 
 fn map_load_failure(path: &Path, error: &glib::Error) -> LoadFailure {
+    if error.matches(gio::IOErrorEnum::Cancelled) {
+        return LoadFailure::Failed(AppError::Cancelled);
+    }
     match error.kind::<sourceview5::FileLoaderError>() {
         Some(
             sourceview5::FileLoaderError::EncodingAutoDetectionFailed

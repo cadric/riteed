@@ -6,7 +6,8 @@ use gtk4::prelude::*;
 
 use crate::git_status::{GitAttrState, GitPath, GitStatusSnapshot};
 use crate::source_control::{
-    SourceControlState, SourceStateRef, actions, git_attrs_unavailable_text, history, live,
+    SourceControlState, SourceStateRef, actions, git_attrs_unavailable_text,
+    git_error_is_cancelled, history, live,
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -41,18 +42,26 @@ pub(super) fn refresh_status_with_origin(state: &SourceStateRef, origin: Refresh
         }
     }
     let weak = Rc::downgrade(state);
+    let cancellable_for_callback = cancellable.clone();
     process.check_repo_capabilities(
         &cancellable,
         Rc::new(move |capabilities| {
+            if cancellable_for_callback.is_cancelled() {
+                return;
+            }
             let Some(state) = weak.upgrade() else {
                 return;
             };
-            let Ok(capabilities) = capabilities else {
-                finish_error(
-                    &state,
-                    &gettext("Unable to read Git repository capabilities."),
-                );
-                return;
+            let capabilities = match capabilities {
+                Ok(capabilities) => capabilities,
+                Err(error) if git_error_is_cancelled(&error) => return,
+                Err(_error) => {
+                    finish_error(
+                        &state,
+                        &gettext("Unable to read Git repository capabilities."),
+                    );
+                    return;
+                }
             };
             state.borrow_mut().capabilities = capabilities;
             if !capabilities.object_format_supported || !capabilities.eol_supported {
@@ -64,7 +73,7 @@ pub(super) fn refresh_status_with_origin(state: &SourceStateRef, origin: Refresh
     );
 }
 
-fn ellipsis_label(mut label: String) -> String {
+pub(super) fn ellipsis_label(mut label: String) -> String {
     label.push('…');
     label
 }
@@ -111,15 +120,23 @@ fn refresh_status_entries(state: &SourceStateRef) {
         return;
     };
     let weak = Rc::downgrade(state);
+    let cancellable_for_callback = cancellable.clone();
     process.status(
         &cancellable,
         Rc::new(move |result| {
+            if cancellable_for_callback.is_cancelled() {
+                return;
+            }
             let Some(state) = weak.upgrade() else {
                 return;
             };
-            let Ok(snapshot) = result else {
-                finish_error(&state, &gettext("Unable to refresh Git status."));
-                return;
+            let snapshot = match result {
+                Ok(snapshot) => snapshot,
+                Err(error) if git_error_is_cancelled(&error) => return,
+                Err(_error) => {
+                    finish_error(&state, &gettext("Unable to refresh Git status."));
+                    return;
+                }
             };
             let paths = snapshot.changed_paths();
             if paths.is_empty() {
@@ -139,14 +156,22 @@ fn refresh_attrs(state: &SourceStateRef, snapshot: GitStatusSnapshot, paths: &[G
         return;
     };
     let weak = Rc::downgrade(state);
+    let cancellable_for_callback = cancellable.clone();
     process.check_attrs(
         paths,
         &cancellable,
         Rc::new(move |result| {
+            if cancellable_for_callback.is_cancelled() {
+                return;
+            }
             let Some(state) = weak.upgrade() else {
                 return;
             };
-            let attrs = result.map_or(GitAttrState::Unavailable, GitAttrState::Known);
+            let attrs = match result {
+                Ok(attrs) => GitAttrState::Known(attrs),
+                Err(error) if git_error_is_cancelled(&error) => return,
+                Err(_error) => GitAttrState::Unavailable,
+            };
             apply_status(&state, snapshot.clone(), attrs);
         }),
     );

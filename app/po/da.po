@@ -54,6 +54,9 @@ msgstr ""
 msgid "Autosave is available for already-saved writable files, while read-only and externally changed files stay guarded by explicit user choices."
 msgstr ""
 
+msgid "Browse project folders from the integrated sidebar"
+msgstr "Gennemse projektmapper fra den integrerede sidebjælke"
+
 msgid "Autosave paused because the document contains characters that cannot be saved with the selected encoding."
 msgstr ""
 
@@ -187,6 +190,9 @@ msgstr ""
 
 msgid "Edit Text, Code, and Config Files"
 msgstr ""
+
+msgid "Edit code with syntax highlighting and a project sidebar"
+msgstr "Rediger kode med syntaksfremhævning og projektsidebjælke"
 
 msgid "Editor Font"
 msgstr ""
@@ -332,6 +338,9 @@ msgstr ""
 msgid "Recent Files"
 msgstr ""
 
+msgid "Review local Git changes with source control and split diffs"
+msgstr "Gennemgå lokale Git-ændringer med kildekontrol og opdelte diffvisninger"
+
 msgid "Refresh Project Tree"
 msgstr ""
 
@@ -408,6 +417,9 @@ msgstr ""
 
 msgid "Show Minimap"
 msgstr ""
+
+msgid "Start from a clean editor window for local files"
+msgstr "Start fra et rent redigeringsvindue til lokale filer"
 
 msgid "Some files could not be opened."
 msgstr ""

@@ -14,6 +14,15 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 
 ## Unreleased
 
+### Fixed
+- Fixed project switching from one open folder to another so Riteed no longer performs synchronous portal/FUSE filesystem probes from the GTK main loop while project state is mutably borrowed.
+- Made Source Control root changes cancel stale Git callbacks and live-refresh timeouts before they can update UI or probe old index-lock paths.
+
+### Changed
+- Moved document open size checks and recent-file missing checks onto async Gio queries, avoiding synchronous runtime filesystem probes for user-selected paths.
+- Added `runtime-sync-fs` review-required validation for synchronous runtime filesystem probes, with native-only review artifacts for the remaining approved sites.
+- Added optimized AppStream screenshots for the 0.2.0 beta Software listing.
+
 ## 0.2.0 - 2026-05-05
 
 ### Added

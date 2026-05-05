@@ -42,6 +42,15 @@ type TreeActivationHandler = Rc<dyn Fn(ProjectTreeActivation)>;
 type RootChangeHandler = Rc<dyn Fn(Option<gio::File>)>;
 type GitStatusHandler = Rc<dyn Fn(Vec<(String, String)>)>;
 
+struct RootApplyPlan {
+    settings: AppSettings,
+    show_hidden_action: gio::SimpleAction,
+    handler: Option<RootChangeHandler>,
+    uri: String,
+    display_name: String,
+    origin: RootChangeOrigin,
+}
+
 struct ProjectState {
     window: adw::ApplicationWindow,
     toast_overlay: adw::ToastOverlay,
@@ -432,9 +441,11 @@ fn begin_root_change(
                         return;
                     }
 
-                    let sidebar_visible =
+                    let plan =
                         apply_root_change(&mut state_mut, &folder_for_callback, &info, origin);
                     drop(state_mut);
+                    let sidebar_visible =
+                        finish_root_change(&state_for_callback, &folder_for_callback, plan);
                     sidebar_state::set_sidebar_visible_for_root(
                         &state_for_callback,
                         sidebar_visible,
@@ -468,36 +479,52 @@ fn apply_root_change(
     folder: &gio::File,
     info: &gio::FileInfo,
     origin: RootChangeOrigin,
-) -> bool {
+) -> RootApplyPlan {
     let uri = folder.uri().to_string();
     let display_name = resolve_display_name(folder, info);
     state.root = Some(ProjectRoot {
         file: folder.clone(),
     });
-    state.browser.set_title(&display_name);
-    state.browser.tree().set_root(Some(folder.clone()));
-    if let Some(handler) = state.root_change_handler.as_ref() {
-        handler(Some(folder.clone()));
+    state.toast_keys.clear();
+
+    RootApplyPlan {
+        settings: state.settings.clone(),
+        show_hidden_action: state.show_hidden_action.clone(),
+        handler: state.root_change_handler.clone(),
+        uri,
+        display_name,
+        origin,
     }
+}
 
-    state.settings.set_project_folder_uri(&uri);
-    state
-        .settings
-        .set_project_folder_display_name(&display_name);
+fn finish_root_change(
+    state: &Rc<RefCell<ProjectState>>,
+    folder: &gio::File,
+    plan: RootApplyPlan,
+) -> bool {
+    plan.settings.set_project_folder_uri(&plan.uri);
+    plan.settings
+        .set_project_folder_display_name(&plan.display_name);
 
-    let sidebar_visible = match origin {
+    let sidebar_visible = match plan.origin {
         RootChangeOrigin::UserOpen | RootChangeOrigin::AppOpen => {
-            state.settings.set_project_sidebar_visible(true);
+            plan.settings.set_project_sidebar_visible(true);
             true
         }
-        RootChangeOrigin::Restore => state.settings.project_sidebar_visible(),
+        RootChangeOrigin::Restore => plan.settings.project_sidebar_visible(),
     };
 
-    let show_hidden = state.settings.project_show_hidden();
-    state
-        .show_hidden_action
-        .set_state(&show_hidden.to_variant());
-    state.browser.tree().model().set_show_hidden(show_hidden);
+    let show_hidden = plan.settings.project_show_hidden();
+    plan.show_hidden_action.set_state(&show_hidden.to_variant());
+    {
+        let state = state.borrow();
+        state.browser.set_title(&plan.display_name);
+        state.browser.tree().set_root(Some(folder.clone()));
+        state.browser.tree().model().set_show_hidden(show_hidden);
+    }
+    if let Some(handler) = plan.handler {
+        handler(Some(folder.clone()));
+    }
     sidebar_visible
 }
 
