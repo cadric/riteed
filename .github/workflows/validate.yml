@@ -81,9 +81,15 @@ jobs:
       options: --privileged
     steps:
       - uses: actions/checkout@v5
+      - name: Read app version
+        id: app-version
+        run: |
+          version="$(sed -n 's/^version = "\(.*\)"/\1/p' app/Cargo.toml | head -n 1)"
+          test -n "$version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
       - name: Build Flatpak
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
-          bundle: riteed-0.2.0.flatpak
+          bundle: riteed-${{ steps.app-version.outputs.version }}.flatpak
           manifest-path: app/build-aux/io.github.cadric.Riteed.yml
           cache-key: flatpak-builder-${{ github.sha }}

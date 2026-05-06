@@ -25,6 +25,7 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 
 ### Changed
 - Corrected the v12 roadmap framing now that Replace and Replace All are verified V3 features, while preserving Ctrl+H and adding primary-menu/search-bar discoverability for Find and Replace.
+- Made the GitHub Actions Flatpak bundle name follow the app version from `app/Cargo.toml` for 0.3.0 release artifacts.
 - Moved document open size checks and recent-file missing checks onto async Gio queries, avoiding synchronous runtime filesystem probes for user-selected paths.
 - Added `runtime-sync-fs` review-required validation for synchronous runtime filesystem probes, with native-only review artifacts for the remaining approved sites.
 - Added optimized AppStream screenshots for the 0.2.0 beta Software listing.
