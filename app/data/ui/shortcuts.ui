@@ -80,6 +80,12 @@
             </child>
             <child>
               <object class="GtkShortcutsShortcut">
+                <property name="accelerator">&lt;Ctrl&gt;p</property>
+                <property name="title" translatable="yes">Print Current Document</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
                 <property name="accelerator">&lt;Ctrl&gt;w</property>
                 <property name="title" translatable="yes">Close Current Tab</property>
               </object>
@@ -187,6 +193,12 @@
               <object class="GtkShortcutsShortcut">
                 <property name="accelerator">&lt;Ctrl&gt;h</property>
                 <property name="title" translatable="yes">Find and Replace</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="accelerator">&lt;Ctrl&gt;&lt;Shift&gt;f</property>
+                <property name="title" translatable="yes">Find in Files</property>
               </object>
             </child>
             <child>

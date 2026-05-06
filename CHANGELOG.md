@@ -1,6 +1,6 @@
 ---
 created: 2026-04-19
-updated: 2026-05-05
+updated: 2026-05-06
 status: current
 priority: high
 type: changelog
@@ -14,11 +14,17 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 
 ## Unreleased
 
+## 0.3.0 - 2026-05-06
+
+### Added
+- Added Riteed v12 editing power tools: Find in Files for the open workspace, a document statistics dialog, and native print support through GTK's portal-aware print flow.
+
 ### Fixed
 - Fixed project switching from one open folder to another so Riteed no longer performs synchronous portal/FUSE filesystem probes from the GTK main loop while project state is mutably borrowed.
 - Made Source Control root changes cancel stale Git callbacks and live-refresh timeouts before they can update UI or probe old index-lock paths.
 
 ### Changed
+- Corrected the v12 roadmap framing now that Replace and Replace All are verified V3 features, while preserving Ctrl+H and adding primary-menu/search-bar discoverability for Find and Replace.
 - Moved document open size checks and recent-file missing checks onto async Gio queries, avoiding synchronous runtime filesystem probes for user-selected paths.
 - Added `runtime-sync-fs` review-required validation for synchronous runtime filesystem probes, with native-only review artifacts for the remaining approved sites.
 - Added optimized AppStream screenshots for the 0.2.0 beta Software listing.

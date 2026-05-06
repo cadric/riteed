@@ -1,11 +1,11 @@
 ---
 created: 2026-04-19
-updated: 2026-05-02
+updated: 2026-05-06
 status: active
 priority: high
 type: roadmap
-completed_through: v11
-next_version: v12
+completed_through: v12
+next_version: unscheduled
 final_scheduled_version: v12
 ---
 
@@ -1279,11 +1279,11 @@ V10 made Source Control useful enough that diff readability is now the main fric
 # V12 — Editing power tools
 
 > created: 2026-05-02
-> updated: 2026-05-02
-> status: planned
+> updated: 2026-05-06
+> status: complete
 > priority: medium
 > type: roadmap-milestone
-> implementation: pending
+> implementation: shipped
 
 ## Purpose
 
@@ -1293,33 +1293,36 @@ This is a writing-and-editing release: it makes the editor self-sufficient for s
 
 ## What V12 adds
 
-* Replace and Replace All
 * Find in Files across the open workspace
 * Document statistics (word, line, character counts)
 * Print support
 
+## Existing V3 behavior preserved
+
+* Replace and Replace All already shipped in V3. V12 keeps Ctrl+H, exposes Find and Replace from the primary menu, adds a search-bar affordance to reveal the replace row from normal Find, and treats Replace All's single undo group as a regression-protected behavior.
+
 ## Why this version matters
 
-V12 closes practical gaps that have shown up in real use: replace was implied by V3's search but never fully landed, find-in-files leverages the V6 workspace model, and statistics and printing make the app appropriate for documents that leave the editor. V12 is the final scheduled milestone on the roadmap; remaining ideas (spell check, Markdown preview, large-file streaming, and git push) are collected as unscheduled candidates and only promoted to a real version once one of them earns it.
+V12 closes practical gaps that have shown up in real use: find-in-files leverages the V6 workspace model, and statistics and printing make the app appropriate for documents that leave the editor. V12 is the final scheduled milestone on the roadmap; remaining ideas (spell check, Markdown preview, large-file streaming, and git push) are collected as unscheduled candidates and only promoted to a real version once one of them earns it.
 
 ## Prompt for V12
 
 ```text
-Build v12 of the GNOME desktop application in Rust by extending everyday editing capabilities with replace, project-wide search, document statistics, and printing.
+Build v12 of the GNOME desktop application in Rust by extending everyday editing capabilities with project-wide search, document statistics, and printing.
 
 The goal of v12 is to make the editor genuinely capable for serious text work, while keeping the app lightweight and GNOME-native. This version should round out features that complement the existing search and workspace model rather than introduce new architectural pieces.
 
 What v12 adds:
-- Replace and Replace All in the search bar
 - Find in Files across the open workspace
 - Document statistics (word count, line count, character counts with and without spaces)
 - Print support via the portal
 
 Scope for v12:
-- Add Replace and Replace All
-  - Extend the v3 search bar with a replacement field
-  - Provide single-replace-and-advance and replace-all actions
-  - Treat replace-all as a single undoable operation per document
+- Preserve existing V3 Replace and Replace All
+  - Keep Ctrl+H and the existing replace row behavior
+  - Expose Find and Replace in the primary menu
+  - Add a search-bar affordance to reveal the replace row from normal Find
+  - Keep Replace All as a single undoable operation per document and cover it as a regression
 - Add Find in Files
   - Search across the currently open workspace folder
   - Present results in a side panel or scoped result view, with file and line context
@@ -1336,14 +1339,13 @@ Scope for v12:
 
 Behavior expectations:
 - The app should remain a lightweight GNOME editor
-- Replace and Replace All must integrate with the existing search bar, not introduce a parallel UI
+- Replace and Replace All stay integrated with the existing search bar and are not replaced by a parallel UI
 - Find in Files must respect the workspace boundary and avoid scanning ignored or hidden directories
 - Statistics should be quick to invoke and ignorable when not needed
 - Print should feel native and predictable
 
 Technical expectations:
 - Extend the existing Rust + GTK4 + Libadwaita + GtkSourceView codebase
-- Reuse the v3 search controller for replace
 - Reuse the v6 workspace traversal for find-in-files
 - Use the print portal rather than direct printer access
 - Keep all user-facing strings ready for gettext localization
@@ -1362,7 +1364,7 @@ Implementation guidance:
 - Refresh help and translations as part of the same change
 
 Deliverable:
-Implement a working v12 of the app with replace and replace-all, find in files across the workspace, document statistics, and print support, while preserving the app's identity as a lightweight GNOME editor.
+Implement a working v12 of the app with find in files across the workspace, document statistics, print support, and preserved V3 find-and-replace behavior, while preserving the app's identity as a lightweight GNOME editor.
 ```
 
 ---
@@ -1415,7 +1417,7 @@ If any of these items is promoted to a real version later, the promoting change 
 
 # Summary of the full progression
 
-V1–V11 are complete as of 2026-05-02. V11 closed the split-diff polish milestone with aligned presentation buffers for manual Compare and Git compare. V12 is the final scheduled release: an editing-power-tools milestone (replace, find in files, statistics, print). Anything beyond V12 — spell check, Markdown preview, large-file streaming, git push and the bundled Git network expansion it requires — sits in the "Post-V12 — Unscheduled candidates" section and only earns a version number once one of them has a concrete reason to ship next.
+V1–V12 are complete as of 2026-05-06. V12 closed the final scheduled milestone with Find in Files, document statistics, print support, and preserved V3 Find and Replace discoverability. Anything beyond V12 — spell check, Markdown preview, large-file streaming, git push and the bundled Git network expansion it requires — sits in the "Post-V12 — Unscheduled candidates" section and only earns a version number once one of them has a concrete reason to ship next.
 
 ## V1
 
@@ -1463,7 +1465,7 @@ Polish split diff so manual Compare and Git compare become practical for daily c
 
 ## V12
 
-Add editing power tools: replace, find in files, statistics, and printing. Final scheduled milestone.
+Add editing power tools: find in files, statistics, and printing, while preserving the existing Find and Replace workflow. Final scheduled milestone.
 
 ## Post-V12
 

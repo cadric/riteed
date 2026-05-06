@@ -13,7 +13,7 @@
   <url type="bugtracker">https://github.com/cadric/riteed/issues</url>
   <description>
     <p>Riteed is an early beta GNOME text editor for editing local text, code, config, and markdown files with encoding-aware open and save behavior.</p>
-    <p>It provides tabs, find and replace, syntax highlighting, optional line numbers and minimap, folder navigation, split diffs, lightweight local Git source control, format controls for text encoding and line endings, curated editor palettes, and conservative reload prompts when files change on disk.</p>
+    <p>It provides tabs, find and replace, Find in Files, document statistics, printing, syntax highlighting, optional line numbers and minimap, folder navigation, split diffs, lightweight local Git source control, format controls for text encoding and line endings, curated editor palettes, and conservative reload prompts when files change on disk.</p>
     <p>Autosave is available for already-saved writable files, while read-only and externally changed files stay guarded by explicit user choices.</p>
   </description>
   <screenshots>
@@ -35,6 +35,11 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release version="0.3.0" type="development" date="2026-05-06">
+      <description>
+        <p>Adds Find in Files, document statistics, and print support while preserving the existing Find and Replace workflow.</p>
+      </description>
+    </release>
     <release version="0.2.0" type="development" date="2026-05-05">
       <description>
         <p>First public beta with tabs, syntax highlighting, folder navigation, split diffs, lightweight local Git source control, autosave, and guarded file monitoring.</p>

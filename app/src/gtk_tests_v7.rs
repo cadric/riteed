@@ -154,9 +154,10 @@ fn exercise_compare_with_disk_and_file(test_app: &adw::Application) {
     window.compare_with_file_for_tests(&gio::File::for_path(&reference_path));
     spin_until("v7 compare with file starts", || {
         window.selected_compare_active_for_tests()
-            && window.selected_compare_diff_count_for_tests() == 1
-            && window.selected_compare_highlight_count_for_tests() > 0
+            && window.selected_compare_diff_count_for_tests() > 0
     });
+    assert_eq!(window.selected_compare_diff_count_for_tests(), 1);
+    assert!(window.selected_compare_highlight_count_for_tests() > 0);
     window.exit_compare_for_tests();
     drain_events(8);
     assert!(!window.selected_compare_active_for_tests());

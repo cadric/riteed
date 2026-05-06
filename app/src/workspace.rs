@@ -22,6 +22,7 @@ pub(crate) use autosave::AutosaveRequestForTests;
 
 type FormatPreferencesHandler = Rc<dyn Fn(Option<Rc<EditorTab>>)>;
 type CompareActionSyncHandler = Rc<dyn Fn(Option<Rc<EditorTab>>)>;
+type DocumentToolsSyncHandler = Rc<dyn Fn(Option<Rc<EditorTab>>)>;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum OpenSource {
@@ -62,6 +63,7 @@ pub struct Workspace {
     pub(crate) status_bar: EditorStatusBar,
     format_preferences_handler: OnceCell<FormatPreferencesHandler>,
     compare_action_sync_handler: OnceCell<CompareActionSyncHandler>,
+    document_tools_sync_handler: OnceCell<DocumentToolsSyncHandler>,
     save_notification_handler: OnceCell<Rc<dyn Fn(gio::File)>>,
     pub(crate) state: RefCell<WorkspaceState>,
 }
@@ -120,6 +122,7 @@ impl Workspace {
             status_bar,
             format_preferences_handler: OnceCell::new(),
             compare_action_sync_handler: OnceCell::new(),
+            document_tools_sync_handler: OnceCell::new(),
             save_notification_handler: OnceCell::new(),
             state: RefCell::new(WorkspaceState {
                 tabs: Vec::new(),
@@ -437,6 +440,10 @@ impl Workspace {
         let _set_callback = self.compare_action_sync_handler.set(callback);
     }
 
+    pub(crate) fn set_document_tools_sync_handler(&self, callback: DocumentToolsSyncHandler) {
+        let _set_callback = self.document_tools_sync_handler.set(callback);
+    }
+
     pub(crate) fn set_save_notification_handler(&self, callback: Rc<dyn Fn(gio::File)>) {
         let _set_callback = self.save_notification_handler.set(callback);
     }
@@ -509,6 +516,9 @@ impl Workspace {
             callback(selected.clone());
         }
         if let Some(callback) = self.compare_action_sync_handler.get() {
+            callback(selected.clone());
+        }
+        if let Some(callback) = self.document_tools_sync_handler.get() {
             callback(selected.clone());
         }
 

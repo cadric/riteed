@@ -39,25 +39,39 @@ msgid_plural "%d lines only in reference"
 msgstr[0] ""
 msgstr[1] ""
 
-msgid "First public beta with tabs, syntax highlighting, folder navigation, split diffs, lightweight local Git source control, autosave, and guarded file monitoring."
-msgstr "Første offentlige beta med faner, syntaksfremhævning, mappenavigation, delt diff-visning, let lokal Git-kildekontrol, autosave og beskyttet filovervågning."
+msgid ""
+"First public beta with tabs, syntax highlighting, folder navigation, split "
+"diffs, lightweight local Git source control, autosave, and guarded file "
+"monitoring."
+msgstr ""
+"Første offentlige beta med faner, syntaksfremhævning, mappenavigation, delt "
+"diff-visning, let lokal Git-kildekontrol, autosave og beskyttet "
+"filovervågning."
 
-msgid "Automatic text decoding was not reliable for this file. Choose a text encoding manually and try again."
+msgid ""
+"Automatic text decoding was not reliable for this file. Choose a text "
+"encoding manually and try again."
 msgstr ""
 
-msgid "Automatic text detection or safe conversion was not reliable for this file. Choose an encoding manually to try opening it."
+msgid ""
+"Automatic text detection or safe conversion was not reliable for this file. "
+"Choose an encoding manually to try opening it."
 msgstr ""
 
 msgid "Autosave"
 msgstr ""
 
-msgid "Autosave is available for already-saved writable files, while read-only and externally changed files stay guarded by explicit user choices."
+msgid ""
+"Autosave is available for already-saved writable files, while read-only and "
+"externally changed files stay guarded by explicit user choices."
 msgstr ""
 
 msgid "Browse project folders from the integrated sidebar"
 msgstr "Gennemse projektmapper fra den integrerede sidebjælke"
 
-msgid "Autosave paused because the document contains characters that cannot be saved with the selected encoding."
+msgid ""
+"Autosave paused because the document contains characters that cannot be "
+"saved with the selected encoding."
 msgstr ""
 
 msgid "Autosave paused because the file changed on disk."
@@ -127,43 +141,61 @@ msgstr ""
 msgid "Controls how many columns a tab character occupies in the editor."
 msgstr ""
 
-msgid "Controls how many columns automatic indentation and indent actions use in the editor."
+msgid ""
+"Controls how many columns automatic indentation and indent actions use in "
+"the editor."
 msgstr ""
 
 msgid "Controls the color palette used for editor buffers."
 msgstr ""
 
-msgid "Stores the previous window palette setting for compatibility. Riteed now derives window chrome from the editor palette family and app style."
+msgid ""
+"Stores the previous window palette setting for compatibility. Riteed now "
+"derives window chrome from the editor palette family and app style."
 msgstr ""
 
-msgid "Controls whether Riteed automatically saves already-saved writable files after edits."
+msgid ""
+"Controls whether Riteed automatically saves already-saved writable files "
+"after edits."
 msgstr ""
 
-msgid "Controls whether Riteed highlights the active line in editable documents."
+msgid ""
+"Controls whether Riteed highlights the active line in editable documents."
 msgstr ""
 
-msgid "Controls whether Riteed shows a document overview minimap beside the editor."
+msgid ""
+"Controls whether Riteed shows a document overview minimap beside the editor."
 msgstr ""
 
 msgid "Controls whether Riteed shows line numbers in the editor gutter."
 msgstr ""
 
-msgid "Controls whether Riteed uses the system appearance, a light appearance, or a dark appearance."
+msgid ""
+"Controls whether Riteed uses the system appearance, a light appearance, or a "
+"dark appearance."
 msgstr ""
 
 msgid "Controls whether long lines wrap inside the editor."
 msgstr ""
 
-msgid "Controls whether pressing Tab inserts spaces instead of a literal tab character."
+msgid ""
+"Controls whether pressing Tab inserts spaces instead of a literal tab "
+"character."
 msgstr ""
 
-msgid "Controls whether the project sidebar is shown when a project folder is active."
+msgid ""
+"Controls whether the project sidebar is shown when a project folder is "
+"active."
 msgstr ""
 
-msgid "Controls whether the project tree shows dot-prefixed hidden files and folders."
+msgid ""
+"Controls whether the project tree shows dot-prefixed hidden files and "
+"folders."
 msgstr ""
 
-msgid "Controls whether the source control changes view uses a folder tree or a flat list."
+msgid ""
+"Controls whether the source control changes view uses a folder tree or a "
+"flat list."
 msgstr ""
 
 msgid "Current Document Location"
@@ -175,15 +207,21 @@ msgstr ""
 msgid "Diff unavailable for this Git state."
 msgstr ""
 
-msgid "Discard stays disabled when open tabs, Git filters, working-tree encodings, or line-ending conversion make an exact restore unsafe."
+msgid ""
+"Discard stays disabled when open tabs, Git filters, working-tree encodings, "
+"or line-ending conversion make an exact restore unsafe."
 msgstr ""
 
 msgid "Discard File Changes?"
 msgstr ""
 
 msgctxt "source control discard dialog"
-msgid "Unstaged changes to \"%s\" will be permanently lost and replaced with the version from the Git index. This cannot be undone."
-msgstr "Ikke-stageede ændringer i \"%s\" går permanent tabt og erstattes med versionen fra Git-indekset. Dette kan ikke fortrydes."
+msgid ""
+"Unstaged changes to \"%s\" will be permanently lost and replaced with the "
+"version from the Git index. This cannot be undone."
+msgstr ""
+"Ikke-stageede ændringer i \"%s\" går permanent tabt og erstattes med "
+"versionen fra Git-indekset. Dette kan ikke fortrydes."
 
 msgid "Document Format"
 msgstr ""
@@ -230,7 +268,12 @@ msgstr ""
 msgid "Insert Spaces Instead of Tabs"
 msgstr ""
 
-msgid "It provides tabs, find and replace, syntax highlighting, optional line numbers and minimap, folder navigation, split diffs, lightweight local Git source control, format controls for text encoding and line endings, curated editor palettes, and conservative reload prompts when files change on disk."
+msgid ""
+"It provides tabs, find and replace, Find in Files, document statistics, "
+"printing, syntax highlighting, optional line numbers and minimap, folder "
+"navigation, split diffs, lightweight local Git source control, format "
+"controls for text encoding and line endings, curated editor palettes, and "
+"conservative reload prompts when files change on disk."
 msgstr ""
 
 msgid "Loading recent commits"
@@ -284,16 +327,24 @@ msgstr ""
 msgid "Only one folder can be opened at a time."
 msgstr ""
 
-msgid "Use the main menu theme selector to switch System, Light, or Dark appearance. Open Preferences to adjust window and editor palettes, current-line highlight, line numbers, and the minimap when you want more structure while reading longer code or markdown files."
+msgid ""
+"Use the main menu to print, view document statistics, or switch System, "
+"Light, and Dark appearance. Open Preferences to adjust window and editor "
+"palettes, current-line highlight, line numbers, and the minimap."
 msgstr ""
 
-msgid "Open Keyboard Shortcuts from the main menu to review the available file, tab, find, and app commands."
+msgid ""
+"Open Keyboard Shortcuts from the main menu to review the available file, "
+"tab, find, and app commands."
 msgstr ""
 
 msgid "Open Files"
 msgstr ""
 
-msgid "Open a Git folder to review local changes in the Source Control sidebar. Select a changed file to compare it, or switch between tree and list views when a flat list is easier to scan."
+msgid ""
+"Open a Git folder to review local changes in the Source Control sidebar. "
+"Select a changed file to compare it, or switch between tree and list views "
+"when a flat list is easier to scan."
 msgstr ""
 
 msgid "Open a folder to see Git status."
@@ -311,10 +362,14 @@ msgstr ""
 msgid "Pre-commit hooks are not run from Riteed."
 msgstr ""
 
-msgid "Press Ctrl+F to find text in the current document, Ctrl+H to show replace, and Ctrl+G or Shift+Ctrl+G to move between matches."
+msgid ""
+"Press Ctrl+F to find text in the current document, Ctrl+H to show replace, "
+"and Ctrl+G or Shift+Ctrl+G to move between matches."
 msgstr ""
 
-msgid "Press Ctrl+T to create another tab, and use Open Files (Ctrl+O) to load local files into separate tabs with their saved encoding and line endings."
+msgid ""
+"Press Ctrl+T to create another tab, and use Open Files (Ctrl+O) to load "
+"local files into separate tabs with their saved encoding and line endings."
 msgstr ""
 
 msgid "Preview unavailable"
@@ -339,7 +394,8 @@ msgid "Recent Files"
 msgstr ""
 
 msgid "Review local Git changes with source control and split diffs"
-msgstr "Gennemgå lokale Git-ændringer med kildekontrol og opdelte diffvisninger"
+msgstr ""
+"Gennemgå lokale Git-ændringer med kildekontrol og opdelte diffvisninger"
 
 msgid "Refresh Project Tree"
 msgstr ""
@@ -356,7 +412,8 @@ msgstr ""
 msgid "Reopen With a Different Encoding?"
 msgstr ""
 
-msgid "Reopening with another encoding will discard unsaved changes in this tab."
+msgid ""
+"Reopening with another encoding will discard unsaved changes in this tab."
 msgstr ""
 
 msgid "Replaced %d match"
@@ -373,16 +430,26 @@ msgstr ""
 msgid "Riteed Only Supports Local Plain Text Files in This Version."
 msgstr ""
 
-msgid "Riteed is a lightweight GNOME editor for text, code, config, and markdown files, with tabs, find, syntax highlighting, session restore, and encoding-aware open and save behavior."
+msgid ""
+"Riteed is a lightweight GNOME editor for text, code, config, and markdown "
+"files, with tabs, find, syntax highlighting, session restore, and encoding-"
+"aware open and save behavior."
 msgstr ""
 
-msgid "Riteed is an early beta GNOME text editor for editing local text, code, config, and markdown files with encoding-aware open and save behavior."
+msgid ""
+"Riteed is an early beta GNOME text editor for editing local text, code, "
+"config, and markdown files with encoding-aware open and save behavior."
 msgstr ""
 
-msgid "Riteed refreshes Git status after saves and local Git metadata changes. Document-portal folders use periodic polling when native file monitoring is unavailable."
+msgid ""
+"Riteed refreshes Git status after saves and local Git metadata changes. "
+"Document-portal folders use periodic polling when native file monitoring is "
+"unavailable."
 msgstr ""
 
-msgid "Riteed tracks unsaved changes per tab, restores saved files from your previous session, and warns before external file changes replace your work."
+msgid ""
+"Riteed tracks unsaved changes per tab, restores saved files from your "
+"previous session, and warns before external file changes replace your work."
 msgstr ""
 
 msgid "Save Changes Before Continuing?"
@@ -397,7 +464,9 @@ msgstr ""
 msgid "Search is disabled for very large files."
 msgstr "Søgning er slået fra for meget store filer."
 
-msgid "Select the reference on the left and the current document or text on the right."
+msgid ""
+"Select the reference on the left and the current document or text on the "
+"right."
 msgstr ""
 
 msgid "Selected Session File"
@@ -430,19 +499,28 @@ msgstr ""
 msgid "Source Control"
 msgstr ""
 
-msgid "Source Control supports local review, diff, stage, unstage, discard, and simple commits. It does not manage remotes, branches, merges, rebases, conflicts, credentials, or build workflows."
+msgid ""
+"Source Control supports local review, diff, stage, unstage, discard, and "
+"simple commits. It does not manage remotes, branches, merges, rebases, "
+"conflicts, credentials, or build workflows."
 msgstr ""
 
 msgid "Source Control View Mode"
 msgstr ""
 
-msgid "Stores the Git author email Riteed passes to sandboxed Git commits after explicit user action."
+msgid ""
+"Stores the Git author email Riteed passes to sandboxed Git commits after "
+"explicit user action."
 msgstr ""
 
-msgid "Stores the Git author name Riteed passes to sandboxed Git commits after explicit user action."
+msgid ""
+"Stores the Git author name Riteed passes to sandboxed Git commits after "
+"explicit user action."
 msgstr ""
 
-msgid "Stores the URI of the selected saved tab. An empty string means no saved tab is selected."
+msgid ""
+"Stores the URI of the selected saved tab. An empty string means no saved tab "
+"is selected."
 msgstr ""
 
 msgid "Stores the currently open saved local text files as URIs in tab order."
@@ -454,7 +532,9 @@ msgstr ""
 msgid "Stores the last height used for the main window."
 msgstr ""
 
-msgid "Stores the last selected project folder as a URI. An empty string means no folder is remembered."
+msgid ""
+"Stores the last selected project folder as a URI. An empty string means no "
+"folder is remembered."
 msgstr ""
 
 msgid "Stores the last width used for the main window."
@@ -463,7 +543,9 @@ msgstr ""
 msgid "Stores the most recently opened local text files as URIs, newest first."
 msgstr ""
 
-msgid "Stores the preferred monospace font description for editor text and the minimap. An empty value uses the default monospace font."
+msgid ""
+"Stores the preferred monospace font description for editor text and the "
+"minimap. An empty value uses the default monospace font."
 msgstr ""
 
 msgid "Symlinks and unsupported file modes are visible only."
@@ -493,7 +575,9 @@ msgstr ""
 msgid "The Requested Action Was Cancelled."
 msgstr ""
 
-msgid "The document contains characters that cannot be saved with the selected encoding."
+msgid ""
+"The document contains characters that cannot be saved with the selected "
+"encoding."
 msgstr ""
 
 msgid "The file changed again on disk and could not be overwritten."
@@ -517,7 +601,9 @@ msgstr ""
 msgid "This Git state is visible but not editable in Riteed."
 msgstr ""
 
-msgid "This document contains characters that cannot be saved in the current text encoding."
+msgid ""
+"This document contains characters that cannot be saved in the current text "
+"encoding."
 msgstr ""
 
 msgid "This document has unsaved changes."
@@ -526,7 +612,8 @@ msgstr ""
 msgid "This file changed on disk while you also have unsaved changes."
 msgstr ""
 
-msgid "This file changed on disk. Saving now will replace the external version."
+msgid ""
+"This file changed on disk. Saving now will replace the external version."
 msgstr ""
 
 msgid "This file type cannot be staged from Riteed."
@@ -544,7 +631,9 @@ msgstr ""
 msgid "Too large to compare differences."
 msgstr ""
 
-msgid "Tracked unstaged files can be discarded after confirmation. Riteed keeps unsafe discard cases disabled when it cannot restore the file predictably."
+msgid ""
+"Tracked unstaged files can be discarded after confirmation. Riteed keeps "
+"unsafe discard cases disabled when it cannot restore the file predictably."
 msgstr ""
 
 msgid "Unable to Build the Window"
@@ -577,7 +666,9 @@ msgstr ""
 msgid "Unavailable"
 msgstr ""
 
-msgid "Use the row actions to stage or unstage files, then write a commit message and commit local staged changes with the Git identity saved in Preferences."
+msgid ""
+"Use the row actions to stage or unstage files, then write a commit message "
+"and commit local staged changes with the Git identity saved in Preferences."
 msgstr ""
 
 msgid "Window Height"
@@ -630,4 +721,734 @@ msgstr ""
 
 msgctxt "alert response"
 msgid "Save"
+msgstr ""
+
+msgid "%d file skipped."
+msgid_plural "%d files skipped."
+msgstr[0] "%d fil sprunget over."
+msgstr[1] "%d filer sprunget over."
+
+msgid "%d result"
+msgid_plural "%d results"
+msgstr[0] "%d resultat"
+msgstr[1] "%d resultater"
+
+msgid ""
+"Adds Find in Files, document statistics, and print support while preserving "
+"the existing Find and Replace workflow."
+msgstr ""
+"Tilføjer Søg i filer, dokumentstatistik og udskriftsunderstøttelse, mens den "
+"eksisterende Søg og erstat-arbejdsgang bevares."
+
+msgid "Document Statistics"
+msgstr "Dokumentstatistik"
+
+msgid "Find in Files"
+msgstr "Søg i filer"
+
+msgid ""
+"Find in Files searches UTF-8 text without an index. It skips generated "
+"folders such as .git, target, build, node_modules, vendor, dist, .flatpak-"
+"builder, __pycache__, and .venv."
+msgstr ""
+"Søg i filer søger i UTF-8-tekst uden et indeks. Det springer genererede "
+"mapper over såsom .git, target, build, node_modules, vendor, dist, .flatpak-"
+"builder, __pycache__ og .venv."
+
+msgid "Open a folder to search files."
+msgstr "Åbn en mappe for at søge i filer."
+
+msgid ""
+"Press Ctrl+Shift+F to search the open folder. Riteed streams results from "
+"the current workspace and skips hidden or generated folders that are not "
+"useful for text search."
+msgstr ""
+"Tryk Ctrl+Skift+F for at søge i den åbne mappe. Riteed streamer resultater "
+"fra det aktuelle arbejdsområde og springer skjulte eller genererede mapper "
+"over, som ikke er nyttige til tekstsøgning."
+
+msgid "Printing failed."
+msgstr "Udskrivning mislykkedes."
+
+msgid "Refresh Find in Files"
+msgstr "Opdater Søg i filer"
+
+msgid "Results limited; refine the search."
+msgstr "Resultaterne er begrænset; præciser søgningen."
+
+msgid "Searching"
+msgstr "Søger"
+
+msgid "Statistics are disabled for very large files."
+msgstr "Statistik er slået fra for meget store filer."
+
+msgid "Type to search the open folder."
+msgstr "Skriv for at søge i den åbne mappe."
+
+msgid ""
+"Words are separated by whitespace; em dashes and punctuation count with "
+"adjacent words."
+msgstr ""
+"Ord adskilles af blanktegn; tankestreger og tegnsætning tælles sammen med "
+"tilstødende ord."
+
+msgid "in %d file"
+msgid_plural "in %d files"
+msgstr[0] "i %d fil"
+msgstr[1] "i %d filer"
+
+msgctxt "help row"
+msgid "Find in Files"
+msgstr "Søg i filer"
+
+msgctxt "help row"
+msgid "Find in Files Limits"
+msgstr "Begrænsninger for Søg i filer"
+
+msgctxt "menu item"
+msgid "Document Statistics"
+msgstr "Dokumentstatistik"
+
+msgctxt "menu item"
+msgid "Find and Replace"
+msgstr "Søg og erstat"
+
+msgctxt "menu item"
+msgid "Find in Files"
+msgstr "Søg i filer"
+
+msgctxt "menu item"
+msgid "Print"
+msgstr "Udskriv"
+
+msgctxt "search action"
+msgid "Show Replace"
+msgstr "Vis erstat"
+
+msgctxt "search field placeholder"
+msgid "Search Files"
+msgstr "Søg i filer"
+
+msgctxt "sidebar mode"
+msgid "Find in Files"
+msgstr "Søg i filer"
+
+msgctxt "statistics row"
+msgid "Characters"
+msgstr "Tegn"
+
+msgctxt "statistics row"
+msgid "Characters Without Spaces"
+msgstr "Tegn uden mellemrum"
+
+msgctxt "statistics row"
+msgid "Lines"
+msgstr "Linjer"
+
+msgctxt "statistics row"
+msgid "Words (whitespace-delimited)"
+msgstr "Ord (adskilt af blanktegn)"
+
+msgctxt "statistics scope"
+msgid "Document"
+msgstr "Dokument"
+
+msgctxt "statistics scope"
+msgid "Selection"
+msgstr "Markering"
+
+msgctxt "alert response"
+msgid "Save Anyway"
+msgstr ""
+
+msgctxt "compare action"
+msgid "Exit Compare"
+msgstr ""
+
+msgctxt "compare action"
+msgid "Next Difference"
+msgstr ""
+
+msgctxt "compare action"
+msgid "Previous Difference"
+msgstr ""
+
+msgctxt "compare action"
+msgid "Refresh Reference"
+msgstr ""
+
+msgctxt "compare dialog action"
+msgid "Choose File"
+msgstr ""
+
+msgctxt "compare dialog action"
+msgid "Clear"
+msgstr ""
+
+msgctxt "compare dialog action"
+msgid "Paste Text"
+msgstr ""
+
+msgctxt "compare dialog action"
+msgid "Swap"
+msgstr ""
+
+msgctxt "compare dialog side"
+msgid "Current"
+msgstr ""
+
+msgctxt "compare dialog side"
+msgid "Reference"
+msgstr ""
+
+msgctxt "compare pane"
+msgid "Current"
+msgstr ""
+
+msgctxt "compare pane"
+msgid "Reference"
+msgstr ""
+
+msgctxt "compare dialog title"
+msgid "Compare"
+msgstr ""
+
+msgctxt "compare source"
+msgid "Current Document"
+msgstr ""
+
+msgctxt "compare source"
+msgid "File"
+msgstr ""
+
+msgctxt "compare source"
+msgid "Git Version"
+msgstr ""
+
+msgctxt "compare source"
+msgid "Not Set"
+msgstr ""
+
+msgctxt "compare source"
+msgid "Pasted Text"
+msgstr ""
+
+msgctxt "compare source"
+msgid "Saved Version"
+msgstr ""
+
+msgctxt "compare status"
+msgid "Loading Reference"
+msgstr ""
+
+msgctxt "compare toolbar"
+msgid "Compare"
+msgstr ""
+
+msgctxt "dialog button"
+msgid "Apply"
+msgstr ""
+
+msgctxt "dialog button"
+msgid "Cancel"
+msgstr ""
+
+msgctxt "dialog button"
+msgid "Clear All"
+msgstr ""
+
+msgctxt "dialog button"
+msgid "Compare"
+msgstr ""
+
+msgctxt "dialog button"
+msgid "Open"
+msgstr ""
+
+msgctxt "dialog button"
+msgid "Reopen"
+msgstr ""
+
+msgctxt "dialog button"
+msgid "Save"
+msgstr ""
+
+msgctxt "document format"
+msgid "No Document"
+msgstr ""
+
+msgctxt "document subtitle"
+msgid "Plain Text Document"
+msgstr ""
+
+msgctxt "document title"
+msgid "Untitled"
+msgstr ""
+
+msgctxt "editor palette"
+msgid "Adwaita Dark"
+msgstr ""
+
+msgctxt "editor palette"
+msgid "Adwaita Light"
+msgstr ""
+
+msgctxt "editor palette"
+msgid "Auto"
+msgstr ""
+
+msgctxt "editor palette"
+msgid "Classic Dark"
+msgstr ""
+
+msgctxt "editor palette"
+msgid "Classic Light"
+msgstr ""
+
+msgctxt "editor palette"
+msgid "Kate Dark"
+msgstr ""
+
+msgctxt "editor palette"
+msgid "Kate Light"
+msgstr ""
+
+msgctxt "editor palette"
+msgid "Solarized Dark"
+msgstr ""
+
+msgctxt "editor palette"
+msgid "Solarized Light"
+msgstr ""
+
+msgctxt "window palette"
+msgid "Adwaita"
+msgstr ""
+
+msgctxt "window palette"
+msgid "Classic"
+msgstr ""
+
+msgctxt "window palette"
+msgid "Kate"
+msgstr ""
+
+msgctxt "window palette"
+msgid "Solarized"
+msgstr ""
+
+msgctxt "error title"
+msgid "Action Cancelled"
+msgstr ""
+
+msgctxt "error title"
+msgid "Unable to Open Help"
+msgstr ""
+
+msgctxt "external action"
+msgid "Reload"
+msgstr ""
+
+msgctxt "external action"
+msgid "Save"
+msgstr ""
+
+msgctxt "external banner"
+msgid "This File Changed on Disk."
+msgstr ""
+
+msgctxt "external banner"
+msgid "This File Is Missing on Disk."
+msgstr ""
+
+msgctxt "file dialog action"
+msgid "Choose"
+msgstr ""
+
+msgctxt "file dialog action"
+msgid "Open"
+msgstr ""
+
+msgctxt "file dialog action"
+msgid "Save"
+msgstr ""
+
+msgctxt "file dialog title"
+msgid "Choose a File"
+msgstr ""
+
+msgctxt "file dialog title"
+msgid "Open Folder"
+msgstr ""
+
+msgctxt "file dialog title"
+msgid "Open Files"
+msgstr ""
+
+msgctxt "file dialog title"
+msgid "Save the Document"
+msgstr ""
+
+msgctxt "file filter"
+msgid "All Files"
+msgstr ""
+
+msgctxt "file filter"
+msgid "Folders"
+msgstr ""
+
+msgctxt "file filter"
+msgid "Plain Text Files"
+msgstr ""
+
+msgctxt "git action disabled"
+msgid "No staged change"
+msgstr ""
+
+msgctxt "git action disabled"
+msgid "No unstaged change"
+msgstr ""
+
+msgctxt "git action disabled"
+msgid "Refresh required"
+msgstr ""
+
+msgctxt "git action disabled"
+msgid "Untracked file"
+msgstr ""
+
+msgctxt "git action tooltip"
+msgid "Discard Changes"
+msgstr ""
+
+msgctxt "git action tooltip"
+msgid "Stage File"
+msgstr ""
+
+msgctxt "git action tooltip"
+msgid "Unstage File"
+msgstr ""
+
+msgctxt "git branch"
+msgid "Detached"
+msgstr ""
+
+msgctxt "git commit"
+msgid "Commit"
+msgstr ""
+
+msgctxt "git commit"
+msgid "Commit Message"
+msgstr ""
+
+msgctxt "git history"
+msgid "Recent Commits"
+msgstr ""
+
+msgctxt "git path fallback"
+msgid "Invalid path encoding"
+msgstr ""
+
+msgctxt "git status"
+msgid "Added"
+msgstr ""
+
+msgctxt "git status"
+msgid "Conflict"
+msgstr ""
+
+msgctxt "git status"
+msgid "Deleted"
+msgstr ""
+
+msgctxt "git status"
+msgid "Modified"
+msgstr ""
+
+msgctxt "git status"
+msgid "Staged"
+msgstr ""
+
+msgctxt "git status"
+msgid "Unsupported"
+msgstr ""
+
+msgctxt "git status"
+msgid "Untracked"
+msgstr ""
+
+msgctxt "help dialog"
+msgid "Help"
+msgstr ""
+
+msgctxt "help page"
+msgid "Overview"
+msgstr ""
+
+msgctxt "help page"
+msgid "Technical Notes"
+msgstr ""
+
+msgctxt "help row"
+msgid "Changed Files"
+msgstr ""
+
+msgctxt "help row"
+msgid "Discard Changes"
+msgstr ""
+
+msgctxt "help row"
+msgid "Editor Tools"
+msgstr ""
+
+msgctxt "help row"
+msgid "Live Refresh"
+msgstr ""
+
+msgctxt "help row"
+msgid "Local Git Only"
+msgstr ""
+
+msgctxt "help row"
+msgid "More Shortcuts"
+msgstr ""
+
+msgctxt "help row"
+msgid "Saving Work"
+msgstr ""
+
+msgctxt "help row"
+msgid "Find and Replace"
+msgstr ""
+
+msgctxt "help row"
+msgid "Safe Discard Limits"
+msgstr ""
+
+msgctxt "help row"
+msgid "Stage and Commit"
+msgstr ""
+
+msgctxt "help row"
+msgid "Tabs and Files"
+msgstr ""
+
+msgctxt "help section"
+msgid "Everyday Editing"
+msgstr ""
+
+msgctxt "help section"
+msgid "Getting Started"
+msgstr ""
+
+msgctxt "help section"
+msgid "Source Control"
+msgstr ""
+
+msgctxt "line ending"
+msgid "CR"
+msgstr ""
+
+msgctxt "line ending"
+msgid "CRLF"
+msgstr ""
+
+msgctxt "line ending"
+msgid "LF"
+msgstr ""
+
+msgctxt "line ending menu"
+msgid "Classic Mac (CR)"
+msgstr ""
+
+msgctxt "line ending menu"
+msgid "Unix (LF)"
+msgstr ""
+
+msgctxt "line ending menu"
+msgid "Windows (CRLF)"
+msgstr ""
+
+msgctxt "menu item"
+msgid "About Riteed"
+msgstr ""
+
+msgctxt "menu item"
+msgid "Help"
+msgstr ""
+
+msgctxt "menu item"
+msgid "Keyboard Shortcuts"
+msgstr ""
+
+msgctxt "menu item"
+msgid "New Window"
+msgstr ""
+
+msgctxt "menu item"
+msgid "Open Folder"
+msgstr ""
+
+msgctxt "menu item"
+msgid "Open Files"
+msgstr ""
+
+msgctxt "menu item"
+msgid "Preferences"
+msgstr ""
+
+msgctxt "menu item"
+msgid "Recent Files"
+msgstr ""
+
+msgctxt "open menu tooltip"
+msgid "Open Choices"
+msgstr ""
+
+msgctxt "menu item"
+msgid "Find"
+msgstr ""
+
+msgctxt "tab menu item"
+msgid "_Close"
+msgstr ""
+
+msgctxt "tab menu item"
+msgid "Close _Other Tabs"
+msgstr ""
+
+msgctxt "tab menu item"
+msgid "Move Tab _Backward"
+msgstr ""
+
+msgctxt "tab menu item"
+msgid "Move Tab _Forward"
+msgstr ""
+
+msgctxt "tab menu item"
+msgid "Move to _New Window"
+msgstr ""
+
+msgctxt "tab menu item"
+msgid "Compare With F_ile"
+msgstr ""
+
+msgctxt "tab menu item"
+msgid "Compare With _Saved Version"
+msgstr ""
+
+msgctxt "tab menu item"
+msgid "Compare With _Pasted Text"
+msgstr ""
+
+msgctxt "paste dialog title"
+msgid "Paste Text"
+msgstr ""
+
+msgctxt "recent files dialog title"
+msgid "Recent Files"
+msgstr ""
+
+msgctxt "save file name"
+msgid "Untitled"
+msgstr ""
+
+msgctxt "save safety action"
+msgid "Save"
+msgstr ""
+
+msgctxt "save safety action"
+msgid "Save As"
+msgstr ""
+
+msgctxt "save safety banner"
+msgid "This File Is Read-Only."
+msgstr ""
+
+msgctxt "search action"
+msgid "Close Find"
+msgstr ""
+
+msgctxt "search action"
+msgid "Next Match"
+msgstr ""
+
+msgctxt "search action"
+msgid "Previous Match"
+msgstr ""
+
+msgctxt "search action"
+msgid "Replace"
+msgstr ""
+
+msgctxt "search action"
+msgid "Replace All"
+msgstr ""
+
+msgctxt "search field placeholder"
+msgid "Replace With"
+msgstr ""
+
+msgctxt "search option"
+msgid "Match Case"
+msgstr ""
+
+msgctxt "sidebar mode"
+msgid "Files"
+msgstr ""
+
+msgctxt "sidebar mode"
+msgid "Source Control"
+msgstr ""
+
+msgctxt "source control view"
+msgid "List"
+msgstr ""
+
+msgctxt "source control view"
+msgid "Tree"
+msgstr ""
+
+msgctxt "status format"
+msgid "Format"
+msgstr ""
+
+msgctxt "status position"
+msgid "Ln %1$d, Col %2$d"
+msgstr ""
+
+msgctxt "status zoom"
+msgid "Zoom"
+msgstr ""
+
+msgctxt "theme selector accessibility"
+msgid "Dark style"
+msgstr ""
+
+msgctxt "theme selector accessibility"
+msgid "Follow system style"
+msgstr ""
+
+msgctxt "theme selector accessibility"
+msgid "Light style"
+msgstr ""
+
+msgctxt "theme selector tooltip"
+msgid "Dark Style"
+msgstr ""
+
+msgctxt "theme selector tooltip"
+msgid "Follow System Style"
+msgstr ""
+
+msgctxt "theme selector tooltip"
+msgid "Light Style"
+msgstr ""
+
+msgctxt "zoom action"
+msgid "Zoom In"
+msgstr ""
+
+msgctxt "zoom action"
+msgid "Zoom Out"
 msgstr ""

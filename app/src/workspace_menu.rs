@@ -20,6 +20,19 @@ fn workflow_section() -> gio::Menu {
         Some("app.new-window"),
     );
     section.append(Some(&pgettext("menu item", "Find")), Some("win.search"));
+    section.append(
+        Some(&pgettext("menu item", "Find and Replace")),
+        Some("win.replace"),
+    );
+    section.append(
+        Some(&pgettext("menu item", "Find in Files")),
+        Some("win.find-in-files"),
+    );
+    section.append(
+        Some(&pgettext("menu item", "Document Statistics")),
+        Some("win.document-statistics"),
+    );
+    section.append(Some(&pgettext("menu item", "Print")), Some("win.print"));
     section
 }
 
@@ -108,8 +121,28 @@ mod tests {
         assert_eq!(item_string(&theme, 0, "action"), None);
 
         let workflow = section(&menu, 1);
-        assert_menu_labels(&workflow, &["New Window", "Find"]);
-        assert_menu_actions(&workflow, &["app.new-window", "win.search"]);
+        assert_menu_labels(
+            &workflow,
+            &[
+                "New Window",
+                "Find",
+                "Find and Replace",
+                "Find in Files",
+                "Document Statistics",
+                "Print",
+            ],
+        );
+        assert_menu_actions(
+            &workflow,
+            &[
+                "app.new-window",
+                "win.search",
+                "win.replace",
+                "win.find-in-files",
+                "win.document-statistics",
+                "win.print",
+            ],
+        );
 
         let standard = section(&menu, 2);
         assert_menu_labels(

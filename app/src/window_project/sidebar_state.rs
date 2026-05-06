@@ -45,6 +45,9 @@ pub(super) fn set_sidebar_visibility(state: &mut ProjectState, visible: bool) {
         state.sidebar_visible_action.set_state(&false.to_variant());
         animate_split_position(state, 0);
     }
+    if let Some(handler) = state.sidebar_visibility_handler.as_ref() {
+        handler(visible);
+    }
 }
 
 pub(super) fn set_sidebar_position_from_move(state: &mut ProjectState, split_view: &gtk4::Paned) {

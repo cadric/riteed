@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use gettextrs::{gettext, ngettext, pgettext};
+use gettextrs::{gettext, pgettext};
 use gtk4::accessible::Property;
 use gtk4::gdk;
 use gtk4::{glib, prelude::*};
@@ -10,6 +10,11 @@ use sourceview5::prelude::*;
 
 use crate::dialogs;
 use crate::editor_tab::EditorTab;
+
+mod support;
+use support::{
+    count_matches, format_match_count, format_replaced_count, select_match, selection_matches_query,
+};
 
 struct SearchBinding {
     context: sourceview5::SearchContext,
@@ -62,12 +67,17 @@ impl EditorSearch {
             "window-close-symbolic",
             &pgettext("search action", "Close Find"),
         );
+        let reveal_replace_button = icon_button(
+            "edit-find-replace-symbolic",
+            &pgettext("search action", "Show Replace"),
+        );
 
         let first_row = gtk4::Box::builder()
             .orientation(gtk4::Orientation::Horizontal)
             .spacing(6)
             .build();
         first_row.append(&search_entry);
+        first_row.append(&reveal_replace_button);
         first_row.append(&close_button);
 
         let second_row = gtk4::Box::builder()
@@ -126,7 +136,7 @@ impl EditorSearch {
                 manual_message: None,
             }),
         });
-        search.install_callbacks(&close_button);
+        search.install_callbacks(&close_button, &reveal_replace_button);
         search.update_result_state();
         search
     }
@@ -268,7 +278,11 @@ impl EditorSearch {
         self.update_result_state();
     }
 
-    fn install_callbacks(self: &Rc<Self>, close_button: &gtk4::Button) {
+    fn install_callbacks(
+        self: &Rc<Self>,
+        close_button: &gtk4::Button,
+        reveal_replace_button: &gtk4::Button,
+    ) {
         let weak = Rc::downgrade(self);
         self.search_entry.connect_search_changed(move |_| {
             if let Some(search) = weak.upgrade() {
@@ -338,6 +352,17 @@ impl EditorSearch {
             move |_| {
                 if let Some(search) = weak.upgrade() {
                     search.close();
+                }
+            }
+        });
+
+        reveal_replace_button.connect_clicked({
+            let weak = Rc::downgrade(self);
+            move |_| {
+                if let Some(search) = weak.upgrade() {
+                    search.replace_row.set_visible(true);
+                    search.replace_entry.grab_focus();
+                    search.update_result_state();
                 }
             }
         });
@@ -535,66 +560,4 @@ fn icon_button(icon_name: &str, label: &str) -> gtk4::Button {
     button.set_tooltip_text(Some(label));
     button.update_property(&[Property::Label(label)]);
     button
-}
-
-fn count_matches(context: &sourceview5::SearchContext, buffer: &sourceview5::Buffer) -> u32 {
-    let mut count = 0;
-    let mut iter = buffer.start_iter();
-    while let Some((_start, end, wrapped)) = context.forward(&iter) {
-        if wrapped {
-            break;
-        }
-        count += 1;
-        iter = end;
-    }
-    count
-}
-
-fn select_match(tab: &EditorTab, start: &gtk4::TextIter, end: &gtk4::TextIter) {
-    let buffer = tab.text_buffer();
-    buffer.select_range(start, end);
-    let mut scroll_iter = *start;
-    tab.text_view()
-        .scroll_to_iter(&mut scroll_iter, 0.2, false, 0.0, 0.0);
-}
-
-fn selection_matches_query(selection: &str, query: &str, case_sensitive: bool) -> bool {
-    if case_sensitive {
-        selection == query
-    } else {
-        selection.to_lowercase() == query.to_lowercase()
-    }
-}
-
-#[must_use]
-pub fn format_match_count(count: u32) -> String {
-    ngettext("%d match", "%d matches", count).replace("%d", &count.to_string())
-}
-
-#[must_use]
-pub fn format_replaced_count(count: u32) -> String {
-    ngettext("Replaced %d match", "Replaced %d matches", count).replace("%d", &count.to_string())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::{format_match_count, format_replaced_count, selection_matches_query};
-
-    #[test]
-    fn match_count_is_plural_sensitive() {
-        assert_eq!(format_match_count(1), "1 match");
-        assert_eq!(format_match_count(2), "2 matches");
-    }
-
-    #[test]
-    fn replaced_count_is_plural_sensitive() {
-        assert_eq!(format_replaced_count(1), "Replaced 1 match");
-        assert_eq!(format_replaced_count(2), "Replaced 2 matches");
-    }
-
-    #[test]
-    fn case_insensitive_selection_match_works() {
-        assert!(selection_matches_query("Hello", "hello", false));
-        assert!(!selection_matches_query("Hello", "hello", true));
-    }
 }

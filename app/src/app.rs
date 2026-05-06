@@ -127,9 +127,11 @@ fn install_accels(app: &adw::Application) {
     app.set_accels_for_action("app.open-folder", &["<Ctrl><Shift>o"]);
     app.set_accels_for_action("win.save", &["<Ctrl>s"]);
     app.set_accels_for_action("win.save-as", &["<Ctrl><Shift>s"]);
+    app.set_accels_for_action("win.print", &["<Ctrl>p"]);
     app.set_accels_for_action("win.close", &["<Ctrl>w"]);
     app.set_accels_for_action("win.search", &["<Ctrl>f"]);
     app.set_accels_for_action("win.replace", &["<Ctrl>h"]);
+    app.set_accels_for_action("win.find-in-files", &["<Ctrl><Shift>f"]);
     app.set_accels_for_action("win.find-next", &["<Ctrl>g", "F3"]);
     app.set_accels_for_action("win.find-prev", &["<Ctrl><Shift>g", "<Shift>F3"]);
     app.set_accels_for_action("win.diff-next", &["F8"]);
@@ -490,6 +492,8 @@ mod tests {
         assert_accels(app, "app.new-window", &["<Ctrl>n"]);
         assert_accels(app, "app.new", &["<Ctrl>t"]);
         assert_accels(app, "win.tab-move-to-new-window", &["<Ctrl><Shift>n"]);
+        assert_accels(app, "win.print", &["<Ctrl>p"]);
+        assert_accels(app, "win.find-in-files", &["<Ctrl><Shift>f"]);
         assert_accels(app, "win.find-next", &["<Ctrl>g", "F3"]);
         assert_accels(app, "win.find-prev", &["<Ctrl><Shift>g", "<Shift>F3"]);
         assert_accels(app, "win.refresh-project-tree", &["<Ctrl>r", "F5"]);

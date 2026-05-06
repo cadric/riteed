@@ -9,6 +9,9 @@ pub mod dialogs;
 pub mod document;
 mod document_limits;
 mod document_portal;
+mod document_print;
+mod document_statistics;
+mod document_tools;
 pub mod editor_format;
 pub mod editor_io;
 mod editor_language;
@@ -19,6 +22,7 @@ pub mod editor_tab;
 mod editor_view;
 mod editor_zoom;
 pub mod error;
+mod find_in_files;
 mod git_process;
 mod git_status;
 mod palette_engine;
@@ -39,6 +43,7 @@ mod window_compare;
 mod window_preferences;
 mod window_project;
 pub mod window_shell;
+mod window_support;
 mod window_theme;
 pub mod workspace;
 mod workspace_close;
@@ -58,6 +63,8 @@ mod gtk_tests_v10;
 mod gtk_tests_v11;
 #[cfg(test)]
 mod gtk_tests_v11_git;
+#[cfg(test)]
+mod gtk_tests_v12;
 #[cfg(test)]
 mod gtk_tests_v4;
 #[cfg(test)]

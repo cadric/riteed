@@ -35,7 +35,7 @@
     },
     {
       "path": "src/editor_search.rs",
-      "line": 37,
+      "line": 42,
       "match": "state: RefCell<SearchState>,",
       "kind": "runtime-shared-state",
       "ownership": "The search controller owns one mutable binding to the active tab and active search context.",
@@ -307,15 +307,15 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 85,
+      "line": 84,
       "match": "state: Rc<RefCell<ProjectState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The window project controller owns shared project sidebar state.",
-      "justification": "Sidebar actions, async folder open/restore, refresh, and tab\u2192tree reveal must coordinate through one mutable state cell."
+      "justification": "Sidebar actions, async folder open/restore, refresh, and tab→tree reveal must coordinate through one mutable state cell."
     },
     {
       "path": "src/window_project.rs",
-      "line": 111,
+      "line": 110,
       "match": "let tree_activation_handler: Rc<RefCell<Option<TreeActivationHandler>>> =",
       "kind": "runtime-shared-state",
       "ownership": "Tree activation wiring stores one late-bound handler closure.",
@@ -330,16 +330,8 @@
       "justification": "Root transitions must consistently enable/disable window actions and sidebar visibility from one state source of truth."
     },
     {
-      "path": "src/window_project.rs",
-      "line": 385,
-      "match": "fn open_file_from_tree(state: &Rc<RefCell<ProjectState>>, file: gio::File) {",
-      "kind": "runtime-shared-state",
-      "ownership": "Tree activation routing borrows shared project state.",
-      "justification": "Opening from the project tree needs access to the shared workspace handle and consistent open-source behavior."
-    },
-    {
-      "path": "src/window_project.rs",
-      "line": 393,
+      "path": "src/window_project/root.rs",
+      "line": 163,
       "match": "state: &Rc<RefCell<ProjectState>>,",
       "kind": "runtime-shared-state",
       "ownership": "Project root transition helpers borrow shared project state.",
@@ -352,22 +344,6 @@
       "kind": "runtime-shared-state",
       "ownership": "Root-change sidebar visibility borrows shared project state after mutation is complete.",
       "justification": "Split-view notify handlers can re-enter project state, so visibility changes run after root mutation releases its mutable borrow."
-    },
-    {
-      "path": "src/window_project.rs",
-      "line": 543,
-      "match": "fn close_root(state: &Rc<RefCell<ProjectState>>) {",
-      "kind": "runtime-shared-state",
-      "ownership": "Close-folder handling mutates shared project state.",
-      "justification": "Closing a project folder cancels async work, clears reveal state, resets the sidebar model, and updates remembered settings."
-    },
-    {
-      "path": "src/window_project.rs",
-      "line": 568,
-      "match": "fn sync_root_none(state: &Rc<RefCell<ProjectState>>, clear_settings: bool) {",
-      "kind": "runtime-shared-state",
-      "ownership": "No-root synchronization mutates shared project state.",
-      "justification": "Restore failures and first-run state need a single path to reset runtime state without clearing remembered settings unless requested."
     },
     {
       "path": "src/window_project/app_open.rs",
@@ -435,7 +411,7 @@
     },
     {
       "path": "src/workspace.rs",
-      "line": 66,
+      "line": 68,
       "match": "pub(crate) state: RefCell<WorkspaceState>,",
       "kind": "runtime-shared-state",
       "ownership": "The workspace owns tab collection, recent/session caches, restore gating, and active close flow.",
@@ -482,8 +458,8 @@
       "justification": "Completion handling needs the accumulated batch results to decide between restore selection, aggregated toasts, and fallback UI state."
     },
     {
-      "path": "src/window_project.rs",
-      "line": 501,
+      "path": "src/window_project/root.rs",
+      "line": 119,
       "match": "state: &Rc<RefCell<ProjectState>>,",
       "kind": "runtime-shared-state",
       "ownership": "Project root finish helpers borrow shared project state after the mutable root update is released.",

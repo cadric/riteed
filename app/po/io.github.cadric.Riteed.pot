@@ -216,7 +216,7 @@ msgstr ""
 msgid "Insert Spaces Instead of Tabs"
 msgstr ""
 
-msgid "It provides tabs, find and replace, syntax highlighting, optional line numbers and minimap, folder navigation, split diffs, lightweight local Git source control, format controls for text encoding and line endings, curated editor palettes, and conservative reload prompts when files change on disk."
+msgid "It provides tabs, find and replace, Find in Files, document statistics, printing, syntax highlighting, optional line numbers and minimap, folder navigation, split diffs, lightweight local Git source control, format controls for text encoding and line endings, curated editor palettes, and conservative reload prompts when files change on disk."
 msgstr ""
 
 msgid "Loading recent commits"
@@ -270,7 +270,7 @@ msgstr ""
 msgid "Only one folder can be opened at a time."
 msgstr ""
 
-msgid "Use the main menu theme selector to switch System, Light, or Dark appearance. Open Preferences to adjust window and editor palettes, current-line highlight, line numbers, and the minimap when you want more structure while reading longer code or markdown files."
+msgid "Use the main menu to print, view document statistics, or switch System, Light, and Dark appearance. Open Preferences to adjust window and editor palettes, current-line highlight, line numbers, and the minimap."
 msgstr ""
 
 msgid "Open Keyboard Shortcuts from the main menu to review the available file, tab, find, and app commands."
@@ -616,4 +616,118 @@ msgstr ""
 
 msgctxt "alert response"
 msgid "Save"
+msgstr ""
+
+msgid "%d file skipped."
+msgid_plural "%d files skipped."
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "%d result"
+msgid_plural "%d results"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "Adds Find in Files, document statistics, and print support while preserving the existing Find and Replace workflow."
+msgstr ""
+
+msgid "Document Statistics"
+msgstr ""
+
+msgid "Find in Files"
+msgstr ""
+
+msgid "Find in Files searches UTF-8 text without an index. It skips generated folders such as .git, target, build, node_modules, vendor, dist, .flatpak-builder, __pycache__, and .venv."
+msgstr ""
+
+msgid "Open a folder to search files."
+msgstr ""
+
+msgid "Press Ctrl+Shift+F to search the open folder. Riteed streams results from the current workspace and skips hidden or generated folders that are not useful for text search."
+msgstr ""
+
+msgid "Printing failed."
+msgstr ""
+
+msgid "Refresh Find in Files"
+msgstr ""
+
+msgid "Results limited; refine the search."
+msgstr ""
+
+msgid "Searching"
+msgstr ""
+
+msgid "Statistics are disabled for very large files."
+msgstr ""
+
+msgid "Type to search the open folder."
+msgstr ""
+
+msgid "Words are separated by whitespace; em dashes and punctuation count with adjacent words."
+msgstr ""
+
+msgid "in %d file"
+msgid_plural "in %d files"
+msgstr[0] ""
+msgstr[1] ""
+
+msgctxt "help row"
+msgid "Find in Files"
+msgstr ""
+
+msgctxt "help row"
+msgid "Find in Files Limits"
+msgstr ""
+
+msgctxt "menu item"
+msgid "Document Statistics"
+msgstr ""
+
+msgctxt "menu item"
+msgid "Find and Replace"
+msgstr ""
+
+msgctxt "menu item"
+msgid "Find in Files"
+msgstr ""
+
+msgctxt "menu item"
+msgid "Print"
+msgstr ""
+
+msgctxt "search action"
+msgid "Show Replace"
+msgstr ""
+
+msgctxt "search field placeholder"
+msgid "Search Files"
+msgstr ""
+
+msgctxt "sidebar mode"
+msgid "Find in Files"
+msgstr ""
+
+msgctxt "statistics row"
+msgid "Characters"
+msgstr ""
+
+msgctxt "statistics row"
+msgid "Characters Without Spaces"
+msgstr ""
+
+msgctxt "statistics row"
+msgid "Lines"
+msgstr ""
+
+msgctxt "statistics row"
+msgid "Words (whitespace-delimited)"
+msgstr ""
+
+msgctxt "statistics scope"
+msgid "Document"
+msgstr ""
+
+msgctxt "statistics scope"
+msgid "Selection"
 msgstr ""

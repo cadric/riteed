@@ -323,7 +323,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 71,
+      "line": 68,
       "match": "sidebar_position_guard: Rc<Cell<bool>>,",
       "kind": "runtime-shared-state",
       "ownership": "The project sidebar owns a shared programmatic-position guard.",

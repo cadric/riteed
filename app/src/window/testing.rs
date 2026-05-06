@@ -277,6 +277,18 @@ impl Window {
         self.source_control.status_label_for_tests()
     }
 
+    pub(crate) fn set_print_runner_for_tests(&self, runner: crate::document_tools::PrintRunner) {
+        self.document_tools.set_print_runner_for_tests(runner);
+    }
+
+    pub(crate) fn document_tool_actions_enabled_for_tests(&self) -> (bool, bool) {
+        self.document_tools.actions_enabled_for_tests()
+    }
+
+    pub(crate) fn activate_print_for_tests(&self) -> bool {
+        gtk4::prelude::WidgetExt::activate_action(self.widget(), "win.print", None).is_ok()
+    }
+
     pub(crate) fn source_control_row_count_for_tests(&self) -> usize {
         self.source_control.row_count_for_tests()
     }

@@ -1,7 +1,7 @@
 use std::cell::Cell;
 use std::rc::Rc;
 
-use gettextrs::{gettext, pgettext};
+use gettextrs::gettext;
 use gtk4::accessible::Property;
 use gtk4::{gdk, gio, glib, prelude::*};
 use libadwaita as adw;
@@ -9,8 +9,10 @@ use libadwaita::prelude::*;
 
 use crate::app_chrome::{AppChromeController, ChromeObserver};
 use crate::dialogs;
+use crate::document_tools::DocumentToolsController;
 use crate::editor_zoom::EditorZoomController;
 use crate::error::AppError;
+use crate::find_in_files::FindInFilesController;
 use crate::settings::AppSettings;
 use crate::sidebar_host::SidebarHost;
 use crate::source_control::SourceControlController;
@@ -19,6 +21,9 @@ use crate::window_compare::WindowCompareController;
 use crate::window_preferences::WindowPreferencesController;
 use crate::window_project::WindowProjectController;
 use crate::window_shell::WindowShell;
+use crate::window_support::{
+    configure_open_button, create_window_actions, install_chrome_observer,
+};
 use crate::workspace::{OpenSource, Workspace, WorkspaceParts};
 
 #[cfg(test)]
@@ -58,6 +63,7 @@ pub struct Window {
     recent_files_action: gio::SimpleAction,
     search_action: gio::SimpleAction,
     replace_action: gio::SimpleAction,
+    find_in_files_action: gio::SimpleAction,
     find_next_action: gio::SimpleAction,
     find_prev_action: gio::SimpleAction,
     fullscreen_action: gio::SimpleAction,
@@ -69,11 +75,10 @@ pub struct Window {
     _chrome_observer: Option<ChromeObserver>,
     _preferences: WindowPreferencesController,
     compare: Rc<WindowCompareController>,
+    document_tools: Rc<DocumentToolsController>,
     project: WindowProjectController,
-    #[cfg(test)]
     sidebar_host: SidebarHost,
-    #[cfg(not(test))]
-    _sidebar_host: SidebarHost,
+    find_in_files: Rc<FindInFilesController>,
     source_control: SourceControlController,
     zoom: Rc<EditorZoomController>,
     last_non_fullscreen_size: Cell<(i32, i32)>,
@@ -111,7 +116,7 @@ impl Window {
         settings: &AppSettings,
         chrome: Option<&AppChromeController>,
     ) -> Result<Rc<Self>, AppError> {
-        install_sourceview_for_tests();
+        crate::window_support::install_sourceview_for_tests();
         Self::build(app, settings.clone(), chrome, WindowInit::primary())
     }
 
@@ -124,7 +129,7 @@ impl Window {
         settings: &AppSettings,
         chrome: Option<&AppChromeController>,
     ) -> Result<Rc<Self>, AppError> {
-        install_sourceview_for_tests();
+        crate::window_support::install_sourceview_for_tests();
         Self::build(app, settings.clone(), chrome, WindowInit::secondary())
     }
 
@@ -133,7 +138,7 @@ impl Window {
         app: &adw::Application,
         settings: AppSettings,
     ) -> Result<Rc<Self>, AppError> {
-        install_sourceview_for_tests();
+        crate::window_support::install_sourceview_for_tests();
         Self::build(app, settings, None, WindowInit::primary())
     }
 
@@ -146,27 +151,7 @@ impl Window {
         let shell = WindowShell::new(app)?;
         configure_open_button(&shell);
         crate::runtime_icons::configure(&shell.window);
-        let save_action = gio::SimpleAction::new("save", None);
-        let save_as_action = gio::SimpleAction::new("save-as", None);
-        let close_action = gio::SimpleAction::new("close", None);
-        let recent_files_action = gio::SimpleAction::new("recent-files", None);
-        let search_action = gio::SimpleAction::new("search", None);
-        let replace_action = gio::SimpleAction::new("replace", None);
-        let find_next_action = gio::SimpleAction::new("find-next", None);
-        let find_prev_action = gio::SimpleAction::new("find-prev", None);
-        let fullscreen_action =
-            gio::SimpleAction::new_stateful("fullscreen", None, &false.to_variant());
-        let theme_action = crate::window_theme::create_action(&settings);
-        shell.window.add_action(&save_action);
-        shell.window.add_action(&save_as_action);
-        shell.window.add_action(&close_action);
-        shell.window.add_action(&recent_files_action);
-        shell.window.add_action(&search_action);
-        shell.window.add_action(&replace_action);
-        shell.window.add_action(&find_next_action);
-        shell.window.add_action(&find_prev_action);
-        shell.window.add_action(&fullscreen_action);
-        shell.window.add_action(&theme_action);
+        let actions = create_window_actions(&shell.window, &settings);
 
         let (width, height) = settings.window_size();
         shell.window.set_default_size(width, height);
@@ -178,9 +163,9 @@ impl Window {
             toast_overlay: &shell.toast_overlay,
             workspace_box: &shell.workspace_box,
             menu_button: &shell.primary_menu_button,
-            save_action: &save_action,
-            save_as_action: &save_as_action,
-            close_action: &close_action,
+            save_action: &actions.save,
+            save_as_action: &actions.save_as,
+            close_action: &actions.close,
             settings: &settings,
             persist_session: init.persist_session,
         });
@@ -189,7 +174,7 @@ impl Window {
             WindowAppearanceController::new(&settings, &workspace, &shell.preferences_dialog)?;
         let chrome_observer = install_chrome_observer(chrome, &appearance, &workspace);
         crate::window_theme::install(
-            &theme_action,
+            &actions.theme,
             &settings,
             &workspace,
             &appearance,
@@ -198,44 +183,58 @@ impl Window {
         );
         let preferences = WindowPreferencesController::new(&shell, &settings, &workspace, &zoom);
         let compare = WindowCompareController::new(&shell.window, &workspace);
+        let document_tools = DocumentToolsController::new(&shell.window, &workspace);
         let project =
             WindowProjectController::new(&shell, &settings, &workspace, init.restore_project);
         let source_control = SourceControlController::new(&shell.window, &settings, &workspace);
-        let sidebar_host = SidebarHost::new(&project.sidebar_widget(), &source_control.widget());
+        let find_in_files =
+            FindInFilesController::new(&shell.window, &workspace, settings.project_show_hidden());
+        let sidebar_host = SidebarHost::new(
+            &project.sidebar_widget(),
+            &source_control.widget(),
+            &find_in_files.widget(),
+        );
         shell
             .project_split_view
             .set_start_child(Some(sidebar_host.widget()));
         shell
             .project_split_view
             .set_end_child(Some(&shell.workspace_box));
-        project.set_root_change_handler(source_control.root_change_handler());
+        let source_root_handler = source_control.root_change_handler();
+        let find_root_handler = find_in_files.root_change_handler();
+        project.set_root_change_handler(Rc::new(move |root| {
+            source_root_handler(root.clone());
+            find_root_handler(root);
+        }));
+        project.set_filter_change_handler(find_in_files.show_hidden_handler());
+        project.set_sidebar_visibility_handler(find_in_files.sidebar_visibility_handler());
         source_control.set_status_handler(project.git_status_handler());
         workspace.set_save_notification_handler(source_control.save_notification_handler());
 
         let window = Rc::new(Self {
             shell,
-            save_action,
-            save_as_action,
-            close_action,
-            recent_files_action,
-            search_action,
-            replace_action,
-            find_next_action,
-            find_prev_action,
-            fullscreen_action,
+            save_action: actions.save,
+            save_as_action: actions.save_as,
+            close_action: actions.close,
+            recent_files_action: actions.recent_files,
+            search_action: actions.search,
+            replace_action: actions.replace,
+            find_in_files_action: actions.find_in_files,
+            find_next_action: actions.find_next,
+            find_prev_action: actions.find_prev,
+            fullscreen_action: actions.fullscreen,
             #[cfg(test)]
-            theme_action,
+            theme_action: actions.theme,
             settings,
             workspace,
             appearance,
             _chrome_observer: chrome_observer,
             _preferences: preferences,
             compare,
+            document_tools,
             project,
-            #[cfg(test)]
             sidebar_host,
-            #[cfg(not(test))]
-            _sidebar_host: sidebar_host,
+            find_in_files,
             source_control,
             zoom,
             last_non_fullscreen_size: Cell::new((width, height)),
@@ -321,6 +320,17 @@ impl Window {
         self.workspace.find_previous();
     }
 
+    pub fn show_find_in_files(self: &Rc<Self>) {
+        if self.project.current_root_file().is_none() {
+            self.workspace
+                .show_toast(&gettext("Open a folder to search files."));
+            return;
+        }
+        self.project.set_sidebar_visible(true);
+        self.sidebar_host.select_find_in_files();
+        self.find_in_files.focus_query();
+    }
+
     pub fn show_preferences(&self) {
         self.appearance.sync();
         self.shell
@@ -362,10 +372,13 @@ impl Window {
     fn finish_initialization(self: &Rc<Self>) {
         self.source_control
             .set_project_root(self.project.current_root_file());
+        self.find_in_files
+            .set_project_root(self.project.current_root_file());
         self.zoom.set_editor_font(&self.settings.editor_font());
         self.install_accessible_labels();
         self.appearance.sync();
         self.compare.refresh_action_state();
+        self.document_tools.sync_current();
         self.install_callbacks();
     }
 
@@ -409,6 +422,13 @@ impl Window {
         self.replace_action.connect_activate(move |_, _| {
             if let Some(window) = weak.upgrade() {
                 window.open_search(true);
+            }
+        });
+
+        let weak = Rc::downgrade(self);
+        self.find_in_files_action.connect_activate(move |_, _| {
+            if let Some(window) = weak.upgrade() {
+                window.show_find_in_files();
             }
         });
 
@@ -537,35 +557,4 @@ impl Window {
         };
         self.settings.set_window_size(width, height);
     }
-}
-
-fn configure_open_button(shell: &WindowShell) {
-    let menu = crate::workspace_menu::build_open_menu();
-    shell.open_button.set_menu_model(Some(&menu));
-    shell
-        .open_button
-        .set_dropdown_tooltip(&pgettext("open menu tooltip", "Open Choices"));
-}
-
-fn install_chrome_observer(
-    chrome: Option<&AppChromeController>,
-    appearance: &WindowAppearanceController,
-    workspace: &Rc<Workspace>,
-) -> Option<ChromeObserver> {
-    chrome.map(|chrome| {
-        let appearance = appearance.clone();
-        let workspace_weak = Rc::downgrade(workspace);
-        chrome.add_observer(move || {
-            appearance.sync();
-            if let Some(workspace) = workspace_weak.upgrade() {
-                workspace.apply_source_style_scheme_to_tabs();
-            }
-        })
-    })
-}
-
-#[cfg(test)]
-fn install_sourceview_for_tests() {
-    sourceview5::init();
-    crate::source_styles::install_builtin_style_schemes();
 }

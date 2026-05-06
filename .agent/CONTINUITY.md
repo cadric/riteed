@@ -1,6 +1,11 @@
 # Continuity
 
 ## OUTCOMES
+- Implemented V12 editing power tools: Find in Files as a third sidebar page with Ctrl+Shift+F, 300 ms debounce, refresh button, UTF-8 streaming scan, 25k visited-path/500-result/2 MiB-per-file caps, hidden/generated-directory skipping, cancellable+generation cancellation, and result activation that opens the file and selects the match.
+- Added document statistics as a single main-menu dialog action with document and selection snapshot counts for lines, whitespace-delimited words, characters, and characters without whitespace.
+- Added print support through `GtkPrintOperation` plus `GtkSourcePrintCompositor::from_view`; print is disabled while a document is loading or in compare mode, keeps live unsaved buffer content, and relies on GTK/Flatpak's portal-aware print path without new broad manifest permissions.
+- Corrected ROADMAP.md so V12 no longer claims Replace and Replace All were missing; V12 preserves the V3 Ctrl+H replace flow and adds primary-menu/search-bar discoverability instead.
+- V12 local user Flatpak rebuild/install passed with app commit `3dfa346f4c5668ec39b59c3b9006c16fa41ed38d7a7824020b9c97e33ff47d0b`; `flatpak info --user io.github.cadric.Riteed` reports version 0.3.0, 8.2 MB installed size on `org.gnome.Platform//50`, and `/app/bin/git` reports `git version 2.54.0`.
 - Fixed the project A -> B switch freeze class by removing Source Control's synchronous `.git` preflight, moving project-tree/root-change handling outside the `ProjectState` mutable borrow, and cancelling stale Git/live-refresh callbacks before they can touch UI.
 - Added `runtime-sync-fs` policy coverage for synchronous runtime filesystem probes under `app/src`; approved remaining probes are limited to native-only Source Control live monitoring and the developer-only runtime icon override.
 - Document open size checks and recent-file missing checks now use async Gio queries, so user-selected document paths do not run Rust `std::fs` probes on the GTK main loop.
@@ -66,6 +71,8 @@
 - V10 keeps Source Control local-only: no push, pull, branch UI, remotes, full log browser, merge conflict editor, Markdown preview, or new language catalogs.
 - V11 keeps compare tab-local and presentation-only. `DiffRowModel` replaces the old hunk/anchor `DiffPlan`; the live editor widget stays hidden and intact while read-only presentation buffers carry ephemeral placeholder rows and metadata-backed run markers, and compare wrap is a view-local override that does not write GSettings.
 - V11 compare recompute uses one full `similar::TextDiff::from_lines` source for both the logical row model and presentation buffers; runtime callers should go through `compare::diff::compute_diff` to avoid duplicate large-compare work.
+- V12 Find in Files deliberately uses a hardcoded generated-directory skip list (`.git`, `target`, `build`, `build-dir`, `node_modules`, `vendor`, `dist`, `.flatpak-builder`, `__pycache__`, `.venv`) rather than user-configurable ignore rules or `.gitignore` parsing; custom skip-list preferences remain a future milestone candidate.
+- V12 Find in Files scans one file read at a time for simplicity. If profiling typical workspaces shows more than roughly two seconds to first useful results without UI jank, the next tuning knob is 4-8 concurrent Gio file reads.
 - System gettext is enforced through the `gettext-rs/gettext-system` Cargo dependency feature; host and Flatpak validation should not depend on a manual environment override for gettext linking.
 - AppStream keeps the uppercase `io.github.cadric.Riteed` component id to match the app-id contract, while the developer id uses lowercase `io.github.cadric` because AppStream validates developer ids as rDNS-style identifiers.
 - Document monitor file stamps are queried through `src/editor_monitor/stamp.rs` with async GIO metadata calls. Monitor events, portal polling, missing-file settle checks, cancellation, and stale async results coalesce through the stamp state machine instead of synchronous `query_info()`.

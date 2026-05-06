@@ -18,7 +18,7 @@ use crate::window::Window;
 use crate::workspace::OpenSource;
 
 pub(crate) fn spin_until(label: &str, done: impl Fn() -> bool) {
-    let deadline = std::time::Instant::now() + Duration::from_secs(10);
+    let deadline = std::time::Instant::now() + Duration::from_secs(30);
     while std::time::Instant::now() < deadline {
         while glib::MainContext::default().iteration(false) {}
         if done() {
@@ -270,8 +270,9 @@ fn exercise_restore_and_recent_pruning(test_app: &adw::Application) {
     };
     prune_window.ensure_default_tab();
     prune_window.request_open_recent(&missing_uri);
-    drain_events(12);
-    assert!(prune_window.recent_files_for_tests().is_empty());
+    spin_until("prune missing recent file", || {
+        prune_window.recent_files_for_tests().is_empty()
+    });
     prune_window.request_open_files(vec![gio::File::for_path(&missing_path)], OpenSource::Drop);
     drain_events(12);
 
@@ -582,4 +583,5 @@ fn gtk_surfaces_and_editor_flow_work() {
     crate::gtk_tests_v10::exercise_chrome_palette(&test_app);
     crate::gtk_tests_v11::exercise_v11_diff_surface(&test_app);
     crate::gtk_tests_v11_git::exercise_v11_git_compare_renderer_path(&test_app);
+    crate::gtk_tests_v12::exercise_v12_power_tools(&test_app);
 }

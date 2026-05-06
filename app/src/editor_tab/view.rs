@@ -87,6 +87,15 @@ impl EditorTab {
         self.text_view.clone()
     }
 
+    pub(crate) fn select_offsets(&self, start: i32, end: i32) {
+        let start_iter = self.text_buffer.iter_at_offset(start);
+        let end_iter = self.text_buffer.iter_at_offset(end);
+        self.text_buffer.select_range(&start_iter, &end_iter);
+        let mut scroll_iter = start_iter;
+        self.text_view
+            .scroll_to_iter(&mut scroll_iter, 0.2, false, 0.0, 0.0);
+    }
+
     #[cfg(test)]
     pub(crate) fn set_text_for_tests(&self, text: &str) {
         self.text_buffer.set_text(text);
@@ -95,9 +104,7 @@ impl EditorTab {
 
     #[cfg(test)]
     pub(crate) fn select_offsets_for_tests(&self, start: i32, end: i32) {
-        let start_iter = self.text_buffer.iter_at_offset(start);
-        let end_iter = self.text_buffer.iter_at_offset(end);
-        self.text_buffer.select_range(&start_iter, &end_iter);
+        self.select_offsets(start, end);
     }
 
     #[cfg(test)]
