@@ -7,6 +7,7 @@ pub(crate) const SOURCE_CONTROL_ICON: &str = "io.github.cadric.Riteed-source-con
 pub(crate) struct SidebarHost {
     root: adw::ToolbarView,
     stack: adw::ViewStack,
+    search_results_page: adw::ViewStackPage,
     #[cfg(test)]
     source_control_page: adw::ViewStackPage,
 }
@@ -32,12 +33,13 @@ impl SidebarHost {
         );
         git_page.set_icon_name(Some(SOURCE_CONTROL_ICON));
 
-        let find_page = stack.add_titled(
+        let search_results_page = stack.add_titled(
             find_in_files,
-            Some("find-in-files"),
-            &pgettext("sidebar mode", "Find in Files"),
+            Some("search-results"),
+            &pgettext("sidebar mode", "Search Results"),
         );
-        find_page.set_icon_name(Some("edit-find-symbolic"));
+        search_results_page.set_icon_name(Some("edit-find-symbolic"));
+        search_results_page.set_visible(false);
 
         let switcher = adw::ViewSwitcher::new();
         switcher.set_policy(adw::ViewSwitcherPolicy::Narrow);
@@ -55,6 +57,7 @@ impl SidebarHost {
         Self {
             root,
             stack,
+            search_results_page,
             #[cfg(test)]
             source_control_page: git_page,
         }
@@ -65,8 +68,15 @@ impl SidebarHost {
         &self.root
     }
 
-    pub(crate) fn select_find_in_files(&self) {
-        self.stack.set_visible_child_name("find-in-files");
+    pub(crate) fn select_search_results(&self) {
+        self.stack.set_visible_child_name("search-results");
+    }
+
+    pub(crate) fn set_search_results_visible(&self, visible: bool) {
+        if !visible && self.stack.visible_child_name().as_deref() == Some("search-results") {
+            self.stack.set_visible_child_name("files");
+        }
+        self.search_results_page.set_visible(visible);
     }
 
     #[cfg(test)]

@@ -6,8 +6,8 @@
       "line": 5,
       "match": "<object class=\"AdwPreferencesDialog\" id=\"preferences_dialog\">",
       "smallest_width": 320,
-      "adaptive_pattern": "Multi-page libadwaita preferences dialog with standard rows for editor behavior and an Appearance page for preview-only window chrome and editor palette tiles.",
-      "collapse_behavior": "Rows stay vertically stacked, SpinRows keep their numeric editor inline without horizontal scrolling, and the Appearance palette grids wrap within the preferences page while keeping tooltip and accessible names on unlabeled tiles.",
+      "adaptive_pattern": "Four-page libadwaita preferences dialog with Editor, Appearance, Format, and Source Control pages. Editor keeps behavior rows, Appearance owns app style and editor palette tiles, Format follows the selected document, and Source Control owns local Git identity.",
+      "collapse_behavior": "Rows stay vertically stacked, SpinRows keep their numeric editor inline without horizontal scrolling, Appearance palette grids wrap within their page, and the Source Control identity rows remain separate from editor controls while keeping standard row labels.",
       "copy_reviewed": true,
       "a11y_reviewed": true
     },
@@ -33,7 +33,7 @@
     },
     {
       "path": "data/ui/window.ui",
-      "line": 43,
+      "line": 81,
       "match": "<object class=\"AdwWindowTitle\" id=\"window_title\">",
       "smallest_width": 320,
       "adaptive_pattern": "Centered window title reflects the selected tab title while the full file location lives in the bottom status bar.",
@@ -41,5 +41,7 @@
       "copy_reviewed": true,
       "a11y_reviewed": true
     }
-  ]
+  ],
+  "menus": [],
+  "css": []
 }

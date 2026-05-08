@@ -107,6 +107,31 @@ fn unavailable_attrs_disable_git_actions_and_commit() {
 }
 
 #[test]
+fn commit_controls_require_committable_staged_changes() {
+    let mut unstaged = entry("tracked.txt", GitFileStatus::Modified, false, true);
+    unstaged.stage_action = GitActionState::Enabled;
+    assert!(!commit_sensitive(
+        &GitStatusSnapshot {
+            entries: vec![unstaged],
+            ..GitStatusSnapshot::default()
+        },
+        &known_attrs(),
+        false,
+    ));
+
+    let mut staged = entry("tracked.txt", GitFileStatus::Modified, true, false);
+    staged.unstage_action = GitActionState::Enabled;
+    assert!(commit_sensitive(
+        &GitStatusSnapshot {
+            entries: vec![staged],
+            ..GitStatusSnapshot::default()
+        },
+        &known_attrs(),
+        false,
+    ));
+}
+
+#[test]
 fn file_modes_and_reference_text_are_guarded() {
     let unknown = entry_with_mode(
         "script.sh",

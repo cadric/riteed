@@ -2,11 +2,10 @@ use std::rc::Rc;
 use std::sync::OnceLock;
 
 use gtk4::{gdk, glib, prelude::*};
-use libadwaita as adw;
 use libadwaita::prelude::*;
 
-use crate::error::AppError;
 use crate::settings::AppSettings;
+use crate::window_shell::WindowShell;
 use crate::workspace::Workspace;
 
 mod editor_grid;
@@ -14,7 +13,6 @@ mod editor_grid;
 use editor_grid::EditorPaletteGrid;
 
 const APPEARANCE_CSS_RESOURCE: &str = "/io/github/cadric/Riteed/ui/appearance.css";
-const APPEARANCE_RESOURCE: &str = "/io/github/cadric/Riteed/ui/appearance_page.ui";
 
 static APPEARANCE_CSS_INSTALLED: OnceLock<()> = OnceLock::new();
 
@@ -25,37 +23,26 @@ pub struct WindowAppearanceController {
 
 struct AppearanceState {
     #[cfg(test)]
-    preferences_dialog: adw::PreferencesDialog,
+    preferences_dialog: libadwaita::PreferencesDialog,
     #[cfg(test)]
-    page: adw::PreferencesPage,
+    page: libadwaita::PreferencesPage,
     editor_grid: EditorPaletteGrid,
 }
 
 impl WindowAppearanceController {
-    /// # Errors
-    ///
-    /// Returns an error when the resource-backed appearance page cannot be loaded.
-    pub fn new(
-        settings: &AppSettings,
-        workspace: &Rc<Workspace>,
-        preferences_dialog: &adw::PreferencesDialog,
-    ) -> Result<Self, AppError> {
-        let builder = gtk4::Builder::from_resource(APPEARANCE_RESOURCE);
-        let page: adw::PreferencesPage = builder_object(&builder, "appearance_page")?;
-        let style_group: adw::PreferencesGroup = builder_object(&builder, "style_group")?;
-        let editor_flow_box: gtk4::FlowBox = builder_object(&builder, "palette_flow_box")?;
-        style_group.add(&crate::window_theme::build_selector());
-        preferences_dialog.add(&page);
-
+    pub fn new(settings: &AppSettings, workspace: &Rc<Workspace>, shell: &WindowShell) -> Self {
+        shell
+            .style_group
+            .add(&crate::window_theme::build_selector());
         let state = Rc::new(AppearanceState {
             #[cfg(test)]
-            preferences_dialog: preferences_dialog.clone(),
+            preferences_dialog: shell.preferences_dialog.clone(),
             #[cfg(test)]
-            page,
-            editor_grid: EditorPaletteGrid::new(settings, workspace, &editor_flow_box),
+            page: shell.appearance_page.clone(),
+            editor_grid: EditorPaletteGrid::new(settings, workspace, &shell.palette_flow_box),
         });
         state.sync_all();
-        Ok(Self { state })
+        Self { state }
     }
 
     pub fn sync(&self) {
@@ -118,15 +105,6 @@ impl AppearanceState {
             editor_grid.queue_resize();
         });
     }
-}
-
-fn builder_object<T: IsA<gtk4::glib::Object>>(
-    builder: &gtk4::Builder,
-    id: &str,
-) -> Result<T, AppError> {
-    builder
-        .object(id)
-        .ok_or_else(|| AppError::Internal(format!("Missing resource object `{id}`.")))
 }
 
 fn clear_flow_box(flow_box: &gtk4::FlowBox) {

@@ -76,10 +76,7 @@ pub(super) fn begin_root_change(
             state_for_callback.borrow_mut().root_cancellable = None;
             match result {
                 Ok(info) => finish_query(&state_for_callback, &folder_for_callback, origin, &info),
-                Err(error) => {
-                    let mut state_mut = state_for_callback.borrow_mut();
-                    finish_query_error(&state_for_callback, &mut state_mut, origin, error);
-                }
+                Err(error) => finish_query_error(&state_for_callback, origin, error),
             }
         },
     );
@@ -117,7 +114,6 @@ fn finish_query(
 
 fn finish_query_error(
     state: &Rc<RefCell<ProjectState>>,
-    state_mut: &mut ProjectState,
     origin: RootChangeOrigin,
     error: glib::Error,
 ) {
@@ -125,13 +121,17 @@ fn finish_query_error(
         return;
     }
     if origin == RootChangeOrigin::Restore {
-        state_mut.toast_overlay.add_toast(adw::Toast::new(&gettext(
-            "The previous project folder could not be restored.",
-        )));
+        state
+            .borrow()
+            .toast_overlay
+            .add_toast(adw::Toast::new(&gettext(
+                "The previous project folder could not be restored.",
+            )));
         sync_root_none(state, false);
         return;
     }
-    state_mut
+    state
+        .borrow()
         .toast_overlay
         .add_toast(adw::Toast::new(&AppError::from(error).body()));
 }
@@ -178,12 +178,17 @@ fn finish_root_change(
 
     let show_hidden = plan.settings.project_show_hidden();
     plan.show_hidden_action.set_state(&show_hidden.to_variant());
-    {
+    let (model, selection) = {
         let state = state.borrow();
         state.browser.set_title(&plan.display_name);
-        state.browser.tree().set_root(Some(folder.clone()));
-        state.browser.tree().model().set_show_hidden(show_hidden);
-    }
+        (
+            state.browser.tree().model().clone(),
+            state.browser.tree().selection().clone(),
+        )
+    };
+    model.set_root(Some(folder.clone()));
+    selection.set_selected(gtk4::INVALID_LIST_POSITION);
+    model.set_show_hidden(show_hidden);
     if let Some(handler) = plan.handler {
         handler(Some(folder.clone()));
     }
@@ -204,7 +209,7 @@ fn resolve_display_name(folder: &gio::File, info: &gio::FileInfo) -> String {
 
 pub(super) fn close_root(state: &Rc<RefCell<ProjectState>>) {
     reveal::cancel_reveal(state);
-    {
+    let (handler, model, selection) = {
         let mut state = state.borrow_mut();
         if let Some(cancellable) = state.root_cancellable.take() {
             cancellable.cancel();
@@ -218,18 +223,24 @@ pub(super) fn close_root(state: &Rc<RefCell<ProjectState>>) {
         state.settings.set_project_folder_display_name("");
         state.settings.set_project_sidebar_visible(false);
         state.browser.set_title(&gettext("Project"));
-        state.browser.tree().set_root(None);
         state.toast_keys.clear();
-        if let Some(handler) = state.root_change_handler.as_ref() {
-            handler(None);
-        }
+        (
+            state.root_change_handler.clone(),
+            state.browser.tree().model().clone(),
+            state.browser.tree().selection().clone(),
+        )
+    };
+    model.set_root(None);
+    selection.set_selected(gtk4::INVALID_LIST_POSITION);
+    if let Some(handler) = handler {
+        handler(None);
     }
     sidebar_state::sync_actions_for_root(state);
 }
 
 pub(super) fn sync_root_none(state: &Rc<RefCell<ProjectState>>, clear_settings: bool) {
     reveal::cancel_reveal(state);
-    {
+    let (handler, model, selection) = {
         let mut state = state.borrow_mut();
         if let Some(cancellable) = state.symlink_cancellable.take() {
             cancellable.cancel();
@@ -237,15 +248,21 @@ pub(super) fn sync_root_none(state: &Rc<RefCell<ProjectState>>, clear_settings: 
         state.symlink_generation += 1;
         state.root = None;
         state.browser.set_title(&gettext("Project"));
-        state.browser.tree().set_root(None);
-        if let Some(handler) = state.root_change_handler.as_ref() {
-            handler(None);
-        }
         if clear_settings {
             state.settings.set_project_folder_uri("");
             state.settings.set_project_folder_display_name("");
             state.settings.set_project_sidebar_visible(false);
         }
+        (
+            state.root_change_handler.clone(),
+            state.browser.tree().model().clone(),
+            state.browser.tree().selection().clone(),
+        )
+    };
+    model.set_root(None);
+    selection.set_selected(gtk4::INVALID_LIST_POSITION);
+    if let Some(handler) = handler {
+        handler(None);
     }
     sidebar_state::sync_actions_for_root(state);
 }

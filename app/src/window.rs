@@ -26,6 +26,10 @@ use crate::window_support::{
 };
 use crate::workspace::{OpenSource, Workspace, WorkspaceParts};
 
+mod actions;
+mod git_actions;
+mod search_coordinator;
+mod sidebar_wiring;
 #[cfg(test)]
 mod testing;
 #[cfg(test)]
@@ -77,9 +81,10 @@ pub struct Window {
     compare: Rc<WindowCompareController>,
     document_tools: Rc<DocumentToolsController>,
     project: WindowProjectController,
-    sidebar_host: SidebarHost,
+    sidebar_host: Rc<SidebarHost>,
     find_in_files: Rc<FindInFilesController>,
     source_control: SourceControlController,
+    _git_actions: Rc<git_actions::WindowGitActions>,
     zoom: Rc<EditorZoomController>,
     last_non_fullscreen_size: Cell<(i32, i32)>,
 }
@@ -170,8 +175,7 @@ impl Window {
             persist_session: init.persist_session,
         });
         let zoom = EditorZoomController::new(&shell.window, &workspace, &settings);
-        let appearance =
-            WindowAppearanceController::new(&settings, &workspace, &shell.preferences_dialog)?;
+        let appearance = WindowAppearanceController::new(&settings, &workspace, &shell);
         let chrome_observer = install_chrome_observer(chrome, &appearance, &workspace);
         crate::window_theme::install(
             &actions.theme,
@@ -186,30 +190,7 @@ impl Window {
         let document_tools = DocumentToolsController::new(&shell.window, &workspace);
         let project =
             WindowProjectController::new(&shell, &settings, &workspace, init.restore_project);
-        let source_control = SourceControlController::new(&shell.window, &settings, &workspace);
-        let find_in_files =
-            FindInFilesController::new(&shell.window, &workspace, settings.project_show_hidden());
-        let sidebar_host = SidebarHost::new(
-            &project.sidebar_widget(),
-            &source_control.widget(),
-            &find_in_files.widget(),
-        );
-        shell
-            .project_split_view
-            .set_start_child(Some(sidebar_host.widget()));
-        shell
-            .project_split_view
-            .set_end_child(Some(&shell.workspace_box));
-        let source_root_handler = source_control.root_change_handler();
-        let find_root_handler = find_in_files.root_change_handler();
-        project.set_root_change_handler(Rc::new(move |root| {
-            source_root_handler(root.clone());
-            find_root_handler(root);
-        }));
-        project.set_filter_change_handler(find_in_files.show_hidden_handler());
-        project.set_sidebar_visibility_handler(find_in_files.sidebar_visibility_handler());
-        source_control.set_status_handler(project.git_status_handler());
-        workspace.set_save_notification_handler(source_control.save_notification_handler());
+        let sidebar = sidebar_wiring::install(&shell, &settings, &workspace, &project);
 
         let window = Rc::new(Self {
             shell,
@@ -233,9 +214,10 @@ impl Window {
             compare,
             document_tools,
             project,
-            sidebar_host,
-            find_in_files,
-            source_control,
+            sidebar_host: sidebar.sidebar_host,
+            find_in_files: sidebar.find_in_files,
+            source_control: sidebar.source_control,
+            _git_actions: sidebar.git_actions,
             zoom,
             last_non_fullscreen_size: Cell::new((width, height)),
         });
@@ -309,7 +291,7 @@ impl Window {
     }
 
     pub fn open_search(self: &Rc<Self>, replace_mode: bool) {
-        self.workspace.open_search(replace_mode);
+        self.open_search_with_scope(crate::editor_search::SearchScope::Document, replace_mode);
     }
 
     pub fn find_next(self: &Rc<Self>) {
@@ -321,14 +303,8 @@ impl Window {
     }
 
     pub fn show_find_in_files(self: &Rc<Self>) {
-        if self.project.current_root_file().is_none() {
-            self.workspace
-                .show_toast(&gettext("Open a folder to search files."));
-            return;
-        }
-        self.project.set_sidebar_visible(true);
-        self.sidebar_host.select_find_in_files();
-        self.find_in_files.focus_query();
+        self.sidebar_host.set_search_results_visible(true);
+        self.open_project_search();
     }
 
     pub fn show_preferences(&self) {
@@ -380,71 +356,6 @@ impl Window {
         self.compare.refresh_action_state();
         self.document_tools.sync_current();
         self.install_callbacks();
-    }
-
-    fn install_document_callbacks(self: &Rc<Self>) {
-        let weak = Rc::downgrade(self);
-        self.save_action.connect_activate(move |_, _| {
-            if let Some(window) = weak.upgrade() {
-                window.request_save();
-            }
-        });
-
-        let weak = Rc::downgrade(self);
-        self.recent_files_action.connect_activate(move |_, _| {
-            if let Some(window) = weak.upgrade() {
-                window.show_recent_files();
-            }
-        });
-
-        let weak = Rc::downgrade(self);
-        self.save_as_action.connect_activate(move |_, _| {
-            if let Some(window) = weak.upgrade() {
-                window.request_save_as();
-            }
-        });
-
-        let weak = Rc::downgrade(self);
-        self.close_action.connect_activate(move |_, _| {
-            if let Some(window) = weak.upgrade() {
-                window.request_close_current_tab();
-            }
-        });
-
-        let weak = Rc::downgrade(self);
-        self.search_action.connect_activate(move |_, _| {
-            if let Some(window) = weak.upgrade() {
-                window.open_search(false);
-            }
-        });
-
-        let weak = Rc::downgrade(self);
-        self.replace_action.connect_activate(move |_, _| {
-            if let Some(window) = weak.upgrade() {
-                window.open_search(true);
-            }
-        });
-
-        let weak = Rc::downgrade(self);
-        self.find_in_files_action.connect_activate(move |_, _| {
-            if let Some(window) = weak.upgrade() {
-                window.show_find_in_files();
-            }
-        });
-
-        let weak = Rc::downgrade(self);
-        self.find_next_action.connect_activate(move |_, _| {
-            if let Some(window) = weak.upgrade() {
-                window.find_next();
-            }
-        });
-
-        let weak = Rc::downgrade(self);
-        self.find_prev_action.connect_activate(move |_, _| {
-            if let Some(window) = weak.upgrade() {
-                window.find_previous();
-            }
-        });
     }
 
     fn install_window_state_callbacks(self: &Rc<Self>) {

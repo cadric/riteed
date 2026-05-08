@@ -16,12 +16,14 @@ use crate::settings::AppSettings;
 use crate::settings::SourceControlViewMode;
 use crate::workspace::Workspace;
 
-mod actions;
+pub(crate) mod action_widgets;
+pub(crate) mod actions;
 mod history;
 mod list_view;
 mod live;
+mod path_target;
 mod refresh;
-mod row_overlay;
+mod row_popover;
 mod status_style;
 #[cfg(test)]
 mod tests;
@@ -42,6 +44,7 @@ pub(super) type SourceStateRef = Rc<RefCell<SourceControlState>>;
 pub(crate) type DetectRepoForTests =
     Rc<dyn Fn(&Path, &gio::Cancellable, GitCallback<GitRepoContext>)>;
 type GitStatusHandler = Rc<dyn Fn(Vec<(String, String)>)>;
+const HISTORY_SPLIT_DEFAULT_POSITION: i32 = 360;
 
 #[derive(Clone)]
 pub(crate) struct SourceControlController {
@@ -54,6 +57,9 @@ pub(super) struct SourceControlState {
     pub(super) status_label: gtk4::Label,
     views: SourceControlViews,
     history: SourceControlHistory,
+    #[cfg(test)]
+    history_split: gtk4::Paned,
+    pub(super) commit_revealer: gtk4::Revealer,
     pub(super) commit_entry: gtk4::Entry,
     pub(super) commit_button: gtk4::Button,
     pub(super) settings: AppSettings,
@@ -67,6 +73,7 @@ pub(super) struct SourceControlState {
     pub(super) live_refresh: Option<SourceControlLiveRefresh>,
     pub(super) status_stale: bool,
     pub(super) action_generation: u64,
+    pub(super) state_change_handler: Option<Rc<dyn Fn()>>,
     #[cfg(test)]
     detect_repo: DetectRepoForTests,
     status_handler: Option<GitStatusHandler>,
@@ -104,40 +111,28 @@ impl SourceControlController {
         content.set_margin_bottom(12);
         content.set_margin_start(12);
         content.set_margin_end(12);
+        content.set_vexpand(true);
+
+        let changes_pane = gtk4::Box::new(gtk4::Orientation::Vertical, 12);
+        changes_pane.set_vexpand(true);
 
         let status_label = gtk4::Label::new(Some(&gettext("Open a folder to see Git status.")));
         status_label.set_xalign(0.0);
         status_label.set_wrap(true);
-        content.append(&status_label);
+        changes_pane.append(&status_label);
 
         let views = SourceControlViews::new(settings);
-        content.append(&views.widget());
+        changes_pane.append(&views.widget());
+
+        let (commit_revealer, commit_entry, commit_button) = build_commit_controls();
+        changes_pane.append(&commit_revealer);
 
         let history = SourceControlHistory::new();
-        content.append(&history.widget());
-
-        let commit_entry = gtk4::Entry::builder()
-            .placeholder_text(pgettext("git commit", "Commit Message"))
-            .build();
-        content.append(&commit_entry);
-
-        let commit_button = gtk4::Button::with_label(&pgettext("git commit", "Commit"));
-        commit_button.add_css_class("suggested-action");
-        commit_button.set_sensitive(false);
-        content.append(&commit_button);
-
-        let hooks = gtk4::Label::new(Some(&gettext("Pre-commit hooks are not run from Riteed.")));
-        hooks.add_css_class("caption");
-        hooks.set_xalign(0.0);
-        hooks.set_wrap(true);
-        content.append(&hooks);
-
-        let scroller = gtk4::ScrolledWindow::builder()
-            .hscrollbar_policy(gtk4::PolicyType::Never)
-            .vscrollbar_policy(gtk4::PolicyType::Automatic)
-            .child(&content)
-            .build();
-        root.set_content(Some(&scroller));
+        let history_split = build_history_split(&changes_pane, &history);
+        #[cfg(test)]
+        let history_split_for_tests = history_split.clone();
+        content.append(&history_split);
+        root.set_content(Some(&content));
 
         let state = Rc::new(RefCell::new(SourceControlState {
             root,
@@ -145,6 +140,9 @@ impl SourceControlController {
             status_label,
             views,
             history,
+            #[cfg(test)]
+            history_split: history_split_for_tests,
+            commit_revealer,
             commit_entry,
             commit_button,
             settings: settings.clone(),
@@ -158,6 +156,7 @@ impl SourceControlController {
             live_refresh: None,
             status_stale: true,
             action_generation: 0,
+            state_change_handler: None,
             #[cfg(test)]
             detect_repo: Rc::new(|path, cancellable, callback| {
                 GitProcess::detect_repo(path, cancellable, callback);
@@ -206,6 +205,52 @@ impl SourceControlController {
 
     pub(crate) fn set_status_handler(&self, handler: GitStatusHandler) {
         self.state.borrow_mut().status_handler = Some(handler);
+    }
+
+    pub(crate) fn set_state_change_handler(&self, handler: Rc<dyn Fn()>) {
+        self.state.borrow_mut().state_change_handler = Some(handler);
+    }
+
+    #[must_use]
+    pub(crate) fn entry_for_uri(&self, uri: &str) -> Option<crate::git_status::GitStatusEntry> {
+        let state = self.state.borrow();
+        let repo = state.repo.as_ref()?;
+        let raw = path_target::raw_path_for_uri(repo, uri)?;
+        state
+            .snapshot
+            .entries
+            .iter()
+            .find(|entry| entry.path.raw() == raw.as_slice())
+            .cloned()
+    }
+
+    #[must_use]
+    pub(crate) fn entry_action_state_for_uri(
+        &self,
+        uri: &str,
+        action: actions::GitRowAction,
+    ) -> Option<crate::git_status::GitActionState> {
+        let entry = self.entry_for_uri(uri)?;
+        Some(match action {
+            actions::GitRowAction::Diff => entry.diff_action,
+            actions::GitRowAction::Stage => entry.stage_action,
+            actions::GitRowAction::Unstage => entry.unstage_action,
+            actions::GitRowAction::Discard => entry.discard_action,
+        })
+    }
+
+    pub(crate) fn run_action_for_uri(&self, uri: &str, action: actions::GitRowAction) {
+        let raw = {
+            let state = self.state.borrow();
+            let Some(repo) = state.repo.as_ref() else {
+                return;
+            };
+            let Some(raw) = path_target::raw_path_for_uri(repo, uri) else {
+                return;
+            };
+            raw
+        };
+        actions::run_path_action(&self.state, &raw, action);
     }
 
     pub(crate) fn save_notification_handler(&self) -> Rc<dyn Fn(gio::File)> {
@@ -268,9 +313,59 @@ impl SourceControlController {
     }
 
     #[cfg(test)]
+    pub(crate) fn commit_controls_visible_for_tests(&self) -> bool {
+        self.state.borrow().commit_revealer.reveals_child()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn history_split_resizable_for_tests(&self) -> bool {
+        let state = self.state.borrow();
+        state.history_split.orientation() == gtk4::Orientation::Vertical
+            && state.history_split.is_wide_handle()
+            && state.history_split.resizes_start_child()
+            && state.history_split.resizes_end_child()
+            && state.history_split.start_child().is_some()
+            && state.history_split.end_child().is_some()
+            && state.history_split.position() == HISTORY_SPLIT_DEFAULT_POSITION
+    }
+
+    #[cfg(test)]
     pub(crate) fn set_detect_repo_for_tests(&self, detect_repo: DetectRepoForTests) {
         self.state.borrow_mut().detect_repo = detect_repo;
     }
+}
+
+fn build_commit_controls() -> (gtk4::Revealer, gtk4::Entry, gtk4::Button) {
+    let commit_box = gtk4::Box::new(gtk4::Orientation::Vertical, 6);
+    let commit_entry = gtk4::Entry::builder()
+        .placeholder_text(pgettext("git commit", "Commit Message"))
+        .build();
+    commit_box.append(&commit_entry);
+
+    let commit_button = gtk4::Button::with_label(&pgettext("git commit", "Commit"));
+    commit_button.add_css_class("suggested-action");
+    commit_button.set_sensitive(false);
+    commit_box.append(&commit_button);
+
+    let commit_revealer = gtk4::Revealer::builder()
+        .transition_type(gtk4::RevealerTransitionType::SlideDown)
+        .child(&commit_box)
+        .build();
+    (commit_revealer, commit_entry, commit_button)
+}
+
+fn build_history_split(changes_pane: &gtk4::Box, history: &SourceControlHistory) -> gtk4::Paned {
+    let history_split = gtk4::Paned::new(gtk4::Orientation::Vertical);
+    history_split.set_vexpand(true);
+    history_split.set_wide_handle(true);
+    history_split.set_resize_start_child(true);
+    history_split.set_resize_end_child(true);
+    history_split.set_shrink_start_child(false);
+    history_split.set_shrink_end_child(false);
+    history_split.set_start_child(Some(changes_pane));
+    history_split.set_end_child(Some(&history.widget()));
+    history_split.set_position(HISTORY_SPLIT_DEFAULT_POSITION);
+    history_split
 }
 
 fn set_project_root(state: &SourceStateRef, folder: Option<gio::File>) {
@@ -301,10 +396,12 @@ fn set_project_root(state: &SourceStateRef, folder: Option<gio::File>) {
         state
             .status_label
             .set_label(&ellipsis_label(gettext("Refreshing Git status")));
+        set_commit_controls_enabled(&state, false);
         emit_project_statuses(&state);
         state.history.clear();
         rebuild_views(&state);
     }
+    actions::fire_state_change_handler(state);
     let weak = Rc::downgrade(state);
     let cancellable_for_callback = cancellable.clone();
     let callback: GitCallback<GitRepoContext> = Rc::new(move |result| {
@@ -347,17 +444,26 @@ fn set_project_root(state: &SourceStateRef, folder: Option<gio::File>) {
 }
 
 fn reset_project_state(state: &SourceStateRef, label: &str, mark_stale: bool) {
-    let mut state = state.borrow_mut();
-    state.repo = None;
-    state.process = None;
-    state.attrs = GitAttrState::default();
-    state.snapshot = GitStatusSnapshot::default();
-    state.status_stale = mark_stale;
-    state.action_generation = state.action_generation.wrapping_add(1);
-    state.status_label.set_label(label);
-    emit_project_statuses(&state);
-    state.history.clear();
-    rebuild_views(&state);
+    {
+        let mut state = state.borrow_mut();
+        state.repo = None;
+        state.process = None;
+        state.attrs = GitAttrState::default();
+        state.snapshot = GitStatusSnapshot::default();
+        state.status_stale = mark_stale;
+        state.action_generation = state.action_generation.wrapping_add(1);
+        state.status_label.set_label(label);
+        set_commit_controls_enabled(&state, false);
+        emit_project_statuses(&state);
+        state.history.clear();
+        rebuild_views(&state);
+    }
+    actions::fire_state_change_handler(state);
+}
+
+pub(super) fn set_commit_controls_enabled(state: &SourceControlState, enabled: bool) {
+    state.commit_button.set_sensitive(enabled);
+    state.commit_revealer.set_reveal_child(enabled);
 }
 
 pub(super) fn git_error_is_cancelled(error: &GitProcessError) -> bool {
@@ -408,7 +514,9 @@ fn commit(state: &SourceStateRef) {
             let Some(identity) = identity else {
                 finish_error(
                     &state,
-                    &gettext("Set a Git identity in Preferences before committing."),
+                    &gettext(
+                        "Set a Git identity in the Source Control preferences before committing.",
+                    ),
                 );
                 return;
             };

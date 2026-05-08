@@ -39,6 +39,44 @@
                 <property name="tooltip-text" translatable="yes">New Tab</property>
               </object>
             </child>
+            <child type="start">
+              <object class="GtkBox" id="git_actions_group">
+                <property name="orientation">horizontal</property>
+                <property name="spacing">0</property>
+                <property name="visible">False</property>
+                <style>
+                  <class name="linked"/>
+                </style>
+                <child>
+                  <object class="GtkButton" id="git_diff_button">
+                    <property name="action-name">win.scm-diff-active</property>
+                    <property name="icon-name">view-dual-symbolic</property>
+                    <property name="tooltip-text" translatable="yes">Compare With Git</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkButton" id="git_stage_button">
+                    <property name="action-name">win.scm-stage-active</property>
+                    <property name="icon-name">list-add-symbolic</property>
+                    <property name="tooltip-text" translatable="yes">Stage File</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkButton" id="git_unstage_button">
+                    <property name="action-name">win.scm-unstage-active</property>
+                    <property name="icon-name">list-remove-symbolic</property>
+                    <property name="tooltip-text" translatable="yes">Unstage File</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkButton" id="git_discard_button">
+                    <property name="action-name">win.scm-discard-active</property>
+                    <property name="icon-name">edit-delete-symbolic</property>
+                    <property name="tooltip-text" translatable="yes">Discard Changes</property>
+                  </object>
+                </child>
+              </object>
+            </child>
             <property name="title-widget">
               <object class="AdwWindowTitle" id="window_title">
                 <property name="title" translatable="yes">Untitled</property>

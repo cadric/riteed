@@ -339,6 +339,30 @@ pub(crate) fn exercise_v6_project_restore(test_app: &adw::Application) {
         (true, true, true, true)
     );
 
+    let session_file = root.join("A.txt");
+    let session_uri = gio::File::for_path(&session_file).uri().to_string();
+    let session_settings = AppSettings::new_for_tests();
+    session_settings.set_project_folder_uri(&root_uri);
+    session_settings.set_project_sidebar_visible(true);
+    session_settings.set_session_files(std::slice::from_ref(&session_uri));
+    session_settings.set_session_selected_file(&session_uri);
+    let restored_with_session =
+        Window::new_with_settings_for_tests(test_app, session_settings).ok();
+    assert!(restored_with_session.is_some());
+    let Some(restored_with_session) = restored_with_session else {
+        return;
+    };
+    restored_with_session.restore_session();
+    spin_until("restore opens selected project session file", || {
+        restored_with_session.selected_saved_uri_for_tests() == session_uri
+            && restored_with_session
+                .project_root_uri_for_tests()
+                .as_deref()
+                == Some(root_uri.as_str())
+    });
+    restored_with_session.widget().close();
+    drain_events(4);
+
     let failed_settings = AppSettings::new_for_tests();
     let file_uri = gio::File::for_path(&remembered_file).uri().to_string();
     failed_settings.set_project_folder_uri(&file_uri);
@@ -358,6 +382,9 @@ pub(crate) fn exercise_v6_project_restore(test_app: &adw::Application) {
         failed.project_action_states_for_tests(),
         (false, false, false, false)
     );
+    restored.widget().close();
+    failed.widget().close();
+    drain_events(4);
 
     let _removed = fs::remove_dir_all(root);
     let _removed = fs::remove_file(remembered_file);

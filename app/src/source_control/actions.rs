@@ -12,14 +12,14 @@ use crate::git_status::{
 };
 use crate::source_control::{
     SourceControlState, SourceStateRef, git_attrs_unavailable_text, git_error_is_cancelled,
-    git_error_text,
+    git_error_text, set_commit_controls_enabled,
 };
 use crate::workspace::{OpenSource, Workspace};
 
 use super::refresh::{finish_error, refresh_status};
 
 #[derive(Clone, Copy)]
-pub(super) enum GitRowAction {
+pub(crate) enum GitRowAction {
     Diff,
     Stage,
     Unstage,
@@ -52,7 +52,7 @@ pub(super) fn apply_entry_actions(state: &mut SourceControlState) {
         entry.diff_action = GitActionState::Enabled;
     }
     let can_commit = commit_sensitive(&state.snapshot, &state.attrs, state.status_stale);
-    state.commit_button.set_sensitive(can_commit);
+    set_commit_controls_enabled(state, can_commit);
 }
 
 fn commit_sensitive(
@@ -68,7 +68,7 @@ fn commit_sensitive(
             .any(|entry| entry.staged && entry.unstage_action.enabled())
 }
 
-pub(super) fn run_path_action(state: &SourceStateRef, path: &[u8], action: GitRowAction) {
+pub(crate) fn run_path_action(state: &SourceStateRef, path: &[u8], action: GitRowAction) {
     let entry = state
         .borrow()
         .snapshot
@@ -88,6 +88,13 @@ pub(super) fn run_path_action(state: &SourceStateRef, path: &[u8], action: GitRo
         GitRowAction::Stage => stage_entry(state, &entry),
         GitRowAction::Unstage => unstage_entry(state, &entry),
         GitRowAction::Discard => confirm_discard_entry(state, entry),
+    }
+}
+
+pub(crate) fn fire_state_change_handler(state: &SourceStateRef) {
+    let handler = { state.borrow().state_change_handler.as_ref().map(Rc::clone) };
+    if let Some(handler) = handler {
+        handler();
     }
 }
 
@@ -334,13 +341,14 @@ fn begin_action(
         state.action_generation = state.action_generation.wrapping_add(1);
         state.cancellable = Some(cancellable.clone());
         state.status_stale = true;
-        state.commit_button.set_sensitive(false);
+        set_commit_controls_enabled(&state, false);
         (
             state.process.clone(),
             state.repo.clone(),
             state.action_generation,
         )
     };
+    fire_state_change_handler(state);
     (process, repo, cancellable, generation)
 }
 
@@ -366,6 +374,7 @@ fn begin_diff_action(
             state.action_generation,
         )
     };
+    fire_state_change_handler(state);
     (process, repo, cancellable, generation)
 }
 

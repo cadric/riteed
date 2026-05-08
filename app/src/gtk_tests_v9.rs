@@ -47,6 +47,8 @@ pub(crate) fn exercise_v9_source_control(test_app: &adw::Application) {
         window.source_control_row_count_for_tests() > 0
             && window.source_control_status_for_tests() == "Changed files"
     });
+    assert!(!window.source_control_commit_controls_visible_for_tests());
+    assert!(window.source_control_history_split_resizable_for_tests());
     assert_eq!(
         window.source_control_row_state_for_tests(marker_name),
         Some((String::from("U"), true, false))
@@ -58,6 +60,7 @@ pub(crate) fn exercise_v9_source_control(test_app: &adw::Application) {
     spin_until("v10 source control list view lists changed files", || {
         window.source_control_row_count_for_tests() > 0
     });
+    assert!(!window.source_control_commit_controls_visible_for_tests());
     assert!(window.source_control_activate_path_for_tests(marker_name));
     let marker_uri = gio::File::for_path(&marker).uri().to_string();
     spin_until("v9 source control row activation opens compare", || {
@@ -120,6 +123,7 @@ fn exercise_tracked_source_control_compare_after_open(test_app: &adw::Applicatio
             .source_control_row_state_for_tests(tracked_name)
             .is_some()
     });
+    assert!(!window.source_control_commit_controls_visible_for_tests());
     assert!(window.source_control_activate_path_for_tests(tracked_name));
     let tracked_uri = gio::File::for_path(&tracked_path).uri().to_string();
     spin_until("v9 tracked source control activation opens compare", || {

@@ -11,7 +11,7 @@
     },
     {
       "path": "src/find_in_files/mod.rs",
-      "line": 29,
+      "line": 27,
       "match": "root_folder: RefCell<Option<gio::File>>,",
       "kind": "runtime-shared-state",
       "ownership": "The Find in Files controller and scanner own one workspace scan generation, cancellable, and result set.",
@@ -123,23 +123,7 @@
     },
     {
       "path": "src/window_project/root.rs",
-      "line": 44,
-      "match": "state: &Rc<RefCell<ProjectState>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The project controller owns root-change and sidebar state shared across async GIO callbacks.",
-      "justification": "Folder root changes, hidden-filter updates, and sidebar integration must coordinate cancellables and handlers without synchronous filesystem probes."
-    },
-    {
-      "path": "src/window_project/root.rs",
-      "line": 89,
-      "match": "state: &Rc<RefCell<ProjectState>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The project controller owns root-change and sidebar state shared across async GIO callbacks.",
-      "justification": "Folder root changes, hidden-filter updates, and sidebar integration must coordinate cancellables and handlers without synchronous filesystem probes."
-    },
-    {
-      "path": "src/window_project/root.rs",
-      "line": 205,
+      "line": 210,
       "match": "pub(super) fn close_root(state: &Rc<RefCell<ProjectState>>) {",
       "kind": "runtime-shared-state",
       "ownership": "The project controller owns root-change and sidebar state shared across async GIO callbacks.",
@@ -147,7 +131,7 @@
     },
     {
       "path": "src/window_project/root.rs",
-      "line": 230,
+      "line": 241,
       "match": "pub(super) fn sync_root_none(state: &Rc<RefCell<ProjectState>>, clear_settings: bool) {",
       "kind": "runtime-shared-state",
       "ownership": "The project controller owns root-change and sidebar state shared across async GIO callbacks.",

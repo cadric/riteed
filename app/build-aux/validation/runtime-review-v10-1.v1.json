@@ -99,22 +99,6 @@
     },
     {
       "path": "src/editor_tab/compare/scroll.rs",
-      "line": 55,
-      "match": "row_model: &Rc<RefCell<DiffRowModel>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "Compare row scroll synchronization borrows the controller-owned logical row model.",
-      "justification": "Live split-diff scrolling follows the top visible presentation row plus intra-row offset, so value-change callbacks need the current row count from the shared row model."
-    },
-    {
-      "path": "src/editor_tab/compare/scroll.rs",
-      "line": 117,
-      "match": "row_model: &Rc<RefCell<DiffRowModel>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "Compare row scroll synchronization reads the controller-owned logical row model during sync.",
-      "justification": "The sync helper clamps top-visible-row lookup to the latest row count while preserving source intra-row offset without copying model state into adjustment callbacks."
-    },
-    {
-      "path": "src/editor_tab/compare/scroll.rs",
       "line": 118,
       "match": "target_handler: &Rc<RefCell<Option<glib::SignalHandlerId>>>,",
       "kind": "runtime-shared-state",
@@ -155,30 +139,6 @@
     },
     {
       "path": "src/editor_tab/compare/hatch.rs",
-      "line": 61,
-      "match": "presentation: &Rc<RefCell<DiffPresentation>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "Compare hatch setup borrows the controller-owned presentation row map.",
-      "justification": "Both pane hatch layers share the same presentation model so ReferenceOnly and CurrentOnly placeholder classification stays aligned with the rendered buffers."
-    },
-    {
-      "path": "src/editor_tab/compare/hatch.rs",
-      "line": 124,
-      "match": "presentation: &Rc<RefCell<DiffPresentation>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "A compare hatch layer borrows the controller-owned presentation row map during setup.",
-      "justification": "The DrawingArea callback receives a shared handle to the latest presentation rows so hatch rendering follows recompute and does not duplicate diff state."
-    },
-    {
-      "path": "src/editor_tab/compare/hatch.rs",
-      "line": 204,
-      "match": "presentation: &Rc<RefCell<DiffPresentation>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The compare hatch draw callback borrows the shared presentation row map.",
-      "justification": "Drawing only visible placeholder rows requires the latest presentation-side classification while keeping the renderer tied to the controller-owned compare state."
-    },
-    {
-      "path": "src/editor_tab/compare/hatch.rs",
       "line": 206,
       "match": "high_contrast: &Rc<Cell<bool>>,",
       "kind": "runtime-shared-state",
@@ -187,15 +147,7 @@
     },
     {
       "path": "src/source_control/list_view.rs",
-      "line": 18,
-      "match": "activation_guard: Rc<Cell<bool>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The Source Control list view owns recycled-row action state and a weak controller handle.",
-      "justification": "The flat ListView factory is created before controller Rc wiring and must dispatch row actions against the current snapshot without retaining the window."
-    },
-    {
-      "path": "src/source_control/list_view.rs",
-      "line": 19,
+      "line": 21,
       "match": "state_weak: Rc<RefCell<Weak<RefCell<SourceControlState>>>>,",
       "kind": "runtime-shared-state",
       "ownership": "The Source Control list view owns recycled-row action state and a weak controller handle.",
@@ -203,7 +155,7 @@
     },
     {
       "path": "src/source_control/list_view.rs",
-      "line": 50,
+      "line": 64,
       "match": "pub(super) fn connect_activation(&self, weak: Weak<RefCell<SourceControlState>>) {",
       "kind": "runtime-shared-state",
       "ownership": "The Source Control list view owns recycled-row action state and a weak controller handle.",
@@ -211,55 +163,15 @@
     },
     {
       "path": "src/source_control/list_view.rs",
-      "line": 93,
-      "match": "state_weak: &Rc<RefCell<Weak<RefCell<SourceControlState>>>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The Source Control list view owns recycled-row action state and a weak controller handle.",
-      "justification": "The flat ListView factory is created before controller Rc wiring and must dispatch row actions against the current snapshot without retaining the window."
-    },
-    {
-      "path": "src/source_control/list_view.rs",
-      "line": 94,
-      "match": "activation_guard: &Rc<Cell<bool>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The Source Control list view owns recycled-row action state and a weak controller handle.",
-      "justification": "The flat ListView factory is created before controller Rc wiring and must dispatch row actions against the current snapshot without retaining the window."
-    },
-    {
-      "path": "src/source_control/list_view.rs",
-      "line": 106,
-      "match": "state_weak: &Rc<RefCell<Weak<RefCell<SourceControlState>>>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The Source Control list view owns recycled-row action state and a weak controller handle.",
-      "justification": "The flat ListView factory is created before controller Rc wiring and must dispatch row actions against the current snapshot without retaining the window."
-    },
-    {
-      "path": "src/source_control/list_view.rs",
-      "line": 107,
-      "match": "activation_guard: &Rc<Cell<bool>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The Source Control list view owns recycled-row action state and a weak controller handle.",
-      "justification": "The flat ListView factory is created before controller Rc wiring and must dispatch row actions against the current snapshot without retaining the window."
-    },
-    {
-      "path": "src/source_control/list_view.rs",
       "line": 215,
-      "match": "state_weak: &Rc<RefCell<Weak<RefCell<SourceControlState>>>>,",
+      "match": "fn action_runner(state_weak: &Rc<RefCell<Weak<RefCell<SourceControlState>>>>) -> RowActionRunner {",
       "kind": "runtime-shared-state",
       "ownership": "The Source Control list view owns recycled-row action state and a weak controller handle.",
       "justification": "The flat ListView factory is created before controller Rc wiring and must dispatch row actions against the current snapshot without retaining the window."
     },
     {
       "path": "src/source_control/list_view.rs",
-      "line": 216,
-      "match": "activation_guard: &Rc<Cell<bool>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The Source Control list view owns recycled-row action state and a weak controller handle.",
-      "justification": "The flat ListView factory is created before controller Rc wiring and must dispatch row actions against the current snapshot without retaining the window."
-    },
-    {
-      "path": "src/source_control/list_view.rs",
-      "line": 320,
+      "line": 339,
       "match": "weak: &Weak<RefCell<SourceControlState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The Source Control list view owns recycled-row action state and a weak controller handle.",
@@ -299,7 +211,7 @@
     },
     {
       "path": "src/source_control/view_mode.rs",
-      "line": 68,
+      "line": 73,
       "match": "pub(super) fn connect_activation(&self, weak: Weak<RefCell<SourceControlState>>) {",
       "kind": "runtime-shared-state",
       "ownership": "The Source Control view switcher owns its programmatic-toggle guard.",

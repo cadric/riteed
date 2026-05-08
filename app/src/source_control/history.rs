@@ -75,6 +75,7 @@ impl SourceControlHistory {
     #[must_use]
     pub(super) fn new() -> Self {
         let root = gtk4::Box::new(gtk4::Orientation::Vertical, 6);
+        root.set_vexpand(true);
         let title = gtk4::Label::new(Some(&pgettext("git history", "Recent Commits")));
         title.add_css_class("caption-heading");
         title.set_xalign(0.0);
@@ -88,9 +89,8 @@ impl SourceControlHistory {
             .child(&list)
             .hscrollbar_policy(gtk4::PolicyType::Never)
             .vscrollbar_policy(gtk4::PolicyType::Automatic)
-            .max_content_height(200)
-            .propagate_natural_height(true)
             .build();
+        scroller.set_vexpand(true);
         root.append(&scroller);
 
         let status = gtk4::Label::new(None);

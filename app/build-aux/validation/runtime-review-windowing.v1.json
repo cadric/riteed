@@ -19,75 +19,11 @@
     },
     {
       "path": "src/app.rs",
-      "line": 113,
-      "match": "state: &Rc<RefCell<AppState>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The test-only window helper borrows shared application state.",
-      "justification": "Tests need controlled access to the window registry without introducing a second window-lifecycle path."
-    },
-    {
-      "path": "src/app.rs",
-      "line": 156,
-      "match": "state: &Rc<RefCell<AppState>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "App-scoped actions borrow shared application state.",
-      "justification": "New, new-window, open, open-folder, and recent-open actions must reuse the last-focused editor window or create a new one exactly once."
-    },
-    {
-      "path": "src/app.rs",
-      "line": 165,
-      "match": "state: &Rc<RefCell<AppState>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "File actions borrow shared application state.",
-      "justification": "File actions need window routing that preserves window-local tabs and compare state while allowing new windows to start empty."
-    },
-    {
-      "path": "src/app.rs",
-      "line": 244,
-      "match": "state: &Rc<RefCell<AppState>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "App actions borrow shared application state.",
-      "justification": "Preferences/help/about actions need a stable editor window target so dialogs do not attach to non-editor transient windows."
-    },
-    {
-      "path": "src/app.rs",
-      "line": 307,
-      "match": "state: &Rc<RefCell<AppState>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "Application lifecycle callbacks borrow shared application state.",
-      "justification": "Activation and open signals must share the session-restore gate and resolve the correct editor window when multiple windows exist."
-    },
-    {
-      "path": "src/app.rs",
-      "line": 350,
-      "match": "state: &Rc<RefCell<AppState>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "Window resolution borrows shared application state.",
-      "justification": "Window creation is centralized so the registry and last-focused tracking remain consistent across action and lifecycle entry points."
-    },
-    {
-      "path": "src/app.rs",
       "line": 360,
       "match": "fn resolve_window(state: &Rc<RefCell<AppState>>) -> Option<Rc<Window>> {",
       "kind": "runtime-shared-state",
       "ownership": "Active editor window resolution reads shared application state.",
       "justification": "Window routing prefers the last-focused editor window while still allowing a deterministic fallback when focus tracking is unavailable."
-    },
-    {
-      "path": "src/app.rs",
-      "line": 374,
-      "match": "state: &Rc<RefCell<AppState>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "Window creation borrows shared application state.",
-      "justification": "New windows register destroy/focus handlers that update the shared registry without leaking strong reference cycles."
-    },
-    {
-      "path": "src/app.rs",
-      "line": 410,
-      "match": "state: &Rc<RefCell<AppState>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "Tab-transfer window handler borrows shared application state.",
-      "justification": "Moving a tab to a new window must create a registered secondary editor window through the same lifecycle registry as normal window creation."
     },
     {
       "path": "src/app.rs",

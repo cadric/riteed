@@ -28,6 +28,7 @@ impl SourceControlViews {
     #[must_use]
     pub(super) fn new(settings: &AppSettings) -> Self {
         let root = gtk4::Box::new(gtk4::Orientation::Vertical, 6);
+        root.set_vexpand(true);
         let tree_button = view_button(&pgettext("source control view", "Tree"));
         let list_button = view_button(&pgettext("source control view", "List"));
         list_button.set_group(Some(&tree_button));
@@ -39,10 +40,14 @@ impl SourceControlViews {
 
         let tree = SourceControlTree::new();
         let list = SourceControlList::new();
+        let tree_view = tree.widget();
+        let list_view = list.widget();
+        let tree_scroller = scrollable_view(&tree_view);
+        let list_scroller = scrollable_view(&list_view);
         let stack = gtk4::Stack::new();
         stack.set_vexpand(true);
-        stack.add_named(&tree.widget(), Some("tree"));
-        stack.add_named(&list.widget(), Some("list"));
+        stack.add_named(&tree_scroller, Some("tree"));
+        stack.add_named(&list_scroller, Some("list"));
         root.append(&stack);
 
         let views = Self {
@@ -156,4 +161,14 @@ fn view_button(label: &str) -> gtk4::ToggleButton {
     let button = gtk4::ToggleButton::with_label(label);
     button.update_property(&[Property::Label(label)]);
     button
+}
+
+fn scrollable_view(child: &gtk4::ListView) -> gtk4::ScrolledWindow {
+    let scroller = gtk4::ScrolledWindow::builder()
+        .child(child)
+        .hscrollbar_policy(gtk4::PolicyType::Never)
+        .vscrollbar_policy(gtk4::PolicyType::Automatic)
+        .build();
+    scroller.set_vexpand(true);
+    scroller
 }

@@ -1,12 +1,12 @@
 ---
 created: 2026-04-19
-updated: 2026-05-06
+updated: 2026-05-08
 status: active
 priority: high
 type: roadmap
-completed_through: v12
-next_version: unscheduled
-final_scheduled_version: v12
+completed_through: v12.5
+next_version: v13
+final_scheduled_version: v13
 ---
 
 # Complete Roadmap: Mini GNOME Text Editor in Rust
@@ -1002,7 +1002,7 @@ Implement a working v9 of the app with Git repository detection, a lightweight s
 
 V10 finishes the local source control work started in V9 and clears the polish regressions that have accumulated since V8.
 
-The goal is to make local Git workflows feel complete enough for daily use while restoring the visual and interaction polish the app expects. Network-bound source control (push) is intentionally held out of V10 so the security-sensitive bundled Git rebuild can be reviewed on its own; it now lives in the Post-V12 unscheduled candidates and is not part of the current roadmap.
+The goal is to make local Git workflows feel complete enough for daily use while restoring the visual and interaction polish the app expects. Network-bound source control is intentionally out of scope because Source Control is capped at local review, diff, stage/unstage, safe discard, and simple commits unless the architecture is revisited first.
 
 ## What V10 adds
 
@@ -1022,7 +1022,7 @@ The goal is to make local Git workflows feel complete enough for daily use while
 
 ## Why this version matters
 
-V10 turns V9's local source-control core into a complete local workflow. The deferred history and discard items finish the local loop, while the polish work removes the lingering regressions that signal "still in motion". Push is intentionally held back so its security-sensitive bundled Git rebuild can be reviewed on its own; it sits in the Post-V12 unscheduled backlog and is not part of the active roadmap. After V10 the app should feel like the V9 plan was always going to land here.
+V10 turns V9's local source-control core into a complete local workflow. The deferred history and discard items finish the local loop, while the polish work removes the lingering regressions that signal "still in motion". Network and remote Git workflows stay outside Riteed's lightweight editor boundary. After V10 the app should feel like the V9 plan was always going to land here.
 
 ## Prompt for V10
 
@@ -1093,7 +1093,7 @@ Behavior expectations:
 Technical expectations:
 - Continue to use only the bundled `/app/bin/git` boundary in `app/src/git_process.rs`
 - Add only these new Git verbs to the typed Git boundary as required: `log` and `checkout`/`restore` for discard. Update `app/src/git_process.rs` and `app/build-aux/git/README.md` together; the README is the source of truth for the bundled Git surface
-- Do not expand the bundled Git build flags in v10; network transport stays disabled and any future re-enable belongs to its own dedicated milestone (currently in the Post-V12 unscheduled backlog)
+- Do not expand the bundled Git build flags in v10; network transport stays disabled and requires a dedicated Source Control architecture review before any future milestone can propose it
 - Keep all source control UI changes inside the existing source control panel architecture
 - Reuse the file-monitoring infrastructure from v4 for the live refresh
 - Keep all user-facing strings ready for gettext localization
@@ -1104,7 +1104,7 @@ Non-goals for v10:
 - No branch management UI
 - No pull, fetch, or merge UI
 - No remote configuration UI
-- No git push (held back so the bundled Git build expansion can be reviewed on its own; currently sits in the Post-V12 unscheduled backlog and is not part of the active roadmap)
+- No git push
 - No stash, rebase, or cherry-pick tooling
 - No conflict resolution UI
 - No GitHub or GitLab integration
@@ -1303,7 +1303,7 @@ This is a writing-and-editing release: it makes the editor self-sufficient for s
 
 ## Why this version matters
 
-V12 closes practical gaps that have shown up in real use: find-in-files leverages the V6 workspace model, and statistics and printing make the app appropriate for documents that leave the editor. V12 is the final scheduled milestone on the roadmap; remaining ideas (spell check, Markdown preview, large-file streaming, and git push) are collected as unscheduled candidates and only promoted to a real version once one of them earns it.
+V12 closes practical gaps that have shown up in real use: find-in-files leverages the V6 workspace model, and statistics and printing make the app appropriate for documents that leave the editor. Later review and backlog milestones are tracked separately so V12 stays focused on everyday editing power tools.
 
 ## Prompt for V12
 
@@ -1369,10 +1369,249 @@ Implement a working v12 of the app with find in files across the workspace, docu
 
 ---
 
-# Post-V12 — Unscheduled candidates
+# V12.5 — Sidebar Density, Contextual Git Actions, and Unified Search
+
+> created: 2026-05-08
+> updated: 2026-05-08
+> status: complete
+> priority: high
+> type: roadmap-milestone
+> implementation: local V12.5 worktree
+
+## Purpose
+
+V12.5 reduces sidebar density and removes duplicate search entry points before the V13 diff-review milestone. It keeps the app focused as a lightweight GNOME editor rather than expanding Source Control into a full Git client.
+
+## What V12.5 adds
+
+* A unified Find bar with Document and Project scope
+* Sticky Search Results sidebar page driven by the Find bar query and Match Case state
+* Compact Source Control list and tree rows without inline action buttons
+* Active-tab Git actions in the header bar for compare, stage, unstage, and discard
+* Row context Git actions through right click, Menu, and Shift+F10
+* Split editor search and window wiring modules so the code stays under policy line limits
+
+## Why this version matters
+
+The Source Control sidebar had started to feel denser than Files because inline row buttons increased row height. Find in Files also duplicated the existing search UI with a second query entry and Match Case toggle. V12.5 makes both surfaces follow one editor-centered model: compact rows in the sidebar, contextual Git actions where they are needed, and one search bar for both document and project search.
+
+## Acceptance criteria
+
+* Source Control list and tree rows match the Files sidebar density.
+* Stage, Unstage, Discard, and Compare stay reachable from row context menus through pointer and keyboard access.
+* Active Git-modified tabs show contextual header-bar actions with correct enabled, disabled, and hidden states for clean files, untracked files, staged files, dirty buffers, compare mode, and unsafe path states.
+* Disabled Git actions expose tooltips and accessible descriptions.
+* Git actions refuse to run on the wrong path or from dirty/unsafe states.
+* Ctrl+F and Ctrl+H always open the Find bar in Document scope.
+* Ctrl+Shift+F opens the Find bar in Project scope and shows Search Results in the sidebar.
+* The old Find in Files query entry and sidebar Match Case control are removed.
+
+## Non-goals for V12.5
+
+* No V13 diff-review maturity feature set
+* No project-wide replace
+* No file-type icons
+* No branch, remote, push, pull, fetch, merge, rebase, or conflict-resolution Git workflows
+* No new search preferences, ignore-rule editor, or parallel scanner architecture
+
+## Implementation notes
+
+* Header-bar Git actions use four individual flat icon buttons rather than a single menu button.
+* Row-level Git actions use one shared list-level popover anchored from `compute_bounds(row_widget, list_view)` and no-op if bounds cannot be computed.
+* Dirty open buffers are overlaid as disabled header Git actions, even when the Git status snapshot itself has not refreshed yet.
+* Source Control state-change callbacks fire only after mutable state borrows are released.
+* Search Results visibility is pure sidebar UI; scan cancellation and clearing remain owned by the search coordinator and project-root change flow.
+
+## Prompt for V12.5
+
+```text
+Build v12.5 of the GNOME desktop application in Rust by tightening sidebar density, moving Source Control actions into contextual controls, and unifying document and project search through the Find bar.
+
+The goal of v12.5 is to make Riteed's sidebar more compact and consistent while preserving Git action accessibility and discoverability. Source Control rows should visually match Files rows. Git actions should move out of the row body into active-tab header controls and row context popovers. Find in Files should stop owning a separate query input and instead use the existing Find bar with a Document/Project scope selector.
+
+What v12.5 adds:
+- Compact Source Control list and tree rows without inline Stage, Unstage, or Discard buttons
+- Row context Git actions available from right click, Menu, and Shift+F10
+- Active-tab header-bar Git actions for compare, stage, unstage, and discard
+- Correct Git action state handling for clean, untracked, staged, dirty-buffer, compare-mode, non-UTF-8, and unsupported-repository states
+- A unified Find bar with Document and Project scope
+- Ctrl+F and Ctrl+H opening Document scope
+- Ctrl+Shift+F opening Project scope and showing sticky Search Results
+- Removal of the old Find in Files sidebar query entry and Match Case control
+
+Technical expectations:
+- Keep the implementation GTK4/libadwaita-native
+- Keep all runtime source files under the policy line limit
+- Preserve gettext-ready user-visible strings
+- Keep Git operations inside the existing typed `/app/bin/git` Gio subprocess boundary
+- Do not run Git actions from dirty buffers, compare mode, wrong paths, or unsafe repository states
+- Keep Search Results lifecycle ownership in the window/search coordinator rather than the sidebar container
+
+Deliverable:
+Implement a complete v12.5 where Source Control density matches Files, contextual Git actions remain accessible by pointer and keyboard, and document/project search share one Find bar without regressing Compare, Replace, or Find in Files behavior.
+```
+
+---
+
+# V13 — Diff Review Maturity
+
+> created: 2026-05-07
+> updated: 2026-05-08
+> status: planned
+> priority: high
+> type: roadmap-milestone
+> implementation: not started
+
+## Purpose
+
+V13 makes Riteed's Compare and Source Control review workflows feel mature without turning the app into an IDE or full Git client.
+
+V11 made split diffs readable. V13 should make diff review flexible, compact, and practical across real changed-file sessions. The focus is still review: understand what changed, move through it efficiently, and keep the UI native to GNOME.
+
+## What V13 adds
+
+* Unified inline diff view for Compare and Git compare
+* Adaptive compare layout that can switch away from split view in narrow spaces
+* Collapsed unchanged regions with context lines and reveal controls
+* Multi-file diff review for local Source Control changes
+* Compare review options for whitespace, wrapping, and large-diff behavior
+* Accessibility-focused diff navigation and summaries
+
+## Current baseline
+
+Riteed already has a strong split compare surface: logical row alignment, placeholder rows, custom original-line gutters, intra-line highlighting, semantic red/green changed-line colors, hunk navigation, scroll sync, copy filtering, and shared rendering for manual Compare and Source Control Git compare.
+
+Source Control already supports local review, per-file Git compare, file-level stage, unstage, discard, recent commit orientation, and simple commits. It deliberately does not manage remotes, branches, merges, rebases, conflicts, credentials, or build workflows.
+
+## Why this version matters
+
+Diff review is one of the strongest reasons for Riteed to exist beyond a basic text editor. The current split view is good for precise side-by-side inspection, but mature editors also support compact patch-style review, collapsing unchanged text, reviewing all changed files as one task, and keyboard/screen-reader-friendly change navigation.
+
+V13 should close those review gaps while preserving Riteed's lightweight identity. The result should feel like a focused GNOME editor with excellent local diff review, not like a general-purpose IDE.
+
+## Prompt for V13
+
+```text
+Build v13 of the GNOME desktop application in Rust by maturing Riteed's existing Compare and Source Control diff-review workflows.
+
+The goal of v13 is to make local diff review flexible, compact, accessible, and practical across real changed-file sessions. Riteed already has a polished split compare surface from v11. This version should add the missing mature review modes around that surface: unified inline diff, collapsed unchanged regions, multi-file diff review, compare options, and accessibility-focused navigation.
+
+What v13 adds:
+- Unified inline diff view for manual Compare and Source Control Git compare
+- Adaptive compare layout for narrow spaces
+- Collapsed unchanged regions with context lines and reveal controls
+- Multi-file diff review for local Source Control changes
+- Compare review options for whitespace, wrapping, and large-diff behavior
+- Accessibility-focused diff navigation and summaries
+
+Scope for v13:
+- Add a unified inline diff view
+  - Provide a single-column diff presentation that shows removed and added lines in one flow
+  - Reuse the existing `DiffRowModel` and compare computation path instead of creating a parallel diff engine
+  - Preserve truthful original/current line numbers in the unified presentation
+  - Preserve intra-line highlighting for modified rows where it remains readable
+  - Keep split view available; unified view is an additional mode, not a replacement
+- Add adaptive compare layout
+  - Allow compare to use unified view automatically when the available width is too narrow for useful split review
+  - Make the adaptive behavior predictable and reversible through an explicit user preference
+  - Do not write transient per-tab compare state into GSettings
+- Add collapsed unchanged regions
+  - Allow unchanged stretches between hunks to collapse to a compact marker with configurable context lines
+  - Provide reveal controls for showing more unchanged lines above, below, or all at once
+  - Keep hunk navigation, copy behavior, line numbering, and scroll position correct when regions are collapsed
+  - Ensure collapsed markers are localizable and accessible
+- Add multi-file diff review for Source Control
+  - Add a review surface for all unstaged changes
+  - Add a review surface for all staged changes
+  - Include untracked files in the unstaged review with an empty reference side
+  - Preserve the current Source Control local-only ceiling: no remotes, branches, push, pull, fetch, merge, rebase, stash, or conflict-resolution workflow
+  - Keep the per-file Source Control row diff action unchanged
+  - Provide next/previous change navigation across file boundaries
+  - Provide a clear way to open the real file from a reviewed diff item
+- Add compare review options
+  - Add a localizable UI for choosing split vs unified compare mode
+  - Add an option to ignore trim-only whitespace differences during review
+  - Add a clear hint when the only differences are hidden by the whitespace option
+  - Add compare word-wrap behavior that can be enabled without breaking row alignment
+  - Improve large-diff feedback so users know whether compare was skipped because of byte limits, line limits, or computation limits
+- Add accessibility-focused diff navigation
+  - Provide a keyboard-first change list or accessible review mode that summarizes each change with file name, side, line range, and changed-line counts
+  - Make next/previous change work consistently in split, unified, collapsed, and multi-file review
+  - Ensure screen-reader labels distinguish reference/old content from current/working content
+  - Ensure collapsed unchanged markers and multi-file diff item boundaries are reachable by keyboard
+
+Behavior expectations:
+- Compare should remain fast, local, and predictable
+- Split view remains the precise inspection mode
+- Unified view becomes the compact review mode
+- Collapsed unchanged regions should reduce scrolling without hiding the user's current cursor or selected change
+- Multi-file review should make a whole local changeset reviewable without opening each file manually
+- Compare options should reduce noise without making hidden behavior surprising
+- All compare surfaces should use the same side language: reference/old on the left or removal side, current/working on the right or addition side
+- Source Control remains a lightweight local workflow, not a full Git client
+
+Technical expectations:
+- Extend the existing Rust + GTK4 + Libadwaita + GtkSourceView codebase
+- Keep compare state tab-local or review-session-local unless a setting is explicitly a durable user preference
+- Use GSettings only for durable compare preferences such as preferred view mode, adaptive layout, whitespace handling, and wrap behavior
+- Keep user-facing strings gettext-ready and refresh the translation template/catalogs if the milestone is implemented
+- Keep all packaged UI/CSS/assets resource-backed
+- Preserve hard limits: no source file over 600 lines, no `unsafe`/`unwrap`/`expect`, no broad Flatpak permissions
+- Keep Git access inside the existing typed `/app/bin/git` Gio subprocess boundary
+- Prefer existing diff data structures; introduce new model types only when they remove real duplication between split, unified, collapsed, and multi-file review
+
+Tests and validation:
+- Unit tests for unified presentation rows: insertions, deletions, modifications, mixed hunks, empty files, missing trailing newline, and line-number mapping
+- Unit tests for collapsed unchanged region ranges: context lines, first/last hunk boundaries, reveal above/below/all, and hunk navigation targets
+- Unit tests for whitespace review behavior, including the whitespace-only hidden-difference hint
+- Widget tests for switching split/unified mode, adaptive narrow layout, collapsed region controls, and keyboard navigation
+- Widget or integration tests proving manual Compare and Git compare use the same split/unified/collapsed renderer path
+- Source Control tests for multi-file unstaged and staged review item ordering, untracked file handling, stale snapshot cancellation, and open-file action behavior
+- Accessibility review evidence for the new compare controls, collapsed markers, and multi-file review surface
+
+Non-goals for v13:
+- No hunk or selection staging
+- No partial revert from inside the diff
+- No merge editor
+- No conflict resolver
+- No three-way diff
+- No branch, push, pull, fetch, remote, stash, rebase, cherry-pick, or credential workflow
+- No full Git log browser
+- No moved-code detection unless it falls out naturally from the existing diff model without new algorithmic risk
+- No replacement of the existing diff library
+- No notebook, binary, image, or rich document diffing
+- No multi-file replace or patch-apply workflow
+
+Implementation guidance:
+- Treat v13 as a review ergonomics milestone, not a Git operation milestone
+- Build unified view from the same logical diff model that powers split view
+- Add collapsed unchanged regions after unified view only if the row/range model can represent hidden rows cleanly
+- Build multi-file review as a Source Control review session over existing snapshot entries, not as a new repository browser
+- Keep option names and UI copy plain; avoid exposing implementation terms like "algorithm" unless there is a real user choice
+- Prefer a small set of durable compare preferences over per-surface toggles that drift out of sync
+- Refresh help and translations only when the implementation strings are stable
+- Leave partial staging/revert for a later milestone with a dedicated Git safety design
+
+Deliverable:
+Implement a working v13 of the app where manual Compare and Source Control Git compare support both split and unified diff review, can collapse unchanged regions, can review all local changed files in one multi-file surface, expose restrained compare options for whitespace and wrapping, and provide accessible keyboard-first change navigation. The feature set must preserve Riteed's local-only Source Control ceiling and its identity as a lightweight GNOME-native editor.
+```
+
+## Follow-up candidates after V13
+
+These are intentionally not part of V13. They should only be promoted when they can be handled as focused milestones with their own safety model.
+
+* Hunk and selection staging
+* Hunk and selection revert
+* Moved-code detection and moved-block explanation
+* Merge and conflict resolution
+* Commit/ref/stash diff review beyond the existing recent-history orientation
+
+---
+
+# Post-V13 — Unscheduled Candidates
 
 > created: 2026-04-27
-> updated: 2026-05-02
+> updated: 2026-05-08
 > status: deferred
 > priority: low
 > type: roadmap-backlog
@@ -1388,10 +1627,6 @@ The rule for promotion is unchanged from the rest of the roadmap: a candidate be
 
 * Optional GTK native spell check
 * Lightweight Markdown preview for `.md` files
-* Git push for the current branch and configured remote
-* Bundled Git build expanded to support network transport (re-enabling curl/openssl/expat with documented justification)
-* Authentication path for push using GNOME-appropriate credential storage
-* Clear surfacing of authentication, network, and rejection errors in the source control side panel
 * Initial chunk streaming for very large files
 
 ## Why each candidate is deferred
@@ -1400,15 +1635,17 @@ The rule for promotion is unchanged from the rest of the roadmap: a candidate be
 
 **Markdown preview** — useful but distinct from the editor's identity as a plain-text/code editor; the existing diff/compare infrastructure already provides side-by-side viewing for the cases that matter most today.
 
-**Git push (and the three items it requires)** — push is treated as a single coupled bundle: it cannot ship without re-enabling network transport in the bundled Git build (re-justifying NO_CURL/NO_OPENSSL/NO_EXPAT), without a credential storage path, and without explicit error surfacing. The bundled Git network expansion is security-sensitive enough that it should only be opened when push itself is the next thing to ship — not preemptively.
-
 **Initial chunk streaming for very large files** — useful and worth investigating, but it likely needs its own document/viewer mode rather than normal GtkSourceView loading. It should be promoted only when the milestone can focus on large-file architecture, including clear behavior for search, syntax highlighting, minimap, compare, autosave, and session restore.
+
+## Source Control ceiling
+
+Source Control is intentionally capped at local status, compare, stage, unstage, safe discard, recent-history orientation, and simple commits. Branch switching, remotes, push, pull, fetch, merge, rebase, conflict resolution, credential storage, hook execution, and build workflows must not be promoted from this backlog unless Source Control first gets a dedicated architecture milestone.
 
 ## Promotion rules
 
 If any of these items is promoted to a real version later, the promoting change must:
 
-* Pick a version number (V13, V14, …) and create a full milestone section with Purpose, What it adds, Why this version matters, and Prompt — matching the structure of V1–V12
+* Pick a version number (V14, V15, …) and create a full milestone section with Purpose, What it adds, Why this version matters, and Prompt, matching the structure of V1 through V13
 * Pull only the items that genuinely belong together in one release; do not promote the whole list at once unless that is the actual decision
 * Re-justify any bundled Git or Flatpak manifest expansion as part of the same change, not as a follow-up
 * Update the header `final_scheduled_version` and the Summary section accordingly
@@ -1417,7 +1654,7 @@ If any of these items is promoted to a real version later, the promoting change 
 
 # Summary of the full progression
 
-V1–V12 are complete as of 2026-05-06. V12 closed the final scheduled milestone with Find in Files, document statistics, print support, and preserved V3 Find and Replace discoverability. Anything beyond V12 — spell check, Markdown preview, large-file streaming, git push and the bundled Git network expansion it requires — sits in the "Post-V12 — Unscheduled candidates" section and only earns a version number once one of them has a concrete reason to ship next.
+V1 through V12.5 are complete as of 2026-05-08. V13 is the next scheduled milestone and remains not implemented; it covers diff review maturity for Compare and local Source Control review. Anything beyond V13, including spell check, Markdown preview, and large-file streaming, sits in the "Post-V13 — Unscheduled Candidates" section and only earns a version number once one of those ideas has a concrete reason to ship next.
 
 ## V1
 
@@ -1465,11 +1702,19 @@ Polish split diff so manual Compare and Git compare become practical for daily c
 
 ## V12
 
-Add editing power tools: find in files, statistics, and printing, while preserving the existing Find and Replace workflow. Final scheduled milestone.
+Add editing power tools: find in files, statistics, and printing, while preserving the existing Find and Replace workflow.
 
-## Post-V12
+## V12.5
 
-Unscheduled backlog. Holds spell check, Markdown preview, initial large-file streaming, and the git push bundle (push action + bundled Git network expansion + credential storage + error surfacing). Items only promote to a numbered version when one has a concrete reason to ship next.
+Compact the sidebar, move Source Control actions into contextual header/popover controls, and unify document/project search through the Find bar.
+
+## V13
+
+Mature diff review with unified diff, adaptive compare layout, collapsed unchanged regions, multi-file local changeset review, compare options, and accessible change navigation.
+
+## Post-V13
+
+Unscheduled backlog. Holds spell check, Markdown preview, and initial large-file streaming. Items only promote to a numbered version when one has a concrete reason to ship next.
 
 ---
 

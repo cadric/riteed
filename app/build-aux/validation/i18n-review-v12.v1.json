@@ -9,27 +9,6 @@
       "resolution": "This short print failure message appears in the print error dialog after the native print operation reports failure."
     },
     {
-      "path": "src/document_statistics.rs",
-      "line": 27,
-      "match": "crate::dialog_shell::build_dialog_shell(&gettext(\"Document Statistics\"), 420, None, true);",
-      "kind": "i18n-short-string",
-      "resolution": "This short V12 string appears inside the Document Statistics dialog, where the row grouping identifies whether the count belongs to the document or selection."
-    },
-    {
-      "path": "src/document_statistics.rs",
-      "line": 43,
-      "match": "crate::dialog_shell::build_dialog_shell(&gettext(\"Document Statistics\"), 420, None, true);",
-      "kind": "i18n-short-string",
-      "resolution": "This short V12 string appears inside the Document Statistics dialog, where the row grouping identifies whether the count belongs to the document or selection."
-    },
-    {
-      "path": "src/find_in_files/mod.rs",
-      "line": 43,
-      "match": "let title = adw::WindowTitle::new(&gettext(\"Find in Files\"), \"\");",
-      "kind": "i18n-short-string",
-      "resolution": "This short V12 string appears inside the Find in Files sidebar, where the query field, result list, and scan summary provide the missing context."
-    },
-    {
       "path": "src/find_in_files/mod.rs",
       "line": 421,
       "match": "let mut label = gettext(\"Searching\");",

@@ -1,6 +1,6 @@
 ---
 created: 2026-04-19
-updated: 2026-05-06
+updated: 2026-05-08
 status: current
 priority: high
 type: changelog
@@ -13,6 +13,24 @@ All notable changes to this repository are documented in this file.
 The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries describe public beta snapshots.
 
 ## Unreleased
+
+### Added
+- Added the V12.5 sidebar/search pass: the Find bar now has Document and Project scope, Ctrl+Shift+F opens Project scope, and project matches render in a sticky Search Results sidebar page.
+- Added active-tab Source Control actions in the header bar for Git compare, stage, unstage, and discard.
+- Added Source Control row context actions through a shared row popover available from right click, Menu, and Shift+F10.
+
+### Fixed
+- Fixed a Flatpak startup abort during project/session restore by avoiding re-entrant project-tree selection cleanup while project state is borrowed.
+- Prevented active Compare tabs from silently auto-reloading their current document after disk changes, keeping manual reference refresh explicit and stable.
+
+### Changed
+- Split Preferences into Editor, Appearance, Format, and Source Control pages so appearance and Git identity controls are no longer mixed into unrelated editor settings.
+- Made Source Control rows match the Files sidebar density by removing inline row action buttons and reusing compact sidebar-row styling in both list and tree modes.
+- Kept document search, replace, and project search on one query and Match Case state while preserving Ctrl+F and Ctrl+H as document-scoped actions.
+- Hid Source Control commit controls until staged changes are present, and documented that Riteed creates local commits without repository hooks, commit signing, or an external editor.
+- Made Source Control's changed-files area and Recent Commits history share a draggable vertical split so large change lists no longer push commit history out of view.
+- Merged the standalone V12.5 and V13 roadmap drafts into `ROADMAP.md`, removed the loose draft files, and moved the unscheduled backlog beyond V13 as Post-V13.
+- Capped the roadmap Source Control scope at local status, compare, stage/unstage, safe discard, recent history, and simple local commits until a dedicated architecture milestone expands it.
 
 ## 0.3.0 - 2026-05-06
 

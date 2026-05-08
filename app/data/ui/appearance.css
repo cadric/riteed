@@ -119,25 +119,6 @@
   padding: 2px;
 }
 
-.riteed-git-row .riteed-git-row-actions {
-  opacity: 0;
-  transition: opacity 120ms ease;
-  padding: 0 6px 0 24px;
-  background: linear-gradient(to right, transparent, var(--view-bg-color) 24px);
-  border-radius: 6px;
-}
-
-.riteed-git-row:hover .riteed-git-row-actions,
-.riteed-git-row:focus-within .riteed-git-row-actions {
-  opacity: 1;
-}
-
-.riteed-git-row-actions button.flat {
-  min-height: 24px;
-  min-width: 24px;
-  padding: 2px;
-}
-
 .riteed-git-status-badge,
 .riteed-git-staged {
   min-width: 16px;

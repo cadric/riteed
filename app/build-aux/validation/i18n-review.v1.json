@@ -16,13 +16,6 @@
       "resolution": "This short confirmation heading is shown in the Clear All confirmation dialog, where the body text explains the irreversible action."
     },
     {
-      "path": "src/editor_search.rs",
-      "line": 514,
-      "match": "gettext(\"No matches\")",
-      "kind": "i18n-short-string",
-      "resolution": "This short result label appears directly beside the find-next/find-previous controls in the search bar, so the empty-match state remains explicit without extra translator comments."
-    },
-    {
       "path": "src/editor_search/support.rs",
       "line": 40,
       "match": "ngettext(\"%d match\", \"%d matches\", count).replace(\"%d\", &count.to_string())",
@@ -108,28 +101,28 @@
     },
     {
       "path": "src/project_tree.rs",
-      "line": 173,
+      "line": 164,
       "match": "label.set_label(&ellipsis_label(gettext(\"Loading\")));",
       "kind": "i18n-short-string",
       "resolution": "This short inline row label is shown beside a spinner while the project tree enumerates a directory."
     },
     {
       "path": "src/source_control.rs",
-      "line": 89,
+      "line": 96,
       "match": "let title = adw::WindowTitle::new(&gettext(\"Source Control\"), \"\");",
       "kind": "i18n-short-string",
       "resolution": "This short title labels the Source Control sidebar header above the changed-file tree and commit controls."
     },
     {
       "path": "src/source_control/refresh.rs",
-      "line": 227,
+      "line": 234,
       "match": "state.status_label.set_label(&gettext(\"No changes.\"));",
       "kind": "i18n-short-string",
       "resolution": "This compact status appears in the Source Control panel when the repository has no changed files."
     },
     {
       "path": "src/source_control/refresh.rs",
-      "line": 229,
+      "line": 236,
       "match": "state.status_label.set_label(&gettext(\"Changed files\"));",
       "kind": "i18n-short-string",
       "resolution": "This short Source Control string appears inside the Git sidebar where the changed-file, history, or action context is visible."
@@ -143,35 +136,35 @@
     },
     {
       "path": "src/window.rs",
-      "line": 508,
+      "line": 419,
       "match": ".update_property(&[Property::Label(&gettext(\"New Tab\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
     },
     {
       "path": "src/window.rs",
-      "line": 511,
+      "line": 422,
       "match": ".update_property(&[Property::Label(&gettext(\"Open Files\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
     },
     {
       "path": "src/window.rs",
-      "line": 514,
+      "line": 425,
       "match": ".update_property(&[Property::Label(&gettext(\"Project Sidebar\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
     },
     {
       "path": "src/window.rs",
-      "line": 517,
+      "line": 428,
       "match": ".update_property(&[Property::Label(&gettext(\"Save Current File\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
     },
     {
       "path": "src/window.rs",
-      "line": 520,
+      "line": 431,
       "match": ".update_property(&[Property::Label(&gettext(\"Main Menu\"))]);",
       "kind": "i18n-short-string",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
@@ -203,20 +196,6 @@
       "match": "font_dialog.set_title(&gettext(\"Choose Editor Font\"));",
       "kind": "i18n-short-string",
       "resolution": "This short dialog title appears at the top of the font chooser and the accompanying copy explains that the selection affects only the editor font."
-    },
-    {
-      "path": "src/window_project/root.rs",
-      "line": 239,
-      "match": "state.browser.set_title(&gettext(\"Project\"));",
-      "kind": "i18n-short-string",
-      "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
-    },
-    {
-      "path": "src/window_project/root.rs",
-      "line": 220,
-      "match": "state.browser.set_title(&gettext(\"Project\"));",
-      "kind": "i18n-short-string",
-      "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
     }
   ]
 }

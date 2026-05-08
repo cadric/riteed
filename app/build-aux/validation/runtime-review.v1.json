@@ -34,8 +34,8 @@
       "justification": "GIO metadata queries complete asynchronously, so monitor events, polling fallback, cancellation, and stale-result guards must coalesce through one mutable state cell without blocking the GTK main loop."
     },
     {
-      "path": "src/editor_search.rs",
-      "line": 42,
+      "path": "src/editor_search/mod.rs",
+      "line": 49,
       "match": "state: RefCell<SearchState>,",
       "kind": "runtime-shared-state",
       "ownership": "The search controller owns one mutable binding to the active tab and active search context.",
@@ -114,38 +114,6 @@
       "justification": "Window-scoped zoom actions must clamp, reset, and reapply the same percentage across every attached editor tab."
     },
     {
-      "path": "src/project_tree_model.rs",
-      "line": 44,
-      "match": "state: Rc<RefCell<ModelState>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The project tree model owns shared lazy-loading state.",
-      "justification": "Directory enumeration, monitor callbacks, and refresh callbacks need a generation counter, hidden filter state, active root, cancellables, and directory monitors shared across tree expansions."
-    },
-    {
-      "path": "src/project_tree_model.rs",
-      "line": 287,
-      "match": "state: Rc<RefCell<ModelState>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "Enumerator batching carries shared tree state across async callbacks.",
-      "justification": "Batch iteration needs generation checks, cancellable ownership, and monitor registration context without global variables."
-    },
-    {
-      "path": "src/project_tree_model.rs",
-      "line": 297,
-      "match": "state: &Rc<RefCell<ModelState>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "Directory-load helpers borrow shared tree model state.",
-      "justification": "Async enumeration must consult the current generation and hidden filter, then register directory monitors without racing root changes."
-    },
-    {
-      "path": "src/project_tree_model.rs",
-      "line": 471,
-      "match": "state: &Rc<RefCell<ModelState>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "Enumeration error handling uses shared tree state.",
-      "justification": "Error callbacks must ignore stale generations and update the correct list store without racing refresh operations."
-    },
-    {
       "path": "src/project_tree_monitor.rs",
       "line": 48,
       "match": "poll_source: RefCell<Option<glib::SourceId>>,",
@@ -160,38 +128,6 @@
       "kind": "runtime-shared-state",
       "ownership": "Each project directory monitor owns a shared polling cancellation flag.",
       "justification": "Async snapshot callbacks need a stale guard after root replacement, refresh, hidden-toggle refresh, or close-folder cancellation."
-    },
-    {
-      "path": "src/project_tree_monitor.rs",
-      "line": 112,
-      "match": "poll_state: Rc<RefCell<Option<ProjectDirectorySnapshot>>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The directory polling loop shares the last observed snapshot.",
-      "justification": "Loaded-directory polling compares child name/type snapshots without broad filesystem permissions or recursive watchers."
-    },
-    {
-      "path": "src/project_tree_monitor.rs",
-      "line": 115,
-      "match": "cancelled: Rc<Cell<bool>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The directory polling loop shares its cancellation flag.",
-      "justification": "Timeout callbacks must stop immediately after the directory monitor is cancelled by a generation change."
-    },
-    {
-      "path": "src/project_tree_monitor.rs",
-      "line": 152,
-      "match": "poll_state: Rc<RefCell<Option<ProjectDirectorySnapshot>>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "Directory-poll callbacks carry shared snapshot state.",
-      "justification": "Async enumeration batches need access to the previous snapshot when deciding whether to trigger one coalesced tree refresh."
-    },
-    {
-      "path": "src/project_tree_monitor.rs",
-      "line": 155,
-      "match": "cancelled: Rc<Cell<bool>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "Directory-poll callbacks carry the shared cancellation flag.",
-      "justification": "Late async enumeration completions must not refresh the current tree after their monitor generation has been cancelled."
     },
     {
       "path": "src/project_tree_monitor.rs",
@@ -216,70 +152,6 @@
       "kind": "runtime-shared-state",
       "ownership": "The preferences controller owns the staged editor-preferences state for the dialog lifetime.",
       "justification": "SpinRow staging and syncing guards need one shared mutable state cell that all preference-row callbacks can borrow."
-    },
-    {
-      "path": "src/window_preferences.rs",
-      "line": 57,
-      "match": "state: &Rc<RefCell<PreferencesState>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The preferences controller borrows the shared staged preferences state.",
-      "justification": "Preference callbacks need one syncing guard and staged numeric state so UI population and write-back do not recursively write settings."
-    },
-    {
-      "path": "src/window_preferences.rs",
-      "line": 109,
-      "match": "state: &Rc<RefCell<PreferencesState>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The preferences controller borrows the shared staged preferences state.",
-      "justification": "Preference callbacks need one syncing guard and staged numeric state so UI population and write-back do not recursively write settings."
-    },
-    {
-      "path": "src/window_preferences.rs",
-      "line": 165,
-      "match": "state: &Rc<RefCell<PreferencesState>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The preferences controller borrows the shared staged preferences state.",
-      "justification": "Preference callbacks need one syncing guard and staged numeric state so UI population and write-back do not recursively write settings."
-    },
-    {
-      "path": "src/window_preferences.rs",
-      "line": 187,
-      "match": "state: &Rc<RefCell<PreferencesState>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The preferences controller borrows the shared staged preferences state.",
-      "justification": "Preference callbacks need one syncing guard and staged numeric state so UI population and write-back do not recursively write settings."
-    },
-    {
-      "path": "src/window_preferences.rs",
-      "line": 227,
-      "match": "state: &Rc<RefCell<PreferencesState>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The preferences controller borrows the shared staged preferences state.",
-      "justification": "Preference callbacks need one syncing guard and staged numeric state so UI population and write-back do not recursively write settings."
-    },
-    {
-      "path": "src/window_preferences.rs",
-      "line": 282,
-      "match": "state: &Rc<RefCell<PreferencesState>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The preferences controller borrows the shared staged preferences state.",
-      "justification": "Preference callbacks need one syncing guard and staged numeric state so UI population and write-back do not recursively write settings."
-    },
-    {
-      "path": "src/window_preferences.rs",
-      "line": 304,
-      "match": "state: &Rc<RefCell<PreferencesState>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The preferences controller borrows the shared staged preferences state.",
-      "justification": "Preference callbacks need one syncing guard and staged numeric state so UI population and write-back do not recursively write settings."
-    },
-    {
-      "path": "src/window_preferences.rs",
-      "line": 348,
-      "match": "state: &Rc<RefCell<PreferencesState>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The preferences controller borrows the shared staged preferences state.",
-      "justification": "Preference callbacks need one syncing guard and staged numeric state so UI population and write-back do not recursively write settings."
     },
     {
       "path": "src/window_preferences.rs",
@@ -330,14 +202,6 @@
       "justification": "Root transitions must consistently enable/disable window actions and sidebar visibility from one state source of truth."
     },
     {
-      "path": "src/window_project/root.rs",
-      "line": 163,
-      "match": "state: &Rc<RefCell<ProjectState>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "Project root transition helpers borrow shared project state.",
-      "justification": "Opening, restoring, replacing, and revealing project roots must coordinate cancellables, sidebar state, and tree synchronization from one state source."
-    },
-    {
       "path": "src/window_project/sidebar_state.rs",
       "line": 26,
       "match": "pub(super) fn set_sidebar_visible_for_root(state: &Rc<RefCell<ProjectState>>, visible: bool) {",
@@ -355,27 +219,11 @@
     },
     {
       "path": "src/window_project/app_open.rs",
-      "line": 33,
-      "match": "state: &Rc<RefCell<ProjectState>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "App-open request processing borrows shared project state.",
-      "justification": "Async file-type probes must enqueue follow-up callbacks against the same project state to apply root replacement and toasts safely."
-    },
-    {
-      "path": "src/window_project/app_open.rs",
       "line": 34,
       "match": "request: Rc<RefCell<AppOpenRequest>>,",
       "kind": "runtime-shared-state",
       "ownership": "The app-open request accumulates classification results across async callbacks.",
       "justification": "Mixed directory/file opens must collect results before deciding which folder to activate and which files to open as tabs."
-    },
-    {
-      "path": "src/window_project/app_open.rs",
-      "line": 87,
-      "match": "state: &Rc<RefCell<ProjectState>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "App-open finishing borrows shared project state.",
-      "justification": "Completion logic needs shared access to the active workspace and toast overlay to apply the aggregated open decisions."
     },
     {
       "path": "src/window_project/app_open.rs",
@@ -411,19 +259,11 @@
     },
     {
       "path": "src/workspace.rs",
-      "line": 68,
+      "line": 70,
       "match": "pub(crate) state: RefCell<WorkspaceState>,",
       "kind": "runtime-shared-state",
       "ownership": "The workspace owns tab collection, recent/session caches, restore gating, and active close flow.",
       "justification": "Tabbed document coordination requires shared mutable state across menu rebuilds, session persistence, search/status rebinding, selection changes, and drag-and-drop."
-    },
-    {
-      "path": "src/workspace/autosave.rs",
-      "line": 19,
-      "match": "result: Rc<RefCell<Option<SaveResult>>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The guarded autosave test request owns its observed asynchronous save result.",
-      "justification": "GTK regression coverage needs to prove the production autosave gate either skipped the write or returned the real save result without duplicating eligibility logic in the test."
     },
     {
       "path": "src/workspace/tabs.rs",
@@ -456,14 +296,6 @@
       "kind": "runtime-shared-state",
       "ownership": "The open-request finisher reads shared batch state.",
       "justification": "Completion handling needs the accumulated batch results to decide between restore selection, aggregated toasts, and fallback UI state."
-    },
-    {
-      "path": "src/window_project/root.rs",
-      "line": 119,
-      "match": "state: &Rc<RefCell<ProjectState>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "Project root finish helpers borrow shared project state after the mutable root update is released.",
-      "justification": "Finishing a root replacement must update the project tree outside the ProjectState mutable borrow while still reading the current browser owner."
     }
   ]
 }

@@ -47,19 +47,19 @@ fn help_overview_page() -> adw::PreferencesPage {
     editing.add(&help_row(
         &pgettext("help row", "Find and Replace"),
         &gettext(
-            "Press Ctrl+F to find text in the current document, Ctrl+H to show replace, and Ctrl+G or Shift+Ctrl+G to move between matches.",
+            "Press Ctrl+F to find text in the current document, Ctrl+H to show document replace, and Ctrl+G or Shift+Ctrl+G to move between matches.",
         ),
     ));
     editing.add(&help_row(
         &pgettext("help row", "Find in Files"),
         &gettext(
-            "Press Ctrl+Shift+F to search the open folder. Riteed streams results from the current workspace and skips hidden or generated folders that are not useful for text search.",
+            "Press Ctrl+Shift+F to search the open folder from the find bar's Project scope. Search Results stay available in the sidebar while you return to document search or close the find bar.",
         ),
     ));
     editing.add(&help_row(
         &pgettext("help row", "Editor Tools"),
         &gettext(
-            "Use the main menu to print, view document statistics, or switch System, Light, and Dark appearance. Open Preferences to adjust window and editor palettes, current-line highlight, line numbers, and the minimap.",
+            "Use the main menu to print, view document statistics, or switch System, Light, and Dark appearance. Open Preferences to adjust the appearance style, editor palette, current-line highlight, line numbers, and minimap.",
         ),
     ));
     editing.add(&help_row(
@@ -81,7 +81,7 @@ fn help_overview_page() -> adw::PreferencesPage {
     source_control.add(&help_row(
         &pgettext("help row", "Stage and Commit"),
         &gettext(
-            "Use the row actions to stage or unstage files, then write a commit message and commit local staged changes with the Git identity saved in Preferences.",
+            "Use the active tab's header-bar Git actions or a Source Control row context menu to stage or unstage files, then write a commit message and commit local staged changes with the Git identity from the Source Control page in Preferences.",
         ),
     ));
     source_control.add(&help_row(
@@ -119,6 +119,12 @@ fn help_technical_page() -> adw::PreferencesPage {
         ),
     ));
     source_control_notes.add(&help_row(
+        &pgettext("help row", "Commit Behavior"),
+        &gettext(
+            "Riteed creates local commits from staged changes without running repository hooks, signing commits, or opening an external editor.",
+        ),
+    ));
+    source_control_notes.add(&help_row(
         &pgettext("help row", "Live Refresh"),
         &gettext(
             "Riteed refreshes Git status after saves and local Git metadata changes. Document-portal folders use periodic polling when native file monitoring is unavailable.",
@@ -127,7 +133,7 @@ fn help_technical_page() -> adw::PreferencesPage {
     source_control_notes.add(&help_row(
         &pgettext("help row", "Find in Files Limits"),
         &gettext(
-            "Find in Files searches UTF-8 text without an index. It skips generated folders such as .git, target, build, node_modules, vendor, dist, .flatpak-builder, __pycache__, and .venv.",
+            "Project search uses the same find bar query and Match Case option as document search. It searches UTF-8 text without an index and skips generated folders such as .git, target, build, node_modules, vendor, dist, .flatpak-builder, __pycache__, and .venv.",
         ),
     ));
 

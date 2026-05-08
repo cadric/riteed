@@ -81,19 +81,19 @@ pub(super) fn sync_reveal_for_selection(state: &Rc<RefCell<ProjectState>>) {
     };
 
     let Some(root) = root else {
-        state.borrow().browser.tree().clear_selection();
+        clear_tree_selection(state);
         cancel_reveal(state);
         return;
     };
 
     let Some(selected_uri) = selected_uri else {
-        state.borrow().browser.tree().clear_selection();
+        clear_tree_selection(state);
         cancel_reveal(state);
         return;
     };
     let selected_file = gio::File::for_uri(&selected_uri);
     if !file_is_under_root(&root, &selected_file) {
-        state.borrow().browser.tree().clear_selection();
+        clear_tree_selection(state);
         cancel_reveal(state);
         return;
     }
@@ -105,7 +105,7 @@ fn start_reveal(state: &Rc<RefCell<ProjectState>>, root: &gio::File, target: &gi
     cancel_reveal(state);
 
     let Some(relative) = root.relative_path(target) else {
-        state.borrow().browser.tree().clear_selection();
+        clear_tree_selection(state);
         return;
     };
 
@@ -119,7 +119,7 @@ fn start_reveal(state: &Rc<RefCell<ProjectState>>, root: &gio::File, target: &gi
         chain.push(current.clone());
     }
     if chain.is_empty() {
-        state.borrow().browser.tree().clear_selection();
+        clear_tree_selection(state);
         return;
     }
 
@@ -145,18 +145,37 @@ fn start_reveal(state: &Rc<RefCell<ProjectState>>, root: &gio::File, target: &gi
 }
 
 fn finish_reveal(state: &Rc<RefCell<ProjectState>>, selection: SelectionCleanup) {
-    let (model, pending) = {
-        let mut state = state.borrow_mut();
+    let (model, pending, selected) = {
+        let Ok(mut state) = state.try_borrow_mut() else {
+            schedule_finish_reveal(state, selection);
+            return;
+        };
         state.reveal_generation = state.reveal_generation.saturating_add(1);
         let model = state.browser.tree().model().model().clone();
-        (model, state.pending_reveal.take())
+        let selected = state.browser.tree().selection().clone();
+        (model, state.pending_reveal.take(), selected)
     };
     if let Some(mut pending) = pending {
         pending.disconnect(&model);
     }
     if matches!(selection, SelectionCleanup::Clear) {
-        state.borrow().browser.tree().clear_selection();
+        selected.set_selected(gtk4::INVALID_LIST_POSITION);
     }
+}
+
+fn schedule_finish_reveal(state: &Rc<RefCell<ProjectState>>, selection: SelectionCleanup) {
+    let weak = Rc::downgrade(state);
+    let _source = glib::idle_add_local_once(move || {
+        let Some(state) = weak.upgrade() else {
+            return;
+        };
+        finish_reveal(&state, selection);
+    });
+}
+
+fn clear_tree_selection(state: &Rc<RefCell<ProjectState>>) {
+    let selected = state.borrow().browser.tree().selection().clone();
+    selected.set_selected(gtk4::INVALID_LIST_POSITION);
 }
 
 impl PendingReveal {
@@ -292,12 +311,8 @@ fn drive_reveal_step(state: &Rc<RefCell<ProjectState>>, generation: u64) {
     let step = reveal_step(state, generation);
     match step {
         RevealStep::Select(position) => {
-            state
-                .borrow()
-                .browser
-                .tree()
-                .selection()
-                .set_selected(position);
+            let selected = state.borrow().browser.tree().selection().clone();
+            selected.set_selected(position);
             finish_reveal(state, SelectionCleanup::Keep);
         }
         RevealStep::Expand(row) => {

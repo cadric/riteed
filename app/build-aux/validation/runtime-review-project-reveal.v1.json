@@ -43,7 +43,23 @@
     },
     {
       "path": "src/window_project/reveal.rs",
+      "line": 166,
+      "match": "fn schedule_finish_reveal(state: &Rc<RefCell<ProjectState>>, selection: SelectionCleanup) {",
+      "kind": "runtime-shared-state",
+      "ownership": "Deferred reveal cleanup borrows shared project state.",
+      "justification": "Selection and model changes can re-enter reveal cleanup while project state is already borrowed, so the fallback schedules cleanup for the next main-loop turn instead of panicking."
+    },
+    {
+      "path": "src/window_project/reveal.rs",
       "line": 176,
+      "match": "fn clear_tree_selection(state: &Rc<RefCell<ProjectState>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "Reveal selection cleanup borrows shared project state.",
+      "justification": "Reveal cancellation clones the GTK selection handle before clearing it so selection notifications cannot re-enter while the project state borrow is still active."
+    },
+    {
+      "path": "src/window_project/reveal.rs",
+      "line": 195,
       "match": "fn install_reveal_model_handler(state: &Rc<RefCell<ProjectState>>, generation: u64) {",
       "kind": "runtime-shared-state",
       "ownership": "Reveal model-change wiring borrows shared project state.",
@@ -51,7 +67,7 @@
     },
     {
       "path": "src/window_project/reveal.rs",
-      "line": 202,
+      "line": 221,
       "match": "fn schedule_reveal_watchdog(state: &Rc<RefCell<ProjectState>>, generation: u64) {",
       "kind": "runtime-shared-state",
       "ownership": "Reveal watchdog scheduling mutates shared project state.",
@@ -59,7 +75,7 @@
     },
     {
       "path": "src/window_project/reveal.rs",
-      "line": 238,
+      "line": 257,
       "match": "fn schedule_reveal_step(state: &Rc<RefCell<ProjectState>>, generation: u64) {",
       "kind": "runtime-shared-state",
       "ownership": "Reveal step scheduling mutates shared project state.",
@@ -67,7 +83,7 @@
     },
     {
       "path": "src/window_project/reveal.rs",
-      "line": 291,
+      "line": 310,
       "match": "fn drive_reveal_step(state: &Rc<RefCell<ProjectState>>, generation: u64) {",
       "kind": "runtime-shared-state",
       "ownership": "Reveal step execution borrows shared project state.",
@@ -75,7 +91,7 @@
     },
     {
       "path": "src/window_project/reveal.rs",
-      "line": 320,
+      "line": 335,
       "match": "fn reveal_step(state: &Rc<RefCell<ProjectState>>, generation: u64) -> RevealStep {",
       "kind": "runtime-shared-state",
       "ownership": "Reveal step planning borrows shared project state.",
@@ -83,7 +99,7 @@
     },
     {
       "path": "src/window_project/reveal.rs",
-      "line": 349,
+      "line": 364,
       "match": "fn advance_reveal_index(state: &Rc<RefCell<ProjectState>>, generation: u64) -> bool {",
       "kind": "runtime-shared-state",
       "ownership": "Reveal chain advancement mutates shared project state.",
@@ -91,7 +107,7 @@
     },
     {
       "path": "src/window_project/reveal.rs",
-      "line": 421,
+      "line": 436,
       "match": "pub(super) fn reveal_pending_for_tests(state: &Rc<RefCell<ProjectState>>) -> bool {",
       "kind": "runtime-shared-state",
       "ownership": "Reveal test helper reads shared project state.",
@@ -99,7 +115,7 @@
     },
     {
       "path": "src/window_project/reveal.rs",
-      "line": 426,
+      "line": 441,
       "match": "pub(super) fn reveal_file_for_tests(state: &Rc<RefCell<ProjectState>>, target: &gio::File) {",
       "kind": "runtime-shared-state",
       "ownership": "Reveal test helper starts reveal from shared project state.",

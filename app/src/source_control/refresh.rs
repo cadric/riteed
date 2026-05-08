@@ -7,7 +7,7 @@ use gtk4::prelude::*;
 use crate::git_status::{GitAttrState, GitPath, GitStatusSnapshot};
 use crate::source_control::{
     SourceControlState, SourceStateRef, actions, git_attrs_unavailable_text,
-    git_error_is_cancelled, history, live,
+    git_error_is_cancelled, history, live, set_commit_controls_enabled,
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -79,12 +79,15 @@ pub(super) fn ellipsis_label(mut label: String) -> String {
 }
 
 pub(super) fn finish_error(state: &SourceStateRef, message: &str) {
-    let mut state = state.borrow_mut();
-    state.status_stale = true;
-    state.status_label.set_label(message);
-    state.commit_button.set_sensitive(false);
-    emit_project_statuses(&state);
-    rebuild_views(&state);
+    {
+        let mut state = state.borrow_mut();
+        state.status_stale = true;
+        state.status_label.set_label(message);
+        set_commit_controls_enabled(&state, false);
+        emit_project_statuses(&state);
+        rebuild_views(&state);
+    }
+    actions::fire_state_change_handler(state);
 }
 
 pub(super) fn rebuild_views(state: &SourceControlState) {
@@ -196,19 +199,23 @@ fn apply_status(state: &SourceStateRef, snapshot: GitStatusSnapshot, attrs: GitA
         }
         (state.snapshot.head_oid.clone(), state.snapshot.clone())
     };
+    actions::fire_state_change_handler(state);
     live::sync_branch_monitor(state, &snapshot);
     history::refresh(state, head_oid.as_deref());
 }
 
 fn finish_unsupported_repo(state: &SourceStateRef) {
-    let mut state = state.borrow_mut();
-    state.status_stale = false;
-    state.commit_button.set_sensitive(false);
-    state.status_label.set_label(&gettext(
-        "This Git repository uses unsupported object or EOL settings.",
-    ));
-    emit_project_statuses(&state);
-    rebuild_views(&state);
+    {
+        let mut state = state.borrow_mut();
+        state.status_stale = false;
+        set_commit_controls_enabled(&state, false);
+        state.status_label.set_label(&gettext(
+            "This Git repository uses unsupported object or EOL settings.",
+        ));
+        emit_project_statuses(&state);
+        rebuild_views(&state);
+    }
+    actions::fire_state_change_handler(state);
 }
 
 fn update_title(state: &SourceControlState) {

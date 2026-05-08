@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "review": "audit-two-remediation",
+  "date": "2026-05-07",
+  "surfaces": [
+    {
+      "name": "Source Control",
+      "scope": "Local Git status, compare, stage, unstage, safe discard, recent history, and simple commits.",
+      "keyboard_review": "Changed-file rows activate compare from the list row; Stage, Unstage, and Discard are always visible icon buttons with accessible labels and disabled-reason descriptions.",
+      "screen_reader_review": "Status badges expose text labels, staged markers expose a Staged label, and row action buttons expose action names plus disabled reasons when unavailable.",
+      "high_contrast_review": "Status still uses text badges, action icons, and tooltips/descriptions, so color is supplemental.",
+      "narrow_width_review": "Commit controls are revealed only when staged changes can be committed, reducing persistent sidebar density at narrow widths.",
+      "limits": "Riteed intentionally does not provide remotes, branch switching, push, pull, fetch, merge, rebase, conflict resolution, credential storage, terminal, build, or hook-running workflows."
+    },
+    {
+      "name": "Compare",
+      "scope": "Read-only split diff for manual compare and Source Control Git compare.",
+      "keyboard_review": "F8 and Shift+F8 move between differences and the compare toolbar keeps icon buttons accessible by labels.",
+      "screen_reader_review": "Compare panes are read-only presentation views; generated placeholder markers remain visible text and should be included in future manual assistive-technology testing.",
+      "high_contrast_review": "Compare rendering keeps high-contrast fallbacks and does not rely on red/green alone because gutters, row positions, and placeholder rows also convey state.",
+      "narrow_width_review": "The split view remains tab-local and exits back to the normal editor rather than opening additional window surfaces.",
+      "limits": "Editable merge, conflict resolution, patch staging, and multi-file compare sessions remain out of scope."
+    }
+  ]
+}

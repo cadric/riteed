@@ -1,9 +1,8 @@
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 use gettextrs::{gettext, pgettext};
 use gtk4::accessible::Property;
-use gtk4::gdk;
 use gtk4::{glib, prelude::*};
 use libadwaita as adw;
 use sourceview5::prelude::*;
@@ -11,19 +10,23 @@ use sourceview5::prelude::*;
 use crate::dialogs;
 use crate::editor_tab::EditorTab;
 
+mod callbacks;
+mod replace;
+mod scope;
+mod state;
 mod support;
+use scope::ScopeBar;
+pub(crate) use scope::SearchScope;
+use state::{SearchBinding, SearchState};
 use support::{
     count_matches, format_match_count, format_replaced_count, select_match, selection_matches_query,
 };
 
-struct SearchBinding {
-    context: sourceview5::SearchContext,
-}
+pub(crate) type ProjectSearchDispatch = Rc<dyn Fn(ProjectSearchRequest)>;
 
-struct SearchState {
-    active_tab: Option<Rc<EditorTab>>,
-    active_binding: Option<SearchBinding>,
-    manual_message: Option<String>,
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(crate) enum ProjectSearchRequest {
+    Query { query: String, match_case: bool },
 }
 
 pub struct EditorSearch {
@@ -34,11 +37,15 @@ pub struct EditorSearch {
     match_case_button: gtk4::ToggleButton,
     previous_button: gtk4::Button,
     next_button: gtk4::Button,
+    reveal_replace_button: gtk4::Button,
     replace_button: gtk4::Button,
     replace_all_button: gtk4::Button,
+    scope_bar: ScopeBar,
     result_label: gtk4::Label,
     replace_row: gtk4::Box,
     settings: sourceview5::SearchSettings,
+    project_search_dispatch: RefCell<Option<ProjectSearchDispatch>>,
+    last_replace_mode: Cell<bool>,
     state: RefCell<SearchState>,
 }
 
@@ -46,10 +53,6 @@ impl EditorSearch {
     #[must_use]
     pub fn new(parent_window: &adw::ApplicationWindow) -> Rc<Self> {
         let search_entry = gtk4::SearchEntry::builder().hexpand(true).build();
-        let replace_entry = gtk4::Entry::builder().hexpand(true).build();
-        replace_entry
-            .set_placeholder_text(Some(&pgettext("search field placeholder", "Replace With")));
-
         let match_case_button =
             gtk4::ToggleButton::with_label(&pgettext("search option", "Match Case"));
         let previous_button = icon_button(
@@ -57,9 +60,7 @@ impl EditorSearch {
             &pgettext("search action", "Previous Match"),
         );
         let next_button = icon_button("go-down-symbolic", &pgettext("search action", "Next Match"));
-        let replace_button = gtk4::Button::with_label(&pgettext("search action", "Replace"));
-        let replace_all_button =
-            gtk4::Button::with_label(&pgettext("search action", "Replace All"));
+        let replace_controls = replace::build_controls();
         let result_label = gtk4::Label::builder().xalign(0.0).hexpand(true).build();
         result_label.add_css_class("dim-label");
 
@@ -72,11 +73,13 @@ impl EditorSearch {
             &pgettext("search action", "Show Replace"),
         );
 
+        let scope_bar = ScopeBar::new();
         let first_row = gtk4::Box::builder()
             .orientation(gtk4::Orientation::Horizontal)
             .spacing(6)
             .build();
         first_row.append(&search_entry);
+        first_row.append(scope_bar.widget());
         first_row.append(&reveal_replace_button);
         first_row.append(&close_button);
 
@@ -89,15 +92,6 @@ impl EditorSearch {
         second_row.append(&match_case_button);
         second_row.append(&result_label);
 
-        let replace_row = gtk4::Box::builder()
-            .orientation(gtk4::Orientation::Horizontal)
-            .spacing(6)
-            .visible(false)
-            .build();
-        replace_row.append(&replace_entry);
-        replace_row.append(&replace_button);
-        replace_row.append(&replace_all_button);
-
         let content = gtk4::Box::builder()
             .orientation(gtk4::Orientation::Vertical)
             .spacing(6)
@@ -108,7 +102,7 @@ impl EditorSearch {
             .build();
         content.append(&first_row);
         content.append(&second_row);
-        content.append(&replace_row);
+        content.append(&replace_controls.row);
 
         let search_bar = gtk4::SearchBar::new();
         search_bar.connect_entry(&search_entry);
@@ -121,15 +115,19 @@ impl EditorSearch {
             parent_window: parent_window.clone(),
             search_bar,
             search_entry,
-            replace_entry,
+            replace_entry: replace_controls.entry,
             match_case_button,
             previous_button,
             next_button,
-            replace_button,
-            replace_all_button,
+            reveal_replace_button: reveal_replace_button.clone(),
+            replace_button: replace_controls.replace_button,
+            replace_all_button: replace_controls.replace_all_button,
+            scope_bar,
             result_label,
-            replace_row,
+            replace_row: replace_controls.row,
             settings,
+            project_search_dispatch: RefCell::new(None),
+            last_replace_mode: Cell::new(false),
             state: RefCell::new(SearchState {
                 active_tab: None,
                 active_binding: None,
@@ -152,14 +150,32 @@ impl EditorSearch {
         replace_mode: bool,
         prefill: Option<String>,
     ) {
-        self.replace_row.set_visible(replace_mode);
+        self.open_with_scope(tab, SearchScope::Document, replace_mode, prefill);
+    }
+
+    pub(crate) fn open_with_scope(
+        self: &Rc<Self>,
+        tab: Option<Rc<EditorTab>>,
+        scope: SearchScope,
+        replace_mode: bool,
+        prefill: Option<String>,
+    ) {
+        self.last_replace_mode.set(replace_mode);
         if let Some(prefill) = prefill {
             self.search_entry.set_text(&prefill);
         }
         self.search_bar.set_search_mode(true);
-        self.bind_tab(tab);
+        self.state.borrow_mut().active_tab = tab;
+        match scope {
+            SearchScope::Document => self.enter_document_scope(),
+            SearchScope::Project => self.enter_project_scope(),
+        }
         self.search_entry.grab_focus();
         self.search_entry.select_region(0, -1);
+    }
+
+    pub(crate) fn set_project_search_dispatch(&self, dispatch: ProjectSearchDispatch) {
+        self.project_search_dispatch.replace(Some(dispatch));
     }
 
     pub fn close(self: &Rc<Self>) {
@@ -170,8 +186,11 @@ impl EditorSearch {
         let search_active = self.search_bar.is_search_mode();
         self.drop_active_context();
         self.state.borrow_mut().active_tab.clone_from(&tab);
-        if search_active {
+        if search_active && self.scope_bar.current_scope() == SearchScope::Document {
             self.bind_active_context(tab);
+        } else if search_active {
+            self.result_label.set_label("");
+            self.set_action_sensitivity(false);
         } else {
             self.clear_manual_message();
             self.update_result_state();
@@ -220,6 +239,9 @@ impl EditorSearch {
     }
 
     pub fn replace_current(self: &Rc<Self>) {
+        if self.scope_bar.current_scope() == SearchScope::Project {
+            return;
+        }
         self.clear_manual_message();
         let Some(tab) = self.state.borrow().active_tab.clone() else {
             self.update_result_state();
@@ -244,6 +266,9 @@ impl EditorSearch {
     }
 
     pub fn replace_all(self: &Rc<Self>) {
+        if self.scope_bar.current_scope() == SearchScope::Project {
+            return;
+        }
         let Some(tab) = self.state.borrow().active_tab.clone() else {
             self.update_result_state();
             return;
@@ -276,127 +301,6 @@ impl EditorSearch {
 
         self.state.borrow_mut().manual_message = Some(format_replaced_count(replacements));
         self.update_result_state();
-    }
-
-    fn install_callbacks(
-        self: &Rc<Self>,
-        close_button: &gtk4::Button,
-        reveal_replace_button: &gtk4::Button,
-    ) {
-        let weak = Rc::downgrade(self);
-        self.search_entry.connect_search_changed(move |_| {
-            if let Some(search) = weak.upgrade() {
-                search.on_search_changed();
-            }
-        });
-
-        let weak = Rc::downgrade(self);
-        self.search_entry.connect_activate(move |_| {
-            if let Some(search) = weak.upgrade() {
-                search.find_next();
-            }
-        });
-
-        let controller = gtk4::EventControllerKey::new();
-        controller.connect_key_pressed({
-            let weak = Rc::downgrade(self);
-            move |_, key, _, modifiers| {
-                if key == gdk::Key::Return && modifiers.contains(gdk::ModifierType::SHIFT_MASK) {
-                    if let Some(search) = weak.upgrade() {
-                        search.find_previous();
-                    }
-                    return glib::Propagation::Stop;
-                }
-                glib::Propagation::Proceed
-            }
-        });
-        self.search_entry.add_controller(controller);
-
-        let weak = Rc::downgrade(self);
-        self.match_case_button.connect_toggled(move |_| {
-            if let Some(search) = weak.upgrade() {
-                search.on_search_changed();
-            }
-        });
-
-        let weak = Rc::downgrade(self);
-        self.previous_button.connect_clicked(move |_| {
-            if let Some(search) = weak.upgrade() {
-                search.find_previous();
-            }
-        });
-
-        let weak = Rc::downgrade(self);
-        self.next_button.connect_clicked(move |_| {
-            if let Some(search) = weak.upgrade() {
-                search.find_next();
-            }
-        });
-
-        let weak = Rc::downgrade(self);
-        self.replace_button.connect_clicked(move |_| {
-            if let Some(search) = weak.upgrade() {
-                search.replace_current();
-            }
-        });
-
-        let weak = Rc::downgrade(self);
-        self.replace_all_button.connect_clicked(move |_| {
-            if let Some(search) = weak.upgrade() {
-                search.replace_all();
-            }
-        });
-
-        close_button.connect_clicked({
-            let weak = Rc::downgrade(self);
-            move |_| {
-                if let Some(search) = weak.upgrade() {
-                    search.close();
-                }
-            }
-        });
-
-        reveal_replace_button.connect_clicked({
-            let weak = Rc::downgrade(self);
-            move |_| {
-                if let Some(search) = weak.upgrade() {
-                    search.replace_row.set_visible(true);
-                    search.replace_entry.grab_focus();
-                    search.update_result_state();
-                }
-            }
-        });
-
-        let weak = Rc::downgrade(self);
-        self.search_bar
-            .connect_search_mode_enabled_notify(move |bar| {
-                if let Some(search) = weak.upgrade() {
-                    if bar.is_search_mode() {
-                        let active_tab = search.state.borrow().active_tab.clone();
-                        search.bind_active_context(active_tab);
-                    } else {
-                        search.drop_active_context();
-                        search.clear_manual_message();
-                        search.result_label.set_label("");
-                        search.update_result_state();
-                    }
-                }
-            });
-    }
-
-    fn on_search_changed(self: &Rc<Self>) {
-        self.clear_manual_message();
-        let query = self.query();
-        self.settings
-            .set_search_text(if query.is_empty() { None } else { Some(&query) });
-        self.settings
-            .set_case_sensitive(self.match_case_button.is_active());
-        let active_tab = self.state.borrow().active_tab.clone();
-        if let Some(tab) = active_tab {
-            self.bind_active_context(Some(tab));
-        } else {
-            self.update_result_state();
-        }
     }
 
     fn bind_active_context(self: &Rc<Self>, tab: Option<Rc<EditorTab>>) {

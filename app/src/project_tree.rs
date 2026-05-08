@@ -51,15 +51,6 @@ impl ProjectTree {
         &self.selection
     }
 
-    pub(crate) fn clear_selection(&self) {
-        self.selection.set_selected(gtk4::INVALID_LIST_POSITION);
-    }
-
-    pub(crate) fn set_root(&self, root: Option<gio::File>) {
-        self.model.set_root(root);
-        self.clear_selection();
-    }
-
     pub(crate) fn set_git_statuses(&self, statuses: Vec<(String, String)>) {
         self.model.set_git_statuses(statuses);
     }

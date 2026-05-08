@@ -223,6 +223,13 @@ impl Window {
         self.appearance.selected_palette_for_tests()
     }
 
+    pub(crate) fn preferences_page_count_for_tests(&self) -> u32 {
+        u32::from(self.shell.appearance_page.parent().is_some())
+            + u32::from(self.shell.encoding_row.parent().is_some())
+            + u32::from(self.shell.git_name_row.parent().is_some())
+            + u32::from(self.shell.word_wrap_row.parent().is_some())
+    }
+
     pub(crate) fn chrome_css_for_tests(&self) -> String {
         crate::app_chrome::chrome_css_for_settings(&self.settings)
     }
@@ -313,6 +320,14 @@ impl Window {
 
     pub(crate) fn source_control_recent_commit_count_for_tests(&self) -> usize {
         self.source_control.recent_commit_count_for_tests()
+    }
+
+    pub(crate) fn source_control_commit_controls_visible_for_tests(&self) -> bool {
+        self.source_control.commit_controls_visible_for_tests()
+    }
+
+    pub(crate) fn source_control_history_split_resizable_for_tests(&self) -> bool {
+        self.source_control.history_split_resizable_for_tests()
     }
 
     pub(crate) fn set_source_control_detect_repo_for_tests(

@@ -1,22 +1,31 @@
-use std::cell::{Cell, RefCell};
+use std::cell::RefCell;
 use std::rc::{Rc, Weak};
 
 use gettextrs::pgettext;
 use gtk4::accessible::Property;
 use gtk4::{gio, glib, pango, prelude::*};
 
-use crate::git_status::{GitActionState, GitStatusEntry};
+use crate::git_status::GitStatusEntry;
 use crate::source_control::SourceControlState;
 use crate::source_control::actions::{self, GitRowAction};
-use crate::source_control::row_overlay::setup_action_overlay;
+use crate::source_control::row_popover::{RowActionRunner, RowPopover};
 use crate::source_control::status_style;
+use crate::source_control::tree_model::file_basename;
+
+type BoundRows = Rc<RefCell<Vec<BoundRow>>>;
 
 pub(super) struct SourceControlList {
     store: gio::ListStore,
     selection: gtk4::SingleSelection,
     list_view: gtk4::ListView,
-    activation_guard: Rc<Cell<bool>>,
     state_weak: Rc<RefCell<Weak<RefCell<SourceControlState>>>>,
+    _popover: Rc<RowPopover>,
+    bound_rows: BoundRows,
+}
+
+struct BoundRow {
+    path: Vec<u8>,
+    widget: glib::WeakRef<gtk4::Widget>,
 }
 
 impl SourceControlList {
@@ -27,18 +36,23 @@ impl SourceControlList {
         selection.set_autoselect(false);
         selection.set_can_unselect(true);
         let state_weak = Rc::new(RefCell::new(Weak::new()));
-        let activation_guard = Rc::new(Cell::new(false));
-        let factory = create_factory(&state_weak, &activation_guard);
-        let list_view = gtk4::ListView::new(Some(selection.clone()), Some(factory));
+        let bound_rows = Rc::new(RefCell::new(Vec::new()));
+        let list_view = gtk4::ListView::new(Some(selection.clone()), None::<gtk4::ListItemFactory>);
+        let popover = RowPopover::new(action_runner(&state_weak));
+        popover.attach_to_list_view(&list_view);
+        let factory = create_factory(&list_view, &popover, &bound_rows);
+        list_view.set_factory(Some(&factory));
         list_view.set_single_click_activate(true);
         list_view.set_enable_rubberband(false);
         list_view.set_vexpand(true);
+        install_keyboard_context_menu(&list_view, &selection, &store, &popover, &bound_rows);
         Self {
             store,
             selection,
             list_view,
-            activation_guard,
             state_weak,
+            _popover: popover,
+            bound_rows,
         }
     }
 
@@ -50,18 +64,14 @@ impl SourceControlList {
     pub(super) fn connect_activation(&self, weak: Weak<RefCell<SourceControlState>>) {
         *self.state_weak.borrow_mut() = weak.clone();
         let model = self.store.clone();
-        let activation_guard = Rc::clone(&self.activation_guard);
         self.list_view.connect_activate(move |_, position| {
-            if activation_guard.get() {
-                activation_guard.set(false);
-                return;
-            }
             activate_position(&model, position, &weak);
         });
     }
 
     pub(super) fn rebuild(&self, entries: &[GitStatusEntry]) {
         let selected = selected_path(&self.selection);
+        self.bound_rows.borrow_mut().clear();
         self.store.remove_all();
         for entry in sorted_entries(entries) {
             self.store.append(&glib::BoxedAnyObject::new(entry));
@@ -90,26 +100,28 @@ impl SourceControlList {
 }
 
 fn create_factory(
-    state_weak: &Rc<RefCell<Weak<RefCell<SourceControlState>>>>,
-    activation_guard: &Rc<Cell<bool>>,
+    list_view: &gtk4::ListView,
+    popover: &Rc<RowPopover>,
+    bound_rows: &BoundRows,
 ) -> gtk4::SignalListItemFactory {
     let factory = gtk4::SignalListItemFactory::new();
-    let state_weak = Rc::clone(state_weak);
-    let activation_guard = Rc::clone(activation_guard);
-    factory.connect_setup(move |_, object| setup_row(object, &state_weak, &activation_guard));
-    factory.connect_bind(move |_, object| bind_row(object));
+    let list_view = list_view.clone();
+    let popover = Rc::clone(popover);
+    factory.connect_setup(move |_, object| setup_row(object, &list_view, &popover));
+    let bound_rows_for_bind = Rc::clone(bound_rows);
+    factory.connect_bind(move |_, object| bind_row(object, &bound_rows_for_bind));
+    let bound_rows_for_unbind = Rc::clone(bound_rows);
+    factory.connect_unbind(move |_, object| unbind_row(object, &bound_rows_for_unbind));
     factory
 }
 
-fn setup_row(
-    object: &glib::Object,
-    state_weak: &Rc<RefCell<Weak<RefCell<SourceControlState>>>>,
-    activation_guard: &Rc<Cell<bool>>,
-) {
+fn setup_row(object: &glib::Object, list_view: &gtk4::ListView, popover: &Rc<RowPopover>) {
     let Ok(list_item) = object.clone().downcast::<gtk4::ListItem>() else {
         return;
     };
+    let list_item_weak = list_item.downgrade();
     let row_box = gtk4::Box::new(gtk4::Orientation::Horizontal, 6);
+    row_box.add_css_class("riteed-sidebar-row");
     row_box.set_hexpand(true);
     row_box.set_margin_top(3);
     row_box.set_margin_bottom(3);
@@ -136,45 +148,23 @@ fn setup_row(
     label.set_ellipsize(pango::EllipsizeMode::End);
     row_box.append(&label);
 
-    let actions_box = gtk4::Box::new(gtk4::Orientation::Horizontal, 2);
-    actions_box.add_css_class("riteed-git-row-actions");
-    actions_box.set_halign(gtk4::Align::End);
-    actions_box.set_valign(gtk4::Align::Center);
-    actions_box.set_can_target(false);
-    actions_box.append(&action_button(
-        "list-add-symbolic",
-        &pgettext("git action tooltip", "Stage File"),
-        state_weak,
-        activation_guard,
-        GitRowAction::Stage,
-    ));
-    actions_box.append(&action_button(
-        "list-remove-symbolic",
-        &pgettext("git action tooltip", "Unstage File"),
-        state_weak,
-        activation_guard,
-        GitRowAction::Unstage,
-    ));
-    actions_box.append(&action_button(
-        "edit-delete-symbolic",
-        &pgettext("git action tooltip", "Discard Changes"),
-        state_weak,
-        activation_guard,
-        GitRowAction::Discard,
-    ));
+    let gesture = gtk4::GestureClick::new();
+    gesture.set_button(3);
+    let list_view = list_view.clone();
+    let popover = Rc::clone(popover);
+    let row_widget = row_box.clone();
+    gesture.connect_pressed(move |_, _, _, _| {
+        let Some(entry) = entry_for_list_item(&list_item_weak) else {
+            return;
+        };
+        popover.popup_for_row(&list_view, &row_widget, &entry);
+    });
+    row_box.add_controller(gesture);
 
-    let overlay = gtk4::Overlay::new();
-    overlay.add_css_class("riteed-git-row");
-    overlay.set_hexpand(true);
-    overlay.set_child(Some(&row_box));
-    overlay.add_overlay(&actions_box);
-    overlay.set_measure_overlay(&actions_box, false);
-    setup_action_overlay(&overlay, &actions_box);
-
-    list_item.set_child(Some(&overlay));
+    list_item.set_child(Some(&row_box));
 }
 
-fn bind_row(object: &glib::Object) {
+fn bind_row(object: &glib::Object, bound_rows: &BoundRows) {
     let Ok(list_item) = object.clone().downcast::<gtk4::ListItem>() else {
         return;
     };
@@ -183,83 +173,27 @@ fn bind_row(object: &glib::Object) {
     };
     let Some(widgets) = list_item
         .child()
-        .and_then(|child| child.downcast::<gtk4::Overlay>().ok())
-        .and_then(|overlay| row_widgets(&overlay))
+        .and_then(|child| child.downcast::<gtk4::Box>().ok())
+        .and_then(|row_box| row_widgets(&row_box))
     else {
         return;
     };
-    widgets.label.set_label(entry.path.display());
+    widgets.label.set_label(&list_display_name(&entry));
     widgets.row_box.set_tooltip_text(Some(entry.path.display()));
+    remember_bound_row(bound_rows, &entry, &widgets.row_box);
     bind_staged_marker(&widgets.staged, entry.staged);
-    bind_action_state(
-        &widgets.stage_button,
-        &entry.stage_action,
-        &pgettext("git action tooltip", "Stage File"),
-    );
-    bind_action_state(
-        &widgets.unstage_button,
-        &entry.unstage_action,
-        &pgettext("git action tooltip", "Unstage File"),
-    );
-    bind_action_state(
-        &widgets.discard_button,
-        &entry.discard_action,
-        &pgettext("git action tooltip", "Discard Changes"),
-    );
     bind_status_badge(&widgets.status, &entry);
 }
 
-fn action_button(
-    icon_name: &str,
-    label: &str,
-    state_weak: &Rc<RefCell<Weak<RefCell<SourceControlState>>>>,
-    activation_guard: &Rc<Cell<bool>>,
-    action: GitRowAction,
-) -> gtk4::Button {
-    let button = gtk4::Button::builder()
-        .icon_name(icon_name)
-        .tooltip_text(label)
-        .build();
-    button.add_css_class("flat");
-    button.update_property(&[Property::Label(label)]);
-    let state_weak = Rc::clone(state_weak);
-    let activation_guard = Rc::clone(activation_guard);
-    button.connect_clicked(move |button| {
-        activation_guard.set(true);
-        if let Some(state) = state_weak.borrow().upgrade()
-            && let Some(path) = path_for_button(button)
-        {
-            actions::run_path_action(&state, path.as_bytes(), action);
-        }
-        let activation_guard = Rc::clone(&activation_guard);
-        glib::idle_add_local_once(move || activation_guard.set(false));
-    });
-    button
-}
-
-fn row_widgets(overlay: &gtk4::Overlay) -> Option<RowWidgets> {
-    let row_box = overlay.child()?.downcast::<gtk4::Box>().ok()?;
+fn row_widgets(row_box: &gtk4::Box) -> Option<RowWidgets> {
     let icon = row_box.first_child()?.downcast::<gtk4::Image>().ok()?;
     let status = icon.next_sibling()?.downcast::<gtk4::Label>().ok()?;
     let staged = status.next_sibling()?.downcast::<gtk4::Label>().ok()?;
     let label = staged.next_sibling()?.downcast::<gtk4::Label>().ok()?;
-    let actions_box = row_box.next_sibling()?.downcast::<gtk4::Box>().ok()?;
-    let stage_button = actions_box.first_child()?.downcast::<gtk4::Button>().ok()?;
-    let unstage_button = stage_button
-        .next_sibling()?
-        .downcast::<gtk4::Button>()
-        .ok()?;
-    let discard_button = unstage_button
-        .next_sibling()?
-        .downcast::<gtk4::Button>()
-        .ok()?;
     Some(RowWidgets {
-        row_box,
+        row_box: row_box.clone(),
         label,
         staged,
-        stage_button,
-        unstage_button,
-        discard_button,
         status,
     })
 }
@@ -268,21 +202,114 @@ struct RowWidgets {
     row_box: gtk4::Box,
     label: gtk4::Label,
     staged: gtk4::Label,
-    stage_button: gtk4::Button,
-    unstage_button: gtk4::Button,
-    discard_button: gtk4::Button,
     status: gtk4::Label,
 }
 
-fn path_for_button(button: &gtk4::Button) -> Option<String> {
-    let actions_box = button.parent()?;
-    let overlay = actions_box.parent()?.downcast::<gtk4::Overlay>().ok()?;
-    let row_box = overlay.child()?.downcast::<gtk4::Box>().ok()?;
-    let icon = row_box.first_child()?;
-    let status = icon.next_sibling()?;
-    let staged = status.next_sibling()?;
-    let label = staged.next_sibling()?.downcast::<gtk4::Label>().ok()?;
-    Some(label.text().to_string())
+fn entry_for_list_item(list_item: &glib::WeakRef<gtk4::ListItem>) -> Option<GitStatusEntry> {
+    list_item
+        .upgrade()
+        .and_then(|item| item.item())
+        .and_then(|item| entry_from_object(&item))
+}
+
+fn action_runner(state_weak: &Rc<RefCell<Weak<RefCell<SourceControlState>>>>) -> RowActionRunner {
+    let state_weak = Rc::clone(state_weak);
+    Rc::new(move |path, action| {
+        if let Some(state) = state_weak.borrow().upgrade() {
+            actions::run_path_action(&state, &path, action);
+        }
+    })
+}
+
+fn install_keyboard_context_menu(
+    list_view: &gtk4::ListView,
+    selection: &gtk4::SingleSelection,
+    store: &gio::ListStore,
+    popover: &Rc<RowPopover>,
+    bound_rows: &BoundRows,
+) {
+    let controller = gtk4::ShortcutController::new();
+    controller.set_scope(gtk4::ShortcutScope::Local);
+    let list_view_weak = list_view.downgrade();
+    let selection = selection.clone();
+    let store = store.clone();
+    let popover = Rc::clone(popover);
+    let bound_rows = Rc::clone(bound_rows);
+    let popup: Rc<dyn Fn() -> bool> = Rc::new(move || {
+        let position = selection.selected();
+        if position == gtk4::INVALID_LIST_POSITION {
+            return false;
+        }
+        let Some(entry) = entry_at(&store, position) else {
+            return false;
+        };
+        let Some(list_view) = list_view_weak.upgrade() else {
+            return false;
+        };
+        let Some(row_widget) = row_widget_for_entry(&bound_rows, entry.path.raw()) else {
+            return false;
+        };
+        popover.popup_for_row(&list_view, &row_widget, &entry);
+        true
+    });
+    add_context_shortcut(&controller, "Menu", Rc::clone(&popup));
+    add_context_shortcut(&controller, "<Shift>F10", popup);
+    list_view.add_controller(controller);
+}
+
+fn add_context_shortcut(
+    controller: &gtk4::ShortcutController,
+    trigger: &str,
+    popup: Rc<dyn Fn() -> bool>,
+) {
+    let Some(trigger) = gtk4::ShortcutTrigger::parse_string(trigger) else {
+        return;
+    };
+    controller.add_shortcut(gtk4::Shortcut::new(
+        Some(trigger),
+        Some(gtk4::CallbackAction::new(move |_, _| {
+            if popup() {
+                glib::Propagation::Stop
+            } else {
+                glib::Propagation::Proceed
+            }
+        })),
+    ));
+}
+
+fn remember_bound_row(bound_rows: &BoundRows, entry: &GitStatusEntry, row_box: &gtk4::Box) {
+    let mut rows = bound_rows.borrow_mut();
+    rows.retain(|row| row.path != entry.path.raw());
+    let widget: gtk4::Widget = row_box.clone().upcast();
+    rows.push(BoundRow {
+        path: entry.path.raw().to_vec(),
+        widget: widget.downgrade(),
+    });
+}
+
+fn unbind_row(object: &glib::Object, bound_rows: &BoundRows) {
+    let Ok(list_item) = object.clone().downcast::<gtk4::ListItem>() else {
+        return;
+    };
+    let Some(entry) = list_item.item().and_then(|item| entry_from_object(&item)) else {
+        return;
+    };
+    bound_rows
+        .borrow_mut()
+        .retain(|row| row.path != entry.path.raw());
+}
+
+fn row_widget_for_entry(bound_rows: &BoundRows, path: &[u8]) -> Option<gtk4::Widget> {
+    bound_rows
+        .borrow()
+        .iter()
+        .rev()
+        .find(|row| row.path == path)
+        .and_then(|row| row.widget.upgrade())
+}
+
+fn list_display_name(entry: &GitStatusEntry) -> String {
+    file_basename(entry)
 }
 
 fn bind_staged_marker(staged: &gtk4::Label, visible: bool) {
@@ -290,14 +317,6 @@ fn bind_staged_marker(staged: &gtk4::Label, visible: bool) {
     staged.set_tooltip_text(Some(&staged_label));
     staged.update_property(&[Property::Label(&staged_label)]);
     staged.set_visible(visible);
-}
-
-fn bind_action_state(button: &gtk4::Button, action_state: &GitActionState, tooltip: &str) {
-    button.set_sensitive(action_state.enabled());
-    match action_state {
-        GitActionState::Enabled => button.set_tooltip_text(Some(tooltip)),
-        GitActionState::Disabled(reason) => button.set_tooltip_text(Some(reason)),
-    }
 }
 
 fn bind_status_badge(status: &gtk4::Label, entry: &GitStatusEntry) {
@@ -379,4 +398,28 @@ fn entry_from_object(item: &glib::Object) -> Option<GitStatusEntry> {
     let boxed = item.clone().downcast::<glib::BoxedAnyObject>().ok()?;
     let borrowed = boxed.try_borrow::<GitStatusEntry>().ok()?;
     Some((*borrowed).clone())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::git_status::{GitFileStatus, GitPath};
+
+    #[test]
+    fn list_display_name_uses_file_basename() {
+        let entry = GitStatusEntry::new(
+            GitPath::from_bytes(b"app/build-aux/validation/i18n-review.v1.json"),
+            GitFileStatus::Modified,
+            None,
+            None,
+            false,
+            true,
+        );
+
+        assert_eq!(list_display_name(&entry), "i18n-review.v1.json");
+        assert_eq!(
+            entry.path.display(),
+            "app/build-aux/validation/i18n-review.v1.json"
+        );
+    }
 }

@@ -15,8 +15,16 @@ pub struct WindowShell {
     pub open_button: adw::SplitButton,
     pub project_sidebar_button: gtk4::ToggleButton,
     pub save_button: gtk4::Button,
+    pub git_actions_group: gtk4::Box,
+    pub git_diff_button: gtk4::Button,
+    pub git_stage_button: gtk4::Button,
+    pub git_unstage_button: gtk4::Button,
+    pub git_discard_button: gtk4::Button,
     pub primary_menu_button: gtk4::MenuButton,
     pub preferences_dialog: adw::PreferencesDialog,
+    pub appearance_page: adw::PreferencesPage,
+    pub style_group: adw::PreferencesGroup,
+    pub palette_flow_box: gtk4::FlowBox,
     pub word_wrap_row: adw::SwitchRow,
     pub line_numbers_row: adw::SwitchRow,
     pub highlight_current_line_row: adw::SwitchRow,
@@ -51,6 +59,11 @@ impl WindowShell {
         let project_sidebar_button: gtk4::ToggleButton =
             builder_object(&builder, "project_sidebar_button")?;
         let save_button: gtk4::Button = builder_object(&builder, "save_button")?;
+        let git_actions_group: gtk4::Box = builder_object(&builder, "git_actions_group")?;
+        let git_diff_button: gtk4::Button = builder_object(&builder, "git_diff_button")?;
+        let git_stage_button: gtk4::Button = builder_object(&builder, "git_stage_button")?;
+        let git_unstage_button: gtk4::Button = builder_object(&builder, "git_unstage_button")?;
+        let git_discard_button: gtk4::Button = builder_object(&builder, "git_discard_button")?;
         let primary_menu_button: gtk4::MenuButton =
             builder_object(&builder, "primary_menu_button")?;
 
@@ -58,6 +71,12 @@ impl WindowShell {
             gtk4::Builder::from_resource("/io/github/cadric/Riteed/ui/preferences.ui");
         let preferences_dialog: adw::PreferencesDialog =
             builder_object(&preferences_builder, "preferences_dialog")?;
+        let appearance_page: adw::PreferencesPage =
+            builder_object(&preferences_builder, "appearance_page")?;
+        let style_group: adw::PreferencesGroup =
+            builder_object(&preferences_builder, "style_group")?;
+        let palette_flow_box: gtk4::FlowBox =
+            builder_object(&preferences_builder, "palette_flow_box")?;
         let word_wrap_row: adw::SwitchRow = builder_object(&preferences_builder, "word_wrap_row")?;
         let line_numbers_row: adw::SwitchRow =
             builder_object(&preferences_builder, "line_numbers_row")?;
@@ -100,8 +119,16 @@ impl WindowShell {
             open_button,
             project_sidebar_button,
             save_button,
+            git_actions_group,
+            git_diff_button,
+            git_stage_button,
+            git_unstage_button,
+            git_discard_button,
             primary_menu_button,
             preferences_dialog,
+            appearance_page,
+            style_group,
+            palette_flow_box,
             word_wrap_row,
             line_numbers_row,
             highlight_current_line_row,

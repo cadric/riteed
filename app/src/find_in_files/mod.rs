@@ -20,13 +20,13 @@ pub(crate) struct FindInFilesController {
     parent: adw::ApplicationWindow,
     workspace: Weak<Workspace>,
     root: adw::ToolbarView,
-    query_entry: gtk4::SearchEntry,
-    match_case_button: gtk4::ToggleButton,
     refresh_button: gtk4::Button,
     spinner: gtk4::Spinner,
     status_label: gtk4::Label,
     store: gio::ListStore,
     root_folder: RefCell<Option<gio::File>>,
+    current_query: RefCell<String>,
+    current_match_case: Cell<bool>,
     show_hidden: Cell<bool>,
     // The cancellable stops Gio work; the generation drops late results between async stages.
     generation: Cell<u64>,
@@ -40,8 +40,8 @@ impl FindInFilesController {
         workspace: &Rc<Workspace>,
         show_hidden: bool,
     ) -> Rc<Self> {
-        let title = adw::WindowTitle::new(&gettext("Find in Files"), "");
-        let refresh_label = gettext("Refresh Find in Files");
+        let title = adw::WindowTitle::new(&pgettext("sidebar mode", "Search Results"), "");
+        let refresh_label = gettext("Refresh Search Results");
         let refresh_button = gtk4::Button::builder()
             .icon_name("view-refresh-symbolic")
             .tooltip_text(&refresh_label)
@@ -57,17 +57,6 @@ impl FindInFilesController {
         header.set_title_widget(Some(&title));
         header.pack_start(&spinner);
         header.pack_end(&refresh_button);
-
-        let query_entry = gtk4::SearchEntry::builder()
-            .hexpand(true)
-            .placeholder_text(pgettext("search field placeholder", "Search Files"))
-            .build();
-        let match_case_button =
-            gtk4::ToggleButton::with_label(&pgettext("search option", "Match Case"));
-
-        let query_row = gtk4::Box::new(gtk4::Orientation::Horizontal, 6);
-        query_row.append(&query_entry);
-        query_row.append(&match_case_button);
 
         let status_label = gtk4::Label::new(Some(&gettext("Open a folder to search files.")));
         status_label.add_css_class("dim-label");
@@ -94,7 +83,6 @@ impl FindInFilesController {
         content.set_margin_bottom(12);
         content.set_margin_start(12);
         content.set_margin_end(12);
-        content.append(&query_row);
         content.append(&status_label);
         content.append(&scroller);
 
@@ -106,13 +94,13 @@ impl FindInFilesController {
             parent: parent.clone(),
             workspace: Rc::downgrade(workspace),
             root,
-            query_entry,
-            match_case_button,
             refresh_button,
             spinner,
             status_label,
             store,
             root_folder: RefCell::new(None),
+            current_query: RefCell::new(String::new()),
+            current_match_case: Cell::new(false),
             show_hidden: Cell::new(show_hidden),
             generation: Cell::new(0),
             active_cancellable: RefCell::new(None),
@@ -126,11 +114,6 @@ impl FindInFilesController {
         self.root.clone()
     }
 
-    pub(crate) fn focus_query(&self) {
-        self.query_entry.grab_focus();
-        self.query_entry.select_region(0, -1);
-    }
-
     pub(crate) fn set_project_root(self: &Rc<Self>, root: Option<gio::File>) {
         self.root_folder.replace(root);
         self.cancel_active_scan();
@@ -142,7 +125,45 @@ impl FindInFilesController {
         if self.show_hidden.replace(show_hidden) == show_hidden {
             return;
         }
-        self.start_search_now();
+        if self.has_active_query() {
+            self.start_search_now();
+        }
+    }
+
+    pub(crate) fn set_query(self: &Rc<Self>, query: &str, match_case: bool) {
+        self.current_query.replace(query.to_string());
+        self.current_match_case.set(match_case);
+        if query.is_empty() {
+            self.clear();
+            return;
+        }
+        self.schedule_search();
+    }
+
+    pub(crate) fn clear(&self) {
+        self.cancel_active_scan();
+        self.bump_generation();
+        self.spinner.set_spinning(false);
+        self.spinner.set_visible(false);
+        self.current_query.borrow_mut().clear();
+        self.store.remove_all();
+        self.status_label
+            .set_label(&gettext("Type to search the open folder."));
+    }
+
+    #[must_use]
+    pub(crate) fn has_active_query(&self) -> bool {
+        !self.current_query.borrow().is_empty()
+    }
+
+    pub(crate) fn show_root_missing(&self) {
+        self.cancel_active_scan();
+        self.bump_generation();
+        self.spinner.set_spinning(false);
+        self.spinner.set_visible(false);
+        self.store.remove_all();
+        self.status_label
+            .set_label(&gettext("Open a folder to search files."));
     }
 
     pub(crate) fn cancel_for_sidebar_close(&self) {
@@ -180,27 +201,6 @@ impl FindInFilesController {
     }
 
     fn install_callbacks(self: &Rc<Self>, list_view: &gtk4::ListView) {
-        let weak = Rc::downgrade(self);
-        self.query_entry.connect_search_changed(move |_| {
-            if let Some(controller) = weak.upgrade() {
-                controller.schedule_search();
-            }
-        });
-
-        let weak = Rc::downgrade(self);
-        self.query_entry.connect_activate(move |_| {
-            if let Some(controller) = weak.upgrade() {
-                controller.start_search_now();
-            }
-        });
-
-        let weak = Rc::downgrade(self);
-        self.match_case_button.connect_toggled(move |_| {
-            if let Some(controller) = weak.upgrade() {
-                controller.schedule_search();
-            }
-        });
-
         let weak = Rc::downgrade(self);
         self.refresh_button.connect_clicked(move |_| {
             if let Some(controller) = weak.upgrade() {
@@ -243,7 +243,7 @@ impl FindInFilesController {
                 .set_label(&gettext("Open a folder to search files."));
             return;
         }
-        if !self.query_entry.text().is_empty() {
+        if self.has_active_query() {
             self.start_search_now();
             return;
         }
@@ -254,7 +254,7 @@ impl FindInFilesController {
 
     fn start_search_for_generation(self: &Rc<Self>, generation: u64) {
         self.store.remove_all();
-        let query = self.query_entry.text().to_string();
+        let query = self.current_query.borrow().clone();
         if query.is_empty() {
             self.status_label
                 .set_label(&gettext("Type to search the open folder."));
@@ -289,7 +289,7 @@ impl FindInFilesController {
                 generation,
                 root,
                 query,
-                match_case: self.match_case_button.is_active(),
+                match_case: self.current_match_case.get(),
                 show_hidden: self.show_hidden.get(),
                 cancellable,
             },

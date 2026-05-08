@@ -23,6 +23,7 @@ pub(crate) use autosave::AutosaveRequestForTests;
 type FormatPreferencesHandler = Rc<dyn Fn(Option<Rc<EditorTab>>)>;
 type CompareActionSyncHandler = Rc<dyn Fn(Option<Rc<EditorTab>>)>;
 type DocumentToolsSyncHandler = Rc<dyn Fn(Option<Rc<EditorTab>>)>;
+type GitActionSyncHandler = Rc<dyn Fn(Option<Rc<EditorTab>>)>;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum OpenSource {
@@ -64,6 +65,7 @@ pub struct Workspace {
     format_preferences_handler: OnceCell<FormatPreferencesHandler>,
     compare_action_sync_handler: OnceCell<CompareActionSyncHandler>,
     document_tools_sync_handler: OnceCell<DocumentToolsSyncHandler>,
+    git_action_sync_handler: OnceCell<GitActionSyncHandler>,
     save_notification_handler: OnceCell<Rc<dyn Fn(gio::File)>>,
     pub(crate) state: RefCell<WorkspaceState>,
 }
@@ -123,6 +125,7 @@ impl Workspace {
             format_preferences_handler: OnceCell::new(),
             compare_action_sync_handler: OnceCell::new(),
             document_tools_sync_handler: OnceCell::new(),
+            git_action_sync_handler: OnceCell::new(),
             save_notification_handler: OnceCell::new(),
             state: RefCell::new(WorkspaceState {
                 tabs: Vec::new(),
@@ -444,6 +447,10 @@ impl Workspace {
         let _set_callback = self.document_tools_sync_handler.set(callback);
     }
 
+    pub(crate) fn set_git_action_sync_handler(&self, callback: GitActionSyncHandler) {
+        let _set_callback = self.git_action_sync_handler.set(callback);
+    }
+
     pub(crate) fn set_save_notification_handler(&self, callback: Rc<dyn Fn(gio::File)>) {
         let _set_callback = self.save_notification_handler.set(callback);
     }
@@ -519,6 +526,9 @@ impl Workspace {
             callback(selected.clone());
         }
         if let Some(callback) = self.document_tools_sync_handler.get() {
+            callback(selected.clone());
+        }
+        if let Some(callback) = self.git_action_sync_handler.get() {
             callback(selected.clone());
         }
 
