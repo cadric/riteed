@@ -14,6 +14,8 @@ use crate::settings::AppSettings;
 
 mod autosave;
 mod recent;
+mod selection;
+mod session_state;
 pub(crate) mod tabs;
 #[cfg(test)]
 mod testing;
@@ -24,6 +26,7 @@ type FormatPreferencesHandler = Rc<dyn Fn(Option<Rc<EditorTab>>)>;
 type CompareActionSyncHandler = Rc<dyn Fn(Option<Rc<EditorTab>>)>;
 type DocumentToolsSyncHandler = Rc<dyn Fn(Option<Rc<EditorTab>>)>;
 type GitActionSyncHandler = Rc<dyn Fn(Option<Rc<EditorTab>>)>;
+type ReviewRefreshHandler = Rc<dyn Fn(Rc<EditorTab>)>;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum OpenSource {
@@ -66,6 +69,7 @@ pub struct Workspace {
     compare_action_sync_handler: OnceCell<CompareActionSyncHandler>,
     document_tools_sync_handler: OnceCell<DocumentToolsSyncHandler>,
     git_action_sync_handler: OnceCell<GitActionSyncHandler>,
+    review_refresh_handler: OnceCell<ReviewRefreshHandler>,
     save_notification_handler: OnceCell<Rc<dyn Fn(gio::File)>>,
     pub(crate) state: RefCell<WorkspaceState>,
 }
@@ -126,6 +130,7 @@ impl Workspace {
             compare_action_sync_handler: OnceCell::new(),
             document_tools_sync_handler: OnceCell::new(),
             git_action_sync_handler: OnceCell::new(),
+            review_refresh_handler: OnceCell::new(),
             save_notification_handler: OnceCell::new(),
             state: RefCell::new(WorkspaceState {
                 tabs: Vec::new(),
@@ -394,42 +399,6 @@ impl Workspace {
         );
     }
 
-    pub(crate) fn persist_session_state_if_needed(&self) {
-        let snapshot = crate::session::session_snapshot(
-            &self
-                .ordered_tabs()
-                .into_iter()
-                .map(|tab| tab.uri())
-                .collect::<Vec<_>>(),
-        )
-        .into_iter()
-        .filter(|uri| crate::document_limits::uri_supports_session_restore(uri))
-        .collect::<Vec<_>>();
-        let selected = self
-            .selected_tab()
-            .and_then(|tab| tab.uri())
-            .filter(|uri| crate::document_limits::uri_supports_session_restore(uri));
-        let selected = crate::session::selected_session_value(selected);
-
-        let Ok(mut state) = self.state.try_borrow_mut() else {
-            return;
-        };
-        if state.restoring_session {
-            return;
-        }
-        if !state.persist_session {
-            return;
-        }
-        if crate::session::list_changed(&state.stored_session_files, &snapshot) {
-            self.settings.set_session_files(&snapshot);
-            state.stored_session_files = snapshot;
-        }
-        if crate::session::string_changed(&state.stored_selected_file, &selected) {
-            self.settings.set_session_selected_file(&selected);
-            state.stored_selected_file = selected;
-        }
-    }
-
     pub(crate) fn rebuild_primary_menu(&self) {
         let popover = crate::workspace_menu::build_primary_popover();
         self.menu_button.set_popover(Some(&popover));
@@ -451,12 +420,27 @@ impl Workspace {
         let _set_callback = self.git_action_sync_handler.set(callback);
     }
 
+    pub(crate) fn set_review_refresh_handler(&self, callback: ReviewRefreshHandler) {
+        let _set_callback = self.review_refresh_handler.set(callback);
+    }
+
+    pub(crate) fn refresh_review_tab(&self, tab: &Rc<EditorTab>) {
+        if let Some(callback) = self.review_refresh_handler.get() {
+            callback(Rc::clone(tab));
+        } else {
+            tab.refresh_review_session();
+        }
+    }
+
     pub(crate) fn set_save_notification_handler(&self, callback: Rc<dyn Fn(gio::File)>) {
         let _set_callback = self.save_notification_handler.set(callback);
     }
 
     pub(crate) fn set_selected_line_ending_mode(&self, line_ending_mode: LineEndingMode) {
         if let Some(tab) = self.selected_tab() {
+            if !tab.is_document() {
+                return;
+            }
             tab.set_current_line_ending_mode(line_ending_mode);
             self.refresh_selected_state();
         }
@@ -467,7 +451,11 @@ impl Workspace {
             return;
         };
 
-        if tab.uri().is_some() {
+        if !tab.is_document() {
+            return;
+        }
+
+        if tab.document_uri().is_some() {
             let weak = Rc::downgrade(self);
             tab.request_reopen_with_encoding(
                 &self.shell,
@@ -507,50 +495,5 @@ impl Workspace {
                 }
             },
         );
-    }
-
-    pub(crate) fn handle_selected_tab_changed(self: &Rc<Self>) {
-        let selected = self.selected_tab();
-        self.search.bind_tab(selected.clone());
-        self.refresh_selected_state();
-        crate::workspace_monitor::on_selected_tab_changed(self);
-    }
-
-    pub(crate) fn refresh_selected_state(&self) {
-        let selected = self.selected_tab();
-        self.status_bar.update(selected.as_deref());
-        if let Some(callback) = self.format_preferences_handler.get() {
-            callback(selected.clone());
-        }
-        if let Some(callback) = self.compare_action_sync_handler.get() {
-            callback(selected.clone());
-        }
-        if let Some(callback) = self.document_tools_sync_handler.get() {
-            callback(selected.clone());
-        }
-        if let Some(callback) = self.git_action_sync_handler.get() {
-            callback(selected.clone());
-        }
-
-        if let Some(tab) = selected {
-            self.title_widget.set_title(&tab.title());
-            self.title_widget.set_subtitle("");
-            self.save_action.set_enabled(tab.is_dirty());
-            self.save_as_action.set_enabled(true);
-            self.close_action.set_enabled(true);
-            return;
-        }
-
-        self.title_widget
-            .set_title(&pgettext("document title", "Untitled"));
-        self.title_widget
-            .set_subtitle(&pgettext("document subtitle", "Plain Text Document"));
-        self.save_action.set_enabled(false);
-        self.save_as_action.set_enabled(false);
-        self.close_action.set_enabled(false);
-    }
-
-    pub(crate) fn show_toast(&self, message: &str) {
-        self.toast_overlay.add_toast(adw::Toast::new(message));
     }
 }

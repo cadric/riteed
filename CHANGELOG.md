@@ -1,6 +1,6 @@
 ---
 created: 2026-04-19
-updated: 2026-05-08
+updated: 2026-05-12
 status: current
 priority: high
 type: changelog
@@ -18,10 +18,15 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 - Added the V12.5 sidebar/search pass: the Find bar now has Document and Project scope, Ctrl+Shift+F opens Project scope, and project matches render in a sticky Search Results sidebar page.
 - Added active-tab Source Control actions in the header bar for Git compare, stage, unstage, and discard.
 - Added Source Control row context actions through a shared row popover available from right click, Menu, and Shift+F10.
+- Added the V13 diff-review pass: manual Compare now has adaptive split/unified layouts, unified gutters, collapsed unchanged regions, reveal controls, and durable compare options for mode, context lines, wrapping, and trim-only whitespace handling.
+- Added Source Control staged and unstaged review tabs with multi-file review sessions, file boundaries, skipped-diff reasons, stale-review banners, a Change List navigator, and an Open Reviewed File action.
 
 ### Fixed
+- Raised the adaptive Compare breakpoint so unified view is reachable at Riteed's practical minimum window width, and removed Git-review-only actions from the manual Compare toolbar.
+- Made Collapse Unchanged Lines affect manual split Compare too, and disabled unified word wrap controls when the active manual Compare surface is still split.
 - Fixed a Flatpak startup abort during project/session restore by avoiding re-entrant project-tree selection cleanup while project state is borrowed.
 - Prevented active Compare tabs from silently auto-reloading their current document after disk changes, keeping manual reference refresh explicit and stable.
+- Stabilized the Git process async test helper by acquiring the default main context before starting GIO subprocess operations.
 
 ### Changed
 - Split Preferences into Editor, Appearance, Format, and Source Control pages so appearance and Git identity controls are no longer mixed into unrelated editor settings.
@@ -31,6 +36,7 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 - Made Source Control's changed-files area and Recent Commits history share a draggable vertical split so large change lists no longer push commit history out of view.
 - Merged the standalone V12.5 and V13 roadmap drafts into `ROADMAP.md`, removed the loose draft files, and moved the unscheduled backlog beyond V13 as Post-V13.
 - Capped the roadmap Source Control scope at local status, compare, stage/unstage, safe discard, recent history, and simple local commits until a dedicated architecture milestone expands it.
+- Updated compare/review strings, GSettings schema metadata, validation review artifacts, and Help copy for the V13 review workflow.
 
 ## 0.3.0 - 2026-05-06
 

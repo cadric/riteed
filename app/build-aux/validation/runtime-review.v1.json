@@ -2,6 +2,126 @@
   "version": 1,
   "sites": [
     {
+      "path": "src/app.rs",
+      "line": 39,
+      "match": "state: Rc<RefCell<AppState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The application controller owns shared multi-window lifecycle state.",
+      "justification": "App actions and lifecycle signals route to the last-focused editor window and maintain a window registry without global statics."
+    },
+    {
+      "path": "src/app.rs",
+      "line": 97,
+      "match": "pub(crate) fn install_for_tests(app: &adw::Application, state: &Rc<RefCell<AppState>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "GTK tests reuse the shared application-state container.",
+      "justification": "The test harness drives the same window routing and activation paths as runtime code, including last-focused resolution."
+    },
+    {
+      "path": "src/app.rs",
+      "line": 113,
+      "match": "state: &Rc<RefCell<AppState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
+      "justification": "The state is GTK-main-thread confined and each handler borrows it only for the short action/orchestration step needed to avoid duplicating application lifecycle state."
+    },
+    {
+      "path": "src/app.rs",
+      "line": 156,
+      "match": "state: &Rc<RefCell<AppState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
+      "justification": "The state is GTK-main-thread confined and each handler borrows it only for the short action/orchestration step needed to avoid duplicating application lifecycle state."
+    },
+    {
+      "path": "src/app.rs",
+      "line": 165,
+      "match": "state: &Rc<RefCell<AppState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
+      "justification": "The state is GTK-main-thread confined and each handler borrows it only for the short action/orchestration step needed to avoid duplicating application lifecycle state."
+    },
+    {
+      "path": "src/app.rs",
+      "line": 244,
+      "match": "state: &Rc<RefCell<AppState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
+      "justification": "The state is GTK-main-thread confined and each handler borrows it only for the short action/orchestration step needed to avoid duplicating application lifecycle state."
+    },
+    {
+      "path": "src/app.rs",
+      "line": 307,
+      "match": "state: &Rc<RefCell<AppState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
+      "justification": "The state is GTK-main-thread confined and each handler borrows it only for the short action/orchestration step needed to avoid duplicating application lifecycle state."
+    },
+    {
+      "path": "src/app.rs",
+      "line": 350,
+      "match": "state: &Rc<RefCell<AppState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
+      "justification": "The state is GTK-main-thread confined and each handler borrows it only for the short action/orchestration step needed to avoid duplicating application lifecycle state."
+    },
+    {
+      "path": "src/app.rs",
+      "line": 360,
+      "match": "fn resolve_window(state: &Rc<RefCell<AppState>>) -> Option<Rc<Window>> {",
+      "kind": "runtime-shared-state",
+      "ownership": "Active editor window resolution reads shared application state.",
+      "justification": "Window routing prefers the last-focused editor window while still allowing a deterministic fallback when focus tracking is unavailable."
+    },
+    {
+      "path": "src/app.rs",
+      "line": 374,
+      "match": "state: &Rc<RefCell<AppState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
+      "justification": "The state is GTK-main-thread confined and each handler borrows it only for the short action/orchestration step needed to avoid duplicating application lifecycle state."
+    },
+    {
+      "path": "src/app.rs",
+      "line": 410,
+      "match": "state: &Rc<RefCell<AppState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
+      "justification": "The state is GTK-main-thread confined and each handler borrows it only for the short action/orchestration step needed to avoid duplicating application lifecycle state."
+    },
+    {
+      "path": "src/app.rs",
+      "line": 424,
+      "match": "fn register_window(state: &Rc<RefCell<AppState>>, window: &Rc<Window>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "Window registration mutates shared application state.",
+      "justification": "Destroy and focus notifications must add/remove windows and update last-focused tracking to keep action routing correct."
+    },
+    {
+      "path": "src/app.rs",
+      "line": 463,
+      "match": "fn install_display_services(display: &gdk::Display, state: &Rc<RefCell<AppState>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "Startup display service installation mutates shared application state.",
+      "justification": "The global chrome provider must be installed once a display exists and then stored in AppState so all later windows receive the same palette controller."
+    },
+    {
+      "path": "src/app_chrome/mod.rs",
+      "line": 26,
+      "match": "observers: RefCell<Vec<Weak<ObserverInner>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "AppChromeController tracks per-window observer callbacks via Weak references.",
+      "justification": "Observers fire on chrome refresh (palette/dark/HC change). Weak storage with compaction-on-add-and-refresh prevents stale callbacks after window close from leaking signal subscriptions or aborting on dropped state."
+    },
+    {
+      "path": "src/app_chrome/mod.rs",
+      "line": 27,
+      "match": "subscriptions: RefCell<Vec<Subscription>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "AppChromeController owns the global libadwaita color provider and palette signal subscriptions for the entire application.",
+      "justification": "A single GtkCssProvider attached to gdk::Display::default() at startup overrides libadwaita CSS custom properties on :root. Subscriptions cover StyleManager dark + high-contrast and AppSettings editor-palette changes; recoloring is a no-op for high-contrast and Adwaita schemes."
+    },
+    {
       "path": "src/close_flow.rs",
       "line": 22,
       "match": "state: RefCell<CloseState>,",
@@ -10,12 +130,36 @@
       "justification": "Unsaved tab-close, window-close, and quit flows need mutable queue progress without leaking state into the window shell."
     },
     {
+      "path": "src/dialogs/encoding.rs",
+      "line": 289,
+      "match": "callback: RefCell<Option<EncodingCallback>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The encoding chooser owns its one-shot response callback for the dialog lifetime.",
+      "justification": "Accept, cancel, and close signals must share one callback slot so the encoding response is delivered at most once while avoiding widget-owned callback cycles."
+    },
+    {
+      "path": "src/dialogs/encoding.rs",
+      "line": 290,
+      "match": "handled: Cell<bool>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The encoding chooser owns its close/response guard.",
+      "justification": "The closed handler intentionally owns the dialog state, while accept and cancel paths set this guard before closing so close cannot call the one-shot callback again."
+    },
+    {
       "path": "src/document_portal.rs",
       "line": 14,
       "match": "static PORTAL_HOST_PATHS: RefCell<PortalHostPathCache> =",
       "kind": "runtime-shared-state",
       "ownership": "The document portal resolver owns the process-local document ID to host-path cache and in-flight callback queue.",
       "justification": "Display-path rendering must not block the UI on portal D-Bus calls, so async GetHostPaths results are coalesced and cached while portal access paths remain authoritative for I/O."
+    },
+    {
+      "path": "src/document_tools.rs",
+      "line": 17,
+      "match": "print_runner: RefCell<PrintRunner>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The document tools controller owns the mutable print runner injection point.",
+      "justification": "Print action tests replace only this scoped runner while runtime action state remains owned by the window-local controller."
     },
     {
       "path": "src/editor_monitor.rs",
@@ -35,6 +179,22 @@
     },
     {
       "path": "src/editor_search/mod.rs",
+      "line": 47,
+      "match": "project_search_dispatch: RefCell<Option<ProjectSearchDispatch>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The find bar owns document/project search scope state and callback dispatch.",
+      "justification": "Search and replace callbacks share this main-thread state so document search, project dispatch, and scope toggles stay synchronized."
+    },
+    {
+      "path": "src/editor_search/mod.rs",
+      "line": 48,
+      "match": "last_replace_mode: Cell<bool>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The find bar owns document/project search scope state and the project-search dispatch hook.",
+      "justification": "Search UI callbacks need one shared main-thread state cell so Ctrl+F, Ctrl+H, Ctrl+Shift+F, scope toggles, and replace visibility cannot diverge."
+    },
+    {
+      "path": "src/editor_search/mod.rs",
       "line": 49,
       "match": "state: RefCell<SearchState>,",
       "kind": "runtime-shared-state",
@@ -42,8 +202,24 @@
       "justification": "Workspace-level search preserves query state while rebinding highlights, match counts, and replace state to the selected tab."
     },
     {
+      "path": "src/editor_search/scope.rs",
+      "line": 20,
+      "match": "syncing: Rc<Cell<bool>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The find bar owns document/project search scope state and the project-search dispatch hook.",
+      "justification": "Search UI callbacks need one shared main-thread state cell so Ctrl+F, Ctrl+H, Ctrl+Shift+F, scope toggles, and replace visibility cannot diverge."
+    },
+    {
+      "path": "src/editor_search/scope.rs",
+      "line": 21,
+      "match": "handler: Rc<RefCell<Option<ScopeChangedHandler>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The find bar owns document/project search scope state and callback dispatch.",
+      "justification": "Search and replace callbacks share this main-thread state so document search, project dispatch, and scope toggles stay synchronized."
+    },
+    {
       "path": "src/editor_tab.rs",
-      "line": 101,
+      "line": 110,
       "match": "state: RefCell<EditorTabState>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns one shared mutable state cell split into document runtime, IO, external-file, autosave, compare, and UI owner structs.",
@@ -51,7 +227,7 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 103,
+      "line": 112,
       "match": "on_file_drop: RefCell<Option<FileDropHandler>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns its current workspace file-drop callback.",
@@ -59,7 +235,7 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 104,
+      "line": 113,
       "match": "on_visual_change: RefCell<Option<TabCallback>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns its current workspace visual-state callback.",
@@ -67,7 +243,7 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 105,
+      "line": 114,
       "match": "on_external_state_change: RefCell<Option<TabCallback>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns its current external-state callback.",
@@ -75,19 +251,155 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 106,
+      "line": 115,
       "match": "on_external_action: RefCell<Option<TabCallback>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns its current external-action callback.",
       "justification": "Reload, save, and compare banner actions must route to the workspace that currently owns the tab."
     },
     {
-      "path": "src/editor_tab/compare/controller.rs",
-      "line": 293,
+      "path": "src/editor_tab/compare.rs",
+      "line": 84,
+      "match": "presentation: Rc<std::cell::RefCell<DiffPresentation>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The compare controller owns the tab-local rendered presentation rows and custom line-number gutter model.",
+      "justification": "Read-only compare panes render from ephemeral presentation buffers, so custom gutters, hatch layers, and tests need one shared source of display-row to original-line mapping."
+    },
+    {
+      "path": "src/editor_tab/compare.rs",
+      "line": 85,
+      "match": "display_model: Rc<std::cell::RefCell<CompareDisplayModel>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The compare controller owns the tab-local collapsed display model shared by split rendering and hunk navigation.",
+      "justification": "Collapsed manual Compare needs one display-row map so split buffers, unified buffers, reveal state, and navigation resolve logical diff rows to the same visible rows."
+    },
+    {
+      "path": "src/editor_tab/compare.rs",
+      "line": 86,
+      "match": "row_model: Rc<std::cell::RefCell<DiffRowModel>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The compare controller owns the tab-local logical diff row model.",
+      "justification": "Presentation rendering, hunk navigation, status, and test accessors must share one ephemeral row model so manual Compare and Git compare cannot drift into parallel diff states."
+    },
+    {
+      "ownership": "Each compare controller owns presentation and view-mode state shared with its pane, gutter, and breakpoint callbacks.",
+      "justification": "Compare panes rebuild asynchronously from user actions and settings changes, so small shared cells keep UI callbacks synchronized without global state.",
+      "path": "src/editor_tab/compare.rs",
+      "line": 87,
+      "match": "unified_presentation: Rc<std::cell::RefCell<UnifiedPresentation>>,",
+      "kind": "runtime-shared-state"
+    },
+    {
+      "ownership": "Each compare controller owns presentation and view-mode state shared with its pane, gutter, and breakpoint callbacks.",
+      "justification": "Compare panes rebuild asynchronously from user actions and settings changes, so small shared cells keep UI callbacks synchronized without global state.",
+      "path": "src/editor_tab/compare.rs",
+      "line": 100,
+      "match": "view_mode_cell: Rc<Cell<CompareViewMode>>,",
+      "kind": "runtime-shared-state"
+    },
+    {
+      "path": "src/editor_tab/compare/diff.rs",
+      "line": 16,
+      "match": "static LINE_DIFF_CALLS: Cell<usize> = const { Cell::new(0) };",
+      "kind": "runtime-shared-state",
+      "ownership": "The compare diff unit tests own one thread-local line-diff call counter.",
+      "justification": "The Finding 5.1 regression test must prove each non-large compare path uses one full line diff while avoiding cross-test interference under parallel cargo test execution."
+    },
+    {
+      "path": "src/editor_tab/compare/gutter.rs",
+      "line": 37,
+      "match": "presentation: Rc<RefCell<DiffPresentation>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Compare gutter state owns a shared handle to the tab-local presentation line-number model.",
+      "justification": "Refreshing both gutters after compare recompute, zoom, and style changes needs the latest row map without copying per-pane line-number state."
+    },
+    {
+      "path": "src/editor_tab/compare/gutter.rs",
+      "line": 38,
+      "match": "row_model: Rc<RefCell<DiffRowModel>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Compare gutter state owns a shared handle to the tab-local logical row model.",
+      "justification": "Custom gutter marker cells need the current row kind so equal rows reserve a blank marker column while reference/current changes render visual -/+ markers after recompute."
+    },
+    {
+      "path": "src/editor_tab/compare/gutter.rs",
+      "line": 45,
       "match": "presentation: &Rc<RefCell<DiffPresentation>>,",
       "kind": "runtime-shared-state",
-      "ownership": "Each compare controller owns the presentation metadata shared with its two read-only presentation panes.",
-      "justification": "Copy handlers need the current placeholder marker metadata after every recompute so generated marker text can be filtered without string matching."
+      "ownership": "Compare gutter setup borrows the controller-owned presentation line-number model.",
+      "justification": "Both gutter renderers need read-only access to the same presentation row map so placeholder rows stay blank without copying per-pane line-number state."
+    },
+    {
+      "path": "src/editor_tab/compare/gutter.rs",
+      "line": 46,
+      "match": "row_model: &Rc<RefCell<DiffRowModel>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Compare gutter setup borrows the controller-owned logical row model.",
+      "justification": "GtkSourceView queries gutter marker text per visible line, so the renderer callback must read the latest row kind after every recompute and keep visual +/- markers aligned with the active row model."
+    },
+    {
+      "ownership": "The compare gutter renderer borrows controller-owned presentation state for visible-line mapping.",
+      "justification": "GTK gutter callbacks are invoked by SourceView during drawing and need shared immutable access to the latest diff presentation without copying it into each renderer.",
+      "path": "src/editor_tab/compare/gutter.rs",
+      "line": 88,
+      "match": "presentation: &Rc<RefCell<UnifiedPresentation>>,",
+      "kind": "runtime-shared-state"
+    },
+    {
+      "path": "src/editor_tab/compare/hatch.rs",
+      "line": 24,
+      "match": "presentation: Rc<RefCell<DiffPresentation>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Compare hatch GTK test accessors own a shared handle to the tab-local presentation model.",
+      "justification": "Regression tests inspect visible hatch regions against the latest placeholder row map without copying per-pane presentation state; this field is test-only."
+    },
+    {
+      "path": "src/editor_tab/compare/hatch.rs",
+      "line": 27,
+      "match": "high_contrast: Rc<Cell<bool>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Each compare hatch layer owns the cached high-contrast state shared with its draw callback.",
+      "justification": "Style changes update the cached value once, while the DrawingArea callback can render the high-contrast solid fallback without querying libadwaita on every frame."
+    },
+    {
+      "path": "src/editor_tab/compare/hatch.rs",
+      "line": 29,
+      "match": "detached: Cell<bool>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Each compare hatch layer owns an idempotent detach guard.",
+      "justification": "Compare exit and Drop can both reach overlay cleanup, so the Cell prevents duplicate widget unparenting without introducing a wider controller-level mutable borrow."
+    },
+    {
+      "path": "src/editor_tab/compare/hatch.rs",
+      "line": 61,
+      "match": "presentation: &Rc<RefCell<DiffPresentation>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The compare hatch overlay borrows the tab-local presentation model owned by the compare controller.",
+      "justification": "Visible filler-row drawing must follow the latest presentation rows without copying diff state or querying unrelated editor buffers from the draw callback."
+    },
+    {
+      "path": "src/editor_tab/compare/hatch.rs",
+      "line": 124,
+      "match": "presentation: &Rc<RefCell<DiffPresentation>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The compare hatch overlay borrows the tab-local presentation model owned by the compare controller.",
+      "justification": "Visible filler-row drawing must follow the latest presentation rows without copying diff state or querying unrelated editor buffers from the draw callback."
+    },
+    {
+      "path": "src/editor_tab/compare/hatch.rs",
+      "line": 204,
+      "match": "presentation: &Rc<RefCell<DiffPresentation>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The compare hatch overlay borrows the tab-local presentation model owned by the compare controller.",
+      "justification": "Visible filler-row drawing must follow the latest presentation rows without copying diff state or querying unrelated editor buffers from the draw callback."
+    },
+    {
+      "path": "src/editor_tab/compare/hatch.rs",
+      "line": 206,
+      "match": "high_contrast: &Rc<Cell<bool>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The compare hatch draw callback borrows the shared high-contrast flag.",
+      "justification": "The callback must see style refreshes without per-frame StyleManager queries, and the Cell keeps the cached render mode local to the hatch layer."
     },
     {
       "path": "src/editor_tab/compare/interaction.rs",
@@ -98,204 +410,44 @@
       "justification": "Selection copy must replace generated placeholder marker rows with blank text while preserving clipboard line layout."
     },
     {
-      "path": "src/editor_zoom.rs",
-      "line": 34,
-      "match": "base_font: RefCell<pango::FontDescription>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The window-owned zoom controller owns the resolved base editor font description.",
-      "justification": "Zoom and font changes need one mutable source of truth that can update all open tabs and the minimap without duplicating state per tab."
+      "ownership": "The compare layout owns the adaptive breakpoint mode cell shared with breakpoint callbacks.",
+      "justification": "Breakpoint apply/unapply signals need to observe the current explicit mode so adaptive resizing does not override user-selected split or unified layout.",
+      "path": "src/editor_tab/compare/layout.rs",
+      "line": 45,
+      "match": "presentation: &Rc<RefCell<DiffPresentation>>,",
+      "kind": "runtime-shared-state"
     },
     {
-      "path": "src/editor_zoom.rs",
-      "line": 35,
-      "match": "zoom_percent: Cell<i32>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The window-owned zoom controller owns the current zoom percentage for the whole workspace window.",
-      "justification": "Window-scoped zoom actions must clamp, reset, and reapply the same percentage across every attached editor tab."
+      "ownership": "The compare layout owns the adaptive breakpoint mode cell shared with breakpoint callbacks.",
+      "justification": "Breakpoint apply/unapply signals need to observe the current explicit mode so adaptive resizing does not override user-selected split or unified layout.",
+      "path": "src/editor_tab/compare/layout.rs",
+      "line": 57,
+      "match": "presentation: &Rc<RefCell<DiffPresentation>>,",
+      "kind": "runtime-shared-state"
     },
     {
-      "path": "src/project_tree_monitor.rs",
-      "line": 48,
-      "match": "poll_source: RefCell<Option<glib::SourceId>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "Each project directory monitor owns the removable polling source.",
-      "justification": "Portal-backed directory monitors can miss structural events, so loaded directories keep a cancellable snapshot polling source."
+      "ownership": "The compare layout owns the adaptive breakpoint mode cell shared with breakpoint callbacks.",
+      "justification": "Breakpoint apply/unapply signals need to observe the current explicit mode so adaptive resizing does not override user-selected split or unified layout.",
+      "path": "src/editor_tab/compare/layout.rs",
+      "line": 92,
+      "match": "mode: Rc<Cell<CompareViewMode>>,",
+      "kind": "runtime-shared-state"
     },
     {
-      "path": "src/project_tree_monitor.rs",
-      "line": 50,
-      "match": "poll_cancelled: Rc<Cell<bool>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "Each project directory monitor owns a shared polling cancellation flag.",
-      "justification": "Async snapshot callbacks need a stale guard after root replacement, refresh, hidden-toggle refresh, or close-folder cancellation."
+      "ownership": "The compare layout owns the adaptive breakpoint mode cell shared with breakpoint callbacks.",
+      "justification": "Breakpoint apply/unapply signals need to observe the current explicit mode so adaptive resizing does not override user-selected split or unified layout.",
+      "path": "src/editor_tab/compare/layout.rs",
+      "line": 173,
+      "match": "presentation: &Rc<RefCell<DiffPresentation>>,",
+      "kind": "runtime-shared-state"
     },
     {
-      "path": "src/project_tree_monitor.rs",
-      "line": 156,
-      "match": "query_in_flight: Rc<Cell<bool>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The directory polling loop shares its in-flight enumeration guard.",
-      "justification": "The timeout source must avoid overlapping directory enumerations on slow portal or network filesystems."
-    },
-    {
-      "path": "src/project_tree_monitor.rs",
-      "line": 224,
-      "match": "poll_state: &Rc<RefCell<Option<ProjectDirectorySnapshot>>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The directory snapshot transition helper mutates shared polling state.",
-      "justification": "Snapshot comparison is centralized so root and loaded-dir polling trigger refreshes only on visible structural changes."
-    },
-    {
-      "path": "src/window_preferences.rs",
-      "line": 20,
-      "match": "_state: Rc<RefCell<PreferencesState>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The preferences controller owns the staged editor-preferences state for the dialog lifetime.",
-      "justification": "SpinRow staging and syncing guards need one shared mutable state cell that all preference-row callbacks can borrow."
-    },
-    {
-      "path": "src/window_preferences.rs",
-      "line": 487,
-      "match": "fn with_syncing(state: &Rc<RefCell<PreferencesState>>, operation: impl FnOnce()) {",
-      "kind": "runtime-shared-state",
-      "ownership": "The dialog-scoped syncing helper mutates the shared preferences state.",
-      "justification": "Preferences initialization and sanitized write-back need one explicit guard that suppresses recursive signals without weakening GSettings timing rules."
-    },
-    {
-      "path": "src/window_preferences.rs",
-      "line": 493,
-      "match": "fn spin_dirty(state: &Rc<RefCell<PreferencesState>>, dirty_spin: DirtySpin) -> bool {",
-      "kind": "runtime-shared-state",
-      "ownership": "The staged SpinRow read helper borrows the shared preferences state.",
-      "justification": "The dialog must be able to query whether a numeric row has staged changes before deciding to commit on focus-out."
-    },
-    {
-      "path": "src/window_preferences.rs",
-      "line": 501,
-      "match": "fn set_spin_dirty(state: &Rc<RefCell<PreferencesState>>, dirty_spin: DirtySpin, value: bool) {",
-      "kind": "runtime-shared-state",
-      "ownership": "The staged SpinRow write helper mutates the shared preferences state.",
-      "justification": "Numeric preference rows need one explicit place to mark staged edits dirty or clean as the user types and the dialog commits."
-    },
-    {
-      "path": "src/window_project.rs",
-      "line": 84,
-      "match": "state: Rc<RefCell<ProjectState>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The window project controller owns shared project sidebar state.",
-      "justification": "Sidebar actions, async folder open/restore, refresh, and tab→tree reveal must coordinate through one mutable state cell."
-    },
-    {
-      "path": "src/window_project.rs",
-      "line": 110,
-      "match": "let tree_activation_handler: Rc<RefCell<Option<TreeActivationHandler>>> =",
-      "kind": "runtime-shared-state",
-      "ownership": "Tree activation wiring stores one late-bound handler closure.",
-      "justification": "Activation callbacks need the project state Rc after construction without creating a reference cycle between the tree and controller."
-    },
-    {
-      "path": "src/window_project/sidebar_state.rs",
-      "line": 13,
-      "match": "pub(super) fn sync_actions_for_root(state: &Rc<RefCell<ProjectState>>) {",
-      "kind": "runtime-shared-state",
-      "ownership": "Root-action synchronization borrows shared project state.",
-      "justification": "Root transitions must consistently enable/disable window actions and sidebar visibility from one state source of truth."
-    },
-    {
-      "path": "src/window_project/sidebar_state.rs",
-      "line": 26,
-      "match": "pub(super) fn set_sidebar_visible_for_root(state: &Rc<RefCell<ProjectState>>, visible: bool) {",
-      "kind": "runtime-shared-state",
-      "ownership": "Root-change sidebar visibility borrows shared project state after mutation is complete.",
-      "justification": "Split-view notify handlers can re-enter project state, so visibility changes run after root mutation releases its mutable borrow."
-    },
-    {
-      "path": "src/window_project/app_open.rs",
+      "path": "src/editor_tab/compare/scroll.rs",
       "line": 19,
-      "match": "pub(super) fn handle_application_open(state: &Rc<RefCell<ProjectState>>, files: Vec<gio::File>) {",
+      "match": "row_model: Rc<RefCell<DiffRowModel>>,",
       "kind": "runtime-shared-state",
-      "ownership": "App-open handling borrows shared project state.",
-      "justification": "GApplication::open classification needs access to project state so a folder input can replace the active project root."
-    },
-    {
-      "path": "src/window_project/app_open.rs",
-      "line": 34,
-      "match": "request: Rc<RefCell<AppOpenRequest>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The app-open request accumulates classification results across async callbacks.",
-      "justification": "Mixed directory/file opens must collect results before deciding which folder to activate and which files to open as tabs."
-    },
-    {
-      "path": "src/window_project/app_open.rs",
-      "line": 88,
-      "match": "request: &Rc<RefCell<AppOpenRequest>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The app-open finisher reads the accumulated request state.",
-      "justification": "Finishing needs the collected directory/file lists to open the first folder and then open any remaining files as tabs."
-    },
-    {
-      "path": "src/window_project/auto_refresh.rs",
-      "line": 13,
-      "match": "pending: Rc<Cell<bool>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The project auto-refresh coalescer owns the pending refresh flag.",
-      "justification": "Directory monitors can emit bursts across multiple folders, so the controller needs one shared pending flag to schedule at most one refresh per debounce window."
-    },
-    {
-      "path": "src/window_project/auto_refresh.rs",
-      "line": 38,
-      "match": "pub(super) fn refresh_tree(state: &Rc<std::cell::RefCell<ProjectState>>) {",
-      "kind": "runtime-shared-state",
-      "ownership": "Refresh handling borrows shared project state.",
-      "justification": "Manual and monitor-triggered refresh need the active root, expansion snapshotting, and reveal coordination without spawning background threads."
-    },
-    {
-      "path": "src/window_project/symlink.rs",
-      "line": 15,
-      "match": "pub(super) fn handle_symlink_activation(state: &Rc<RefCell<ProjectState>>, file: &gio::File) {",
-      "kind": "runtime-shared-state",
-      "ownership": "Symlink activation borrows shared project state.",
-      "justification": "Symlink resolution needs cancellable state and toast deduplication shared with other sidebar operations."
-    },
-    {
-      "path": "src/workspace.rs",
-      "line": 70,
-      "match": "pub(crate) state: RefCell<WorkspaceState>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The workspace owns tab collection, recent/session caches, restore gating, and active close flow.",
-      "justification": "Tabbed document coordination requires shared mutable state across menu rebuilds, session persistence, search/status rebinding, selection changes, and drag-and-drop."
-    },
-    {
-      "path": "src/workspace/tabs.rs",
-      "line": 20,
-      "match": "transfer_window_handler: RefCell<Option<TransferWindowHandler>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "Each workspace owns the callback that creates registered destination windows for tab transfer.",
-      "justification": "The tab menu needs to create a secondary window through the app registry while avoiding a strong AppState cycle in workspace state."
-    },
-    {
-      "path": "src/workspace/tabs.rs",
-      "line": 21,
-      "match": "transferring_page: RefCell<Option<adw::TabPage>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "Each workspace owns the page currently being transferred out or in.",
-      "justification": "The detach handler must distinguish transfer from real close so file monitors and zoom styling are not cleared for moved tabs."
-    },
-    {
-      "path": "src/workspace_open.rs",
-      "line": 134,
-      "match": "fn process_open_request(workspace: &Rc<Workspace>, request: Rc<RefCell<OpenRequest>>) {",
-      "kind": "runtime-shared-state",
-      "ownership": "The shared open-request state tracks a multi-file open batch.",
-      "justification": "Multi-open, restore, and drag-and-drop need sequential progress, success/failure counts, and selected-tab restoration across async callbacks."
-    },
-    {
-      "path": "src/workspace_open.rs",
-      "line": 222,
-      "match": "fn finish_open_request(workspace: &Rc<Workspace>, request: &Rc<RefCell<OpenRequest>>) {",
-      "kind": "runtime-shared-state",
-      "ownership": "The open-request finisher reads shared batch state.",
-      "justification": "Completion handling needs the accumulated batch results to decide between restore selection, aggregated toasts, and fallback UI state."
+      "ownership": "Compare scroll synchronization owns a shared handle to the tab-local logical row model.",
+      "justification": "Programmatic first-hunk and hunk-navigation scrolls verify the target presentation row against the current row count without copying diff state into the scroll helper."
     }
   ]
 }

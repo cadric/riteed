@@ -351,9 +351,12 @@ fn sync_document_format_rows(
     with_syncing(state, || {
         if let Some(tab) = tab {
             let format = tab.current_format();
-            encoding_row.set_sensitive(tab.uri().is_none() || tab.can_reopen_with_encoding());
+            encoding_row.set_sensitive(
+                tab.is_document()
+                    && (tab.document_uri().is_none() || tab.can_reopen_with_encoding()),
+            );
             encoding_row.set_subtitle(format.encoding().charset());
-            line_ending_row.set_sensitive(true);
+            line_ending_row.set_sensitive(tab.is_document());
             line_ending_row.set_selected(line_ending_index(format.line_ending_mode()));
         } else {
             encoding_row.set_sensitive(false);

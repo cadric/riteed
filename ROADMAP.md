@@ -4,8 +4,8 @@ updated: 2026-05-08
 status: active
 priority: high
 type: roadmap
-completed_through: v12.5
-next_version: v13
+completed_through: v13
+next_version: post-v13
 final_scheduled_version: v13
 ---
 
@@ -1457,10 +1457,10 @@ Implement a complete v12.5 where Source Control density matches Files, contextua
 
 > created: 2026-05-07
 > updated: 2026-05-08
-> status: planned
+> status: complete
 > priority: high
 > type: roadmap-milestone
-> implementation: not started
+> implementation: working tree — Implement Riteed V13 diff review maturity
 
 ## Purpose
 
@@ -1654,7 +1654,7 @@ If any of these items is promoted to a real version later, the promoting change 
 
 # Summary of the full progression
 
-V1 through V12.5 are complete as of 2026-05-08. V13 is the next scheduled milestone and remains not implemented; it covers diff review maturity for Compare and local Source Control review. Anything beyond V13, including spell check, Markdown preview, and large-file streaming, sits in the "Post-V13 — Unscheduled Candidates" section and only earns a version number once one of those ideas has a concrete reason to ship next.
+V1 through V13 are complete as of 2026-05-08. V13 covers diff review maturity for Compare and local Source Control review. Anything beyond V13, including spell check, Markdown preview, and large-file streaming, sits in the "Post-V13 — Unscheduled Candidates" section and only earns a version number once one of those ideas has a concrete reason to ship next.
 
 ## V1
 

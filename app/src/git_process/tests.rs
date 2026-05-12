@@ -215,6 +215,10 @@ fn immediate_result<T: 'static>(
 fn wait_git<T: 'static>(
     start: impl FnOnce(&gio::Cancellable, GitCallback<T>),
 ) -> Result<T, GitProcessError> {
+    let context = glib::MainContext::default();
+    let Ok(_guard) = context.acquire() else {
+        return Err(GitProcessError::Cancelled);
+    };
     let slot: Rc<RefCell<Option<Result<T, GitProcessError>>>> = Rc::new(RefCell::new(None));
     let slot_for_callback = Rc::clone(&slot);
     let cancellable = gio::Cancellable::new();
@@ -225,7 +229,7 @@ fn wait_git<T: 'static>(
         }),
     );
     for _ in 0..600 {
-        while glib::MainContext::default().iteration(false) {}
+        while context.iteration(false) {}
         if slot.borrow().is_some() {
             break;
         }
@@ -235,7 +239,7 @@ fn wait_git<T: 'static>(
             fired_for_timeout.set(true);
         });
         while !fired.get() && slot.borrow().is_none() {
-            let _dispatched = glib::MainContext::default().iteration(true);
+            let _dispatched = context.iteration(true);
         }
         if !fired.get() {
             source.remove();

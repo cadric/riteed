@@ -189,6 +189,7 @@ fn apply_status(state: &SourceStateRef, snapshot: GitStatusSnapshot, attrs: GitA
         state.snapshot = snapshot;
         state.attrs = attrs;
         state.status_stale = false;
+        state.review_generation = state.review_generation.wrapping_add(1);
         update_title(&state);
         actions::apply_entry_actions(&mut state);
         let changed = state.snapshot != previous_snapshot || state.attrs != previous_attrs;
@@ -200,6 +201,7 @@ fn apply_status(state: &SourceStateRef, snapshot: GitStatusSnapshot, attrs: GitA
         (state.snapshot.head_oid.clone(), state.snapshot.clone())
     };
     actions::fire_state_change_handler(state);
+    super::review::mark_open_reviews(&state.borrow());
     live::sync_branch_monitor(state, &snapshot);
     history::refresh(state, head_oid.as_deref());
 }

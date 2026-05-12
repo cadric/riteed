@@ -1,6 +1,12 @@
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use gtk4::{gio, glib::SList, prelude::*};
 
-use super::{VisibleBannerState, Writability, compare::CompareController};
+use super::{
+    VisibleBannerState, Writability,
+    compare::{CompareController, ReviewSession},
+};
 use crate::document::DocumentState;
 use crate::editor_format::SavedTextFormat;
 use crate::editor_monitor::{MonitorBinding, PendingExternalState};
@@ -12,6 +18,7 @@ pub(super) struct EditorTabState {
     pub(super) external: ExternalFileState,
     pub(super) autosave: AutosaveState,
     pub(super) compare: CompareAttachment,
+    pub(super) review: ReviewAttachment,
     pub(super) ui: UiState,
 }
 
@@ -168,6 +175,11 @@ impl CompareAttachment {
         self.request_generation = self.request_generation.saturating_add(1);
         self.request_generation
     }
+}
+
+#[derive(Default)]
+pub(super) struct ReviewAttachment {
+    pub(super) session: Option<Rc<RefCell<ReviewSession>>>,
 }
 
 #[derive(Default)]

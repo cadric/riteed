@@ -1,6 +1,9 @@
 use gettextrs::{npgettext, pgettext};
 
-use super::model::{DiffRowKind, DiffRowModel};
+#[cfg(test)]
+use super::model::DiffRowKind;
+#[cfg(test)]
+use super::model::DiffRowModel;
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub(super) struct DiffPresentation {
@@ -9,6 +12,7 @@ pub(super) struct DiffPresentation {
     pub(super) reference_line_numbers: Vec<Option<usize>>,
     pub(super) current_line_numbers: Vec<Option<usize>>,
     placeholder_markers: Vec<Option<PlaceholderMarker>>,
+    metadata_rows: Vec<bool>,
     pub(super) placeholder_count: usize,
 }
 
@@ -16,6 +20,27 @@ impl DiffPresentation {
     #[must_use]
     pub(super) fn empty() -> Self {
         Self::default()
+    }
+
+    #[must_use]
+    pub(super) fn from_parts(
+        reference_text: String,
+        current_text: String,
+        reference_line_numbers: Vec<Option<usize>>,
+        current_line_numbers: Vec<Option<usize>>,
+        placeholder_markers: Vec<Option<PlaceholderMarker>>,
+        metadata_rows: Vec<bool>,
+        placeholder_count: usize,
+    ) -> Self {
+        Self {
+            reference_text,
+            current_text,
+            reference_line_numbers,
+            current_line_numbers,
+            placeholder_markers,
+            metadata_rows,
+            placeholder_count,
+        }
     }
 
     #[must_use]
@@ -51,6 +76,11 @@ impl DiffPresentation {
     }
 
     #[must_use]
+    pub(super) fn is_metadata_row(&self, row: usize) -> bool {
+        self.metadata_rows.get(row).copied().unwrap_or(false)
+    }
+
+    #[must_use]
     pub(super) fn max_line_number(&self, side: PresentationSide) -> usize {
         let numbers = match side {
             PresentationSide::Reference => &self.reference_line_numbers,
@@ -78,6 +108,7 @@ pub(super) struct PlaceholderMarker {
     pub(super) run_len: usize,
 }
 
+#[cfg(test)]
 pub(super) fn build_presentation(
     model: &DiffRowModel,
     reference_lines: &[&str],
@@ -91,6 +122,7 @@ pub(super) fn build_presentation(
     let mut reference_numbers = Vec::with_capacity(model.rows.len());
     let mut current_numbers = Vec::with_capacity(model.rows.len());
     let mut placeholder_markers = Vec::with_capacity(model.rows.len());
+    let mut metadata_rows = Vec::with_capacity(model.rows.len());
     let mut placeholder_count = 0;
     let mut row_index = 0;
 
@@ -113,6 +145,7 @@ pub(super) fn build_presentation(
                     &mut placeholder_count,
                 );
                 placeholder_markers.push(None);
+                metadata_rows.push(false);
                 row_index += 1;
             }
             DiffRowKind::ReferenceOnly => {
@@ -137,6 +170,7 @@ pub(super) fn build_presentation(
                         marker.map(marker_text).as_deref(),
                     );
                     placeholder_markers.push(marker);
+                    metadata_rows.push(false);
                 }
                 row_index += run_len;
             }
@@ -155,6 +189,7 @@ pub(super) fn build_presentation(
                         marker.map(marker_text).as_deref(),
                     );
                     placeholder_markers.push(marker);
+                    metadata_rows.push(false);
                     push_line(
                         &mut current_rows,
                         &mut current_numbers,
@@ -174,10 +209,12 @@ pub(super) fn build_presentation(
         reference_line_numbers: reference_numbers,
         current_line_numbers: current_numbers,
         placeholder_markers,
+        metadata_rows,
         placeholder_count,
     }
 }
 
+#[cfg(test)]
 fn push_line(
     rows: &mut Vec<String>,
     numbers: &mut Vec<Option<usize>>,
@@ -196,6 +233,7 @@ fn push_line(
     numbers.push(Some(line + 1));
 }
 
+#[cfg(test)]
 fn push_placeholder(
     rows: &mut Vec<String>,
     numbers: &mut Vec<Option<usize>>,
@@ -207,6 +245,7 @@ fn push_placeholder(
     *placeholder_count += 1;
 }
 
+#[cfg(test)]
 fn same_kind_run_len(model: &DiffRowModel, start: usize, kind: DiffRowKind) -> usize {
     model.rows[start..]
         .iter()
@@ -214,7 +253,7 @@ fn same_kind_run_len(model: &DiffRowModel, start: usize, kind: DiffRowKind) -> u
         .count()
 }
 
-fn marker_text(marker: PlaceholderMarker) -> String {
+pub(super) fn marker_text(marker: PlaceholderMarker) -> String {
     match (marker.side, marker.run_len) {
         (PresentationSide::Reference, 1) => pgettext("compare placeholder", "Only in current"),
         (PresentationSide::Reference, len) => {
@@ -247,6 +286,7 @@ fn plural_count(value: usize) -> u32 {
     u32::try_from(value).map_or(u32::MAX, |value| value)
 }
 
+#[cfg(test)]
 fn strip_line_ending(line: &str) -> &str {
     line.strip_suffix("\r\n")
         .or_else(|| line.strip_suffix('\n'))

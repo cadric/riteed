@@ -6,6 +6,7 @@ use sourceview5::prelude::*;
 
 use super::model::{DiffRowKind, DiffRowModel};
 use super::presentation::{DiffPresentation, PresentationSide};
+use super::unified::{UnifiedLine, UnifiedLineSide, UnifiedPresentation};
 
 const EMPTY_MARKER: char = '\u{00A0}';
 const NUMBER_XPAD: i32 = 6;
@@ -13,11 +14,23 @@ const MARKER_XPAD: i32 = 3;
 const FALLBACK_DIGIT_WIDTH: i32 = 10;
 const NUMBER_RENDERER_POSITION: i32 = 0;
 const MARKER_RENDERER_POSITION: i32 = 10;
+const UNIFIED_REF_RENDERER_POSITION: i32 = 0;
+const UNIFIED_MARKER_RENDERER_POSITION: i32 = 10;
+const UNIFIED_CUR_RENDERER_POSITION: i32 = 20;
 
 pub(super) struct CompareGutters {
     left: GutterHandle,
     right: GutterHandle,
     state: Rc<GutterState>,
+}
+
+pub(super) struct UnifiedGutter {
+    reference_renderer: sourceview5::GutterRendererText,
+    marker_renderer: sourceview5::GutterRendererText,
+    current_renderer: sourceview5::GutterRendererText,
+    reference_handler: Option<glib::SignalHandlerId>,
+    marker_handler: Option<glib::SignalHandlerId>,
+    current_handler: Option<glib::SignalHandlerId>,
 }
 
 struct GutterState {
@@ -66,6 +79,78 @@ impl CompareGutters {
     #[cfg(test)]
     pub(super) fn width_requests(&self) -> (i32, i32) {
         (self.left.width_request(), self.right.width_request())
+    }
+}
+
+impl UnifiedGutter {
+    pub(super) fn new(
+        view: &sourceview5::View,
+        presentation: &Rc<RefCell<UnifiedPresentation>>,
+    ) -> Self {
+        view.set_show_line_numbers(false);
+        view.set_show_line_marks(false);
+        let reference_renderer = unified_number_renderer(1.0);
+        let marker_renderer = unified_marker_renderer();
+        let current_renderer = unified_number_renderer(0.0);
+
+        let reference_state = Rc::clone(presentation);
+        let reference_handler =
+            reference_renderer.connect_query_data(move |renderer, _lines, line| {
+                let row = usize::try_from(line).map_or(usize::MAX, |value| value);
+                let label = reference_state
+                    .borrow()
+                    .lines
+                    .get(row)
+                    .and_then(unified_reference_number)
+                    .map_or_else(String::new, |line| line.to_string());
+                renderer.set_text(&label);
+            });
+        let marker_state = Rc::clone(presentation);
+        let marker_handler = marker_renderer.connect_query_data(move |renderer, _lines, line| {
+            let row = usize::try_from(line).map_or(usize::MAX, |value| value);
+            let label = marker_state
+                .borrow()
+                .lines
+                .get(row)
+                .map_or(EMPTY_MARKER, unified_marker)
+                .to_string();
+            renderer.set_text(&label);
+        });
+        let current_state = Rc::clone(presentation);
+        let current_handler = current_renderer.connect_query_data(move |renderer, _lines, line| {
+            let row = usize::try_from(line).map_or(usize::MAX, |value| value);
+            let label = current_state
+                .borrow()
+                .lines
+                .get(row)
+                .and_then(unified_current_number)
+                .map_or_else(String::new, |line| line.to_string());
+            renderer.set_text(&label);
+        });
+
+        let gutter = sourceview5::prelude::ViewExt::gutter(view, gtk4::TextWindowType::Left);
+        let _inserted = gutter.insert(&reference_renderer, UNIFIED_REF_RENDERER_POSITION);
+        let _inserted = gutter.insert(&marker_renderer, UNIFIED_MARKER_RENDERER_POSITION);
+        let _inserted = gutter.insert(&current_renderer, UNIFIED_CUR_RENDERER_POSITION);
+        let handle = Self {
+            reference_renderer,
+            marker_renderer,
+            current_renderer,
+            reference_handler: Some(reference_handler),
+            marker_handler: Some(marker_handler),
+            current_handler: Some(current_handler),
+        };
+        handle.refresh();
+        handle
+    }
+
+    pub(super) fn refresh(&self) {
+        self.reference_renderer.set_width_request(48);
+        self.marker_renderer.set_width_request(16);
+        self.current_renderer.set_width_request(48);
+        self.reference_renderer.queue_draw();
+        self.marker_renderer.queue_draw();
+        self.current_renderer.queue_draw();
     }
 }
 
@@ -131,6 +216,20 @@ impl Drop for GutterHandle {
         }
         if let Some(handler) = self.marker_handler.take() {
             self.marker_renderer.disconnect(handler);
+        }
+    }
+}
+
+impl Drop for UnifiedGutter {
+    fn drop(&mut self) {
+        if let Some(handler) = self.reference_handler.take() {
+            self.reference_renderer.disconnect(handler);
+        }
+        if let Some(handler) = self.marker_handler.take() {
+            self.marker_renderer.disconnect(handler);
+        }
+        if let Some(handler) = self.current_handler.take() {
+            self.current_renderer.disconnect(handler);
         }
     }
 }
@@ -212,6 +311,48 @@ fn marker_for_kind(side: PresentationSide, kind: DiffRowKind) -> char {
         (PresentationSide::Reference, DiffRowKind::ReferenceOnly | DiffRowKind::Modify) => '-',
         (PresentationSide::Current, DiffRowKind::CurrentOnly | DiffRowKind::Modify) => '+',
         _ => EMPTY_MARKER,
+    }
+}
+
+fn unified_number_renderer(xalign: f32) -> sourceview5::GutterRendererText {
+    sourceview5::GutterRendererText::builder()
+        .alignment_mode(sourceview5::GutterRendererAlignmentMode::Cell)
+        .can_target(false)
+        .focusable(false)
+        .xalign(xalign)
+        .xpad(NUMBER_XPAD)
+        .build()
+}
+
+fn unified_marker_renderer() -> sourceview5::GutterRendererText {
+    sourceview5::GutterRendererText::builder()
+        .alignment_mode(sourceview5::GutterRendererAlignmentMode::Cell)
+        .can_target(false)
+        .focusable(false)
+        .xalign(0.5)
+        .xpad(MARKER_XPAD)
+        .build()
+}
+
+fn unified_reference_number(line: &UnifiedLine) -> Option<usize> {
+    match line.side {
+        UnifiedLineSide::Context | UnifiedLineSide::Removal => line.reference_line,
+        UnifiedLineSide::Addition | UnifiedLineSide::Collapsed => None,
+    }
+}
+
+fn unified_current_number(line: &UnifiedLine) -> Option<usize> {
+    match line.side {
+        UnifiedLineSide::Context | UnifiedLineSide::Addition => line.current_line,
+        UnifiedLineSide::Removal | UnifiedLineSide::Collapsed => None,
+    }
+}
+
+fn unified_marker(line: &UnifiedLine) -> char {
+    match line.side {
+        UnifiedLineSide::Removal => '-',
+        UnifiedLineSide::Addition => '+',
+        UnifiedLineSide::Context | UnifiedLineSide::Collapsed => EMPTY_MARKER,
     }
 }
 

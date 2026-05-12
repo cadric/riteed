@@ -86,7 +86,10 @@ fn filtered_selection_text(
         } else {
             line_end
         };
-        if end_offset > start_offset && presentation.placeholder_marker(side, row).is_none() {
+        if end_offset > start_offset
+            && !presentation.is_metadata_row(row)
+            && presentation.placeholder_marker(side, row).is_none()
+        {
             let segment_start = buffer.iter_at_line_offset(line, start_offset)?;
             let segment_end = buffer.iter_at_line_offset(line, end_offset)?;
             output.push_str(&buffer.text(&segment_start, &segment_end, false));

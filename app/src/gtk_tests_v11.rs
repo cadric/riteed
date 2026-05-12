@@ -6,9 +6,7 @@ use gtk4::{gdk, gio, prelude::*};
 use libadwaita as adw;
 
 use crate::editor_tab::{SaveResult, Writability};
-use crate::gtk_tests::{
-    build_window, build_window_with_settings, drain_events, spin_until, write_temp_file,
-};
+use crate::gtk_tests::{build_window_with_settings, drain_events, spin_until, write_temp_file};
 use crate::settings::AppSettings;
 use crate::workspace::OpenSource;
 
@@ -23,7 +21,9 @@ pub(crate) fn exercise_v11_diff_surface(test_app: &adw::Application) {
 }
 
 fn exercise_manual_compare_surface(test_app: &adw::Application) {
-    let Some(window) = build_window(test_app) else {
+    let settings = AppSettings::new_for_tests();
+    settings.set_compare_collapse_unchanged(false);
+    let Some(window) = build_window_with_settings(test_app, settings) else {
         return;
     };
     let long_reference_tail = format!("right tail {}\n", "x".repeat(240));
@@ -115,7 +115,9 @@ fn exercise_manual_compare_surface(test_app: &adw::Application) {
 }
 
 fn exercise_navigation_copy_and_gutter_surface(test_app: &adw::Application) {
-    let Some(window) = build_window(test_app) else {
+    let settings = AppSettings::new_for_tests();
+    settings.set_compare_collapse_unchanged(false);
+    let Some(window) = build_window_with_settings(test_app, settings) else {
         return;
     };
     let editable_text = numbered_compare_text("left eighty", "left one twenty");
@@ -208,7 +210,9 @@ fn exercise_navigation_copy_and_gutter_surface(test_app: &adw::Application) {
 }
 
 fn exercise_asymmetric_gutter_width_surface(test_app: &adw::Application) {
-    let Some(window) = build_window(test_app) else {
+    let settings = AppSettings::new_for_tests();
+    settings.set_compare_collapse_unchanged(false);
+    let Some(window) = build_window_with_settings(test_app, settings) else {
         return;
     };
     let editable_text = numbered_lines(120);
@@ -275,7 +279,9 @@ fn exercise_asymmetric_gutter_width_surface(test_app: &adw::Application) {
 }
 
 fn exercise_saved_reference_rebuild(test_app: &adw::Application) {
-    let Some(window) = build_window(test_app) else {
+    let settings = AppSettings::new_for_tests();
+    settings.set_compare_collapse_unchanged(false);
+    let Some(window) = build_window_with_settings(test_app, settings) else {
         return;
     };
     let editable_path = write_temp_file("riteed-v11-save-sync.txt", b"before\n");
@@ -310,6 +316,7 @@ fn exercise_saved_reference_rebuild(test_app: &adw::Application) {
 fn exercise_compare_pauses_guarded_autosave(test_app: &adw::Application) {
     let settings = AppSettings::new_for_tests();
     settings.set_autosave_enabled(true);
+    settings.set_compare_collapse_unchanged(false);
     let Some(window) = build_window_with_settings(test_app, settings) else {
         return;
     };

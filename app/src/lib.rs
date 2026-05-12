@@ -66,6 +66,8 @@ mod gtk_tests_v11_git;
 #[cfg(test)]
 mod gtk_tests_v12;
 #[cfg(test)]
+mod gtk_tests_v13;
+#[cfg(test)]
 mod gtk_tests_v4;
 #[cfg(test)]
 mod gtk_tests_v5;

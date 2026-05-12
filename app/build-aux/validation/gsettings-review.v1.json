@@ -2,6 +2,30 @@
   "version": 1,
   "sites": [
     {
+      "path": "src/editor_tab/compare/hatch.rs",
+      "line": 179,
+      "match": "self.handlers.horizontal.adjustment.set_value(value);",
+      "kind": "gsettings-write",
+      "key": "gtk-adjustment-test-helper",
+      "trigger": "GTK regression tests simulate a local horizontal scroll adjustment value so hatch viewport positioning can be verified; this test helper does not touch GSettings."
+    },
+    {
+      "path": "src/editor_tab/compare/scroll.rs",
+      "line": 178,
+      "match": "pane.adjustment.set_value(target.clamp(lower, upper));",
+      "kind": "gsettings-write",
+      "key": "gtk-adjustment",
+      "trigger": "Compare split-diff scroll synchronization updates the local GtkAdjustment for the peer pane only; this is not a GSettings write."
+    },
+    {
+      "path": "src/editor_tab/compare/scroll.rs",
+      "line": 272,
+      "match": "self.left.adjustment.set_value(value);",
+      "kind": "gsettings-write",
+      "key": "gtk-adjustment-test-helper",
+      "trigger": "GTK regression tests simulate a local scroll adjustment value; this test helper does not touch GSettings."
+    },
+    {
       "path": "src/settings/appearance.rs",
       "line": 70,
       "match": "let _changed = settings.set_enum(KEY_THEME, preference.enum_value());",
@@ -10,52 +34,44 @@
       "trigger": "Explicit theme selection from the primary menu theme selector."
     },
     {
-      "path": "src/settings/editor.rs",
-      "line": 21,
-      "match": "let _changed = settings.set_string(KEY_EDITOR_FONT, font);",
-      "kind": "gsettings-write",
-      "key": "editor-font",
-      "trigger": "Explicit accepted font selection from the editor-font chooser."
+      "key": "compare-view-mode",
+      "trigger": "Explicit compare options menu change updates the persisted compare/review preference and immediately rebuilds the active compare or review display.",
+      "path": "src/settings/compare.rs",
+      "line": 95,
+      "match": "let _changed = settings.set_enum(KEY_COMPARE_VIEW_MODE, mode.enum_value());",
+      "kind": "gsettings-write"
     },
     {
-      "path": "src/settings/window_session.rs",
-      "line": 71,
-      "match": "let _changed_width = settings.set_int(KEY_WINDOW_WIDTH, width);",
-      "kind": "gsettings-write",
-      "key": "window-width",
-      "trigger": "Main-window close handling after the user changes window size."
+      "key": "compare-collapse-unchanged",
+      "trigger": "Explicit compare options menu change updates the persisted compare/review preference and immediately rebuilds the active compare or review display.",
+      "path": "src/settings/compare.rs",
+      "line": 121,
+      "match": "let _changed = settings.set_boolean(KEY_COMPARE_COLLAPSE_UNCHANGED, enabled);",
+      "kind": "gsettings-write"
     },
     {
-      "path": "src/settings/window_session.rs",
-      "line": 72,
-      "match": "let _changed_height = settings.set_int(KEY_WINDOW_HEIGHT, height);",
-      "kind": "gsettings-write",
-      "key": "window-height",
-      "trigger": "Main-window close handling after the user changes window size."
+      "key": "compare-context-lines",
+      "trigger": "Explicit compare options menu change updates the persisted compare/review preference and immediately rebuilds the active compare or review display.",
+      "path": "src/settings/compare.rs",
+      "line": 146,
+      "match": "let _changed = settings.set_int(KEY_COMPARE_CONTEXT_LINES, lines);",
+      "kind": "gsettings-write"
     },
     {
-      "path": "src/settings/window_session.rs",
-      "line": 102,
-      "match": "let _changed = settings.set_strv(KEY_RECENT_FILES, files);",
-      "kind": "gsettings-write",
-      "key": "recent-files",
-      "trigger": "Successful explicit open, recent reopen, drag-and-drop open, or local save updates the recent file list."
+      "key": "compare-ignore-whitespace",
+      "trigger": "Explicit compare options menu change updates the persisted compare/review preference and immediately rebuilds the active compare or review display.",
+      "path": "src/settings/compare.rs",
+      "line": 170,
+      "match": "let _changed = settings.set_boolean(KEY_COMPARE_IGNORE_WHITESPACE, enabled);",
+      "kind": "gsettings-write"
     },
     {
-      "path": "src/settings/window_session.rs",
-      "line": 130,
-      "match": "let _changed = settings.set_strv(KEY_SESSION_FILES, files);",
-      "kind": "gsettings-write",
-      "key": "session-files",
-      "trigger": "Opening, closing, reordering, restoring, or externally renaming saved tabs triggers the existing session snapshot write site outside restore mode."
-    },
-    {
-      "path": "src/settings/selected_document.rs",
-      "line": 23,
-      "match": "let _changed = settings.set_string(KEY_SESSION_SELECTED_FILE, uri);",
-      "kind": "gsettings-write",
-      "key": "session-selected-file",
-      "trigger": "Selecting a saved tab or externally renaming the selected saved tab triggers the existing selected-session write site outside restore mode."
+      "key": "compare-word-wrap",
+      "trigger": "Explicit compare options menu change updates the persisted compare/review preference and immediately rebuilds the active compare or review display.",
+      "path": "src/settings/compare.rs",
+      "line": 194,
+      "match": "let _changed = settings.set_boolean(KEY_COMPARE_WORD_WRAP, enabled);",
+      "kind": "gsettings-write"
     },
     {
       "path": "src/settings/display.rs",
@@ -80,6 +96,14 @@
       "kind": "gsettings-write",
       "key": "show-minimap",
       "trigger": "Explicit minimap toggle in the preferences dialog."
+    },
+    {
+      "path": "src/settings/editor.rs",
+      "line": 21,
+      "match": "let _changed = settings.set_string(KEY_EDITOR_FONT, font);",
+      "kind": "gsettings-write",
+      "key": "editor-font",
+      "trigger": "Explicit accepted font selection from the editor-font chooser."
     },
     {
       "path": "src/settings/git.rs",
@@ -186,12 +210,52 @@
       "trigger": "Toggling Show Hidden Files in the project sidebar updates the stored hidden-files preference."
     },
     {
+      "path": "src/settings/selected_document.rs",
+      "line": 23,
+      "match": "let _changed = settings.set_string(KEY_SESSION_SELECTED_FILE, uri);",
+      "kind": "gsettings-write",
+      "key": "session-selected-file",
+      "trigger": "Selecting a saved tab or externally renaming the selected saved tab triggers the existing selected-session write site outside restore mode."
+    },
+    {
       "path": "src/settings/source_control.rs",
       "line": 59,
       "match": "let _changed = settings.set_enum(KEY_SOURCE_CONTROL_VIEW_MODE, mode.enum_value());",
       "kind": "gsettings-write",
       "key": "source-control-view-mode",
       "trigger": "Explicit Source Control tree/list segmented-control toggle."
+    },
+    {
+      "path": "src/settings/window_session.rs",
+      "line": 71,
+      "match": "let _changed_width = settings.set_int(KEY_WINDOW_WIDTH, width);",
+      "kind": "gsettings-write",
+      "key": "window-width",
+      "trigger": "Main-window close handling after the user changes window size."
+    },
+    {
+      "path": "src/settings/window_session.rs",
+      "line": 72,
+      "match": "let _changed_height = settings.set_int(KEY_WINDOW_HEIGHT, height);",
+      "kind": "gsettings-write",
+      "key": "window-height",
+      "trigger": "Main-window close handling after the user changes window size."
+    },
+    {
+      "path": "src/settings/window_session.rs",
+      "line": 102,
+      "match": "let _changed = settings.set_strv(KEY_RECENT_FILES, files);",
+      "kind": "gsettings-write",
+      "key": "recent-files",
+      "trigger": "Successful explicit open, recent reopen, drag-and-drop open, or local save updates the recent file list."
+    },
+    {
+      "path": "src/settings/window_session.rs",
+      "line": 130,
+      "match": "let _changed = settings.set_strv(KEY_SESSION_FILES, files);",
+      "kind": "gsettings-write",
+      "key": "session-files",
+      "trigger": "Opening, closing, reordering, restoring, or externally renaming saved tabs triggers the existing session snapshot write site outside restore mode."
     },
     {
       "path": "src/window_preferences.rs",
@@ -208,30 +272,6 @@
       "kind": "gsettings-write",
       "key": "tab-width-or-indent-width",
       "trigger": "Post-commit SpinRow normalization writes the applied sanitized value back into the widget only. The syncing guard prevents this local update from becoming a per-keystroke GSettings write."
-    },
-    {
-      "path": "src/editor_tab/compare/scroll.rs",
-      "line": 178,
-      "match": "pane.adjustment.set_value(target.clamp(lower, upper));",
-      "kind": "gsettings-write",
-      "key": "gtk-adjustment",
-      "trigger": "Compare split-diff scroll synchronization updates the local GtkAdjustment for the peer pane only; this is not a GSettings write."
-    },
-    {
-      "path": "src/editor_tab/compare/scroll.rs",
-      "line": 272,
-      "match": "self.left.adjustment.set_value(value);",
-      "kind": "gsettings-write",
-      "key": "gtk-adjustment-test-helper",
-      "trigger": "GTK regression tests simulate a local scroll adjustment value; this test helper does not touch GSettings."
-    },
-    {
-      "path": "src/editor_tab/compare/hatch.rs",
-      "line": 179,
-      "match": "self.handlers.horizontal.adjustment.set_value(value);",
-      "kind": "gsettings-write",
-      "key": "gtk-adjustment-test-helper",
-      "trigger": "GTK regression tests simulate a local horizontal scroll adjustment value so hatch viewport positioning can be verified; this test helper does not touch GSettings."
     }
   ]
 }

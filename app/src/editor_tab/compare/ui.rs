@@ -80,10 +80,26 @@ pub(super) fn compare_toolbar(reference_title: &str) -> CompareToolbar {
         "win.diff-next",
     ));
     toolbar.append(&toolbar_button(
+        "pan-up-symbolic",
+        &pgettext("review action", "Reveal More Above"),
+        "win.compare-reveal-above",
+    ));
+    toolbar.append(&toolbar_button(
+        "pan-down-symbolic",
+        &pgettext("review action", "Reveal More Below"),
+        "win.compare-reveal-below",
+    ));
+    toolbar.append(&toolbar_button(
+        "view-fullscreen-symbolic",
+        &pgettext("review action", "Reveal All Hidden Lines"),
+        "win.compare-reveal-all",
+    ));
+    toolbar.append(&toolbar_button(
         "view-refresh-symbolic",
         &pgettext("compare action", "Refresh Reference"),
         "win.compare-refresh-reference",
     ));
+    toolbar.append(&menu_button());
     toolbar.append(&toolbar_button(
         "window-close-symbolic",
         &pgettext("compare action", "Exit Compare"),
@@ -104,6 +120,68 @@ pub(super) fn compare_toolbar(reference_title: &str) -> CompareToolbar {
     }
 }
 
+pub(in crate::editor_tab) fn review_toolbar() -> gtk4::Box {
+    let toolbar = gtk4::Box::builder()
+        .orientation(gtk4::Orientation::Horizontal)
+        .spacing(6)
+        .margin_start(6)
+        .margin_end(6)
+        .margin_top(6)
+        .margin_bottom(6)
+        .build();
+    toolbar.set_hexpand(true);
+    toolbar.append(
+        &gtk4::Label::builder()
+            .label(pgettext("review toolbar", "Review"))
+            .build(),
+    );
+    let spacer = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
+    spacer.set_hexpand(true);
+    toolbar.append(&spacer);
+    toolbar.append(&toolbar_button(
+        "go-up-symbolic",
+        &pgettext("compare action", "Previous Difference"),
+        "win.diff-prev",
+    ));
+    toolbar.append(&toolbar_button(
+        "go-down-symbolic",
+        &pgettext("compare action", "Next Difference"),
+        "win.diff-next",
+    ));
+    toolbar.append(&toolbar_button(
+        "document-open-symbolic",
+        &pgettext("review action", "Open Reviewed File"),
+        "win.open-reviewed-file",
+    ));
+    toolbar.append(&toolbar_button(
+        "view-list-symbolic",
+        &pgettext("review action", "Change List"),
+        "win.compare-change-list",
+    ));
+    toolbar.append(&toolbar_button(
+        "pan-up-symbolic",
+        &pgettext("review action", "Reveal More Above"),
+        "win.compare-reveal-above",
+    ));
+    toolbar.append(&toolbar_button(
+        "pan-down-symbolic",
+        &pgettext("review action", "Reveal More Below"),
+        "win.compare-reveal-below",
+    ));
+    toolbar.append(&toolbar_button(
+        "view-fullscreen-symbolic",
+        &pgettext("review action", "Reveal All Hidden Lines"),
+        "win.compare-reveal-all",
+    ));
+    toolbar.append(&toolbar_button(
+        "view-refresh-symbolic",
+        &pgettext("review action", "Refresh Review"),
+        "win.compare-refresh-review",
+    ));
+    toolbar.append(&menu_button());
+    toolbar
+}
+
 fn toolbar_button(icon_name: &str, tooltip: &str, action_name: &str) -> gtk4::Button {
     let button = gtk4::Button::builder()
         .icon_name(icon_name)
@@ -111,6 +189,17 @@ fn toolbar_button(icon_name: &str, tooltip: &str, action_name: &str) -> gtk4::Bu
         .action_name(action_name)
         .build();
     button.update_property(&[Property::Label(tooltip)]);
+    button
+}
+
+fn menu_button() -> gtk4::MenuButton {
+    let tooltip = pgettext("compare action", "Compare Options");
+    let button = gtk4::MenuButton::builder()
+        .icon_name("open-menu-symbolic")
+        .tooltip_text(&tooltip)
+        .menu_model(&super::menu::build_menu())
+        .build();
+    button.update_property(&[Property::Label(&tooltip)]);
     button
 }
 

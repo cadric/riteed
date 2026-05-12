@@ -92,6 +92,7 @@ pub(crate) fn run_path_action(state: &SourceStateRef, path: &[u8], action: GitRo
 }
 
 pub(crate) fn fire_state_change_handler(state: &SourceStateRef) {
+    super::review::sync_actions(&state.borrow());
     let handler = { state.borrow().state_change_handler.as_ref().map(Rc::clone) };
     if let Some(handler) = handler {
         handler();
@@ -250,7 +251,7 @@ fn compare_with_text(
     let Some(tab) = workspace
         .ordered_tabs()
         .into_iter()
-        .find(|tab| tab.uri().as_deref() == Some(uri.as_str()))
+        .find(|tab| tab.document_uri().as_deref() == Some(uri.as_str()))
     else {
         let weak = Rc::downgrade(state);
         let entry = entry.clone();
@@ -457,7 +458,7 @@ fn dirty_open_uris(state: &SourceControlState) -> Vec<String> {
         .ordered_tabs()
         .into_iter()
         .filter(|tab| tab.is_dirty())
-        .filter_map(|tab| tab.uri())
+        .filter_map(|tab| tab.document_uri())
         .collect()
 }
 

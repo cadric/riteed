@@ -1,48 +1,63 @@
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
+use std::collections::BTreeSet;
 use std::rc::Rc;
 
-use gettextrs::{gettext, ngettext, pgettext};
+use gettextrs::pgettext;
 use gtk4::{gio, prelude::*};
-use libadwaita as adw;
+use libadwaita::prelude::*;
 use sourceview5::prelude::*;
 
-use super::diff::compute_diff;
-use super::gutter::CompareGutters;
+use super::actions_state::refresh_action_states;
+use super::diff::{DiffOptions, compute_diff_with_options};
+use super::display::{CompareDisplayModel, CompareDisplayOptions, build_display_model};
+use super::gutter::{CompareGutters, UnifiedGutter};
 use super::hatch::{CompareHatchEndpoint, CompareHatches};
-use super::interaction::install_presentation_interaction;
+use super::layout::{
+    SPLIT_LAYOUT_NAME, UNIFIED_LAYOUT_NAME, build_compare_layout_root, build_compare_paned,
+    build_current_pane, build_reference_pane, build_unified_pane, connect_style_handlers,
+};
 use super::model::DiffRowModel;
 use super::navigation::{target_hunk_for_navigation, top_visible_row};
-use super::presentation::{DiffPresentation, PresentationSide};
+use super::presentation::DiffPresentation;
+use super::presentation_display::build_presentation_from_display;
 use super::render::{
-    CompareTags, apply_current_hunk_tags, apply_model_tags, apply_placeholder_tags,
+    CompareTags, apply_current_hunk_tags, apply_display_tags, apply_placeholder_tags,
     apply_presentation, clear_tags,
 };
+use super::render_unified::UnifiedTags;
 use super::scroll::{CompareScrollEndpoint, install_scroll_sync};
-use super::ui::{compare_toolbar, configure_presentation_view};
+use super::status::current_hunk_after_recompute;
+use super::ui::compare_toolbar;
+use super::unified::UnifiedPresentation;
+use super::viewport;
 use super::{CompareController, CompareTarget};
 use crate::editor_tab::EditorTab;
 use crate::editor_zoom::{clear_zoom_css_classes, restore_zoom_css_class};
+use crate::settings::{CompareReviewSettingsSnapshot, CompareViewMode};
 
 impl CompareController {
     pub(super) fn new(tab: &Rc<EditorTab>, target: CompareTarget) -> Self {
         let row_model = Rc::new(RefCell::new(DiffRowModel::empty()));
         let presentation = Rc::new(RefCell::new(DiffPresentation::empty()));
-        let left = build_presentation_pane(
-            tab,
-            &pgettext("compare pane", "Reference"),
-            &presentation,
-            PresentationSide::Reference,
-        );
-        let right = build_presentation_pane(
-            tab,
-            &pgettext("compare pane", "Current"),
-            &presentation,
-            PresentationSide::Current,
-        );
+        let display_model = Rc::new(RefCell::new(CompareDisplayModel::empty()));
+        let unified_presentation = Rc::new(RefCell::new(UnifiedPresentation::default()));
+        let left = build_reference_pane(tab, &presentation);
+        let right = build_current_pane(tab, &presentation);
+        let unified = build_unified_pane(tab);
         let gutters = CompareGutters::new(&left.view, &right.view, &presentation, &row_model);
+        let unified_gutter = UnifiedGutter::new(&unified.view, &unified_presentation);
         let toolbar = compare_toolbar(&target.title);
         let status_label = toolbar.status_label.clone();
         let paned = build_compare_paned(&left.root, &right.root);
+        let view_mode = tab.settings.compare_view_mode();
+        let view_mode_cell = Rc::new(Cell::new(view_mode));
+        let layout = build_compare_layout_root(
+            &paned,
+            &unified.root,
+            &left.view,
+            &unified.view,
+            Rc::clone(&view_mode_cell),
+        );
         let scroll_sync = install_scroll_sync(
             CompareScrollEndpoint {
                 adjustment: &left.scrolled.vadjustment(),
@@ -71,10 +86,12 @@ impl CompareController {
         );
         let style_handlers = connect_style_handlers(tab);
 
-        Self {
+        let mut controller = Self {
             target,
             toolbar: toolbar.root,
             status_label,
+            layout_root: layout.root,
+            layout_stack: layout.stack,
             paned,
             editable_snapshot: tab.buffer_text(),
             reference_text: String::new(),
@@ -82,10 +99,16 @@ impl CompareController {
             left_buffer: left.buffer.clone(),
             right_view: right.view,
             right_buffer: right.buffer.clone(),
+            unified_view: unified.view,
+            unified_buffer: unified.buffer.clone(),
             tags: CompareTags::new(&left.buffer, &right.buffer),
+            unified_tags: UnifiedTags::new(&unified.buffer),
             presentation,
+            display_model,
             row_model,
+            unified_presentation,
             gutters,
+            unified_gutter,
             hatches,
             scroll_sync,
             current_hunk: None,
@@ -93,7 +116,24 @@ impl CompareController {
             style_manager: style_handlers.manager,
             style_handler: Some(style_handlers.style_handler),
             high_contrast_handler: Some(style_handlers.high_contrast_handler),
-        }
+            diff_options: DiffOptions {
+                ignore_leading_trailing_whitespace: tab
+                    .settings
+                    .compare_ignore_leading_trailing_whitespace(),
+            },
+            review_settings: tab.settings.compare_review_settings_snapshot(),
+            view_mode,
+            view_mode_cell,
+            revealed_rows: BTreeSet::new(),
+            hidden_trim_whitespace_differences: false,
+        };
+        super::clipboard::install_unified_clipboard(
+            &controller.unified_view,
+            &controller.unified_buffer,
+            &controller.unified_presentation,
+        );
+        controller.sync_layout();
+        controller
     }
 
     pub(super) fn set_loading(&mut self, cancellable: &gio::Cancellable) {
@@ -123,28 +163,22 @@ impl CompareController {
     }
 
     pub(super) fn recompute(&mut self) -> Option<usize> {
-        clear_tags(&self.left_buffer, &self.right_buffer, &self.tags);
         let previous = self.current_hunk;
-        let computation = compute_diff(&self.reference_text, &self.editable_snapshot);
+        let computation = compute_diff_with_options(
+            &self.reference_text,
+            &self.editable_snapshot,
+            self.diff_options,
+        );
         let model = computation.model;
-        let presentation = computation.presentation;
+        let display = self.display_for_model(&model);
         let hunk_count = model.hunks.len();
         let too_large = model.too_large;
-        apply_presentation(&self.left_buffer, &self.right_buffer, &presentation);
         self.current_hunk = current_hunk_after_recompute(previous, hunk_count, too_large);
+        self.hidden_trim_whitespace_differences = computation.hidden_trim_whitespace_differences;
         self.row_model.borrow_mut().clone_from(&model);
-        self.presentation.borrow_mut().clone_from(&presentation);
-        self.gutters.refresh();
-        self.hatches.refresh();
-        apply_model_tags(&self.left_buffer, &self.right_buffer, &model, &self.tags);
-        apply_placeholder_tags(
-            &self.left_buffer,
-            &self.right_buffer,
-            &presentation,
-            &self.tags,
-        );
-        self.apply_current_hunk();
-        self.update_status();
+        self.apply_display_model(&display);
+        self.update_status(computation.hidden_trim_whitespace_differences);
+        refresh_action_states(self);
         if self.current_hunk == Some(0) {
             return self.current_hunk_row();
         }
@@ -156,7 +190,11 @@ impl CompareController {
         if model.hunks.is_empty() || model.too_large {
             return;
         }
-        let top_row = top_visible_row(&self.left_view, model.rows.len());
+        let display = self.display_model.borrow();
+        let display_top_row = top_visible_row(&self.left_view, display.visible_row_count());
+        let top_row = display
+            .logical_row_for_display(display_top_row)
+            .unwrap_or(display_top_row);
         let base_row = self
             .current_hunk
             .and_then(|index| model.hunks.get(index))
@@ -169,8 +207,47 @@ impl CompareController {
         drop(model);
         self.current_hunk = Some(next);
         self.apply_current_hunk();
-        self.update_status();
+        self.update_status(false);
+        refresh_action_states(self);
         let _scrolled = self.scroll_current_hunk();
+    }
+
+    pub(super) fn reveal_above(&mut self) {
+        self.reveal_context(RevealScope::Above);
+    }
+
+    pub(super) fn reveal_below(&mut self) {
+        self.reveal_context(RevealScope::Below);
+    }
+
+    pub(super) fn reveal_all(&mut self) {
+        self.reveal_context(RevealScope::All);
+    }
+
+    pub(super) fn can_reveal_context(&self) -> bool {
+        self.current_collapsed_marker().is_some()
+    }
+
+    #[must_use]
+    pub(super) fn uses_unified_layout(&self) -> bool {
+        self.layout_is_unified()
+    }
+
+    pub(super) fn apply_settings(
+        &mut self,
+        snapshot: CompareReviewSettingsSnapshot,
+        view_mode: CompareViewMode,
+    ) -> Option<usize> {
+        let viewport = viewport::capture(self.active_view());
+        self.review_settings = snapshot;
+        self.diff_options.ignore_leading_trailing_whitespace =
+            snapshot.ignore_leading_trailing_whitespace;
+        self.view_mode = view_mode;
+        self.sync_layout();
+        self.apply_wrap_override();
+        let row = self.recompute();
+        viewport::restore(&viewport, self.active_view());
+        row
     }
 
     pub(super) fn apply_current_hunk(&self) {
@@ -183,32 +260,78 @@ impl CompareController {
         );
     }
 
+    fn apply_display_model(&mut self, display: &CompareDisplayModel) {
+        clear_tags(&self.left_buffer, &self.right_buffer, &self.tags);
+        let presentation = build_presentation_from_display(display);
+        apply_presentation(&self.left_buffer, &self.right_buffer, &presentation);
+        self.apply_unified_display(display, self.hidden_trim_whitespace_differences);
+        self.presentation.borrow_mut().clone_from(&presentation);
+        self.display_model.borrow_mut().clone_from(display);
+        self.gutters.refresh();
+        self.unified_gutter.refresh();
+        self.hatches.refresh();
+        apply_display_tags(&self.left_buffer, &self.right_buffer, display, &self.tags);
+        apply_placeholder_tags(
+            &self.left_buffer,
+            &self.right_buffer,
+            &presentation,
+            &self.tags,
+        );
+        self.apply_current_hunk();
+    }
+
+    fn display_for_model(&self, model: &DiffRowModel) -> CompareDisplayModel {
+        let reference_lines = line_slices(&self.reference_text);
+        let current_lines = line_slices(&self.editable_snapshot);
+        let options = CompareDisplayOptions {
+            collapse_unchanged: self.review_settings.collapse_unchanged,
+            context_lines: usize::try_from(self.review_settings.context_lines)
+                .map_or(3, |value| value)
+                .clamp(1, 10),
+            revealed_rows: self.revealed_rows.clone(),
+        };
+        build_display_model(None, model, &reference_lines, &current_lines, &options)
+    }
+
     pub(super) fn apply_tag_colors(&self) {
         self.tags.apply_colors(&self.left_view);
+        self.unified_tags.apply_colors(&self.unified_view);
         self.hatches.refresh_style();
     }
 
     pub(crate) fn apply_wrap_override(&self) {
         self.left_view.set_wrap_mode(gtk4::WrapMode::None);
         self.right_view.set_wrap_mode(gtk4::WrapMode::None);
+        let unified_wrap = if self.review_settings.word_wrap {
+            gtk4::WrapMode::WordChar
+        } else {
+            gtk4::WrapMode::None
+        };
+        self.unified_view.set_wrap_mode(unified_wrap);
         self.left_view.set_show_line_numbers(false);
         self.right_view.set_show_line_numbers(false);
+        self.unified_view.set_show_line_numbers(false);
         self.left_view.set_show_line_marks(false);
         self.right_view.set_show_line_marks(false);
+        self.unified_view.set_show_line_marks(false);
         self.hatches.refresh();
     }
 
     pub(super) fn clear_zoom_style(&self) {
         clear_zoom_css_classes(&self.left_view);
         clear_zoom_css_classes(&self.right_view);
+        clear_zoom_css_classes(&self.unified_view);
         self.gutters.refresh();
+        self.unified_gutter.refresh();
         self.hatches.refresh();
     }
 
     pub(super) fn restore_zoom_style(&self, css_class: &str) {
         restore_zoom_css_class(&self.left_view, css_class);
         restore_zoom_css_class(&self.right_view, css_class);
+        restore_zoom_css_class(&self.unified_view, css_class);
         self.gutters.refresh();
+        self.unified_gutter.refresh();
         self.hatches.refresh();
     }
 
@@ -229,155 +352,157 @@ impl CompareController {
         let index = self.current_hunk?;
         let model = self.row_model.borrow();
         let hunk = model.hunks.get(index)?;
-        Some(hunk.first_row)
+        self.display_model
+            .borrow()
+            .row_for_logical(hunk.first_row)
+            .or(Some(hunk.first_row))
     }
 
-    fn update_status(&self) {
-        let model = self.row_model.borrow();
-        if model.too_large {
-            self.status_label
-                .set_label(&gettext("Too large to compare differences."));
+    fn sync_layout(&mut self) {
+        let viewport = viewport::capture(self.active_view());
+        self.view_mode_cell.set(self.view_mode);
+        match self.view_mode {
+            CompareViewMode::Unified => self
+                .layout_stack
+                .set_visible_child_name(UNIFIED_LAYOUT_NAME),
+            CompareViewMode::Adaptive if self.layout_root.current_breakpoint().is_some() => self
+                .layout_stack
+                .set_visible_child_name(UNIFIED_LAYOUT_NAME),
+            CompareViewMode::Split | CompareViewMode::Adaptive => {
+                self.layout_stack.set_visible_child_name(SPLIT_LAYOUT_NAME);
+            }
+        }
+        viewport::restore(&viewport, self.active_view());
+    }
+
+    fn layout_is_unified(&self) -> bool {
+        self.layout_stack
+            .visible_child_name()
+            .is_some_and(|name| name.as_str() == UNIFIED_LAYOUT_NAME)
+    }
+
+    fn active_view(&self) -> &sourceview5::View {
+        if self.layout_is_unified() {
+            &self.unified_view
+        } else {
+            &self.left_view
+        }
+    }
+
+    fn current_unified_line(&self) -> Option<usize> {
+        if !self.layout_is_unified() {
+            return None;
+        }
+        let iter = self
+            .unified_buffer
+            .iter_at_mark(&self.unified_buffer.get_insert());
+        usize::try_from(iter.line()).ok()
+    }
+
+    fn current_collapsed_marker(&self) -> Option<CollapsedMarker> {
+        let cursor = self.current_unified_line()?;
+        let presentation = self.unified_presentation.borrow();
+        let mut line_index = cursor.min(presentation.lines.len().saturating_sub(1));
+        loop {
+            let line = presentation.lines.get(line_index)?;
+            if let super::display::DisplayRowIdKind::Collapsed {
+                hidden_start,
+                hidden_end,
+            } = line.display_row_id.kind
+            {
+                return Some(CollapsedMarker {
+                    hidden_start,
+                    hidden_end,
+                });
+            }
+            if line_index == 0 {
+                return None;
+            }
+            line_index = line_index.saturating_sub(1);
+        }
+    }
+
+    fn reveal_context(&mut self, scope: RevealScope) {
+        let Some(marker) = self.current_collapsed_marker() else {
+            return;
+        };
+        let rows = reveal_rows(
+            marker.hidden_start,
+            marker.hidden_end,
+            self.review_settings.context_lines,
+            scope,
+        );
+        if rows.is_empty() {
             return;
         }
-        let hunk_count = model.hunks.len();
-        if hunk_count == 0 {
-            self.status_label
-                .set_label(&gettext("No differences were found."));
+        let before = self.revealed_rows.len();
+        self.revealed_rows.extend(rows);
+        if self.revealed_rows.len() == before {
             return;
         }
-        let changed_lines = model.changed_row_count();
-        self.status_label.set_label(&compare_status_text(
-            changed_lines,
-            self.current_hunk,
-            hunk_count,
-        ));
+        let viewport = viewport::capture(&self.unified_view);
+        let display = {
+            let model = self.row_model.borrow();
+            self.display_for_model(&model)
+        };
+        self.apply_display_model(&display);
+        let cursor = self.remaining_marker_line(marker.hidden_start, marker.hidden_end);
+        viewport::restore_with_cursor_line(&viewport, &self.unified_view, cursor);
+        refresh_action_states(self);
+    }
+
+    fn remaining_marker_line(&self, old_start: usize, old_end: usize) -> Option<usize> {
+        self.unified_presentation
+            .borrow()
+            .lines
+            .iter()
+            .enumerate()
+            .find_map(|(line_index, line)| {
+                let super::display::DisplayRowIdKind::Collapsed {
+                    hidden_start,
+                    hidden_end,
+                } = line.display_row_id.kind
+                else {
+                    return None;
+                };
+                (hidden_start >= old_start && hidden_end <= old_end).then_some(line_index)
+            })
     }
 }
 
-fn compare_status_text(
-    changed_lines: usize,
-    current_hunk: Option<usize>,
-    hunk_count: usize,
-) -> String {
-    let plural_count = u32::try_from(changed_lines).map_or(u32::MAX, |value| value);
-    let changed_lines = changed_lines.to_string();
-    if let Some(current) = current_hunk {
-        return ngettext(
-            "%1$d changed line - %2$d/%3$d",
-            "%1$d changed lines - %2$d/%3$d",
-            plural_count,
-        )
-        .replace("%1$d", &changed_lines)
-        .replace("%2$d", &(current + 1).to_string())
-        .replace("%3$d", &hunk_count.to_string());
+#[derive(Clone, Copy)]
+struct CollapsedMarker {
+    hidden_start: usize,
+    hidden_end: usize,
+}
+
+#[derive(Clone, Copy)]
+enum RevealScope {
+    Above,
+    Below,
+    All,
+}
+
+fn reveal_rows(
+    hidden_start: usize,
+    hidden_end: usize,
+    context_lines: i32,
+    scope: RevealScope,
+) -> Vec<usize> {
+    let hidden_count = hidden_end.saturating_sub(hidden_start);
+    if hidden_count == 0 {
+        return Vec::new();
     }
-    ngettext("%d changed line", "%d changed lines", plural_count).replace("%d", &changed_lines)
-}
-
-struct PresentationPane {
-    root: gtk4::Box,
-    buffer: sourceview5::Buffer,
-    view: sourceview5::View,
-    scrolled: gtk4::ScrolledWindow,
-}
-
-struct StyleHandlers {
-    manager: adw::StyleManager,
-    style_handler: gtk4::glib::SignalHandlerId,
-    high_contrast_handler: gtk4::glib::SignalHandlerId,
-}
-
-fn build_presentation_pane(
-    tab: &EditorTab,
-    title: &str,
-    presentation: &Rc<RefCell<DiffPresentation>>,
-    side: PresentationSide,
-) -> PresentationPane {
-    let buffer = sourceview5::Buffer::builder()
-        .enable_undo(false)
-        .implicit_trailing_newline(false)
-        .build();
-    tab.settings.apply_source_style_scheme(&buffer);
-    sync_reference_language(&tab.text_buffer, &buffer);
-    let view = sourceview5::View::with_buffer(&buffer);
-    configure_presentation_view(tab, &view);
-    install_presentation_interaction(&view, &buffer, presentation, side);
-    let scrolled = gtk4::ScrolledWindow::builder()
-        .hscrollbar_policy(gtk4::PolicyType::Automatic)
-        .vscrollbar_policy(gtk4::PolicyType::Automatic)
-        .child(&view)
-        .build();
-    scrolled.set_hexpand(true);
-    scrolled.set_vexpand(true);
-    scrolled.set_min_content_width(0);
-    let label = gtk4::Label::builder()
-        .label(title)
-        .xalign(0.0)
-        .margin_start(12)
-        .margin_end(12)
-        .margin_bottom(4)
-        .build();
-    label.add_css_class("dim-label");
-    let root = gtk4::Box::builder()
-        .orientation(gtk4::Orientation::Vertical)
-        .build();
-    root.append(&label);
-    root.append(&scrolled);
-    PresentationPane {
-        root,
-        buffer,
-        view,
-        scrolled,
-    }
-}
-
-fn build_compare_paned(
-    left: &impl IsA<gtk4::Widget>,
-    right: &impl IsA<gtk4::Widget>,
-) -> gtk4::Paned {
-    let paned = gtk4::Paned::new(gtk4::Orientation::Horizontal);
-    paned.set_resize_start_child(true);
-    paned.set_shrink_start_child(false);
-    paned.set_resize_end_child(true);
-    paned.set_shrink_end_child(false);
-    paned.set_start_child(Some(left));
-    paned.set_end_child(Some(right));
-    paned.set_hexpand(true);
-    paned.set_vexpand(true);
-    paned
-}
-
-fn connect_style_handlers(tab: &Rc<EditorTab>) -> StyleHandlers {
-    let manager = adw::StyleManager::default();
-    let weak = Rc::downgrade(tab);
-    let style_handler = manager.connect_dark_notify(move |_| {
-        if let Some(tab) = weak.upgrade() {
-            tab.apply_compare_style();
-        }
-    });
-    let weak = Rc::downgrade(tab);
-    let high_contrast_handler = manager.connect_high_contrast_notify(move |_| {
-        if let Some(tab) = weak.upgrade() {
-            tab.apply_compare_style();
-        }
-    });
-    StyleHandlers {
-        manager,
-        style_handler,
-        high_contrast_handler,
-    }
-}
-
-fn current_hunk_after_recompute(
-    previous: Option<usize>,
-    hunk_count: usize,
-    too_large: bool,
-) -> Option<usize> {
-    if hunk_count == 0 || too_large {
-        return None;
-    }
-    let previous = previous.map_or(0, |previous| previous);
-    Some(previous.min(hunk_count - 1))
+    let context = usize::try_from(context_lines)
+        .map_or(3, |value| value)
+        .clamp(1, 10)
+        .min(hidden_count);
+    let range = match scope {
+        RevealScope::Above => hidden_start..hidden_start.saturating_add(context),
+        RevealScope::Below => hidden_end.saturating_sub(context)..hidden_end,
+        RevealScope::All => hidden_start..hidden_end,
+    };
+    range.collect()
 }
 
 fn ellipsis_label(mut label: String) -> String {
@@ -385,13 +510,12 @@ fn ellipsis_label(mut label: String) -> String {
     label
 }
 
-pub(super) fn sync_reference_language(
-    editable_buffer: &sourceview5::Buffer,
-    reference_buffer: &sourceview5::Buffer,
-) {
-    let language = editable_buffer.language();
-    reference_buffer.set_language(language.as_ref());
-    reference_buffer.set_highlight_syntax(language.is_some());
+fn line_slices(text: &str) -> Vec<&str> {
+    if text.is_empty() {
+        Vec::new()
+    } else {
+        text.split_inclusive('\n').collect()
+    }
 }
 
 impl Drop for CompareController {
@@ -405,18 +529,5 @@ impl Drop for CompareController {
         if let Some(handler) = self.high_contrast_handler.take() {
             self.style_manager.disconnect(handler);
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::compare_status_text;
-
-    #[test]
-    fn compare_status_text_keeps_hunk_position_translatable() {
-        assert_eq!(compare_status_text(1, None, 2), "1 changed line");
-        assert_eq!(compare_status_text(2, None, 2), "2 changed lines");
-        assert_eq!(compare_status_text(1, Some(0), 2), "1 changed line - 1/2");
-        assert_eq!(compare_status_text(2, Some(1), 2), "2 changed lines - 2/2");
     }
 }

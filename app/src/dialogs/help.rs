@@ -79,6 +79,12 @@ fn help_overview_page() -> adw::PreferencesPage {
         ),
     ));
     source_control.add(&help_row(
+        &pgettext("help row", "Compare and Review"),
+        &gettext(
+            "Use Compare or Source Control reviews to switch between split and unified diff views, collapse unchanged lines, ignore trim-only whitespace noise, and move through changes with F8 and Shift+F8.",
+        ),
+    ));
+    source_control.add(&help_row(
         &pgettext("help row", "Stage and Commit"),
         &gettext(
             "Use the active tab's header-bar Git actions or a Source Control row context menu to stage or unstage files, then write a commit message and commit local staged changes with the Git identity from the Source Control page in Preferences.",

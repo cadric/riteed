@@ -18,6 +18,10 @@ impl EditorTab {
         file: &gio::File,
         callback: Rc<dyn Fn(Result<String, AppError>)>,
     ) {
+        if !self.is_document() {
+            callback(Err(AppError::Cancelled));
+            return;
+        }
         self.load_file_with_candidates(parent, file, None, callback);
     }
 
@@ -27,11 +31,15 @@ impl EditorTab {
         should_apply: Rc<dyn Fn() -> bool>,
         callback: Rc<dyn Fn(Result<ReloadResult, AppError>)>,
     ) {
+        if !self.is_document() {
+            callback(Err(AppError::MissingSavePath));
+            return;
+        }
         let Some(saved_file) = self.saved_file() else {
             callback(Err(AppError::MissingSavePath));
             return;
         };
-        let Some(expected_uri) = self.uri() else {
+        let Some(expected_uri) = self.document_uri() else {
             callback(Err(AppError::MissingSavePath));
             return;
         };
@@ -108,6 +116,10 @@ impl EditorTab {
         parent: &adw::ApplicationWindow,
         callback: Rc<dyn Fn(Result<(), AppError>)>,
     ) {
+        if !self.is_document() {
+            callback(Err(AppError::MissingSavePath));
+            return;
+        }
         if self.state.borrow().ui.external_prompt_active {
             callback(Err(AppError::Cancelled));
             return;
@@ -244,7 +256,7 @@ impl EditorTab {
             callback(Err(AppError::MissingSavePath));
             return;
         };
-        let Some(expected_uri) = self.uri() else {
+        let Some(expected_uri) = self.document_uri() else {
             callback(Err(AppError::MissingSavePath));
             return;
         };
@@ -271,7 +283,7 @@ impl EditorTab {
                         }
                         match result {
                             Ok(document) => {
-                                if tab.uri().as_deref() != Some(expected_uri.as_str())
+                                if tab.document_uri().as_deref() != Some(expected_uri.as_str())
                                     || !tab.monitor_target_matches_current()
                                 {
                                     tab.set_loading(false);

@@ -1,45 +1,4 @@
 {
   "version": 1,
-  "sites": [
-    {
-      "path": "src/app.rs",
-      "line": 39,
-      "match": "state: Rc<RefCell<AppState>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The application controller owns shared multi-window lifecycle state.",
-      "justification": "App actions and lifecycle signals route to the last-focused editor window and maintain a window registry without global statics."
-    },
-    {
-      "path": "src/app.rs",
-      "line": 97,
-      "match": "pub(crate) fn install_for_tests(app: &adw::Application, state: &Rc<RefCell<AppState>>) {",
-      "kind": "runtime-shared-state",
-      "ownership": "GTK tests reuse the shared application-state container.",
-      "justification": "The test harness drives the same window routing and activation paths as runtime code, including last-focused resolution."
-    },
-    {
-      "path": "src/app.rs",
-      "line": 360,
-      "match": "fn resolve_window(state: &Rc<RefCell<AppState>>) -> Option<Rc<Window>> {",
-      "kind": "runtime-shared-state",
-      "ownership": "Active editor window resolution reads shared application state.",
-      "justification": "Window routing prefers the last-focused editor window while still allowing a deterministic fallback when focus tracking is unavailable."
-    },
-    {
-      "path": "src/app.rs",
-      "line": 424,
-      "match": "fn register_window(state: &Rc<RefCell<AppState>>, window: &Rc<Window>) {",
-      "kind": "runtime-shared-state",
-      "ownership": "Window registration mutates shared application state.",
-      "justification": "Destroy and focus notifications must add/remove windows and update last-focused tracking to keep action routing correct."
-    },
-    {
-      "path": "src/app.rs",
-      "line": 463,
-      "match": "fn install_display_services(display: &gdk::Display, state: &Rc<RefCell<AppState>>) {",
-      "kind": "runtime-shared-state",
-      "ownership": "Startup display service installation mutates shared application state.",
-      "justification": "The global chrome provider must be installed once a display exists and then stored in AppState so all later windows receive the same palette controller."
-    }
-  ]
+  "sites": []
 }

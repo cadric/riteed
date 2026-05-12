@@ -85,8 +85,11 @@ pub(crate) fn request_open_file_then(
     }
     if let Some(existing) = find_tab_by_file(workspace, file) {
         if source != OpenSource::SessionRestore {
-            workspace
-                .remember_recent_uri(&existing.uri().unwrap_or_else(|| file.uri().to_string()));
+            workspace.remember_recent_uri(
+                &existing
+                    .document_uri()
+                    .unwrap_or_else(|| file.uri().to_string()),
+            );
         }
         if let Some(page) = existing.page() {
             workspace.tab_view.set_selected_page(&page);
@@ -157,7 +160,9 @@ fn process_open_request(workspace: &Rc<Workspace>, request: Rc<RefCell<OpenReque
 
     if let Some(existing) = find_tab_by_file(workspace, &file) {
         request.borrow_mut().successes += 1;
-        let existing_uri = existing.uri().unwrap_or_else(|| desired_uri.clone());
+        let existing_uri = existing
+            .document_uri()
+            .unwrap_or_else(|| desired_uri.clone());
         if source != OpenSource::SessionRestore {
             workspace.remember_recent_uri(&existing_uri);
         } else if request
@@ -337,7 +342,7 @@ fn find_tab_by_file(
         .tabs
         .iter()
         .find(|tab| {
-            tab.uri()
+            tab.document_uri()
                 .as_deref()
                 .is_some_and(|uri| file.equal(&gio::File::for_uri(uri)))
         })

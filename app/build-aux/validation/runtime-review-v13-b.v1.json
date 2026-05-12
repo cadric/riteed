@@ -1,0 +1,445 @@
+{
+  "version": 1,
+  "sites": [
+    {
+      "path": "src/source_control/live.rs",
+      "line": 220,
+      "match": "cancelled: Rc<Cell<bool>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control live-refresh scheduler owns timeout cancellation state.",
+      "justification": "GLib timeout one-shots have no Gio cancellable, so stale scheduler clones share a small cancellation flag before probing Git metadata or refreshing UI."
+    },
+    {
+      "path": "src/source_control/live.rs",
+      "line": 221,
+      "match": "last_refresh: Rc<RefCell<Option<Instant>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control live-refresh scheduler owns debounce and last-refresh state.",
+      "justification": "Git metadata monitor and polling callbacks need coalesced refresh timing and index-lock deferral without blocking the main loop."
+    },
+    {
+      "path": "src/source_control/live.rs",
+      "line": 231,
+      "match": "Rc::new(Path::exists),",
+      "kind": "runtime-sync-fs",
+      "ownership": "Source Control native live refresh owns the Git index-lock probe.",
+      "justification": "The scheduler disables this probe for portal and polling contexts; native index-lock deferral is a UI-jank optimization because git status tolerates concurrent index writes."
+    },
+    {
+      "path": "src/source_control/live.rs",
+      "line": 325,
+      "match": "if path.exists() {",
+      "kind": "runtime-sync-fs",
+      "ownership": "Source Control native metadata monitoring owns target existence probing.",
+      "justification": "Metadata targets are only resolved on native non-polling Git contexts; portal and non-native paths return before monitor target discovery."
+    },
+    {
+      "path": "src/source_control/live.rs",
+      "line": 328,
+      "match": "kind: if path.is_dir() {",
+      "kind": "runtime-sync-fs",
+      "ownership": "Source Control native metadata monitoring owns target kind probing.",
+      "justification": "Directory/file classification is only used to choose a native Gio monitor after portal paths have selected polling."
+    },
+    {
+      "path": "src/source_control/live.rs",
+      "line": 338,
+      "match": ".find(|ancestor| ancestor.exists())?;",
+      "kind": "runtime-sync-fs",
+      "ownership": "Source Control native metadata monitoring owns nearest-parent probing.",
+      "justification": "Nearest existing parent discovery is only used for native Git metadata monitor installation and is skipped for portal/polling contexts."
+    },
+    {
+      "path": "src/source_control/live.rs",
+      "line": 489,
+      "match": "fn counted_scheduler(check_index_lock: bool) -> (LiveScheduler, Rc<Cell<i32>>, Rc<Cell<i32>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control live-refresh tests own counters for scheduler probe and refresh callbacks.",
+      "justification": "The test-only counters prove cancelled and polling schedulers return before sync lock probes without sharing state outside the unit test."
+    },
+    {
+      "ownership": "The Source Control review loader owns the queued Git review load state for one review tab.",
+      "justification": "Blob and worktree reads complete asynchronously and need one cancellable queue, byte counter, and output accumulator without blocking the GTK main loop.",
+      "path": "src/source_control/review_loader.rs",
+      "line": 61,
+      "match": "source: Weak<RefCell<SourceControlState>>,",
+      "kind": "runtime-shared-state"
+    },
+    {
+      "ownership": "The Source Control review loader owns the queued Git review load state for one review tab.",
+      "justification": "Blob and worktree reads complete asynchronously and need one cancellable queue, byte counter, and output accumulator without blocking the GTK main loop.",
+      "path": "src/source_control/review_loader.rs",
+      "line": 74,
+      "match": "fn pump(load: Rc<RefCell<ReviewLoad>>) {",
+      "kind": "runtime-shared-state"
+    },
+    {
+      "ownership": "The Source Control review loader owns the queued Git review load state for one review tab.",
+      "justification": "Blob and worktree reads complete asynchronously and need one cancellable queue, byte counter, and output accumulator without blocking the GTK main loop.",
+      "path": "src/source_control/review_loader.rs",
+      "line": 85,
+      "match": "fn load_reference(load: Rc<RefCell<ReviewLoad>>, entry: GitStatusEntry) {",
+      "kind": "runtime-shared-state"
+    },
+    {
+      "ownership": "The Source Control review loader owns the queued Git review load state for one review tab.",
+      "justification": "Blob and worktree reads complete asynchronously and need one cancellable queue, byte counter, and output accumulator without blocking the GTK main loop.",
+      "path": "src/source_control/review_loader.rs",
+      "line": 111,
+      "match": "fn load_current(load: Rc<RefCell<ReviewLoad>>, entry: GitStatusEntry, reference: Option<String>) {",
+      "kind": "runtime-shared-state"
+    },
+    {
+      "ownership": "The Source Control review loader owns the queued Git review load state for one review tab.",
+      "justification": "Blob and worktree reads complete asynchronously and need one cancellable queue, byte counter, and output accumulator without blocking the GTK main loop.",
+      "path": "src/source_control/review_loader.rs",
+      "line": 143,
+      "match": "load: Rc<RefCell<ReviewLoad>>,",
+      "kind": "runtime-shared-state"
+    },
+    {
+      "ownership": "The Source Control review loader owns the queued Git review load state for one review tab.",
+      "justification": "Blob and worktree reads complete asynchronously and need one cancellable queue, byte counter, and output accumulator without blocking the GTK main loop.",
+      "path": "src/source_control/review_loader.rs",
+      "line": 175,
+      "match": "fn finish(load: &Rc<RefCell<ReviewLoad>>) {",
+      "kind": "runtime-shared-state"
+    },
+    {
+      "ownership": "The Source Control review loader owns the queued Git review load state for one review tab.",
+      "justification": "Blob and worktree reads complete asynchronously and need one cancellable queue, byte counter, and output accumulator without blocking the GTK main loop.",
+      "path": "src/source_control/review_loader.rs",
+      "line": 196,
+      "match": "load: &Rc<RefCell<ReviewLoad>>,",
+      "kind": "runtime-shared-state"
+    },
+    {
+      "ownership": "The Source Control review loader owns the queued Git review load state for one review tab.",
+      "justification": "Blob and worktree reads complete asynchronously and need one cancellable queue, byte counter, and output accumulator without blocking the GTK main loop.",
+      "path": "src/source_control/review_loader.rs",
+      "line": 219,
+      "match": "load: Rc<RefCell<ReviewLoad>>,",
+      "kind": "runtime-shared-state"
+    },
+    {
+      "ownership": "The Source Control review loader owns the queued Git review load state for one review tab.",
+      "justification": "Blob and worktree reads complete asynchronously and need one cancellable queue, byte counter, and output accumulator without blocking the GTK main loop.",
+      "path": "src/source_control/review_loader.rs",
+      "line": 249,
+      "match": "fn append_skip(load: &Rc<RefCell<ReviewLoad>>, entry: &GitStatusEntry, reason: &str) {",
+      "kind": "runtime-shared-state"
+    },
+    {
+      "path": "src/source_control/row_popover.rs",
+      "line": 21,
+      "match": "bound_path: RefCell<Option<Vec<u8>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The shared Source Control row popover owns the currently bound raw Git path.",
+      "justification": "One list-level popover is reused for recycled rows, so clicked buttons must read the most recently bound path instead of capturing per-row widgets."
+    },
+    {
+      "path": "src/source_control/tree_view.rs",
+      "line": 18,
+      "match": "type BoundRows = Rc<RefCell<Vec<BoundRow>>>;",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control tree view owns recycled tree-row bindings and a weak controller handle.",
+      "justification": "Tree rows are factory-recycled, so folder/file activation and keyboard context menus need current path-to-widget bindings without retaining the window strongly."
+    },
+    {
+      "path": "src/source_control/tree_view.rs",
+      "line": 25,
+      "match": "state_weak: Rc<RefCell<Weak<RefCell<SourceControlState>>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control tree owns a replaceable weak handle to the sidebar state.",
+      "justification": "The virtual ListView factory is created before the controller Rc exists; row action buttons need a weak state handle once construction finishes without keeping the window alive."
+    },
+    {
+      "path": "src/source_control/tree_view.rs",
+      "line": 84,
+      "match": "pub(super) fn connect_activation(&self, weak: Weak<RefCell<SourceControlState>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control tree activation hook borrows the controller weak state handle.",
+      "justification": "ListView activation resolves the current raw Git path and dispatches to the live sidebar state only if the controller still exists."
+    },
+    {
+      "path": "src/source_control/tree_view.rs",
+      "line": 237,
+      "match": "fn action_runner(state_weak: &Rc<RefCell<Weak<RefCell<SourceControlState>>>>) -> RowActionRunner {",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control tree factory shares the replaceable weak state handle with row setup and bind callbacks.",
+      "justification": "Recycled virtual rows need current sidebar state access for button sensitivity and tooltips without rebuilding the factory on every refresh."
+    },
+    {
+      "path": "src/source_control/tree_view.rs",
+      "line": 433,
+      "match": "weak: &Weak<RefCell<SourceControlState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Source Control activation dispatch borrows the controller weak state handle.",
+      "justification": "File and folder activation must avoid keeping the sidebar alive after teardown while still resolving actions against the current snapshot."
+    },
+    {
+      "path": "src/source_control/view_mode.rs",
+      "line": 23,
+      "match": "syncing: Rc<Cell<bool>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control view switcher owns its programmatic-toggle guard.",
+      "justification": "Tree/list mode synchronization must update buttons and stack visibility without recursively writing GSettings."
+    },
+    {
+      "path": "src/source_control/view_mode.rs",
+      "line": 24,
+      "match": "last_entries: RefCell<Vec<GitStatusEntry>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control view switcher owns its last rendered snapshot.",
+      "justification": "Tree/list no-op refreshes compare against the last prepared entries so automatic Git polling does not rebuild rows or reset selection."
+    },
+    {
+      "path": "src/source_control/view_mode.rs",
+      "line": 73,
+      "match": "pub(super) fn connect_activation(&self, weak: Weak<RefCell<SourceControlState>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control view switcher owns its programmatic-toggle guard.",
+      "justification": "Tree/list mode synchronization must update buttons and stack visibility without recursively writing GSettings."
+    },
+    {
+      "path": "src/window_appearance/editor_grid.rs",
+      "line": 24,
+      "match": "syncing: Cell<bool>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The editor palette grid owns its programmatic-sync guard.",
+      "justification": "Opening or refreshing editor palette tiles must update state without recursively writing GSettings."
+    },
+    {
+      "path": "src/window_appearance/editor_grid.rs",
+      "line": 25,
+      "match": "tiles: RefCell<Vec<EditorTile>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The editor palette grid owns its preview tile set.",
+      "justification": "Editor palette preview tiles are built dynamically and refreshed when app appearance or palette settings change."
+    },
+    {
+      "path": "src/window_compare.rs",
+      "line": 39,
+      "match": "compare_action_installed: Cell<bool>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The compare controller owns its action-installed guard.",
+      "justification": "Compare is hidden from the main menu during active compare sessions by removing the window action, so a mutable guard tracks whether the action is currently installed."
+    },
+    {
+      "path": "src/window_compare/dialog.rs",
+      "line": 436,
+      "match": "left: RefCell<CompareSlot>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The compare dialog owns the mutable left-side source selection.",
+      "justification": "Button callbacks update the left compare source while keeping the dialog responsive without spreading selection state across window code."
+    },
+    {
+      "path": "src/window_compare/dialog.rs",
+      "line": 437,
+      "match": "right: RefCell<CompareSlot>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The compare dialog owns the mutable right-side source selection.",
+      "justification": "Button callbacks update the right compare source and keep the Compare button sensitivity in sync with the current selection."
+    },
+    {
+      "path": "src/window_compare/paste_text.rs",
+      "line": 99,
+      "match": "handled: Cell<bool>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The paste-text dialog owns its close/accept guard.",
+      "justification": "The closed handler intentionally owns the dialog state, while the Compare button sets this guard before closing so the callback cannot receive both pasted text and cancellation."
+    },
+    {
+      "path": "src/window_compare/paste_text.rs",
+      "line": 100,
+      "match": "callback: RefCell<Option<PasteTextCallback>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The paste-text dialog owns its optional response callback.",
+      "justification": "Accept and close signals share one callback slot so generated pasted-text compare requests are delivered at most once without strong widget callback cycles."
+    },
+    {
+      "ownership": "The compare settings action group owns the settings-change subscriptions for the window lifetime.",
+      "justification": "GSettings change handlers must remain connected while the window actions exist so external preference writes stay synchronized with active compare and review tabs.",
+      "path": "src/window_compare/settings_actions.rs",
+      "line": 20,
+      "match": "subscriptions: RefCell<Vec<SettingsSubscription>>,",
+      "kind": "runtime-shared-state"
+    },
+    {
+      "path": "src/window_preferences.rs",
+      "line": 20,
+      "match": "_state: Rc<RefCell<PreferencesState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The preferences controller owns the staged editor-preferences state for the dialog lifetime.",
+      "justification": "SpinRow staging and syncing guards need one shared mutable state cell that all preference-row callbacks can borrow."
+    },
+    {
+      "path": "src/window_preferences.rs",
+      "line": 57,
+      "match": "state: &Rc<RefCell<PreferencesState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Preferences dialog owns one shared state handle for row callbacks and selected-document format controls.",
+      "justification": "Dialog rows update GSettings and selected-tab format state from GTK callbacks, so the shared main-thread state avoids divergent copies of preferences UI state."
+    },
+    {
+      "path": "src/window_preferences.rs",
+      "line": 109,
+      "match": "state: &Rc<RefCell<PreferencesState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Preferences dialog owns one shared state handle for row callbacks and selected-document format controls.",
+      "justification": "Dialog rows update GSettings and selected-tab format state from GTK callbacks, so the shared main-thread state avoids divergent copies of preferences UI state."
+    },
+    {
+      "path": "src/window_preferences.rs",
+      "line": 165,
+      "match": "state: &Rc<RefCell<PreferencesState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Preferences dialog owns one shared state handle for row callbacks and selected-document format controls.",
+      "justification": "Dialog rows update GSettings and selected-tab format state from GTK callbacks, so the shared main-thread state avoids divergent copies of preferences UI state."
+    },
+    {
+      "path": "src/window_preferences.rs",
+      "line": 187,
+      "match": "state: &Rc<RefCell<PreferencesState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Preferences dialog owns one shared state handle for row callbacks and selected-document format controls.",
+      "justification": "Dialog rows update GSettings and selected-tab format state from GTK callbacks, so the shared main-thread state avoids divergent copies of preferences UI state."
+    },
+    {
+      "path": "src/window_preferences.rs",
+      "line": 227,
+      "match": "state: &Rc<RefCell<PreferencesState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Preferences dialog owns one shared state handle for row callbacks and selected-document format controls.",
+      "justification": "Dialog rows update GSettings and selected-tab format state from GTK callbacks, so the shared main-thread state avoids divergent copies of preferences UI state."
+    },
+    {
+      "path": "src/window_preferences.rs",
+      "line": 282,
+      "match": "state: &Rc<RefCell<PreferencesState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Preferences dialog owns one shared state handle for row callbacks and selected-document format controls.",
+      "justification": "Dialog rows update GSettings and selected-tab format state from GTK callbacks, so the shared main-thread state avoids divergent copies of preferences UI state."
+    },
+    {
+      "path": "src/window_preferences.rs",
+      "line": 304,
+      "match": "state: &Rc<RefCell<PreferencesState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Preferences dialog owns one shared state handle for row callbacks and selected-document format controls.",
+      "justification": "Dialog rows update GSettings and selected-tab format state from GTK callbacks, so the shared main-thread state avoids divergent copies of preferences UI state."
+    },
+    {
+      "path": "src/window_preferences.rs",
+      "line": 348,
+      "match": "state: &Rc<RefCell<PreferencesState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Preferences dialog owns one shared state handle for row callbacks and selected-document format controls.",
+      "justification": "Dialog rows update GSettings and selected-tab format state from GTK callbacks, so the shared main-thread state avoids divergent copies of preferences UI state."
+    },
+    {
+      "path": "src/window_preferences.rs",
+      "line": 490,
+      "match": "fn with_syncing(state: &Rc<RefCell<PreferencesState>>, operation: impl FnOnce()) {",
+      "kind": "runtime-shared-state",
+      "ownership": "The dialog-scoped syncing helper mutates the shared preferences state.",
+      "justification": "Preferences initialization and sanitized write-back need one explicit guard that suppresses recursive signals without weakening GSettings timing rules."
+    },
+    {
+      "path": "src/window_preferences.rs",
+      "line": 496,
+      "match": "fn spin_dirty(state: &Rc<RefCell<PreferencesState>>, dirty_spin: DirtySpin) -> bool {",
+      "kind": "runtime-shared-state",
+      "ownership": "The staged SpinRow read helper borrows the shared preferences state.",
+      "justification": "The dialog must be able to query whether a numeric row has staged changes before deciding to commit on focus-out."
+    },
+    {
+      "path": "src/window_preferences.rs",
+      "line": 504,
+      "match": "fn set_spin_dirty(state: &Rc<RefCell<PreferencesState>>, dirty_spin: DirtySpin, value: bool) {",
+      "kind": "runtime-shared-state",
+      "ownership": "The staged SpinRow write helper mutates the shared preferences state.",
+      "justification": "Numeric preference rows need one explicit place to mark staged edits dirty or clean as the user types and the dialog commits."
+    },
+    {
+      "path": "src/window_project.rs",
+      "line": 68,
+      "match": "sidebar_position_guard: Rc<Cell<bool>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The project sidebar owns a shared programmatic-position guard.",
+      "justification": "Animated GtkPaned position updates must bypass drag clamping in both directions while user drag input can still cancel the animation."
+    },
+    {
+      "path": "src/window_project.rs",
+      "line": 84,
+      "match": "state: Rc<RefCell<ProjectState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The window project controller owns shared project sidebar state.",
+      "justification": "Sidebar actions, async folder open/restore, refresh, and tab→tree reveal must coordinate through one mutable state cell."
+    },
+    {
+      "path": "src/window_project.rs",
+      "line": 110,
+      "match": "let tree_activation_handler: Rc<RefCell<Option<TreeActivationHandler>>> =",
+      "kind": "runtime-shared-state",
+      "ownership": "Tree activation wiring stores one late-bound handler closure.",
+      "justification": "Activation callbacks need the project state Rc after construction without creating a reference cycle between the tree and controller."
+    },
+    {
+      "path": "src/window_project/app_open.rs",
+      "line": 19,
+      "match": "pub(super) fn handle_application_open(state: &Rc<RefCell<ProjectState>>, files: Vec<gio::File>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "App-open handling borrows shared project state.",
+      "justification": "GApplication::open classification needs access to project state so a folder input can replace the active project root."
+    },
+    {
+      "path": "src/window_project/app_open.rs",
+      "line": 87,
+      "match": "state: &Rc<RefCell<ProjectState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The project controller owns one shared project-root state for open, close, restore, and app-open flows.",
+      "justification": "Project root changes coordinate sidebar, Source Control, search, settings, and toast state; shared main-thread state keeps those callbacks ordered while borrows are dropped before external handlers run."
+    },
+    {
+      "path": "src/window_project/app_open.rs",
+      "line": 34,
+      "match": "request: Rc<RefCell<AppOpenRequest>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The app-open request accumulates classification results across async callbacks.",
+      "justification": "Mixed directory/file opens must collect results before deciding which folder to activate and which files to open as tabs."
+    },
+    {
+      "path": "src/window_project/app_open.rs",
+      "line": 33,
+      "match": "state: &Rc<RefCell<ProjectState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The project controller owns one shared project-root state for open, close, restore, and app-open flows.",
+      "justification": "Project root changes coordinate sidebar, Source Control, search, settings, and toast state; shared main-thread state keeps those callbacks ordered while borrows are dropped before external handlers run."
+    },
+    {
+      "path": "src/window_project/app_open.rs",
+      "line": 88,
+      "match": "request: &Rc<RefCell<AppOpenRequest>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The app-open finisher reads the accumulated request state.",
+      "justification": "Finishing needs the collected directory/file lists to open the first folder and then open any remaining files as tabs."
+    },
+    {
+      "path": "src/window_project/auto_refresh.rs",
+      "line": 13,
+      "match": "pending: Rc<Cell<bool>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The project auto-refresh coalescer owns the pending refresh flag.",
+      "justification": "Directory monitors can emit bursts across multiple folders, so the controller needs one shared pending flag to schedule at most one refresh per debounce window."
+    },
+    {
+      "path": "src/window_project/auto_refresh.rs",
+      "line": 38,
+      "match": "pub(super) fn refresh_tree(state: &Rc<std::cell::RefCell<ProjectState>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "Refresh handling borrows shared project state.",
+      "justification": "Manual and monitor-triggered refresh need the active root, expansion snapshotting, and reveal coordination without spawning background threads."
+    }
+  ]
+}

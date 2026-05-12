@@ -100,6 +100,10 @@ fn on_banner_action(workspace: &Rc<Workspace>, tab: &Rc<EditorTab>) {
         Some(BannerActionKind::SaveAs) => {
             workspace.request_save_tab(tab, true, Rc::new(|_result| {}));
         }
+        Some(BannerActionKind::RefreshReview) => {
+            workspace.refresh_review_tab(tab);
+            workspace.refresh_selected_state();
+        }
         None => {}
     }
 }

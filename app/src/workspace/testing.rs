@@ -45,7 +45,7 @@ impl Workspace {
 
     pub(crate) fn selected_saved_uri(&self) -> String {
         self.selected_tab()
-            .and_then(|tab| tab.uri())
+            .and_then(|tab| tab.document_uri())
             .unwrap_or_default()
     }
 

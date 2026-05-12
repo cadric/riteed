@@ -1,40 +1,4 @@
 {
   "version": 1,
-  "strings": [
-    {
-      "path": "src/document_statistics.rs",
-      "line": 27,
-      "match": "crate::dialog_shell::build_dialog_shell(&gettext(\"Document Statistics\"), 420, None, true);",
-      "kind": "i18n-short-string",
-      "resolution": "This short dialog title appears at the top of the document statistics surface, whose rows immediately explain document and selection counts."
-    },
-    {
-      "path": "src/document_statistics.rs",
-      "line": 43,
-      "match": "crate::dialog_shell::build_dialog_shell(&gettext(\"Document Statistics\"), 420, None, true);",
-      "kind": "i18n-short-string",
-      "resolution": "This short dialog title appears at the top of the document statistics surface, whose rows immediately explain document and selection counts."
-    },
-    {
-      "path": "src/editor_search/mod.rs",
-      "line": 418,
-      "match": "gettext(\"No matches\")",
-      "kind": "i18n-short-string",
-      "resolution": "This short result label appears inside the find bar next to the previous/next controls and only after a concrete query produced zero matches."
-    },
-    {
-      "path": "src/window_project/root.rs",
-      "line": 225,
-      "match": "state.browser.set_title(&gettext(\"Project\"));",
-      "kind": "i18n-short-string",
-      "resolution": "This short title labels the project sidebar when no folder title is available; the surrounding sidebar controls provide the project context."
-    },
-    {
-      "path": "src/window_project/root.rs",
-      "line": 250,
-      "match": "state.browser.set_title(&gettext(\"Project\"));",
-      "kind": "i18n-short-string",
-      "resolution": "This short title labels the project sidebar when no folder title is available; the surrounding sidebar controls provide the project context."
-    }
-  ]
+  "strings": []
 }

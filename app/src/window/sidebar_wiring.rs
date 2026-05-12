@@ -52,6 +52,7 @@ pub(super) fn install(
     project.set_sidebar_visibility_handler(find_in_files.sidebar_visibility_handler());
     source_control.set_status_handler(project.git_status_handler());
     workspace.set_save_notification_handler(source_control.save_notification_handler());
+    workspace.set_review_refresh_handler(source_control.review_refresh_handler());
 
     let project_for_search = project.clone();
     search_coordinator::install(

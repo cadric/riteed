@@ -16,6 +16,15 @@ impl EditorTab {
     }
 
     pub fn apply_word_wrap(&self) {
+        if self.kind() == super::TabKind::GitReview {
+            let wrap_mode = if self.settings.compare_word_wrap() {
+                gtk4::WrapMode::WordChar
+            } else {
+                gtk4::WrapMode::None
+            };
+            self.text_view.set_wrap_mode(wrap_mode);
+            return;
+        }
         if let Ok(state) = self.state.try_borrow()
             && let Some(compare) = state.compare.active.as_ref()
         {

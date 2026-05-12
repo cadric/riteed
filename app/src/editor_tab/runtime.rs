@@ -52,7 +52,8 @@ impl EditorTab {
 
     #[must_use]
     pub fn can_reopen_with_encoding(&self) -> bool {
-        self.saved_file().is_some()
+        self.is_document()
+            && self.saved_file().is_some()
             && !self.pending_external_state().is_missing()
             && !self.is_loading()
             && !self.state.borrow().ui.external_prompt_active
@@ -62,6 +63,9 @@ impl EditorTab {
         &self,
         line_ending_mode: crate::editor_format::LineEndingMode,
     ) {
+        if !self.is_document() {
+            return;
+        }
         let changed = {
             let mut state = self.state.borrow_mut();
             if state.document.document.format().line_ending_mode() == line_ending_mode {
@@ -80,6 +84,9 @@ impl EditorTab {
     }
 
     pub fn set_current_encoding(&self, encoding: crate::editor_format::EncodingInfo) {
+        if !self.is_document() {
+            return;
+        }
         let changed = {
             let mut state = self.state.borrow_mut();
             if state.document.document.format().encoding() == &encoding {
@@ -322,7 +329,7 @@ impl EditorTab {
         expected_uri: &str,
         should_apply: &Rc<dyn Fn() -> bool>,
     ) -> bool {
-        self.uri().as_deref() == Some(expected_uri)
+        self.document_uri().as_deref() == Some(expected_uri)
             && self.monitor_target_matches_current()
             && match cause {
                 ReloadCause::Automatic => !self.is_dirty() && should_apply(),

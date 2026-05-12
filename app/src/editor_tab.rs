@@ -14,11 +14,16 @@ use crate::settings::AppSettings;
 mod banner;
 mod compare;
 mod open;
+mod review;
 mod runtime;
 mod save;
 mod state;
 mod view;
 
+pub(crate) use compare::{ReviewFileInput, ReviewScrollTarget};
+pub use review::{
+    ReviewFileId, ReviewFileSpec, ReviewKind, ReviewSnapshotFingerprint, ReviewTabSpec, TabKind,
+};
 use state::EditorTabState;
 
 #[cfg(test)]
@@ -68,6 +73,7 @@ pub enum BannerActionKind {
     Reload,
     Save,
     SaveAs,
+    RefreshReview,
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -84,6 +90,7 @@ pub enum VisibleBannerState {
     Missing,
     ReadOnly,
     AutosavePaused,
+    ReviewStale,
     #[default]
     None,
 }
@@ -98,6 +105,8 @@ pub struct EditorTab {
     text_view: sourceview5::View,
     text_buffer: sourceview5::Buffer,
     settings: AppSettings,
+    kind: TabKind,
+    review_spec: Option<ReviewTabSpec>,
     state: RefCell<EditorTabState>,
     page: OnceCell<adw::TabPage>,
     on_file_drop: RefCell<Option<FileDropHandler>>,
@@ -109,6 +118,41 @@ pub struct EditorTab {
 impl EditorTab {
     #[must_use]
     pub fn new(settings: &AppSettings) -> Rc<Self> {
+        Self::new_document(settings)
+    }
+
+    #[must_use]
+    pub fn new_document(settings: &AppSettings) -> Rc<Self> {
+        Self::build(settings, TabKind::Document, None)
+    }
+
+    #[must_use]
+    pub fn new_git_review(settings: &AppSettings, spec: ReviewTabSpec) -> Rc<Self> {
+        let tab = Self::build(settings, TabKind::GitReview, Some(spec));
+        if let Some(spec) = tab.review_spec().cloned() {
+            tab.state.borrow_mut().review.session = Some(Rc::new(RefCell::new(
+                compare::ReviewSession::from_spec(&spec),
+            )));
+        }
+        let toolbar = compare::review_toolbar();
+        tab.root.insert_child_after(&toolbar, Some(&tab.banner));
+        tab.text_view.set_editable(false);
+        let wrap_mode = if settings.compare_word_wrap() {
+            gtk4::WrapMode::WordChar
+        } else {
+            gtk4::WrapMode::None
+        };
+        tab.text_view.set_wrap_mode(wrap_mode);
+        tab.text_buffer.set_modified(false);
+        tab.sync_presentation();
+        tab
+    }
+
+    fn build(
+        settings: &AppSettings,
+        kind: TabKind,
+        review_spec: Option<ReviewTabSpec>,
+    ) -> Rc<Self> {
         let view = EditorView::new(settings);
         let tab = Rc::new(Self {
             root: view.root,
@@ -120,6 +164,8 @@ impl EditorTab {
             text_view: view.text_view,
             text_buffer: view.text_buffer,
             settings: settings.clone(),
+            kind,
+            review_spec,
             state: RefCell::new(EditorTabState::default()),
             page: OnceCell::new(),
             on_file_drop: RefCell::new(None),
@@ -163,11 +209,37 @@ impl EditorTab {
 
     #[must_use]
     pub fn uri(&self) -> Option<String> {
+        self.document_uri()
+    }
+
+    #[must_use]
+    pub fn document_uri(&self) -> Option<String> {
+        if !self.is_document() {
+            return None;
+        }
         self.state.borrow().document.document.uri()
     }
 
     #[must_use]
+    pub fn kind(&self) -> TabKind {
+        self.kind
+    }
+
+    #[must_use]
+    pub fn is_document(&self) -> bool {
+        self.kind == TabKind::Document
+    }
+
+    #[must_use]
+    pub fn review_spec(&self) -> Option<&ReviewTabSpec> {
+        self.review_spec.as_ref()
+    }
+
+    #[must_use]
     pub fn is_dirty(&self) -> bool {
+        if !self.is_document() {
+            return false;
+        }
         self.state.borrow().is_dirty(self.text_buffer.is_modified())
     }
 
@@ -178,6 +250,9 @@ impl EditorTab {
 
     #[must_use]
     pub fn is_autosave_eligible(&self) -> bool {
+        if !self.is_document() {
+            return false;
+        }
         let state = self.state.borrow();
         let is_dirty = state.is_dirty(self.text_buffer.is_modified());
         self.settings.autosave_enabled()
@@ -201,11 +276,19 @@ impl EditorTab {
 
     #[must_use]
     pub fn is_clean_untitled(&self) -> bool {
-        self.state.borrow().document.document.path().is_none() && !self.is_dirty()
+        self.is_document()
+            && self.state.borrow().document.document.path().is_none()
+            && !self.is_dirty()
     }
 
     #[must_use]
     pub fn title(&self) -> String {
+        if let Some(spec) = self.review_spec() {
+            return match spec.review_kind {
+                ReviewKind::Staged => pgettext("document title", "Staged Changes Review"),
+                ReviewKind::Unstaged => pgettext("document title", "Unstaged Changes Review"),
+            };
+        }
         self.state
             .borrow()
             .document
@@ -216,6 +299,9 @@ impl EditorTab {
 
     #[must_use]
     pub fn subtitle(&self) -> String {
+        if let Some(spec) = self.review_spec() {
+            return spec.repo_root.display().to_string();
+        }
         self.state
             .borrow()
             .document
@@ -226,11 +312,17 @@ impl EditorTab {
 
     #[must_use]
     pub fn path_display(&self) -> Option<String> {
+        if !self.is_document() {
+            return None;
+        }
         self.state.borrow().document.document.path_display()
     }
 
     #[must_use]
     pub fn save_name_suggestion(&self) -> String {
+        if !self.is_document() {
+            return pgettext("save file name", "Source Control Review");
+        }
         self.state
             .borrow()
             .document
@@ -297,7 +389,8 @@ impl EditorTab {
 
     #[must_use]
     pub fn should_auto_reload(&self, is_selected: bool, window_active: bool) -> bool {
-        !self.is_dirty()
+        self.is_document()
+            && !self.is_dirty()
             && !self.is_loading()
             && !self.is_compare_active()
             && (!is_selected || !window_active)
@@ -305,7 +398,7 @@ impl EditorTab {
 
     #[must_use]
     pub fn monitor_target_matches_current(&self) -> bool {
-        let current = self.uri();
+        let current = self.document_uri();
         let target = self
             .state
             .borrow()

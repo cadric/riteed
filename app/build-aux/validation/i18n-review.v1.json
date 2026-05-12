@@ -5,197 +5,302 @@
       "path": "src/dialogs/recent_files.rs",
       "line": 56,
       "match": ".title(gettext(\"No Recent Files\"))",
-      "kind": "i18n-short-string",
-      "resolution": "This short empty-state title appears in the Recent Files dialog directly above the explanatory body text."
+      "resolution": "This short empty-state title appears in the Recent Files dialog directly above the explanatory body text.",
+      "kind": "i18n-short-string"
     },
     {
       "path": "src/dialogs/recent_files.rs",
       "line": 139,
       "match": ".heading(gettext(\"Clear Recent Files?\"))",
-      "kind": "i18n-short-string",
-      "resolution": "This short confirmation heading is shown in the Clear All confirmation dialog, where the body text explains the irreversible action."
+      "resolution": "This short confirmation heading is shown in the Clear All confirmation dialog, where the body text explains the irreversible action.",
+      "kind": "i18n-short-string"
+    },
+    {
+      "path": "src/document_print.rs",
+      "line": 34,
+      "match": "crate::dialogs::present_error(parent, &AppError::Internal(gettext(\"Printing failed.\")));",
+      "resolution": "This short print failure message appears in the print error dialog after the native print operation reports failure.",
+      "kind": "i18n-short-string"
+    },
+    {
+      "path": "src/document_statistics.rs",
+      "line": 27,
+      "match": "crate::dialog_shell::build_dialog_shell(&gettext(\"Document Statistics\"), 420, None, true);",
+      "resolution": "This short dialog title appears at the top of the document statistics surface, whose rows immediately explain document and selection counts.",
+      "kind": "i18n-short-string"
+    },
+    {
+      "path": "src/document_statistics.rs",
+      "line": 43,
+      "match": "crate::dialog_shell::build_dialog_shell(&gettext(\"Document Statistics\"), 420, None, true);",
+      "resolution": "This short dialog title appears at the top of the document statistics surface, whose rows immediately explain document and selection counts.",
+      "kind": "i18n-short-string"
+    },
+    {
+      "path": "src/editor_search/mod.rs",
+      "line": 418,
+      "match": "gettext(\"No matches\")",
+      "resolution": "This short result label appears inside the find bar next to the previous/next controls and only after a concrete query produced zero matches.",
+      "kind": "i18n-short-string"
     },
     {
       "path": "src/editor_search/support.rs",
       "line": 40,
       "match": "ngettext(\"%d match\", \"%d matches\", count).replace(\"%d\", &count.to_string())",
-      "kind": "i18n-short-string",
-      "resolution": "This plural-sensitive count label is shown inline in the search bar immediately next to the current query controls, so the standalone noun stays unambiguous in context."
+      "resolution": "This plural-sensitive count label is shown inline in the search bar immediately next to the current query controls, so the standalone noun stays unambiguous in context.",
+      "kind": "i18n-short-string"
     },
     {
       "path": "src/editor_search/support.rs",
       "line": 45,
       "match": "ngettext(\"Replaced %d match\", \"Replaced %d matches\", count).replace(\"%d\", &count.to_string())",
-      "kind": "i18n-short-string",
-      "resolution": "This plural-sensitive replacement summary is shown in the same inline search result position after Replace All completes, making the action outcome explicit without extra chrome."
+      "resolution": "This plural-sensitive replacement summary is shown in the same inline search result position after Replace All completes, making the action outcome explicit without extra chrome.",
+      "kind": "i18n-short-string"
     },
     {
       "path": "src/editor_status.rs",
       "line": 89,
       "match": ".update_property(&[Property::Label(&gettext(\"Document Format\"))]);",
-      "kind": "i18n-short-string",
-      "resolution": "This short string is used only as the accessible label for the read-only format field in the status bar."
+      "resolution": "This short string is used only as the accessible label for the read-only format field in the status bar.",
+      "kind": "i18n-short-string"
     },
     {
       "path": "src/editor_status.rs",
       "line": 91,
       "match": "modified_label.update_property(&[Property::Label(&gettext(\"Modification State\"))]);",
-      "kind": "i18n-short-string",
-      "resolution": "This short string is used only as the accessible label for the status field that reports whether the selected document is modified."
+      "resolution": "This short string is used only as the accessible label for the status field that reports whether the selected document is modified.",
+      "kind": "i18n-short-string"
     },
     {
       "path": "src/editor_status.rs",
       "line": 92,
       "match": "position_label.update_property(&[Property::Label(&gettext(\"Cursor Position\"))]);",
-      "kind": "i18n-short-string",
-      "resolution": "This short string is used only as the accessible label for the right-aligned line and column readout in the status bar."
+      "resolution": "This short string is used only as the accessible label for the right-aligned line and column readout in the status bar.",
+      "kind": "i18n-short-string"
     },
     {
       "path": "src/editor_status.rs",
       "line": 187,
       "match": ".tooltip_text(gettext(\"Document Format\"))",
-      "kind": "i18n-short-string",
-      "resolution": "This short tooltip labels the read-only document format field in the bottom status bar, where it sits directly beside zoom and cursor status."
+      "resolution": "This short tooltip labels the read-only document format field in the bottom status bar, where it sits directly beside zoom and cursor status.",
+      "kind": "i18n-short-string"
     },
     {
       "path": "src/editor_status.rs",
       "line": 256,
       "match": "gettext(\"Modified\")",
-      "kind": "i18n-short-string",
-      "resolution": "This short visible status tag appears immediately after the current document location in the bottom status bar, so its state meaning is explicit from placement."
+      "resolution": "This short visible status tag appears immediately after the current document location in the bottom status bar, so its state meaning is explicit from placement.",
+      "kind": "i18n-short-string"
     },
     {
-      "path": "src/editor_tab/compare/controller.rs",
-      "line": 274,
+      "resolution": "This short banner title appears with the Refresh Review action on stale Git review tabs.",
+      "path": "src/editor_tab/banner.rs",
+      "line": 145,
+      "match": "Some(gettext(\"Refresh Review\")),",
+      "kind": "i18n-short-string"
+    },
+    {
+      "resolution": "This short label appears in the modal Change List dialog where row content and dialog title provide the review context.",
+      "path": "src/editor_tab/compare/change_list.rs",
+      "line": 45,
+      "match": ".title(gettext(\"Change List\"))",
+      "kind": "i18n-short-string"
+    },
+    {
+      "resolution": "This short label appears in the modal Change List dialog where row content and dialog title provide the review context.",
+      "path": "src/editor_tab/compare/change_list.rs",
+      "line": 52,
+      "match": "Property::Label(&gettext(\"Change List\")),",
+      "kind": "i18n-short-string"
+    },
+    {
+      "resolution": "This compact status appears inside the compare or Source Control panel where the surrounding controls identify the state being reported.",
+      "path": "src/editor_tab/compare/status.rs",
+      "line": 63,
       "match": "ngettext(\"%d changed line\", \"%d changed lines\", plural_count).replace(\"%d\", &changed_lines)",
-      "kind": "i18n-short-string",
-      "resolution": "This plural-sensitive compare status is used only when no active hunk position is appended; the full active-hunk status uses a separate positional-argument string."
+      "kind": "i18n-short-string"
+    },
+    {
+      "path": "src/find_in_files/mod.rs",
+      "line": 421,
+      "match": "let mut label = gettext(\"Searching\");",
+      "resolution": "This short V12 string appears inside the Find in Files sidebar, where the query field, result list, and scan summary provide the missing context.",
+      "kind": "i18n-short-string"
+    },
+    {
+      "path": "src/find_in_files/mod.rs",
+      "line": 428,
+      "match": "gettext(\"No matches\")",
+      "resolution": "This short V12 string appears inside the Find in Files sidebar, where the query field, result list, and scan summary provide the missing context.",
+      "kind": "i18n-short-string"
+    },
+    {
+      "path": "src/find_in_files/mod.rs",
+      "line": 430,
+      "match": "let results = ngettext(\"%d result\", \"%d results\", summary.matches)",
+      "resolution": "This short V12 string appears inside the Find in Files sidebar, where the query field, result list, and scan summary provide the missing context.",
+      "kind": "i18n-short-string"
+    },
+    {
+      "path": "src/find_in_files/mod.rs",
+      "line": 432,
+      "match": "let files = ngettext(\"in %d file\", \"in %d files\", summary.files_searched)",
+      "resolution": "This short V12 string appears inside the Find in Files sidebar, where the query field, result list, and scan summary provide the missing context.",
+      "kind": "i18n-short-string"
+    },
+    {
+      "path": "src/find_in_files/mod.rs",
+      "line": 440,
+      "match": "let skipped = ngettext(\"%d file skipped.\", \"%d files skipped.\", summary.skipped)",
+      "resolution": "This short V12 string appears inside the Find in Files sidebar, where the query field, result list, and scan summary provide the missing context.",
+      "kind": "i18n-short-string"
     },
     {
       "path": "src/project_browser.rs",
       "line": 21,
       "match": "let title = adw::WindowTitle::new(&gettext(\"Project\"), \"\");",
-      "kind": "i18n-short-string",
-      "resolution": "This short title labels the project sidebar header, where it is immediately followed by folder navigation controls."
+      "resolution": "This short title labels the project sidebar header, where it is immediately followed by folder navigation controls.",
+      "kind": "i18n-short-string"
     },
     {
       "path": "src/project_browser.rs",
       "line": 29,
       "match": "let show_hidden_tooltip = gettext(\"Show Hidden Files\");",
-      "kind": "i18n-short-string",
-      "resolution": "This tooltip and accessible label belongs to the project sidebar toggle that filters dot-prefixed files and folders, so the action meaning is explicit from placement."
+      "resolution": "This tooltip and accessible label belongs to the project sidebar toggle that filters dot-prefixed files and folders, so the action meaning is explicit from placement.",
+      "kind": "i18n-short-string"
     },
     {
       "path": "src/project_browser.rs",
       "line": 38,
       "match": "let refresh_tooltip = gettext(\"Refresh Project Tree\");",
-      "kind": "i18n-short-string",
-      "resolution": "This tooltip and accessible label belongs to the refresh button in the project sidebar header, where it sits next to the folder tree."
+      "resolution": "This tooltip and accessible label belongs to the refresh button in the project sidebar header, where it sits next to the folder tree.",
+      "kind": "i18n-short-string"
     },
     {
       "path": "src/project_browser.rs",
       "line": 47,
       "match": "let close_tooltip = gettext(\"Close Folder\");",
-      "kind": "i18n-short-string",
-      "resolution": "This tooltip and accessible label belongs to the close-folder button in the project sidebar header, so the action target is unambiguous."
+      "resolution": "This tooltip and accessible label belongs to the close-folder button in the project sidebar header, so the action target is unambiguous.",
+      "kind": "i18n-short-string"
     },
     {
       "path": "src/project_tree.rs",
       "line": 164,
       "match": "label.set_label(&ellipsis_label(gettext(\"Loading\")));",
-      "kind": "i18n-short-string",
-      "resolution": "This short inline row label is shown beside a spinner while the project tree enumerates a directory."
+      "resolution": "This short inline row label is shown beside a spinner while the project tree enumerates a directory.",
+      "kind": "i18n-short-string"
     },
     {
       "path": "src/source_control.rs",
-      "line": 96,
+      "line": 106,
       "match": "let title = adw::WindowTitle::new(&gettext(\"Source Control\"), \"\");",
-      "kind": "i18n-short-string",
-      "resolution": "This short title labels the Source Control sidebar header above the changed-file tree and commit controls."
-    },
-    {
-      "path": "src/source_control/refresh.rs",
-      "line": 234,
-      "match": "state.status_label.set_label(&gettext(\"No changes.\"));",
-      "kind": "i18n-short-string",
-      "resolution": "This compact status appears in the Source Control panel when the repository has no changed files."
-    },
-    {
-      "path": "src/source_control/refresh.rs",
-      "line": 236,
-      "match": "state.status_label.set_label(&gettext(\"Changed files\"));",
-      "kind": "i18n-short-string",
-      "resolution": "This short Source Control string appears inside the Git sidebar where the changed-file, history, or action context is visible."
+      "resolution": "This short title labels the Source Control sidebar header above the changed-file tree and commit controls.",
+      "kind": "i18n-short-string"
     },
     {
       "path": "src/source_control/history.rs",
       "line": 172,
       "match": "self.status.set_label(&gettext(\"No commits yet.\"));",
-      "kind": "i18n-short-string",
-      "resolution": "This short Source Control string appears inside the Git sidebar where the changed-file, history, or action context is visible."
+      "resolution": "This short Source Control string appears inside the Git sidebar where the changed-file, history, or action context is visible.",
+      "kind": "i18n-short-string"
+    },
+    {
+      "path": "src/source_control/refresh.rs",
+      "line": 236,
+      "match": "state.status_label.set_label(&gettext(\"No changes.\"));",
+      "resolution": "This compact status appears in the Source Control panel when the repository has no changed files.",
+      "kind": "i18n-short-string"
+    },
+    {
+      "path": "src/source_control/refresh.rs",
+      "line": 238,
+      "match": "state.status_label.set_label(&gettext(\"Changed files\"));",
+      "resolution": "This short Source Control string appears inside the Git sidebar where the changed-file, history, or action context is visible.",
+      "kind": "i18n-short-string"
+    },
+    {
+      "resolution": "This short loading status is shown inside a Git review tab while the surrounding Source Control review context remains visible.",
+      "path": "src/source_control/review_loader.rs",
+      "line": 35,
+      "match": "tab.set_git_review_text(&ellipsis_label(gettext(\"Loading Git review\")));",
+      "kind": "i18n-short-string"
     },
     {
       "path": "src/window.rs",
       "line": 419,
       "match": ".update_property(&[Property::Label(&gettext(\"New Tab\"))]);",
-      "kind": "i18n-short-string",
-      "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
+      "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context.",
+      "kind": "i18n-short-string"
     },
     {
       "path": "src/window.rs",
       "line": 422,
       "match": ".update_property(&[Property::Label(&gettext(\"Open Files\"))]);",
-      "kind": "i18n-short-string",
-      "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
+      "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context.",
+      "kind": "i18n-short-string"
     },
     {
       "path": "src/window.rs",
       "line": 425,
       "match": ".update_property(&[Property::Label(&gettext(\"Project Sidebar\"))]);",
-      "kind": "i18n-short-string",
-      "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
+      "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context.",
+      "kind": "i18n-short-string"
     },
     {
       "path": "src/window.rs",
       "line": 428,
       "match": ".update_property(&[Property::Label(&gettext(\"Save Current File\"))]);",
-      "kind": "i18n-short-string",
-      "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
+      "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context.",
+      "kind": "i18n-short-string"
     },
     {
       "path": "src/window.rs",
       "line": 431,
       "match": ".update_property(&[Property::Label(&gettext(\"Main Menu\"))]);",
-      "kind": "i18n-short-string",
-      "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context."
+      "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context.",
+      "kind": "i18n-short-string"
     },
     {
       "path": "src/window_appearance/editor_grid.rs",
       "line": 217,
       "match": "let label = gtk4::Label::new(Some(&gettext(\"Unavailable\")));",
-      "kind": "i18n-short-string",
-      "resolution": "This short overlay label is shown directly on editor palette tiles whose source style scheme is not available on the current system."
+      "resolution": "This short overlay label is shown directly on editor palette tiles whose source style scheme is not available on the current system.",
+      "kind": "i18n-short-string"
     },
     {
       "path": "src/window_appearance/editor_grid.rs",
       "line": 241,
       "match": "let label = gtk4::Label::new(Some(&gettext(\"Preview unavailable\")));",
-      "kind": "i18n-short-string",
-      "resolution": "This compact fallback appears inside an editor palette tile when no safe preview style scheme can be resolved."
+      "resolution": "This compact fallback appears inside an editor palette tile when no safe preview style scheme can be resolved.",
+      "kind": "i18n-short-string"
     },
     {
       "path": "src/window_compare/dialog.rs",
       "line": 510,
       "match": "row.set_subtitle(&gettext(\"Unavailable\"));",
-      "kind": "i18n-short-string",
-      "resolution": "This short subtitle appears in the Compare dialog when the Saved Version source is not available for the current left-side selection."
+      "resolution": "This short subtitle appears in the Compare dialog when the Saved Version source is not available for the current left-side selection.",
+      "kind": "i18n-short-string"
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 406,
+      "line": 409,
       "match": "font_dialog.set_title(&gettext(\"Choose Editor Font\"));",
-      "kind": "i18n-short-string",
-      "resolution": "This short dialog title appears at the top of the font chooser and the accompanying copy explains that the selection affects only the editor font."
+      "resolution": "This short dialog title appears at the top of the font chooser and the accompanying copy explains that the selection affects only the editor font.",
+      "kind": "i18n-short-string"
+    },
+    {
+      "path": "src/window_project/root.rs",
+      "line": 225,
+      "match": "state.browser.set_title(&gettext(\"Project\"));",
+      "resolution": "This short title labels the project sidebar when no folder title is available; the surrounding sidebar controls provide the project context.",
+      "kind": "i18n-short-string"
+    },
+    {
+      "path": "src/window_project/root.rs",
+      "line": 250,
+      "match": "state.browser.set_title(&gettext(\"Project\"));",
+      "resolution": "This short title labels the project sidebar when no folder title is available; the surrounding sidebar controls provide the project context.",
+      "kind": "i18n-short-string"
     }
   ]
 }

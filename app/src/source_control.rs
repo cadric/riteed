@@ -4,12 +4,15 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::rc::{Rc, Weak};
 
-use gettextrs::{gettext, pgettext};
+use gettextrs::gettext;
 use gtk4::accessible::Property;
 use gtk4::{gio, prelude::*};
 use libadwaita as adw;
 
-use crate::git_process::{GitCallback, GitIdentity, GitProcess, GitProcessError, GitRepoContext};
+use crate::editor_tab::EditorTab;
+#[cfg(test)]
+use crate::git_process::{GitCallback, GitRepoContext};
+use crate::git_process::{GitIdentity, GitProcess, GitProcessError};
 use crate::git_status::{GitAttrState, GitCapabilities, GitStatusSnapshot};
 use crate::settings::AppSettings;
 #[cfg(test)]
@@ -23,20 +26,21 @@ mod list_view;
 mod live;
 mod path_target;
 mod refresh;
+mod review;
+mod review_loader;
+mod root;
 mod row_popover;
 mod status_style;
 #[cfg(test)]
 mod tests;
 pub(crate) mod tree_model;
 mod tree_view;
+mod ui;
 mod view_mode;
 
 use history::SourceControlHistory;
 use live::SourceControlLiveRefresh;
-use refresh::{
-    RefreshOrigin, ellipsis_label, emit_project_statuses, finish_error, rebuild_views,
-    refresh_status, refresh_status_with_origin,
-};
+use refresh::{RefreshOrigin, finish_error, refresh_status, refresh_status_with_origin};
 use view_mode::SourceControlViews;
 
 pub(super) type SourceStateRef = Rc<RefCell<SourceControlState>>;
@@ -44,7 +48,6 @@ pub(super) type SourceStateRef = Rc<RefCell<SourceControlState>>;
 pub(crate) type DetectRepoForTests =
     Rc<dyn Fn(&Path, &gio::Cancellable, GitCallback<GitRepoContext>)>;
 type GitStatusHandler = Rc<dyn Fn(Vec<(String, String)>)>;
-const HISTORY_SPLIT_DEFAULT_POSITION: i32 = 360;
 
 #[derive(Clone)]
 pub(crate) struct SourceControlController {
@@ -73,6 +76,9 @@ pub(super) struct SourceControlState {
     pub(super) live_refresh: Option<SourceControlLiveRefresh>,
     pub(super) status_stale: bool,
     pub(super) action_generation: u64,
+    pub(super) review_generation: u64,
+    pub(super) review_staged_action: gio::SimpleAction,
+    pub(super) review_unstaged_action: gio::SimpleAction,
     pub(super) state_change_handler: Option<Rc<dyn Fn()>>,
     #[cfg(test)]
     detect_repo: DetectRepoForTests,
@@ -88,6 +94,10 @@ impl SourceControlController {
     ) -> Self {
         let refresh = gio::SimpleAction::new("git-refresh", None);
         window.add_action(&refresh);
+        let review_staged_action = gio::SimpleAction::new("git-review-staged", None);
+        let review_unstaged_action = gio::SimpleAction::new("git-review-unstaged", None);
+        review_staged_action.set_enabled(false);
+        review_unstaged_action.set_enabled(false);
 
         let root = adw::ToolbarView::new();
         let header = adw::HeaderBar::new();
@@ -104,6 +114,14 @@ impl SourceControlController {
         refresh_button.update_property(&[Property::Label(&refresh_tooltip)]);
         refresh_button.set_action_name(Some("win.git-refresh"));
         header.pack_end(&refresh_button);
+        let review_tooltip = gettext("Review Source Control Changes");
+        let review_button = gtk4::MenuButton::builder()
+            .icon_name("open-menu-symbolic")
+            .menu_model(&review::review_menu_model())
+            .tooltip_text(&review_tooltip)
+            .build();
+        review_button.update_property(&[Property::Label(&review_tooltip)]);
+        header.pack_end(&review_button);
         root.add_top_bar(&header);
 
         let content = gtk4::Box::new(gtk4::Orientation::Vertical, 12);
@@ -124,11 +142,11 @@ impl SourceControlController {
         let views = SourceControlViews::new(settings);
         changes_pane.append(&views.widget());
 
-        let (commit_revealer, commit_entry, commit_button) = build_commit_controls();
+        let (commit_revealer, commit_entry, commit_button) = ui::build_commit_controls();
         changes_pane.append(&commit_revealer);
 
         let history = SourceControlHistory::new();
-        let history_split = build_history_split(&changes_pane, &history);
+        let history_split = ui::build_history_split(&changes_pane, &history);
         #[cfg(test)]
         let history_split_for_tests = history_split.clone();
         content.append(&history_split);
@@ -156,6 +174,9 @@ impl SourceControlController {
             live_refresh: None,
             status_stale: true,
             action_generation: 0,
+            review_generation: 0,
+            review_staged_action,
+            review_unstaged_action,
             state_change_handler: None,
             #[cfg(test)]
             detect_repo: Rc::new(|path, cancellable, callback| {
@@ -167,20 +188,8 @@ impl SourceControlController {
             .borrow()
             .views
             .connect_activation(Rc::downgrade(&state));
-
-        let weak = Rc::downgrade(&state);
-        refresh.connect_activate(move |_, _| {
-            if let Some(state) = weak.upgrade() {
-                refresh_status_with_origin(&state, RefreshOrigin::Manual);
-            }
-        });
-
-        let weak = Rc::downgrade(&state);
-        state.borrow().commit_button.connect_clicked(move |_| {
-            if let Some(state) = weak.upgrade() {
-                commit(&state);
-            }
-        });
+        review::install_actions(&state, window);
+        install_callbacks(&state, &refresh);
 
         Self { state }
     }
@@ -191,14 +200,14 @@ impl SourceControlController {
     }
 
     pub(crate) fn set_project_root(&self, folder: Option<gio::File>) {
-        set_project_root(&self.state, folder);
+        root::set_project_root(&self.state, folder);
     }
 
     pub(crate) fn root_change_handler(&self) -> Rc<dyn Fn(Option<gio::File>)> {
         let weak = Rc::downgrade(&self.state);
         Rc::new(move |root| {
             if let Some(state) = weak.upgrade() {
-                set_project_root(&state, root);
+                root::set_project_root(&state, root);
             }
         })
     }
@@ -209,6 +218,15 @@ impl SourceControlController {
 
     pub(crate) fn set_state_change_handler(&self, handler: Rc<dyn Fn()>) {
         self.state.borrow_mut().state_change_handler = Some(handler);
+    }
+
+    pub(crate) fn review_refresh_handler(&self) -> Rc<dyn Fn(Rc<EditorTab>)> {
+        let weak = Rc::downgrade(&self.state);
+        Rc::new(move |tab| {
+            if let Some(state) = weak.upgrade() {
+                review::refresh_open_review(&state, &tab);
+            }
+        })
     }
 
     #[must_use]
@@ -326,7 +344,7 @@ impl SourceControlController {
             && state.history_split.resizes_end_child()
             && state.history_split.start_child().is_some()
             && state.history_split.end_child().is_some()
-            && state.history_split.position() == HISTORY_SPLIT_DEFAULT_POSITION
+            && state.history_split.position() == ui::HISTORY_SPLIT_DEFAULT_POSITION
     }
 
     #[cfg(test)]
@@ -335,130 +353,20 @@ impl SourceControlController {
     }
 }
 
-fn build_commit_controls() -> (gtk4::Revealer, gtk4::Entry, gtk4::Button) {
-    let commit_box = gtk4::Box::new(gtk4::Orientation::Vertical, 6);
-    let commit_entry = gtk4::Entry::builder()
-        .placeholder_text(pgettext("git commit", "Commit Message"))
-        .build();
-    commit_box.append(&commit_entry);
-
-    let commit_button = gtk4::Button::with_label(&pgettext("git commit", "Commit"));
-    commit_button.add_css_class("suggested-action");
-    commit_button.set_sensitive(false);
-    commit_box.append(&commit_button);
-
-    let commit_revealer = gtk4::Revealer::builder()
-        .transition_type(gtk4::RevealerTransitionType::SlideDown)
-        .child(&commit_box)
-        .build();
-    (commit_revealer, commit_entry, commit_button)
-}
-
-fn build_history_split(changes_pane: &gtk4::Box, history: &SourceControlHistory) -> gtk4::Paned {
-    let history_split = gtk4::Paned::new(gtk4::Orientation::Vertical);
-    history_split.set_vexpand(true);
-    history_split.set_wide_handle(true);
-    history_split.set_resize_start_child(true);
-    history_split.set_resize_end_child(true);
-    history_split.set_shrink_start_child(false);
-    history_split.set_shrink_end_child(false);
-    history_split.set_start_child(Some(changes_pane));
-    history_split.set_end_child(Some(&history.widget()));
-    history_split.set_position(HISTORY_SPLIT_DEFAULT_POSITION);
-    history_split
-}
-
-fn set_project_root(state: &SourceStateRef, folder: Option<gio::File>) {
-    cancel_refresh(state);
-    live::cancel(state);
-    let Some(folder) = folder else {
-        reset_project_state(state, &gettext("Open a folder to see Git status."), false);
-        return;
-    };
-    let Some(path) = folder.path() else {
-        reset_project_state(
-            state,
-            &gettext("Only local Git folders are supported."),
-            false,
-        );
-        return;
-    };
-    let cancellable = gio::Cancellable::new();
-    {
-        let mut state = state.borrow_mut();
-        state.cancellable = Some(cancellable.clone());
-        state.repo = None;
-        state.process = None;
-        state.attrs = GitAttrState::default();
-        state.snapshot = GitStatusSnapshot::default();
-        state.status_stale = true;
-        state.action_generation = state.action_generation.wrapping_add(1);
-        state
-            .status_label
-            .set_label(&ellipsis_label(gettext("Refreshing Git status")));
-        set_commit_controls_enabled(&state, false);
-        emit_project_statuses(&state);
-        state.history.clear();
-        rebuild_views(&state);
-    }
-    actions::fire_state_change_handler(state);
+fn install_callbacks(state: &SourceStateRef, refresh: &gio::SimpleAction) {
     let weak = Rc::downgrade(state);
-    let cancellable_for_callback = cancellable.clone();
-    let callback: GitCallback<GitRepoContext> = Rc::new(move |result| {
-        if cancellable_for_callback.is_cancelled() {
-            return;
-        }
-        let Some(state) = weak.upgrade() else {
-            return;
-        };
-        match result {
-            Ok(repo_context) => {
-                {
-                    let mut state = state.borrow_mut();
-                    state.repo = Some(repo_context.work_tree.clone());
-                    state.process = Some(GitProcess::new(repo_context));
-                    state.attrs = GitAttrState::default();
-                    state.snapshot = GitStatusSnapshot::default();
-                    state.status_stale = true;
-                }
-                live::install(&state);
-                refresh_status_with_origin(&state, RefreshOrigin::Initial);
-            }
-            Err(error) if git_error_is_cancelled(&error) => {}
-            Err(_error) => {
-                reset_project_state(
-                    &state,
-                    &gettext("This folder is not a Git repository."),
-                    false,
-                );
-            }
+    refresh.connect_activate(move |_, _| {
+        if let Some(state) = weak.upgrade() {
+            refresh_status_with_origin(&state, RefreshOrigin::Manual);
         }
     });
-    #[cfg(test)]
-    {
-        let detect_repo = state.borrow().detect_repo.clone();
-        detect_repo(&path, &cancellable, callback);
-    }
-    #[cfg(not(test))]
-    GitProcess::detect_repo(&path, &cancellable, callback);
-}
 
-fn reset_project_state(state: &SourceStateRef, label: &str, mark_stale: bool) {
-    {
-        let mut state = state.borrow_mut();
-        state.repo = None;
-        state.process = None;
-        state.attrs = GitAttrState::default();
-        state.snapshot = GitStatusSnapshot::default();
-        state.status_stale = mark_stale;
-        state.action_generation = state.action_generation.wrapping_add(1);
-        state.status_label.set_label(label);
-        set_commit_controls_enabled(&state, false);
-        emit_project_statuses(&state);
-        state.history.clear();
-        rebuild_views(&state);
-    }
-    actions::fire_state_change_handler(state);
+    let weak = Rc::downgrade(state);
+    state.borrow().commit_button.connect_clicked(move |_| {
+        if let Some(state) = weak.upgrade() {
+            commit(&state);
+        }
+    });
 }
 
 pub(super) fn set_commit_controls_enabled(state: &SourceControlState, enabled: bool) {
@@ -560,12 +468,12 @@ pub(super) fn git_attrs_unavailable_text() -> String {
     gettext("Unable to read Git attributes. Git actions are disabled.")
 }
 
+fn saved_file_in_repo(state: &SourceControlState, file: &gio::File) -> bool {
+    root::saved_file_in_repo(state, file)
+}
+
 fn cancel_refresh(state: &SourceStateRef) {
     if let Some(cancellable) = state.borrow_mut().cancellable.take() {
         cancellable.cancel();
     }
-}
-
-fn saved_file_in_repo(state: &SourceControlState, file: &gio::File) -> bool {
-    live::saved_file_in_repo(state, file)
 }

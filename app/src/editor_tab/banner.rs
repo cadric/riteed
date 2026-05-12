@@ -1,4 +1,4 @@
-use gettextrs::pgettext;
+use gettextrs::{gettext, pgettext};
 use gtk4::prelude::*;
 
 use super::{BannerActionKind, EditorTab, EditorTabState, VisibleBannerState, Writability};
@@ -27,6 +27,7 @@ impl EditorTab {
                 Some(BannerActionKind::Save)
             }
             VisibleBannerState::ReadOnly => Some(BannerActionKind::SaveAs),
+            VisibleBannerState::ReviewStale => Some(BannerActionKind::RefreshReview),
             VisibleBannerState::None => None,
         }
     }
@@ -130,6 +131,19 @@ fn visible_banner_state(
 ) -> (VisibleBannerState, Option<String>, Option<String>) {
     if state.compare.active.is_some() {
         return (VisibleBannerState::None, None, None);
+    }
+
+    if state
+        .review
+        .session
+        .as_ref()
+        .is_some_and(|session| session.borrow().is_stale())
+    {
+        return (
+            VisibleBannerState::ReviewStale,
+            Some(gettext("This review is out of date.")),
+            Some(gettext("Refresh Review")),
+        );
     }
 
     match &state.external.pending {

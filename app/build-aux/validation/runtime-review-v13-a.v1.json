@@ -1,0 +1,453 @@
+{
+  "version": 1,
+  "sites": [
+    {
+      "path": "src/editor_tab/compare/scroll.rs",
+      "line": 20,
+      "match": "left_handler: Rc<RefCell<Option<glib::SignalHandlerId>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Compare scroll synchronization owns the left pane signal handler id.",
+      "justification": "Peer scroll updates block the opposite value-changed handler while preserving row and intra-row offset, so the handler id must be available to both the installer and the RAII block guard."
+    },
+    {
+      "path": "src/editor_tab/compare/scroll.rs",
+      "line": 21,
+      "match": "right_handler: Rc<RefCell<Option<glib::SignalHandlerId>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Compare scroll synchronization owns the right pane signal handler id.",
+      "justification": "Peer scroll updates block the opposite value-changed handler while preserving row and intra-row offset, so the handler id must be available to both the installer and the RAII block guard."
+    },
+    {
+      "path": "src/editor_tab/compare/scroll.rs",
+      "line": 48,
+      "match": "left: Cell<usize>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Compare scroll regression tests own a left-pane callback counter.",
+      "justification": "The test-only counter verifies smooth-scroll bursts do not bounce through the peer handler after programmatic sync blocks recursive value-changed emissions."
+    },
+    {
+      "path": "src/editor_tab/compare/scroll.rs",
+      "line": 49,
+      "match": "right: Cell<usize>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Compare scroll regression tests own a right-pane callback counter.",
+      "justification": "The test-only counter verifies smooth-scroll bursts do not bounce through the peer handler after programmatic sync blocks recursive value-changed emissions."
+    },
+    {
+      "path": "src/editor_tab/compare/scroll.rs",
+      "line": 55,
+      "match": "row_model: &Rc<RefCell<DiffRowModel>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Compare scroll synchronization borrows the controller-owned logical row model.",
+      "justification": "Row and intra-row offset sync need the current diff row count during adjustment callbacks so the panes stay aligned after recompute."
+    },
+    {
+      "path": "src/editor_tab/compare/scroll.rs",
+      "line": 117,
+      "match": "row_model: &Rc<RefCell<DiffRowModel>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Compare scroll synchronization borrows the controller-owned logical row model.",
+      "justification": "Row and intra-row offset sync need the current diff row count during adjustment callbacks so the panes stay aligned after recompute."
+    },
+    {
+      "path": "src/editor_tab/compare/scroll.rs",
+      "line": 118,
+      "match": "target_handler: &Rc<RefCell<Option<glib::SignalHandlerId>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Compare row scroll synchronization borrows the target pane signal handler id.",
+      "justification": "Programmatic peer adjustment writes block the target handler with an RAII guard so row+offset sync cannot recurse during touchpad smooth-scroll bursts."
+    },
+    {
+      "path": "src/editor_tab/compare/scroll.rs",
+      "line": 194,
+      "match": "handler: &'a RefCell<Option<glib::SignalHandlerId>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The scoped signal block borrows one compare pane signal handler id.",
+      "justification": "The RAII guard blocks and unblocks the peer value-changed handler around a direct adjustment write, avoiding recursive sync without leaving handlers muted on early returns."
+    },
+    {
+      "ownership": "Each review tab owns the optional compare-side ReviewSession for its rendered Git review.",
+      "justification": "The session must be shared by cursor actions, stale banners, change-list navigation, and renderer refreshes while staying private to the tab.",
+      "path": "src/editor_tab/state.rs",
+      "line": 182,
+      "match": "pub(super) session: Option<Rc<RefCell<ReviewSession>>>,",
+      "kind": "runtime-shared-state"
+    },
+    {
+      "path": "src/editor_zoom.rs",
+      "line": 34,
+      "match": "base_font: RefCell<pango::FontDescription>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The window-owned zoom controller owns the resolved base editor font description.",
+      "justification": "Zoom and font changes need one mutable source of truth that can update all open tabs and the minimap without duplicating state per tab."
+    },
+    {
+      "path": "src/editor_zoom.rs",
+      "line": 35,
+      "match": "zoom_percent: Cell<i32>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The window-owned zoom controller owns the current zoom percentage for the whole workspace window.",
+      "justification": "Window-scoped zoom actions must clamp, reset, and reapply the same percentage across every attached editor tab."
+    },
+    {
+      "path": "src/find_in_files/mod.rs",
+      "line": 27,
+      "match": "root_folder: RefCell<Option<gio::File>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Find in Files controller and scanner own one workspace scan generation, cancellable, and result set.",
+      "justification": "Async GIO enumeration and file loading complete across callbacks, so generation-checked shared state keeps late results out of the current UI without blocking the GTK main loop."
+    },
+    {
+      "path": "src/find_in_files/mod.rs",
+      "line": 28,
+      "match": "current_query: RefCell<String>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Find in Files controller owns the sticky project-search query, root, cancellation, and generation state.",
+      "justification": "The unified Find bar dispatches project queries into this controller while async Gio scans and refresh actions share one cancellable main-thread state."
+    },
+    {
+      "path": "src/find_in_files/mod.rs",
+      "line": 29,
+      "match": "current_match_case: Cell<bool>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Find in Files controller owns the sticky project-search query, root, cancellation, and generation state.",
+      "justification": "The unified Find bar dispatches project queries into this controller while async Gio scans and refresh actions share one cancellable main-thread state."
+    },
+    {
+      "path": "src/find_in_files/mod.rs",
+      "line": 30,
+      "match": "show_hidden: Cell<bool>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Find in Files controller and scanner own one workspace scan generation, cancellable, and result set.",
+      "justification": "Async GIO enumeration and file loading complete across callbacks, so generation-checked shared state keeps late results out of the current UI without blocking the GTK main loop."
+    },
+    {
+      "path": "src/find_in_files/mod.rs",
+      "line": 32,
+      "match": "generation: Cell<u64>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Find in Files controller and scanner own one workspace scan generation, cancellable, and result set.",
+      "justification": "Async GIO enumeration and file loading complete across callbacks, so generation-checked shared state keeps late results out of the current UI without blocking the GTK main loop."
+    },
+    {
+      "path": "src/find_in_files/mod.rs",
+      "line": 33,
+      "match": "active_cancellable: RefCell<Option<gio::Cancellable>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Find in Files controller and scanner own one workspace scan generation, cancellable, and result set.",
+      "justification": "Async GIO enumeration and file loading complete across callbacks, so generation-checked shared state keeps late results out of the current UI without blocking the GTK main loop."
+    },
+    {
+      "path": "src/find_in_files/scanner.rs",
+      "line": 75,
+      "match": "fn scan_next(state: Rc<RefCell<ScanState>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "The Find in Files controller and scanner own one workspace scan generation, cancellable, and result set.",
+      "justification": "Async GIO enumeration and file loading complete across callbacks, so generation-checked shared state keeps late results out of the current UI without blocking the GTK main loop."
+    },
+    {
+      "path": "src/find_in_files/scanner.rs",
+      "line": 96,
+      "match": "fn enumerate_directory(state: Rc<RefCell<ScanState>>, directory: gio::File) {",
+      "kind": "runtime-shared-state",
+      "ownership": "The Find in Files controller and scanner own one workspace scan generation, cancellable, and result set.",
+      "justification": "Async GIO enumeration and file loading complete across callbacks, so generation-checked shared state keeps late results out of the current UI without blocking the GTK main loop."
+    },
+    {
+      "path": "src/find_in_files/scanner.rs",
+      "line": 121,
+      "match": "state: Rc<RefCell<ScanState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Find in Files controller and scanner own one workspace scan generation, cancellable, and result set.",
+      "justification": "Async GIO enumeration and file loading complete across callbacks, so generation-checked shared state keeps late results out of the current UI without blocking the GTK main loop."
+    },
+    {
+      "path": "src/find_in_files/scanner.rs",
+      "line": 156,
+      "match": "state: &Rc<RefCell<ScanState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Find in Files controller and scanner own one workspace scan generation, cancellable, and result set.",
+      "justification": "Async GIO enumeration and file loading complete across callbacks, so generation-checked shared state keeps late results out of the current UI without blocking the GTK main loop."
+    },
+    {
+      "path": "src/find_in_files/scanner.rs",
+      "line": 205,
+      "match": "fn read_file(state: Rc<RefCell<ScanState>>, candidate: FileCandidate) {",
+      "kind": "runtime-shared-state",
+      "ownership": "The Find in Files controller and scanner own one workspace scan generation, cancellable, and result set.",
+      "justification": "Async GIO enumeration and file loading complete across callbacks, so generation-checked shared state keeps late results out of the current UI without blocking the GTK main loop."
+    },
+    {
+      "path": "src/find_in_files/scanner.rs",
+      "line": 224,
+      "match": "fn collect_matches(state: &Rc<RefCell<ScanState>>, candidate: &FileCandidate, text: &str) {",
+      "kind": "runtime-shared-state",
+      "ownership": "The Find in Files controller and scanner own one workspace scan generation, cancellable, and result set.",
+      "justification": "Async GIO enumeration and file loading complete across callbacks, so generation-checked shared state keeps late results out of the current UI without blocking the GTK main loop."
+    },
+    {
+      "path": "src/find_in_files/scanner.rs",
+      "line": 317,
+      "match": "fn should_finish(state: &Rc<RefCell<ScanState>>) -> bool {",
+      "kind": "runtime-shared-state",
+      "ownership": "The Find in Files controller and scanner own one workspace scan generation, cancellable, and result set.",
+      "justification": "Async GIO enumeration and file loading complete across callbacks, so generation-checked shared state keeps late results out of the current UI without blocking the GTK main loop."
+    },
+    {
+      "path": "src/find_in_files/scanner.rs",
+      "line": 324,
+      "match": "fn finish_scan(state: &Rc<RefCell<ScanState>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "The Find in Files controller and scanner own one workspace scan generation, cancellable, and result set.",
+      "justification": "Async GIO enumeration and file loading complete across callbacks, so generation-checked shared state keeps late results out of the current UI without blocking the GTK main loop."
+    },
+    {
+      "path": "src/find_in_files/scanner.rs",
+      "line": 332,
+      "match": "fn stale_or_cancelled(state: &Rc<RefCell<ScanState>>) -> bool {",
+      "kind": "runtime-shared-state",
+      "ownership": "The Find in Files controller and scanner own one workspace scan generation, cancellable, and result set.",
+      "justification": "Async GIO enumeration and file loading complete across callbacks, so generation-checked shared state keeps late results out of the current UI without blocking the GTK main loop."
+    },
+    {
+      "path": "src/git_process.rs",
+      "line": 222,
+      "match": "let flags = gio::SubprocessFlags::STDIN_PIPE",
+      "kind": "runtime-git-subprocess",
+      "ownership": "The typed Git process boundary owns the Gio subprocess pipe flags.",
+      "justification": "V9 allows subprocess use only here to run bundled /app/bin/git with typed operations, no shell, bounded output, fixed env, and reviewable argv construction."
+    },
+    {
+      "path": "src/git_process.rs",
+      "line": 223,
+      "match": "| gio::SubprocessFlags::STDOUT_PIPE",
+      "kind": "runtime-git-subprocess",
+      "ownership": "The typed Git process boundary owns stdout capture for sandbox Git.",
+      "justification": "Git status, attributes, blob reads, and commit responses are bounded and parsed only through this reviewed runner."
+    },
+    {
+      "path": "src/git_process.rs",
+      "line": 224,
+      "match": "| gio::SubprocessFlags::STDERR_PIPE;",
+      "kind": "runtime-git-subprocess",
+      "ownership": "The typed Git process boundary owns stderr capture for sandbox Git.",
+      "justification": "Captured stderr is size-capped and mapped to user-facing errors without exposing a generic command runner."
+    },
+    {
+      "path": "src/git_process.rs",
+      "line": 225,
+      "match": "let launcher = gio::SubprocessLauncher::new(flags);",
+      "kind": "runtime-git-subprocess",
+      "ownership": "The typed Git process boundary owns subprocess creation.",
+      "justification": "All Git subprocess invocations go through the allowlisted operation methods in this file and use bundled /app/bin/git, no host PATH lookup, no shell, and deterministic environment overrides."
+    },
+    {
+      "path": "src/git_process/test_support.rs",
+      "line": 47,
+      "match": "let slot: Rc<RefCell<Option<Result<T, GitProcessError>>>> = Rc::new(RefCell::new(None));",
+      "kind": "runtime-shared-state",
+      "ownership": "The Git process test support owns a one-shot callback result slot.",
+      "justification": "GTK Git fixture setup runs through the typed Git subprocess boundary and pumps the GLib main context until each setup command callback completes."
+    },
+    {
+      "path": "src/git_process/tests.rs",
+      "line": 207,
+      "match": "let slot: Rc<RefCell<Option<Result<T, GitProcessError>>>> = Rc::new(RefCell::new(None));",
+      "kind": "runtime-shared-state",
+      "ownership": "Git process unit tests own this callback result slot.",
+      "justification": "The slot bridges the asynchronous Gio subprocess callback into deterministic test assertions without affecting runtime application state."
+    },
+    {
+      "path": "src/git_process/tests.rs",
+      "line": 222,
+      "match": "let slot: Rc<RefCell<Option<Result<T, GitProcessError>>>> = Rc::new(RefCell::new(None));",
+      "kind": "runtime-shared-state",
+      "ownership": "Git process unit tests own this callback result slot.",
+      "justification": "The slot bridges the asynchronous Gio subprocess callback into deterministic test assertions without affecting runtime application state."
+    },
+    {
+      "path": "src/project_tree_model.rs",
+      "line": 44,
+      "match": "state: Rc<RefCell<ModelState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The project tree model owns one shared model state for lazy directory rows and selection/reveal updates.",
+      "justification": "Gio async enumeration and GTK list-model callbacks need the same main-thread state so directory loading and row replacement stay coherent."
+    },
+    {
+      "path": "src/project_tree_model.rs",
+      "line": 287,
+      "match": "state: Rc<RefCell<ModelState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The project tree model owns one shared model state for lazy directory rows and selection/reveal updates.",
+      "justification": "Gio async enumeration and GTK list-model callbacks need the same main-thread state so directory loading and row replacement stay coherent."
+    },
+    {
+      "path": "src/project_tree_model.rs",
+      "line": 297,
+      "match": "state: &Rc<RefCell<ModelState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The project tree model owns one shared model state for lazy directory rows and selection/reveal updates.",
+      "justification": "Gio async enumeration and GTK list-model callbacks need the same main-thread state so directory loading and row replacement stay coherent."
+    },
+    {
+      "path": "src/project_tree_model.rs",
+      "line": 471,
+      "match": "state: &Rc<RefCell<ModelState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The project tree model owns one shared model state for lazy directory rows and selection/reveal updates.",
+      "justification": "Gio async enumeration and GTK list-model callbacks need the same main-thread state so directory loading and row replacement stay coherent."
+    },
+    {
+      "path": "src/project_tree_monitor.rs",
+      "line": 48,
+      "match": "poll_source: RefCell<Option<glib::SourceId>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Each project directory monitor owns the removable polling source.",
+      "justification": "Portal-backed directory monitors can miss structural events, so loaded directories keep a cancellable snapshot polling source."
+    },
+    {
+      "path": "src/project_tree_monitor.rs",
+      "line": 50,
+      "match": "poll_cancelled: Rc<Cell<bool>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Each project directory monitor owns a shared polling cancellation flag.",
+      "justification": "Async snapshot callbacks need a stale guard after root replacement, refresh, hidden-toggle refresh, or close-folder cancellation."
+    },
+    {
+      "path": "src/project_tree_monitor.rs",
+      "line": 112,
+      "match": "poll_state: Rc<RefCell<Option<ProjectDirectorySnapshot>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The project tree monitor owns fallback polling snapshot and cancellation state.",
+      "justification": "Portal and native monitor callbacks share this state to coalesce external folder changes while allowing stale polling work to stop cleanly."
+    },
+    {
+      "path": "src/project_tree_monitor.rs",
+      "line": 155,
+      "match": "cancelled: Rc<Cell<bool>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The project tree monitor owns fallback polling snapshot and cancellation state.",
+      "justification": "Portal and native monitor callbacks share this state to coalesce external folder changes while allowing stale polling work to stop cleanly."
+    },
+    {
+      "path": "src/project_tree_monitor.rs",
+      "line": 152,
+      "match": "poll_state: Rc<RefCell<Option<ProjectDirectorySnapshot>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The project tree monitor owns fallback polling snapshot and cancellation state.",
+      "justification": "Portal and native monitor callbacks share this state to coalesce external folder changes while allowing stale polling work to stop cleanly."
+    },
+    {
+      "path": "src/project_tree_monitor.rs",
+      "line": 115,
+      "match": "cancelled: Rc<Cell<bool>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The project tree monitor owns fallback polling snapshot and cancellation state.",
+      "justification": "Portal and native monitor callbacks share this state to coalesce external folder changes while allowing stale polling work to stop cleanly."
+    },
+    {
+      "path": "src/project_tree_monitor.rs",
+      "line": 156,
+      "match": "query_in_flight: Rc<Cell<bool>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The directory polling loop shares its in-flight enumeration guard.",
+      "justification": "The timeout source must avoid overlapping directory enumerations on slow portal or network filesystems."
+    },
+    {
+      "path": "src/project_tree_monitor.rs",
+      "line": 224,
+      "match": "poll_state: &Rc<RefCell<Option<ProjectDirectorySnapshot>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The directory snapshot transition helper mutates shared polling state.",
+      "justification": "Snapshot comparison is centralized so root and loaded-dir polling trigger refreshes only on visible structural changes."
+    },
+    {
+      "path": "src/runtime_icons.rs",
+      "line": 12,
+      "match": "if icon_dir.is_dir() {",
+      "kind": "runtime-sync-fs",
+      "ownership": "Runtime icon setup owns the developer-only icon directory guard.",
+      "justification": "This probe only runs for the explicit RITEED_DEV_ICON_DIR development override during startup and is not used for project, document, portal, or user-selected paths."
+    },
+    {
+      "path": "src/source_control.rs",
+      "line": 46,
+      "match": "pub(super) type SourceStateRef = Rc<RefCell<SourceControlState>>;",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control controller owns the sidebar state behind one Rc<RefCell>.",
+      "justification": "Refresh, commit, stage, unstage, and diff callbacks all complete asynchronously on the main loop and need one cancellable, generation-aware UI state owner."
+    },
+    {
+      "path": "src/source_control/history.rs",
+      "line": 17,
+      "match": "loaded_head_oid: RefCell<Option<String>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control history widget owns the last successfully loaded HEAD.",
+      "justification": "Recent commits are refetched only when HEAD changes or a previous history read failed, preventing index-only refresh flicker."
+    },
+    {
+      "path": "src/source_control/history.rs",
+      "line": 18,
+      "match": "needs_refresh: Cell<bool>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control history widget owns its transient retry flag.",
+      "justification": "A failed recent-commits read must self-heal on the next successful status refresh without refetching on every index-only update."
+    },
+    {
+      "path": "src/source_control/list_view.rs",
+      "line": 15,
+      "match": "type BoundRows = Rc<RefCell<Vec<BoundRow>>>;",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control list view owns recycled-row bindings and a weak controller handle.",
+      "justification": "List rows are factory-recycled, so keyboard context menus, row activation, and the shared popover need current path-to-widget bindings without retaining the window strongly."
+    },
+    {
+      "path": "src/source_control/list_view.rs",
+      "line": 21,
+      "match": "state_weak: Rc<RefCell<Weak<RefCell<SourceControlState>>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control list view owns recycled-row action state and a weak controller handle.",
+      "justification": "The flat ListView factory is created before controller Rc wiring and must dispatch row actions against the current snapshot without retaining the window."
+    },
+    {
+      "path": "src/source_control/list_view.rs",
+      "line": 64,
+      "match": "pub(super) fn connect_activation(&self, weak: Weak<RefCell<SourceControlState>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control list view owns recycled-row action state and a weak controller handle.",
+      "justification": "The flat ListView factory is created before controller Rc wiring and must dispatch row actions against the current snapshot without retaining the window."
+    },
+    {
+      "path": "src/source_control/list_view.rs",
+      "line": 215,
+      "match": "fn action_runner(state_weak: &Rc<RefCell<Weak<RefCell<SourceControlState>>>>) -> RowActionRunner {",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control list view owns recycled-row action state and a weak controller handle.",
+      "justification": "The flat ListView factory is created before controller Rc wiring and must dispatch row actions against the current snapshot without retaining the window."
+    },
+    {
+      "path": "src/source_control/list_view.rs",
+      "line": 339,
+      "match": "weak: &Weak<RefCell<SourceControlState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control list view owns recycled-row action state and a weak controller handle.",
+      "justification": "The flat ListView factory is created before controller Rc wiring and must dispatch row actions against the current snapshot without retaining the window."
+    },
+    {
+      "path": "src/source_control/live.rs",
+      "line": 219,
+      "match": "pending: Rc<Cell<bool>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control live-refresh scheduler owns debounce and last-refresh state.",
+      "justification": "Git metadata monitor and polling callbacks need coalesced refresh timing and index-lock deferral without blocking the main loop."
+    },
+    {
+      "path": "src/editor_tab/compare/clipboard.rs",
+      "line": 11,
+      "match": "presentation: &Rc<RefCell<UnifiedPresentation>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Unified compare clipboard handling borrows the controller-owned unified presentation.",
+      "justification": "Copy filtering must read the current line-side map while GTK copy signals fire, and the presentation stays main-thread confined with the compare controller."
+    }
+  ]
+}

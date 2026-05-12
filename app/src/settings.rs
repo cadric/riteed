@@ -6,6 +6,7 @@ use gtk4::{gio, glib, prelude::*};
 use crate::APP_ID;
 
 pub use appearance::ThemePreference;
+pub use compare::{CompareReviewSettingsSnapshot, CompareViewMode};
 pub use presentation::{EditorPalette, WindowPalette};
 pub use source_control::SourceControlViewMode;
 
@@ -32,6 +33,7 @@ struct MemorySettings {
     git_user_name: String,
     git_user_email: String,
     source_control_view_mode: SourceControlViewMode,
+    compare: MemoryCompareSettings,
     project: MemoryProjectSettings,
     #[cfg(test)]
     write_log: Vec<String>,
@@ -70,6 +72,15 @@ struct MemoryWindowSessionSettings {
 #[derive(Clone)]
 struct MemorySelectedDocumentSettings {
     session_selected_file: String,
+}
+
+#[derive(Clone)]
+struct MemoryCompareSettings {
+    view_mode: CompareViewMode,
+    collapse_unchanged: bool,
+    context_lines: i32,
+    ignore_leading_trailing_whitespace: bool,
+    word_wrap: bool,
 }
 
 #[derive(Clone)]
@@ -128,6 +139,13 @@ impl AppSettings {
                 git_user_name: String::new(),
                 git_user_email: String::new(),
                 source_control_view_mode: SourceControlViewMode::Tree,
+                compare: MemoryCompareSettings {
+                    view_mode: CompareViewMode::Adaptive,
+                    collapse_unchanged: true,
+                    context_lines: 3,
+                    ignore_leading_trailing_whitespace: false,
+                    word_wrap: false,
+                },
                 project: MemoryProjectSettings {
                     folder_uri: String::new(),
                     folder_display_name: String::new(),
@@ -244,6 +262,7 @@ fn record_memory_write(_state: &mut MemorySettings, _key: &str) {}
 mod tests;
 
 mod appearance;
+mod compare;
 mod display;
 mod editor;
 mod git;

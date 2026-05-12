@@ -1,6 +1,6 @@
 use super::{
-    AppSettings, EditorPalette, SourceControlViewMode, ThemePreference, WindowPalette,
-    sanitize_editor_width, sanitize_restored_dimension,
+    AppSettings, CompareViewMode, EditorPalette, SourceControlViewMode, ThemePreference,
+    WindowPalette, sanitize_editor_width, sanitize_restored_dimension,
 };
 #[test]
 fn theme_preference_roundtrips_enum_values() {
@@ -52,6 +52,18 @@ fn source_control_view_mode_roundtrips_enum_values() {
     for mode in SourceControlViewMode::ALL {
         assert_eq!(
             SourceControlViewMode::from_enum_value(mode.enum_value()),
+            mode,
+            "{}",
+            mode.nick()
+        );
+    }
+}
+
+#[test]
+fn compare_view_mode_roundtrips_enum_values() {
+    for mode in CompareViewMode::ALL {
+        assert_eq!(
+            CompareViewMode::from_enum_value(mode.enum_value()),
             mode,
             "{}",
             mode.nick()
@@ -123,6 +135,11 @@ fn memory_backend_roundtrips_values() {
     settings.set_session_selected_file("file:///tmp/session.txt");
     settings.set_git_identity("Ada Lovelace", "ada@example.test");
     settings.set_source_control_view_mode(SourceControlViewMode::List);
+    settings.set_compare_view_mode(CompareViewMode::Unified);
+    settings.set_compare_collapse_unchanged(false);
+    settings.set_compare_context_lines(6);
+    settings.set_compare_ignore_leading_trailing_whitespace(true);
+    settings.set_compare_word_wrap(true);
     settings.set_project_folder_uri("file:///tmp/project");
     settings.set_project_folder_display_name("Project");
     settings.set_project_sidebar_visible(true);
@@ -164,6 +181,11 @@ fn memory_backend_roundtrips_values() {
         settings.source_control_view_mode(),
         SourceControlViewMode::List
     );
+    assert_eq!(settings.compare_view_mode(), CompareViewMode::Unified);
+    assert!(!settings.compare_collapse_unchanged());
+    assert_eq!(settings.compare_context_lines(), 6);
+    assert!(settings.compare_ignore_leading_trailing_whitespace());
+    assert!(settings.compare_word_wrap());
     assert_eq!(settings.project_folder_uri(), "file:///tmp/project");
     assert_eq!(settings.project_folder_display_name(), "Project");
     assert!(settings.project_sidebar_visible());
@@ -181,6 +203,9 @@ fn memory_backend_records_writes_for_tests() {
     settings.set_autosave_enabled(true);
     settings.set_git_identity("Ada", "ada@example.test");
     settings.set_source_control_view_mode(SourceControlViewMode::List);
+    settings.set_compare_view_mode(CompareViewMode::Split);
+    settings.set_compare_context_lines(8);
+    settings.set_compare_word_wrap(true);
     assert_eq!(
         settings.write_log_for_tests(),
         vec![
@@ -192,6 +217,40 @@ fn memory_backend_records_writes_for_tests() {
             String::from("git-user-name"),
             String::from("git-user-email"),
             String::from("source-control-view-mode"),
+            String::from("compare-view-mode"),
+            String::from("compare-context-lines"),
+            String::from("compare-word-wrap"),
         ]
     );
+}
+
+#[test]
+fn compare_settings_default_and_clamp_for_tests() {
+    let settings = AppSettings::new_for_tests();
+    assert_eq!(settings.compare_view_mode(), CompareViewMode::Adaptive);
+    assert!(settings.compare_collapse_unchanged());
+    assert_eq!(settings.compare_context_lines(), 3);
+    assert!(!settings.compare_ignore_leading_trailing_whitespace());
+    assert!(!settings.compare_word_wrap());
+
+    settings.set_compare_context_lines(99);
+    assert_eq!(settings.compare_context_lines(), 10);
+    settings.set_compare_context_lines(-2);
+    assert_eq!(settings.compare_context_lines(), 1);
+
+    let snapshot = settings.compare_review_settings_snapshot();
+    assert_eq!(snapshot.view_mode, CompareViewMode::Adaptive);
+    assert_eq!(snapshot.context_lines, 1);
+}
+
+#[test]
+fn schema_defines_compare_settings() {
+    let schema = include_str!("../../data/schemas/io.github.cadric.Riteed.gschema.xml");
+    assert!(schema.contains("io.github.cadric.Riteed.CompareViewMode"));
+    assert!(schema.contains(
+        "<key name=\"compare-view-mode\" enum=\"io.github.cadric.Riteed.CompareViewMode\">"
+    ));
+    assert!(schema.contains(
+        "<key name=\"compare-context-lines\" type=\"i\">\n      <range min=\"1\" max=\"10\"/>"
+    ));
 }

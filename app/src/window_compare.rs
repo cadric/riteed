@@ -1,5 +1,7 @@
+mod actions;
 mod dialog;
 mod paste_text;
+mod settings_actions;
 
 use std::cell::Cell;
 use std::rc::Rc;
@@ -11,9 +13,10 @@ use libadwaita as adw;
 use crate::dialogs;
 use crate::editor_tab::EditorTab;
 use crate::error::AppError;
-use crate::workspace::Workspace;
+use crate::workspace::{OpenSource, Workspace};
 
 use dialog::CompareSlot;
+use settings_actions::CompareSettingsActions;
 
 pub(crate) struct WindowCompareController {
     shell: adw::ApplicationWindow,
@@ -23,6 +26,13 @@ pub(crate) struct WindowCompareController {
     exit_action: gio::SimpleAction,
     next_action: gio::SimpleAction,
     prev_action: gio::SimpleAction,
+    open_reviewed_file_action: gio::SimpleAction,
+    change_list_action: gio::SimpleAction,
+    reveal_above_action: gio::SimpleAction,
+    reveal_below_action: gio::SimpleAction,
+    reveal_all_action: gio::SimpleAction,
+    refresh_review_action: gio::SimpleAction,
+    compare_settings_actions: CompareSettingsActions,
     tab_compare_file_action: gio::SimpleAction,
     tab_compare_saved_action: gio::SimpleAction,
     tab_compare_pasted_text_action: gio::SimpleAction,
@@ -40,6 +50,13 @@ impl WindowCompareController {
             exit_action: gio::SimpleAction::new("compare-exit", None),
             next_action: gio::SimpleAction::new("diff-next", None),
             prev_action: gio::SimpleAction::new("diff-prev", None),
+            open_reviewed_file_action: gio::SimpleAction::new("open-reviewed-file", None),
+            change_list_action: gio::SimpleAction::new("compare-change-list", None),
+            reveal_above_action: gio::SimpleAction::new("compare-reveal-above", None),
+            reveal_below_action: gio::SimpleAction::new("compare-reveal-below", None),
+            reveal_all_action: gio::SimpleAction::new("compare-reveal-all", None),
+            refresh_review_action: gio::SimpleAction::new("compare-refresh-review", None),
+            compare_settings_actions: CompareSettingsActions::new(&workspace.settings),
             tab_compare_file_action: gio::SimpleAction::new("tab-compare-with-file", None),
             tab_compare_saved_action: gio::SimpleAction::new(
                 "tab-compare-with-saved-version",
@@ -84,13 +101,75 @@ impl WindowCompareController {
 
     pub(crate) fn next_diff(&self) {
         if let Some(tab) = self.workspace.selected_tab() {
-            tab.compare_next_diff();
+            if tab.kind() == crate::editor_tab::TabKind::GitReview {
+                tab.review_next_change();
+            } else {
+                tab.compare_next_diff();
+            }
         }
     }
 
     pub(crate) fn previous_diff(&self) {
         if let Some(tab) = self.workspace.selected_tab() {
-            tab.compare_previous_diff();
+            if tab.kind() == crate::editor_tab::TabKind::GitReview {
+                tab.review_previous_change();
+            } else {
+                tab.compare_previous_diff();
+            }
+        }
+    }
+
+    pub(crate) fn reveal_above(&self) {
+        if let Some(tab) = self.workspace.selected_tab() {
+            if tab.kind() == crate::editor_tab::TabKind::GitReview {
+                tab.review_reveal_above();
+            } else {
+                tab.compare_reveal_above();
+            }
+        }
+    }
+
+    pub(crate) fn reveal_below(&self) {
+        if let Some(tab) = self.workspace.selected_tab() {
+            if tab.kind() == crate::editor_tab::TabKind::GitReview {
+                tab.review_reveal_below();
+            } else {
+                tab.compare_reveal_below();
+            }
+        }
+    }
+
+    pub(crate) fn reveal_all(&self) {
+        if let Some(tab) = self.workspace.selected_tab() {
+            if tab.kind() == crate::editor_tab::TabKind::GitReview {
+                tab.review_reveal_all();
+            } else {
+                tab.compare_reveal_all();
+            }
+        }
+    }
+
+    pub(crate) fn present_change_list(&self) {
+        if let Some(tab) = self.workspace.selected_tab() {
+            tab.present_change_list();
+        }
+    }
+
+    pub(crate) fn open_reviewed_file(self: &Rc<Self>) {
+        let Some(file) = self
+            .workspace
+            .selected_tab()
+            .and_then(|tab| tab.current_review_open_target())
+        else {
+            return;
+        };
+        self.workspace
+            .request_open_files(vec![file], OpenSource::SourceControl);
+    }
+
+    pub(crate) fn refresh_review(&self) {
+        if let Some(tab) = self.workspace.selected_tab() {
+            self.workspace.refresh_review_tab(&tab);
         }
     }
 
@@ -128,112 +207,10 @@ impl WindowCompareController {
         )
     }
 
-    fn install_actions(&self) {
-        self.shell.add_action(&self.refresh_reference_action);
-        self.shell.add_action(&self.exit_action);
-        self.shell.add_action(&self.next_action);
-        self.shell.add_action(&self.prev_action);
-        self.shell.add_action(&self.tab_compare_file_action);
-        self.shell.add_action(&self.tab_compare_saved_action);
-        self.shell.add_action(&self.tab_compare_pasted_text_action);
-        self.shell.add_action(&self.compare_action);
-        self.compare_action_installed.set(true);
-    }
-
     fn handle_compare_result(&self, result: Result<(), AppError>) {
         self.workspace.refresh_selected_state();
         if let Err(error) = result {
             dialogs::present_error(&self.shell, &error);
-        }
-    }
-
-    fn install_callbacks(self: &Rc<Self>) {
-        let weak = Rc::downgrade(self);
-        self.compare_action.connect_activate(move |_, _| {
-            if let Some(controller) = weak.upgrade() {
-                controller.present_compare_dialog();
-            }
-        });
-        let weak = Rc::downgrade(self);
-        self.refresh_reference_action.connect_activate(move |_, _| {
-            if let Some(controller) = weak.upgrade() {
-                controller.refresh_reference();
-            }
-        });
-        let weak = Rc::downgrade(self);
-        self.exit_action.connect_activate(move |_, _| {
-            if let Some(controller) = weak.upgrade() {
-                controller.exit_compare();
-            }
-        });
-        let weak = Rc::downgrade(self);
-        self.next_action.connect_activate(move |_, _| {
-            if let Some(controller) = weak.upgrade() {
-                controller.next_diff();
-            }
-        });
-        let weak = Rc::downgrade(self);
-        self.prev_action.connect_activate(move |_, _| {
-            if let Some(controller) = weak.upgrade() {
-                controller.previous_diff();
-            }
-        });
-        let weak = Rc::downgrade(self);
-        self.tab_compare_file_action.connect_activate(move |_, _| {
-            if let Some(controller) = weak.upgrade() {
-                controller.present_tab_compare_file();
-            }
-        });
-        let weak = Rc::downgrade(self);
-        self.tab_compare_saved_action.connect_activate(move |_, _| {
-            if let Some(controller) = weak.upgrade() {
-                controller.compare_selected_with_saved();
-            }
-        });
-        let weak = Rc::downgrade(self);
-        self.tab_compare_pasted_text_action
-            .connect_activate(move |_, _| {
-                if let Some(controller) = weak.upgrade() {
-                    controller.present_tab_compare_pasted_text();
-                }
-            });
-    }
-
-    fn sync_actions(&self, selected: Option<&EditorTab>) {
-        let active = selected.is_some_and(EditorTab::is_compare_active);
-        let can_start = selected.is_some_and(|tab| !tab.is_compare_active());
-        self.set_compare_action_visible(!active);
-        self.tab_compare_file_action.set_enabled(can_start);
-        self.tab_compare_pasted_text_action.set_enabled(can_start);
-        self.tab_compare_saved_action
-            .set_enabled(self.can_compare_with_saved(selected));
-        self.refresh_reference_action
-            .set_enabled(selected.is_some_and(EditorTab::compare_reference_is_refreshable));
-        self.exit_action.set_enabled(active);
-        self.next_action.set_enabled(active);
-        self.prev_action.set_enabled(active);
-    }
-
-    fn can_compare_with_saved(&self, selected: Option<&EditorTab>) -> bool {
-        selected.is_some_and(|tab| {
-            !tab.is_compare_active()
-                && tab.has_saved_local_uri()
-                && tab.is_dirty()
-                && !self.workspace.settings.autosave_enabled()
-        })
-    }
-
-    fn set_compare_action_visible(&self, visible: bool) {
-        if visible {
-            if !self.compare_action_installed.get() {
-                self.shell.add_action(&self.compare_action);
-                self.compare_action_installed.set(true);
-            }
-            return;
-        }
-        if self.compare_action_installed.get() {
-            self.shell.remove_action("compare");
-            self.compare_action_installed.set(false);
         }
     }
 

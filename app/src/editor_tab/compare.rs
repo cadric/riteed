@@ -1,46 +1,75 @@
+use std::cell::Cell;
 use std::rc::{Rc, Weak};
 
 use gettextrs::pgettext;
 use gtk4::{gio, glib, prelude::*};
 use libadwaita as adw;
 
-use super::EditorTab;
+use super::{EditorTab, TabKind};
 use crate::editor_io::{self, LoadFailure};
 use crate::error::AppError;
 
 const COMPARE_SCROLL_LAYOUT_RETRIES: u8 = 8;
 
+mod actions_state;
+mod change_list;
+mod clipboard;
 mod controller;
 mod diff;
+mod display;
 mod gutter;
 mod hatch;
 mod inline;
 mod interaction;
+mod layout;
+mod menu;
 mod model;
 mod navigation;
 mod presentation;
+mod presentation_display;
 mod render;
+mod render_unified;
+mod review_session;
+mod review_session_reveal;
+#[cfg(test)]
+mod review_session_tests;
 mod scroll;
+mod status;
 mod target;
 #[cfg(test)]
 mod testing;
 #[cfg(test)]
 mod testing_render;
 mod ui;
+mod unified;
+pub(in crate::editor_tab) mod viewport;
 
-use controller::sync_reference_language;
+use crate::settings::{CompareReviewSettingsSnapshot, CompareViewMode};
+use display::CompareDisplayModel;
+use layout::sync_reference_language;
 use model::DiffRowModel;
 use presentation::DiffPresentation;
 use render::CompareTags;
+use render_unified::UnifiedTags;
 use target::{CompareTarget, CompareTargetKind};
+use unified::UnifiedPresentation;
 
+pub(in crate::editor_tab) use change_list::present as present_change_list_dialog;
+pub(in crate::editor_tab) use review_session::ReviewSession;
+pub(crate) use review_session::{ReviewFileInput, ReviewScrollTarget};
 #[cfg(test)]
 pub(crate) use testing::row_count_for_texts_for_tests;
+
+pub(in crate::editor_tab) fn review_toolbar() -> gtk4::Box {
+    ui::review_toolbar()
+}
 
 pub(crate) struct CompareController {
     target: CompareTarget,
     toolbar: gtk4::Box,
     status_label: gtk4::Label,
+    layout_root: adw::BreakpointBin,
+    layout_stack: gtk4::Stack,
     paned: gtk4::Paned,
     editable_snapshot: String,
     reference_text: String,
@@ -48,10 +77,16 @@ pub(crate) struct CompareController {
     left_buffer: sourceview5::Buffer,
     right_view: sourceview5::View,
     right_buffer: sourceview5::Buffer,
+    unified_view: sourceview5::View,
+    unified_buffer: sourceview5::Buffer,
     tags: CompareTags,
+    unified_tags: UnifiedTags,
     presentation: Rc<std::cell::RefCell<DiffPresentation>>,
+    display_model: Rc<std::cell::RefCell<CompareDisplayModel>>,
     row_model: Rc<std::cell::RefCell<DiffRowModel>>,
+    unified_presentation: Rc<std::cell::RefCell<UnifiedPresentation>>,
     gutters: gutter::CompareGutters,
+    unified_gutter: gutter::UnifiedGutter,
     hatches: hatch::CompareHatches,
     scroll_sync: scroll::CompareScrollSync,
     current_hunk: Option<usize>,
@@ -59,6 +94,12 @@ pub(crate) struct CompareController {
     style_manager: adw::StyleManager,
     style_handler: Option<glib::SignalHandlerId>,
     high_contrast_handler: Option<glib::SignalHandlerId>,
+    diff_options: diff::DiffOptions,
+    review_settings: CompareReviewSettingsSnapshot,
+    view_mode: CompareViewMode,
+    view_mode_cell: Rc<Cell<CompareViewMode>>,
+    revealed_rows: std::collections::BTreeSet<usize>,
+    hidden_trim_whitespace_differences: bool,
 }
 
 impl EditorTab {
@@ -87,7 +128,7 @@ impl EditorTab {
 
     #[must_use]
     pub fn is_compare_with_current_disk(&self) -> bool {
-        let Some(uri) = self.uri() else {
+        let Some(uri) = self.document_uri() else {
             return false;
         };
         self.state.try_borrow().is_ok_and(|state| {
@@ -99,6 +140,10 @@ impl EditorTab {
     }
 
     pub fn start_compare_with_disk(self: &Rc<Self>, callback: Rc<dyn Fn(Result<(), AppError>)>) {
+        if !self.is_document() {
+            callback(Err(AppError::MissingSavePath));
+            return;
+        }
         let Some(file) = self.saved_file() else {
             callback(Err(AppError::MissingSavePath));
             return;
@@ -112,6 +157,10 @@ impl EditorTab {
         file: &gio::File,
         callback: Rc<dyn Fn(Result<(), AppError>)>,
     ) {
+        if !self.is_document() {
+            callback(Err(AppError::Cancelled));
+            return;
+        }
         let target = CompareTarget::file(file.clone());
         self.start_compare_with_target(&target, callback);
     }
@@ -121,6 +170,10 @@ impl EditorTab {
         text: &str,
         callback: Rc<dyn Fn(Result<(), AppError>)>,
     ) {
+        if !self.is_document() {
+            callback(Err(AppError::Cancelled));
+            return;
+        }
         let target = CompareTarget::text(pgettext("compare source", "Pasted Text"), text.into());
         self.start_compare_with_target(&target, callback);
     }
@@ -157,7 +210,7 @@ impl EditorTab {
             compare.cancel();
             compare.detach_visual_layers();
             self.root.remove(&compare.toolbar);
-            self.root.remove(&compare.paned);
+            self.root.remove(&compare.layout_root);
             compare.paned.set_start_child(Option::<&gtk4::Widget>::None);
             compare.paned.set_end_child(Option::<&gtk4::Widget>::None);
             drop(compare);
@@ -174,6 +227,83 @@ impl EditorTab {
 
     pub fn compare_previous_diff(&self) {
         self.move_compare_hunk(-1);
+    }
+
+    pub fn compare_reveal_above(&self) {
+        if let Some(compare) = self.state.borrow_mut().compare.active.as_mut() {
+            compare.reveal_above();
+        }
+    }
+
+    pub fn compare_reveal_below(&self) {
+        if let Some(compare) = self.state.borrow_mut().compare.active.as_mut() {
+            compare.reveal_below();
+        }
+    }
+
+    pub fn compare_reveal_all(&self) {
+        if let Some(compare) = self.state.borrow_mut().compare.active.as_mut() {
+            compare.reveal_all();
+        }
+    }
+
+    #[must_use]
+    pub fn compare_can_reveal_context(&self) -> bool {
+        self.state
+            .borrow()
+            .compare
+            .active
+            .as_ref()
+            .is_some_and(CompareController::can_reveal_context)
+    }
+
+    #[must_use]
+    pub fn compare_uses_unified_layout(&self) -> bool {
+        self.state
+            .borrow()
+            .compare
+            .active
+            .as_ref()
+            .is_some_and(CompareController::uses_unified_layout)
+    }
+
+    pub(crate) fn refresh_compare_settings(self: &Rc<Self>) {
+        let snapshot = self.settings.compare_review_settings_snapshot();
+        let view_mode = self.settings.compare_view_mode();
+        if let Some(row) = {
+            let mut state = self.state.borrow_mut();
+            state
+                .compare
+                .active
+                .as_mut()
+                .and_then(|compare| compare.apply_settings(snapshot, view_mode))
+        } {
+            self.queue_compare_scroll_to_row(row, self.compare_generation());
+        }
+
+        let session = self.state.borrow().review.session.clone();
+        if let Some(session) = session {
+            {
+                let mut session = session.borrow_mut();
+                session.rebuild_displays(snapshot);
+                session.render_into_buffer(&self.text_buffer);
+            }
+            self.text_buffer.set_modified(false);
+            let wrap_mode = if snapshot.word_wrap {
+                gtk4::WrapMode::WordChar
+            } else {
+                gtk4::WrapMode::None
+            };
+            self.text_view.set_wrap_mode(wrap_mode);
+            self.sync_presentation();
+        } else if self.kind() == TabKind::GitReview {
+            let wrap_mode = if snapshot.word_wrap {
+                gtk4::WrapMode::WordChar
+            } else {
+                gtk4::WrapMode::None
+            };
+            self.text_view.set_wrap_mode(wrap_mode);
+        }
     }
 
     pub(crate) fn apply_compare_style(&self) {
@@ -252,7 +382,7 @@ impl EditorTab {
             .set_vscrollbar_policy(gtk4::PolicyType::Automatic);
         let compare = CompareController::new(self, target.clone());
         self.root.append(&compare.toolbar);
-        self.root.append(&compare.paned);
+        self.root.append(&compare.layout_root);
         compare.apply_tag_colors();
         self.state.borrow_mut().compare.active = Some(compare);
         self.text_view.set_wrap_mode(gtk4::WrapMode::None);

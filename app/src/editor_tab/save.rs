@@ -30,6 +30,10 @@ impl EditorTab {
         save_kind: SaveKind,
         callback: Rc<dyn Fn(SaveResult)>,
     ) {
+        if !self.is_document() {
+            callback(SaveResult::CancelledByUser);
+            return;
+        }
         let current_path = self.state.borrow().document.document.path();
         if !force_save_as && let Some(path) = current_path {
             if self.should_show_stale_save_conflict() {
@@ -145,7 +149,7 @@ impl EditorTab {
         save_kind: SaveKind,
         callback: Rc<dyn Fn(SaveResult)>,
     ) {
-        let old_uri = self.uri();
+        let old_uri = self.document_uri();
         let previous_file = self.saved_file();
         self.clear_monitor();
         self.set_loading(true);

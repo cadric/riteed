@@ -1,0 +1,55 @@
+#!/usr/bin/env python3
+"""V13-local line budget helper.
+
+This is intentionally narrower than the repository-wide 600 line policy. It
+guards the V13 modules that are expected to grow during diff-review work.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+import sys
+
+LIMIT = 520
+PATHS = (
+    "app/src/source_control.rs",
+    "app/src/source_control/root.rs",
+    "app/src/source_control/ui.rs",
+    "app/src/source_control/review.rs",
+    "app/src/source_control/review_loader.rs",
+    "app/src/workspace.rs",
+    "app/src/workspace/session_state.rs",
+    "app/src/workspace/selection.rs",
+    "app/src/workspace/review_tabs.rs",
+    "app/src/window_compare.rs",
+    "app/src/window_compare/actions.rs",
+    "app/src/settings/compare.rs",
+    "app/src/editor_tab/review.rs",
+    "app/src/editor_tab/compare/display.rs",
+    "app/src/editor_tab/compare/collapse.rs",
+    "app/src/editor_tab/compare/viewport.rs",
+    "app/src/editor_tab/compare/unified.rs",
+    "app/src/editor_tab/compare/review.rs",
+    "app/src/editor_tab/compare/testing_v13.rs",
+)
+
+
+def main() -> int:
+    root = Path(__file__).resolve().parents[1]
+    failures: list[str] = []
+    for relative in PATHS:
+        path = root / relative
+        if not path.exists():
+            continue
+        count = len(path.read_text(encoding="utf-8").splitlines())
+        if count > LIMIT:
+            failures.append(f"{relative}: {count} lines, limit {LIMIT}")
+    if failures:
+        for failure in failures:
+            print(failure, file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

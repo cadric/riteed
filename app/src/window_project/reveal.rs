@@ -76,7 +76,7 @@ pub(super) fn sync_reveal_for_selection(state: &Rc<RefCell<ProjectState>>) {
         let selected_uri = state
             .workspace
             .upgrade()
-            .and_then(|workspace| workspace.selected_tab().and_then(|tab| tab.uri()));
+            .and_then(|workspace| workspace.selected_tab().and_then(|tab| tab.document_uri()));
         (root, selected_uri)
     };
 

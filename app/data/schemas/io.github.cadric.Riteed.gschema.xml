@@ -28,6 +28,11 @@
     <value nick="tree" value="0"/>
     <value nick="list" value="1"/>
   </enum>
+  <enum id="io.github.cadric.Riteed.CompareViewMode">
+    <value nick="adaptive" value="0"/>
+    <value nick="split" value="1"/>
+    <value nick="unified" value="2"/>
+  </enum>
   <schema id="io.github.cadric.Riteed" path="/io/github/cadric/Riteed/">
     <key name="theme" enum="io.github.cadric.Riteed.ThemePreference">
       <default>'system'</default>
@@ -132,6 +137,32 @@
       <default>'tree'</default>
       <summary>Source Control View Mode</summary>
       <description>Controls whether the source control changes view uses a folder tree or a flat list.</description>
+    </key>
+    <key name="compare-view-mode" enum="io.github.cadric.Riteed.CompareViewMode">
+      <default>'adaptive'</default>
+      <summary>Compare View Mode</summary>
+      <description>Controls whether compare review prefers split view, unified view, or adaptive switching based on available width.</description>
+    </key>
+    <key name="compare-collapse-unchanged" type="b">
+      <default>true</default>
+      <summary>Collapse Unchanged Compare Lines</summary>
+      <description>Controls whether unchanged stretches between compare hunks are collapsed by default.</description>
+    </key>
+    <key name="compare-context-lines" type="i">
+      <range min="1" max="10"/>
+      <default>3</default>
+      <summary>Compare Context Lines</summary>
+      <description>Controls how many unchanged lines are kept around each visible compare hunk.</description>
+    </key>
+    <key name="compare-ignore-leading-trailing-whitespace" type="b">
+      <default>false</default>
+      <summary>Ignore Leading and Trailing Whitespace in Compare</summary>
+      <description>Controls whether compare review hides changes that only add or remove leading or trailing whitespace.</description>
+    </key>
+    <key name="compare-word-wrap" type="b">
+      <default>false</default>
+      <summary>Compare Word Wrap</summary>
+      <description>Controls whether unified compare review wraps long lines. It does not affect normal editor word wrap.</description>
     </key>
     <key name="project-folder-uri" type="s">
       <default>''</default>

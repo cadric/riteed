@@ -1,37 +1,4 @@
 {
   "version": 1,
-  "sites": [
-    {
-      "path": "src/window_appearance/editor_grid.rs",
-      "line": 24,
-      "match": "syncing: Cell<bool>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The editor palette grid owns its programmatic-sync guard.",
-      "justification": "Opening or refreshing editor palette tiles must update state without recursively writing GSettings."
-    },
-    {
-      "path": "src/window_appearance/editor_grid.rs",
-      "line": 25,
-      "match": "tiles: RefCell<Vec<EditorTile>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The editor palette grid owns its preview tile set.",
-      "justification": "Editor palette preview tiles are built dynamically and refreshed when app appearance or palette settings change."
-    },
-    {
-      "path": "src/app_chrome/mod.rs",
-      "line": 26,
-      "match": "observers: RefCell<Vec<Weak<ObserverInner>>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "AppChromeController tracks per-window observer callbacks via Weak references.",
-      "justification": "Observers fire on chrome refresh (palette/dark/HC change). Weak storage with compaction-on-add-and-refresh prevents stale callbacks after window close from leaking signal subscriptions or aborting on dropped state."
-    },
-    {
-      "path": "src/app_chrome/mod.rs",
-      "line": 27,
-      "match": "subscriptions: RefCell<Vec<Subscription>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "AppChromeController owns the global libadwaita color provider and palette signal subscriptions for the entire application.",
-      "justification": "A single GtkCssProvider attached to gdk::Display::default() at startup overrides libadwaita CSS custom properties on :root. Subscriptions cover StyleManager dark + high-contrast and AppSettings editor-palette changes; recoloring is a no-op for high-contrast and Adwaita schemes."
-    }
-  ]
+  "sites": []
 }

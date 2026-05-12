@@ -246,7 +246,7 @@
         </child>
         <child>
           <object class="GtkShortcutsGroup">
-            <property name="title" translatable="yes">Compare</property>
+            <property name="title" translatable="yes">Compare and Review</property>
             <child>
               <object class="GtkShortcutsShortcut">
                 <property name="accelerator">F8</property>

@@ -1,0 +1,253 @@
+{
+  "version": 1,
+  "sites": [
+    {
+      "path": "src/window_project/reveal.rs",
+      "line": 46,
+      "match": "pub(super) fn cancel_reveal(state: &Rc<RefCell<ProjectState>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "Reveal cancellation borrows shared project state.",
+      "justification": "Tab-to-tree synchronization needs one cleanup path that can disconnect reveal signals and sources before root or selection changes continue."
+    },
+    {
+      "path": "src/window_project/reveal.rs",
+      "line": 50,
+      "match": "pub(super) fn schedule_restore_expanded(state: &Rc<RefCell<ProjectState>>, expanded: Vec<String>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "Expanded-row restore borrows shared project state.",
+      "justification": "Refresh and show-hidden toggles need to restore expansion state opportunistically while the lazy model repopulates."
+    },
+    {
+      "path": "src/window_project/reveal.rs",
+      "line": 72,
+      "match": "pub(super) fn sync_reveal_for_selection(state: &Rc<RefCell<ProjectState>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "Reveal synchronization borrows shared project state.",
+      "justification": "Selected-tab changes need one coordinated place to start or cancel reveal and clear selection when files are outside the active root."
+    },
+    {
+      "path": "src/window_project/reveal.rs",
+      "line": 104,
+      "match": "fn start_reveal(state: &Rc<RefCell<ProjectState>>, root: &gio::File, target: &gio::File) {",
+      "kind": "runtime-shared-state",
+      "ownership": "Reveal startup mutates shared project state.",
+      "justification": "Starting reveal must cancel any previous reveal, install the new generation, and wire temporary model-change sources against the active project tree."
+    },
+    {
+      "path": "src/window_project/reveal.rs",
+      "line": 147,
+      "match": "fn finish_reveal(state: &Rc<RefCell<ProjectState>>, selection: SelectionCleanup) {",
+      "kind": "runtime-shared-state",
+      "ownership": "Reveal cleanup mutates shared project state.",
+      "justification": "Every reveal exit path must share cleanup so model signal handlers and GLib sources cannot outlive their generation."
+    },
+    {
+      "path": "src/window_project/reveal.rs",
+      "line": 166,
+      "match": "fn schedule_finish_reveal(state: &Rc<RefCell<ProjectState>>, selection: SelectionCleanup) {",
+      "kind": "runtime-shared-state",
+      "ownership": "Deferred reveal cleanup borrows shared project state.",
+      "justification": "Selection and model changes can re-enter reveal cleanup while project state is already borrowed, so the fallback schedules cleanup for the next main-loop turn instead of panicking."
+    },
+    {
+      "path": "src/window_project/reveal.rs",
+      "line": 176,
+      "match": "fn clear_tree_selection(state: &Rc<RefCell<ProjectState>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "Reveal selection cleanup borrows shared project state.",
+      "justification": "Reveal cancellation clones the GTK selection handle before clearing it so selection notifications cannot re-enter while the project state borrow is still active."
+    },
+    {
+      "path": "src/window_project/reveal.rs",
+      "line": 195,
+      "match": "fn install_reveal_model_handler(state: &Rc<RefCell<ProjectState>>, generation: u64) {",
+      "kind": "runtime-shared-state",
+      "ownership": "Reveal model-change wiring borrows shared project state.",
+      "justification": "The temporary items-changed handler is owned by the pending reveal generation and must be registered and disconnected with the shared reveal state."
+    },
+    {
+      "path": "src/window_project/reveal.rs",
+      "line": 221,
+      "match": "fn schedule_reveal_watchdog(state: &Rc<RefCell<ProjectState>>, generation: u64) {",
+      "kind": "runtime-shared-state",
+      "ownership": "Reveal watchdog scheduling mutates shared project state.",
+      "justification": "Unreachable targets need bounded cleanup through the same pending reveal generation and source tracking as normal reveal work."
+    },
+    {
+      "path": "src/window_project/reveal.rs",
+      "line": 257,
+      "match": "fn schedule_reveal_step(state: &Rc<RefCell<ProjectState>>, generation: u64) {",
+      "kind": "runtime-shared-state",
+      "ownership": "Reveal step scheduling mutates shared project state.",
+      "justification": "Model-change bursts must coalesce into one idle reveal step while preserving generation checks and queued source ownership."
+    },
+    {
+      "path": "src/window_project/reveal.rs",
+      "line": 310,
+      "match": "fn drive_reveal_step(state: &Rc<RefCell<ProjectState>>, generation: u64) {",
+      "kind": "runtime-shared-state",
+      "ownership": "Reveal step execution borrows shared project state.",
+      "justification": "The reveal state machine needs the active tree model, selection, chain index, and generation to expand directories or select the final target safely."
+    },
+    {
+      "path": "src/window_project/reveal.rs",
+      "line": 335,
+      "match": "fn reveal_step(state: &Rc<RefCell<ProjectState>>, generation: u64) -> RevealStep {",
+      "kind": "runtime-shared-state",
+      "ownership": "Reveal step planning borrows shared project state.",
+      "justification": "Planning a reveal step reads the pending generation and visible tree model without mutating GTK state, so expansion can happen after borrows are dropped."
+    },
+    {
+      "path": "src/window_project/reveal.rs",
+      "line": 364,
+      "match": "fn advance_reveal_index(state: &Rc<RefCell<ProjectState>>, generation: u64) -> bool {",
+      "kind": "runtime-shared-state",
+      "ownership": "Reveal chain advancement mutates shared project state.",
+      "justification": "Lazy directory reveal advances one path component at a time and must ignore stale generation callbacks."
+    },
+    {
+      "path": "src/window_project/reveal.rs",
+      "line": 436,
+      "match": "pub(super) fn reveal_pending_for_tests(state: &Rc<RefCell<ProjectState>>) -> bool {",
+      "kind": "runtime-shared-state",
+      "ownership": "Reveal test helper reads shared project state.",
+      "justification": "GTK regression tests need to assert that watchdog and cancellation paths clear pending reveal state without exposing this as runtime API."
+    },
+    {
+      "path": "src/window_project/reveal.rs",
+      "line": 441,
+      "match": "pub(super) fn reveal_file_for_tests(state: &Rc<RefCell<ProjectState>>, target: &gio::File) {",
+      "kind": "runtime-shared-state",
+      "ownership": "Reveal test helper starts reveal from shared project state.",
+      "justification": "GTK regression tests need direct reveal entry points for back-to-back and unreachable-target coverage without depending on workspace tab timing."
+    },
+    {
+      "path": "src/window_project/root.rs",
+      "line": 36,
+      "match": "pub(super) fn open_file_from_tree(state: &Rc<RefCell<ProjectState>>, file: gio::File) {",
+      "kind": "runtime-shared-state",
+      "ownership": "The project controller owns root-change and sidebar state shared across async GIO callbacks.",
+      "justification": "Folder root changes, hidden-filter updates, and sidebar integration must coordinate cancellables and handlers without synchronous filesystem probes."
+    },
+    {
+      "path": "src/window_project/root.rs",
+      "line": 163,
+      "match": "state: &Rc<RefCell<ProjectState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The project controller owns one shared project-root state for open, close, restore, and app-open flows.",
+      "justification": "Project root changes coordinate sidebar, Source Control, search, settings, and toast state; shared main-thread state keeps those callbacks ordered while borrows are dropped before external handlers run."
+    },
+    {
+      "path": "src/window_project/root.rs",
+      "line": 44,
+      "match": "state: &Rc<RefCell<ProjectState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The project controller owns one shared project-root state for open, close, restore, and app-open flows.",
+      "justification": "Project root changes coordinate sidebar, Source Control, search, settings, and toast state; shared main-thread state keeps those callbacks ordered while borrows are dropped before external handlers run."
+    },
+    {
+      "path": "src/window_project/root.rs",
+      "line": 86,
+      "match": "state: &Rc<RefCell<ProjectState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The project controller owns one shared project-root state for open, close, restore, and app-open flows.",
+      "justification": "Project root changes coordinate sidebar, Source Control, search, settings, and toast state; shared main-thread state keeps those callbacks ordered while borrows are dropped before external handlers run."
+    },
+    {
+      "path": "src/window_project/root.rs",
+      "line": 116,
+      "match": "state: &Rc<RefCell<ProjectState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The project controller owns one shared project-root state for open, close, restore, and app-open flows.",
+      "justification": "Project root changes coordinate sidebar, Source Control, search, settings, and toast state; shared main-thread state keeps those callbacks ordered while borrows are dropped before external handlers run."
+    },
+    {
+      "path": "src/window_project/root.rs",
+      "line": 210,
+      "match": "pub(super) fn close_root(state: &Rc<RefCell<ProjectState>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "The project controller owns root-change and sidebar state shared across async GIO callbacks.",
+      "justification": "Folder root changes, hidden-filter updates, and sidebar integration must coordinate cancellables and handlers without synchronous filesystem probes."
+    },
+    {
+      "path": "src/window_project/root.rs",
+      "line": 241,
+      "match": "pub(super) fn sync_root_none(state: &Rc<RefCell<ProjectState>>, clear_settings: bool) {",
+      "kind": "runtime-shared-state",
+      "ownership": "The project controller owns root-change and sidebar state shared across async GIO callbacks.",
+      "justification": "Folder root changes, hidden-filter updates, and sidebar integration must coordinate cancellables and handlers without synchronous filesystem probes."
+    },
+    {
+      "path": "src/window_project/sidebar_state.rs",
+      "line": 13,
+      "match": "pub(super) fn sync_actions_for_root(state: &Rc<RefCell<ProjectState>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "Root-action synchronization borrows shared project state.",
+      "justification": "Root transitions must consistently enable/disable window actions and sidebar visibility from one state source of truth."
+    },
+    {
+      "path": "src/window_project/sidebar_state.rs",
+      "line": 26,
+      "match": "pub(super) fn set_sidebar_visible_for_root(state: &Rc<RefCell<ProjectState>>, visible: bool) {",
+      "kind": "runtime-shared-state",
+      "ownership": "Root-change sidebar visibility borrows shared project state after mutation is complete.",
+      "justification": "Split-view notify handlers can re-enter project state, so visibility changes run after root mutation releases its mutable borrow."
+    },
+    {
+      "path": "src/window_project/symlink.rs",
+      "line": 15,
+      "match": "pub(super) fn handle_symlink_activation(state: &Rc<RefCell<ProjectState>>, file: &gio::File) {",
+      "kind": "runtime-shared-state",
+      "ownership": "Symlink activation borrows shared project state.",
+      "justification": "Symlink resolution needs cancellable state and toast deduplication shared with other sidebar operations."
+    },
+    {
+      "path": "src/workspace.rs",
+      "line": 74,
+      "match": "pub(crate) state: RefCell<WorkspaceState>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The workspace owns tab collection, recent/session caches, restore gating, and active close flow.",
+      "justification": "Tabbed document coordination requires shared mutable state across menu rebuilds, session persistence, search/status rebinding, selection changes, and drag-and-drop."
+    },
+    {
+      "path": "src/workspace/autosave.rs",
+      "line": 19,
+      "match": "pub(crate) result: Rc<RefCell<Option<SaveResult>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The autosave helper owns a callback result slot for one save attempt.",
+      "justification": "The slot lets the asynchronous save path report completion back to the supervised autosave flow without blocking the GTK main loop."
+    },
+    {
+      "path": "src/workspace/tabs.rs",
+      "line": 21,
+      "match": "transfer_window_handler: RefCell<Option<TransferWindowHandler>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Each workspace owns the callback that creates registered destination windows for tab transfer.",
+      "justification": "The tab menu needs to create a secondary window through the app registry while avoiding a strong AppState cycle in workspace state."
+    },
+    {
+      "path": "src/workspace/tabs.rs",
+      "line": 22,
+      "match": "transferring_page: RefCell<Option<adw::TabPage>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Each workspace owns the page currently being transferred out or in.",
+      "justification": "The detach handler must distinguish transfer from real close so file monitors and zoom styling are not cleared for moved tabs."
+    },
+    {
+      "path": "src/workspace_open.rs",
+      "line": 137,
+      "match": "fn process_open_request(workspace: &Rc<Workspace>, request: Rc<RefCell<OpenRequest>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "The shared open-request state tracks a multi-file open batch.",
+      "justification": "Multi-open, restore, and drag-and-drop need sequential progress, success/failure counts, and selected-tab restoration across async callbacks."
+    },
+    {
+      "path": "src/workspace_open.rs",
+      "line": 227,
+      "match": "fn finish_open_request(workspace: &Rc<Workspace>, request: &Rc<RefCell<OpenRequest>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "The open-request finisher reads shared batch state.",
+      "justification": "Completion handling needs the accumulated batch results to decide between restore selection, aggregated toasts, and fallback UI state."
+    }
+  ]
+}

@@ -768,6 +768,10 @@ msgid "Cancel"
 msgstr ""
 
 msgctxt "dialog button"
+msgid "Close"
+msgstr ""
+
+msgctxt "dialog button"
 msgid "Clear All"
 msgstr ""
 
@@ -1341,4 +1345,211 @@ msgstr ""
 
 msgctxt "zoom action"
 msgid "Zoom Out"
+msgstr ""
+
+msgid "%d more file skipped (review limit reached)."
+msgid_plural "%d more files skipped (review limit reached)."
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "%d unchanged line hidden"
+msgid_plural "%d unchanged lines hidden"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "Change List"
+msgstr ""
+
+msgid "Collapse Unchanged Compare Lines"
+msgstr ""
+
+msgid "Compare Context Lines"
+msgstr ""
+
+msgid "Compare View Mode"
+msgstr ""
+
+msgid "Compare Word Wrap"
+msgstr ""
+
+msgid "Controls how many unchanged lines are kept around each visible compare hunk."
+msgstr ""
+
+msgid "Controls whether compare review hides changes that only add or remove leading or trailing whitespace."
+msgstr ""
+
+msgid "Controls whether compare review prefers split view, unified view, or adaptive switching based on available width."
+msgstr ""
+
+msgid "Controls whether unchanged stretches between compare hunks are collapsed by default."
+msgstr ""
+
+msgid "Controls whether unified compare review wraps long lines. It does not affect normal editor word wrap."
+msgstr ""
+
+msgid "Diff was skipped because the files are over the compare byte limit."
+msgstr ""
+
+msgid "Diff was skipped because the files are over the compare line limit."
+msgstr ""
+
+msgid "Diff was too large to compute fully."
+msgstr ""
+
+msgid "Ignore Leading and Trailing Whitespace in Compare"
+msgstr ""
+
+msgid "List of changed files and hunks in this review."
+msgstr ""
+
+msgid "Loading Git review"
+msgstr ""
+
+msgid "No reviewable text changes were found."
+msgstr ""
+
+msgid "No staged changes to review."
+msgstr ""
+
+msgid "No unstaged changes to review."
+msgstr ""
+
+msgid "Only leading or trailing whitespace differences are hidden."
+msgstr ""
+
+msgid "Refresh Review"
+msgstr ""
+
+msgid "Refresh Source Control before reviewing changes."
+msgstr ""
+
+msgid "Review Source Control Changes"
+msgstr ""
+
+msgid "This review is out of date."
+msgstr ""
+
+msgid "Unable to load Git blob for review."
+msgstr ""
+
+msgid "Unable to start the Git review."
+msgstr ""
+
+msgctxt "change list row"
+msgid "Changed file"
+msgstr ""
+
+msgctxt "change list row"
+msgid "Changed line"
+msgstr ""
+
+msgctxt "change list row"
+msgid "Hidden unchanged lines"
+msgstr ""
+
+msgctxt "compare action"
+msgid "Compare Options"
+msgstr ""
+
+msgctxt "compare menu section"
+msgid "Comparison"
+msgstr ""
+
+msgctxt "compare menu section"
+msgid "Display"
+msgstr ""
+
+msgctxt "compare mode"
+msgid "Adaptive"
+msgstr ""
+
+msgctxt "compare mode"
+msgid "Split"
+msgstr ""
+
+msgctxt "compare mode"
+msgid "Unified"
+msgstr ""
+
+msgctxt "compare option"
+msgid "Collapse Unchanged Lines"
+msgstr ""
+
+msgctxt "compare option"
+msgid "Compare Mode"
+msgstr ""
+
+msgctxt "compare option"
+msgid "Context Lines"
+msgstr ""
+
+msgctxt "compare option"
+msgid "Ignore Leading/Trailing Whitespace"
+msgstr ""
+
+msgctxt "compare option"
+msgid "Wrap Unified Diff Lines"
+msgstr ""
+
+msgctxt "compare pane"
+msgid "Unified"
+msgstr ""
+
+msgctxt "document title"
+msgid "Staged Changes Review"
+msgstr ""
+
+msgctxt "document title"
+msgid "Unstaged Changes Review"
+msgstr ""
+
+msgctxt "git review path"
+msgid "Review limit"
+msgstr ""
+
+msgctxt "review action"
+msgid "Change List"
+msgstr ""
+
+msgctxt "review action"
+msgid "Open Reviewed File"
+msgstr ""
+
+msgctxt "review action"
+msgid "Refresh Review"
+msgstr ""
+
+msgctxt "review action"
+msgid "Reveal All Hidden Lines"
+msgstr ""
+
+msgctxt "review action"
+msgid "Reveal More Above"
+msgstr ""
+
+msgctxt "review action"
+msgid "Reveal More Below"
+msgstr ""
+
+msgctxt "review toolbar"
+msgid "Review"
+msgstr ""
+
+msgctxt "save file name"
+msgid "Source Control Review"
+msgstr ""
+
+msgctxt "source control menu item"
+msgid "Review Staged Changes"
+msgstr ""
+
+msgctxt "source control menu item"
+msgid "Review Unstaged Changes"
+msgstr ""
+
+msgid "Use Compare or Source Control reviews to switch between split and unified diff views, collapse unchanged lines, ignore trim-only whitespace noise, and move through changes with F8 and Shift+F8."
+msgstr ""
+
+msgctxt "help row"
+msgid "Compare and Review"
 msgstr ""

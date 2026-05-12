@@ -1,4 +1,5 @@
 use std::cell::RefCell;
+use std::path::Path;
 use std::rc::Rc;
 
 use gettextrs::pgettext;
@@ -261,6 +262,10 @@ impl Workspace {
 
     pub(crate) fn add_empty_tab(self: &Rc<Self>, select: bool) -> Rc<EditorTab> {
         let tab = EditorTab::new(&self.settings);
+        self.add_tab(tab, select)
+    }
+
+    pub(crate) fn add_tab(self: &Rc<Self>, tab: Rc<EditorTab>, select: bool) -> Rc<EditorTab> {
         self.bind_tab_to_workspace(&tab);
         let page = tab.attach(&self.tab_view);
         self.state.borrow_mut().tabs.push(tab.clone());
@@ -276,6 +281,22 @@ impl Workspace {
             && let Some(page) = tab.page()
         {
             self.tab_view.close_page(&page);
+        }
+    }
+
+    pub(crate) fn close_review_tabs_for_other_repo(&self, repo: Option<&Path>) {
+        let tabs = self.ordered_tabs();
+        for tab in tabs {
+            if tab.kind() != crate::editor_tab::TabKind::GitReview {
+                continue;
+            }
+            let same_repo = tab
+                .review_repo_root()
+                .as_deref()
+                .is_some_and(|tab_repo| repo == Some(tab_repo));
+            if !same_repo && let Some(page) = tab.page() {
+                self.tab_view.close_page(&page);
+            }
         }
     }
 
@@ -410,7 +431,11 @@ impl Workspace {
             .borrow()
             .tabs
             .iter()
-            .find(|tab| tab.uri().as_deref().is_some_and(|item| item == uri))
+            .find(|tab| {
+                tab.document_uri()
+                    .as_deref()
+                    .is_some_and(|item| item == uri)
+            })
             .cloned()
     }
 }

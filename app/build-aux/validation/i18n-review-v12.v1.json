@@ -1,47 +1,4 @@
 {
   "version": 1,
-  "strings": [
-    {
-      "path": "src/document_print.rs",
-      "line": 34,
-      "match": "crate::dialogs::present_error(parent, &AppError::Internal(gettext(\"Printing failed.\")));",
-      "kind": "i18n-short-string",
-      "resolution": "This short print failure message appears in the print error dialog after the native print operation reports failure."
-    },
-    {
-      "path": "src/find_in_files/mod.rs",
-      "line": 421,
-      "match": "let mut label = gettext(\"Searching\");",
-      "kind": "i18n-short-string",
-      "resolution": "This short V12 string appears inside the Find in Files sidebar, where the query field, result list, and scan summary provide the missing context."
-    },
-    {
-      "path": "src/find_in_files/mod.rs",
-      "line": 428,
-      "match": "gettext(\"No matches\")",
-      "kind": "i18n-short-string",
-      "resolution": "This short V12 string appears inside the Find in Files sidebar, where the query field, result list, and scan summary provide the missing context."
-    },
-    {
-      "path": "src/find_in_files/mod.rs",
-      "line": 430,
-      "match": "let results = ngettext(\"%d result\", \"%d results\", summary.matches)",
-      "kind": "i18n-short-string",
-      "resolution": "This short V12 string appears inside the Find in Files sidebar, where the query field, result list, and scan summary provide the missing context."
-    },
-    {
-      "path": "src/find_in_files/mod.rs",
-      "line": 432,
-      "match": "let files = ngettext(\"in %d file\", \"in %d files\", summary.files_searched)",
-      "kind": "i18n-short-string",
-      "resolution": "This short V12 string appears inside the Find in Files sidebar, where the query field, result list, and scan summary provide the missing context."
-    },
-    {
-      "path": "src/find_in_files/mod.rs",
-      "line": 440,
-      "match": "let skipped = ngettext(\"%d file skipped.\", \"%d files skipped.\", summary.skipped)",
-      "kind": "i18n-short-string",
-      "resolution": "This short V12 string appears inside the Find in Files sidebar, where the query field, result list, and scan summary provide the missing context."
-    }
-  ]
+  "strings": []
 }

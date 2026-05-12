@@ -102,7 +102,7 @@ pub(super) fn install(
 impl WindowGitActions {
     pub(super) fn recompute_visibility(&self) {
         let selected = self.workspace.selected_tab();
-        let uri = selected.as_ref().and_then(|tab| tab.uri());
+        let uri = selected.as_ref().and_then(|tab| tab.document_uri());
         let entry = uri
             .as_deref()
             .and_then(|uri| self.source_control.entry_for_uri(uri));
@@ -152,7 +152,7 @@ impl WindowGitActions {
         if tab.is_compare_active() || tab.is_dirty() {
             return;
         }
-        let Some(uri) = tab.uri() else {
+        let Some(uri) = tab.document_uri() else {
             return;
         };
         let Some(state) = self.source_control.entry_action_state_for_uri(&uri, action) else {

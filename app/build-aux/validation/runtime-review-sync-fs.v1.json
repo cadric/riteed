@@ -1,45 +1,4 @@
 {
   "version": 1,
-  "sites": [
-    {
-      "path": "src/runtime_icons.rs",
-      "line": 12,
-      "match": "if icon_dir.is_dir() {",
-      "kind": "runtime-sync-fs",
-      "ownership": "Runtime icon setup owns the developer-only icon directory guard.",
-      "justification": "This probe only runs for the explicit RITEED_DEV_ICON_DIR development override during startup and is not used for project, document, portal, or user-selected paths."
-    },
-    {
-      "path": "src/source_control/live.rs",
-      "line": 231,
-      "match": "Rc::new(Path::exists),",
-      "kind": "runtime-sync-fs",
-      "ownership": "Source Control native live refresh owns the Git index-lock probe.",
-      "justification": "The scheduler disables this probe for portal and polling contexts; native index-lock deferral is a UI-jank optimization because git status tolerates concurrent index writes."
-    },
-    {
-      "path": "src/source_control/live.rs",
-      "line": 325,
-      "match": "if path.exists() {",
-      "kind": "runtime-sync-fs",
-      "ownership": "Source Control native metadata monitoring owns target existence probing.",
-      "justification": "Metadata targets are only resolved on native non-polling Git contexts; portal and non-native paths return before monitor target discovery."
-    },
-    {
-      "path": "src/source_control/live.rs",
-      "line": 328,
-      "match": "kind: if path.is_dir() {",
-      "kind": "runtime-sync-fs",
-      "ownership": "Source Control native metadata monitoring owns target kind probing.",
-      "justification": "Directory/file classification is only used to choose a native Gio monitor after portal paths have selected polling."
-    },
-    {
-      "path": "src/source_control/live.rs",
-      "line": 338,
-      "match": ".find(|ancestor| ancestor.exists())?;",
-      "kind": "runtime-sync-fs",
-      "ownership": "Source Control native metadata monitoring owns nearest-parent probing.",
-      "justification": "Nearest existing parent discovery is only used for native Git metadata monitor installation and is skipped for portal/polling contexts."
-    }
-  ]
+  "sites": []
 }

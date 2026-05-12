@@ -1,6 +1,7 @@
 use gtk4::{gdk, prelude::*};
 use libadwaita as adw;
 
+use super::display::{CompareDisplayModel, CompareDisplayRow, DisplayContentRow};
 use super::model::{DiffRowKind, DiffRowModel, DiffSide};
 use super::presentation::{DiffPresentation, PresentationSide};
 
@@ -79,28 +80,27 @@ impl CompareTags {
     }
 }
 
-pub(super) fn apply_model_tags(
+pub(super) fn apply_display_tags(
     left_buffer: &sourceview5::Buffer,
     right_buffer: &sourceview5::Buffer,
-    model: &DiffRowModel,
+    display: &CompareDisplayModel,
     tags: &CompareTags,
 ) {
-    if model.too_large {
-        return;
-    }
-    for (row_index, row) in model.rows.iter().enumerate() {
-        match row.kind {
-            DiffRowKind::Equal => {}
-            DiffRowKind::ReferenceOnly => {
-                apply_line_tag(left_buffer, row_index, &tags.reference_removed);
-            }
-            DiffRowKind::CurrentOnly => {
-                apply_line_tag(right_buffer, row_index, &tags.current_added);
-            }
-            DiffRowKind::Modify => {
-                apply_line_tag(left_buffer, row_index, &tags.reference_removed);
-                apply_line_tag(right_buffer, row_index, &tags.current_added);
-                apply_inline_ranges(left_buffer, right_buffer, row_index, row, tags);
+    for (row_index, row) in display.rows.iter().enumerate() {
+        if let CompareDisplayRow::Content(row) = row {
+            match row.kind {
+                DiffRowKind::Equal => {}
+                DiffRowKind::ReferenceOnly => {
+                    apply_line_tag(left_buffer, row_index, &tags.reference_removed);
+                }
+                DiffRowKind::CurrentOnly => {
+                    apply_line_tag(right_buffer, row_index, &tags.current_added);
+                }
+                DiffRowKind::Modify => {
+                    apply_line_tag(left_buffer, row_index, &tags.reference_removed);
+                    apply_line_tag(right_buffer, row_index, &tags.current_added);
+                    apply_inline_ranges(left_buffer, right_buffer, row_index, row, tags);
+                }
             }
         }
     }
@@ -135,6 +135,11 @@ pub(super) fn apply_placeholder_tags(
     raise_tag_priority(left_buffer, &tags.reference_placeholder);
     raise_tag_priority(right_buffer, &tags.current_placeholder);
     for row in 0..presentation.reference_line_numbers.len() {
+        if presentation.is_metadata_row(row) {
+            apply_line_tag(left_buffer, row, &tags.reference_placeholder);
+            apply_line_tag(right_buffer, row, &tags.current_placeholder);
+            continue;
+        }
         if presentation
             .placeholder_marker(PresentationSide::Reference, row)
             .is_some()
@@ -187,7 +192,7 @@ fn apply_inline_ranges(
     left_buffer: &sourceview5::Buffer,
     right_buffer: &sourceview5::Buffer,
     row_index: usize,
-    row: &super::model::DiffRow,
+    row: &DisplayContentRow,
     tags: &CompareTags,
 ) {
     for range in &row.inline_ranges {
@@ -247,16 +252,16 @@ fn line_offset_bounds(
     Some((start_iter, end_iter))
 }
 
-struct ComparePalette {
-    added: gdk::RGBA,
-    removed: gdk::RGBA,
-    reference_inline: gdk::RGBA,
-    current_inline: gdk::RGBA,
-    placeholder: gdk::RGBA,
+pub(super) struct ComparePalette {
+    pub(super) added: gdk::RGBA,
+    pub(super) removed: gdk::RGBA,
+    pub(super) reference_inline: gdk::RGBA,
+    pub(super) current_inline: gdk::RGBA,
+    pub(super) placeholder: gdk::RGBA,
 }
 
 impl ComparePalette {
-    fn from_view(view: &sourceview5::View) -> Self {
+    pub(super) fn from_view(view: &sourceview5::View) -> Self {
         let fallback = Self::fallback();
         let foreground = view.color();
         let removed =
@@ -265,7 +270,7 @@ impl ComparePalette {
         Self::from_semantic(&removed, &added, &foreground)
     }
 
-    fn fallback() -> Self {
+    pub(super) fn fallback() -> Self {
         let foreground = gdk::RGBA::new(0.0, 0.0, 0.0, 1.0);
         Self::from_semantic(
             &adw::AccentColor::Red.to_rgba(),
