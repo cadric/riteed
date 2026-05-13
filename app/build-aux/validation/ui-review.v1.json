@@ -43,5 +43,20 @@
     }
   ],
   "menus": [],
-  "css": []
+  "css": [
+    {
+      "path": "data/ui/appearance.css",
+      "line": 1,
+      "match": ".riteed-theme-selector {",
+      "reason": "Theme selector swatches and editor palette preview tiles need compact visual affordances not provided by default Adwaita rows.",
+      "scope": "Riteed-prefixed classes used by the Appearance popover and preferences palette grid only."
+    },
+    {
+      "path": "data/ui/compare.css",
+      "line": 2,
+      "match": ".riteed-diff-reference-color-probe {",
+      "reason": "Compare rendering resolves libadwaita semantic colors for transient text-buffer diff tags through harmless CSS probe widgets.",
+      "scope": "Riteed-prefixed color probe classes used only for compare tag color lookup."
+    }
+  ]
 }

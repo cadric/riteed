@@ -96,7 +96,7 @@
         "message": "Core Adwaita typography, sizing, and widget-shape overrides are forbidden.",
         "pattern": "^\\s*(window|button|entry|label|headerbar)\\s*\\{",
         "paths": [
-          "data/style/**/*.css"
+          "data/**/*.css"
         ]
       }
     ]

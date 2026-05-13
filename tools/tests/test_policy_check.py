@@ -136,6 +136,32 @@ class PolicyCheckTests(unittest.TestCase):
             libadwaita.check_libadwaita(root, errors)
             self.assertTrue(any("missing review entry" in item for item in errors))
 
+    def test_libadwaita_requires_css_review_under_data_ui(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            shutil.copytree(REPO_ROOT / "policy", root / "policy")
+            _write(root / "data" / "ui" / "app.css", ".demo-specific {\n  margin: 6px;\n}\n")
+            errors: list[str] = []
+            libadwaita.check_libadwaita(root, errors)
+            self.assertTrue(any("css-file" in item and "data/ui/app.css" in item for item in errors))
+
+    def test_resources_require_data_ui_css_entries(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            _write(root / "data" / "ui" / "app.css", ".demo-specific {\n  margin: 6px;\n}\n")
+            _write(
+                root / "data" / "resources.gresource.xml",
+                """<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+  <gresource prefix="/io/example/Demo">
+  </gresource>
+</gresources>
+""",
+            )
+            errors: list[str] = []
+            foundation.check_resources(root, "io.example.Demo", errors)
+            self.assertTrue(any("ui/app.css" in item for item in errors))
+
     def test_runtime_detached_task_fails(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

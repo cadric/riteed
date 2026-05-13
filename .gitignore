@@ -25,6 +25,7 @@
 /app/_build/
 *.flatpak
 /app/data/schemas/gschemas.compiled
+/app/vendor/
 
 # Local agent / editor state
 /.claude/

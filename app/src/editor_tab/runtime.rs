@@ -265,20 +265,21 @@ impl EditorTab {
         let saved_uri = saved.uri.clone();
         let saved_access_path = saved.path.clone();
         let saved_file = gio::File::for_path(&saved.path);
-        let mut state = self.state.borrow_mut();
-        state
-            .document
-            .document
-            .set_saved_with_display_path(saved.path, saved.display_path.clone());
-        state.document.document.set_format(saved.format.clone());
-        state.document.saved_format = saved.format.clone();
-        state.document.source_file = Some(saved.source_file);
-        state.external.writability = Writability::Writable;
-        state.autosave.paused_message = None;
+        {
+            let mut state = self.state.borrow_mut();
+            state
+                .document
+                .document
+                .set_saved_with_display_path(saved.path, saved.display_path.clone());
+            state.document.document.set_format(saved.format.clone());
+            state.document.saved_format = saved.format.clone();
+            state.document.source_file = Some(saved.source_file);
+            state.external.writability = Writability::Writable;
+            state.autosave.paused_message = None;
+        }
         self.text_buffer
             .set_implicit_trailing_newline(saved.format.implicit_trailing_newline());
         self.text_buffer.set_modified(false);
-        drop(state);
         self.sync_markdown_preview_availability();
         self.sync_compare_reference_after_save(&saved_uri);
         self.refresh_writability_for_file(&saved_file);

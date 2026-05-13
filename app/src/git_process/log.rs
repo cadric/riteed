@@ -86,7 +86,9 @@ pub(super) fn parse_recent_commits(bytes: &[u8]) -> Result<Vec<GitCommitSummary>
 }
 
 fn field_text(bytes: &[u8]) -> Result<String, GitProcessError> {
-    String::from_utf8(bytes.to_vec()).map_err(|_| GitProcessError::ParseFailed)
+    std::str::from_utf8(bytes)
+        .map(ToOwned::to_owned)
+        .map_err(|_| GitProcessError::ParseFailed)
 }
 
 fn no_history_error(stderr: &str) -> bool {

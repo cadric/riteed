@@ -17,7 +17,7 @@ def first_content_line(path: Path) -> tuple[int, str] | None:
 
 def css_review_hits(root: Path) -> list[ScanHit]:
     hits: list[ScanHit] = []
-    for path in scoped_files(root, ["data/style/**/*.css"]):
+    for path in scoped_files(root, ["data/**/*.css"]):
         first = first_content_line(path)
         if first is None:
             continue

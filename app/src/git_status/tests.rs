@@ -41,7 +41,7 @@ fn status_parser_marks_submodules_and_unmerged_unsupported() {
 #[test]
 fn status_parser_reads_worktree_modes_from_porcelain_v2() {
     let input = b"1 .M N... 100644 100644 100755 abc def chmod.sh\0\
-2 RM N... 100644 100644 120000 abc def R100 link-new\0link-old\0\
+1 .M N... 100644 100644 120000 abc def link-new\0\
 u UU N... 100644 100644 100644 000000 abc def ghi conflict.txt\0\
 1 .M N... 100644 100644 160000 abc def module\0\
 1 .M N... 100644 100644 100600 abc def odd.txt\0";

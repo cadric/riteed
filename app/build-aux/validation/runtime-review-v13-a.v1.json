@@ -187,7 +187,7 @@
     },
     {
       "path": "src/find_in_files/scanner.rs",
-      "line": 317,
+      "line": 321,
       "match": "fn should_finish(state: &Rc<RefCell<ScanState>>) -> bool {",
       "kind": "runtime-shared-state",
       "ownership": "The Find in Files controller and scanner own one workspace scan generation, cancellable, and result set.",
@@ -195,7 +195,7 @@
     },
     {
       "path": "src/find_in_files/scanner.rs",
-      "line": 324,
+      "line": 328,
       "match": "fn finish_scan(state: &Rc<RefCell<ScanState>>) {",
       "kind": "runtime-shared-state",
       "ownership": "The Find in Files controller and scanner own one workspace scan generation, cancellable, and result set.",
@@ -203,7 +203,7 @@
     },
     {
       "path": "src/find_in_files/scanner.rs",
-      "line": 332,
+      "line": 336,
       "match": "fn stale_or_cancelled(state: &Rc<RefCell<ScanState>>) -> bool {",
       "kind": "runtime-shared-state",
       "ownership": "The Find in Files controller and scanner own one workspace scan generation, cancellable, and result set.",
@@ -275,7 +275,7 @@
     },
     {
       "path": "src/project_tree_model.rs",
-      "line": 287,
+      "line": 293,
       "match": "state: Rc<RefCell<ModelState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The project tree model owns one shared model state for lazy directory rows and selection/reveal updates.",
@@ -283,7 +283,7 @@
     },
     {
       "path": "src/project_tree_model.rs",
-      "line": 297,
+      "line": 303,
       "match": "state: &Rc<RefCell<ModelState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The project tree model owns one shared model state for lazy directory rows and selection/reveal updates.",
@@ -291,11 +291,19 @@
     },
     {
       "path": "src/project_tree_model.rs",
-      "line": 471,
+      "line": 491,
       "match": "state: &Rc<RefCell<ModelState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The project tree model owns one shared model state for lazy directory rows and selection/reveal updates.",
       "justification": "Gio async enumeration and GTK list-model callbacks need the same main-thread state so directory loading and row replacement stay coherent."
+    },
+    {
+      "path": "src/project_tree_model.rs",
+      "line": 517,
+      "match": "fn remove_active_cancellable(state: &Rc<RefCell<ModelState>>, cancellable: &gio::Cancellable) {",
+      "kind": "runtime-shared-state",
+      "ownership": "The project tree model owns cleanup of completed async directory-load cancellables.",
+      "justification": "Directory enumeration stores cancellables for root-change cancellation; completed loads remove their cancellable from the shared set so long project sessions do not retain stale handles."
     },
     {
       "path": "src/project_tree_monitor.rs",
@@ -315,7 +323,7 @@
     },
     {
       "path": "src/project_tree_monitor.rs",
-      "line": 112,
+      "line": 129,
       "match": "poll_state: Rc<RefCell<Option<ProjectDirectorySnapshot>>>,",
       "kind": "runtime-shared-state",
       "ownership": "The project tree monitor owns fallback polling snapshot and cancellation state.",
@@ -323,7 +331,7 @@
     },
     {
       "path": "src/project_tree_monitor.rs",
-      "line": 155,
+      "line": 172,
       "match": "cancelled: Rc<Cell<bool>>,",
       "kind": "runtime-shared-state",
       "ownership": "The project tree monitor owns fallback polling snapshot and cancellation state.",
@@ -331,7 +339,7 @@
     },
     {
       "path": "src/project_tree_monitor.rs",
-      "line": 152,
+      "line": 169,
       "match": "poll_state: Rc<RefCell<Option<ProjectDirectorySnapshot>>>,",
       "kind": "runtime-shared-state",
       "ownership": "The project tree monitor owns fallback polling snapshot and cancellation state.",
@@ -339,7 +347,7 @@
     },
     {
       "path": "src/project_tree_monitor.rs",
-      "line": 115,
+      "line": 132,
       "match": "cancelled: Rc<Cell<bool>>,",
       "kind": "runtime-shared-state",
       "ownership": "The project tree monitor owns fallback polling snapshot and cancellation state.",
@@ -347,7 +355,7 @@
     },
     {
       "path": "src/project_tree_monitor.rs",
-      "line": 156,
+      "line": 173,
       "match": "query_in_flight: Rc<Cell<bool>>,",
       "kind": "runtime-shared-state",
       "ownership": "The directory polling loop shares its in-flight enumeration guard.",
@@ -355,7 +363,7 @@
     },
     {
       "path": "src/project_tree_monitor.rs",
-      "line": 224,
+      "line": 241,
       "match": "poll_state: &Rc<RefCell<Option<ProjectDirectorySnapshot>>>,",
       "kind": "runtime-shared-state",
       "ownership": "The directory snapshot transition helper mutates shared polling state.",

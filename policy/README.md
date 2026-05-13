@@ -8,6 +8,7 @@ This directory is the canonical contract for policy scope, validator behavior, a
 - `validation-tooling.policy.json` owns shared thresholds, required tools, line limits, and review-artifact discovery.
 - Domain policies own domain-specific hard-fail and `review_required` rules.
 - `hard_fail_patterns[].exceptions` are narrow repo-relative globs applied before scanner regex matching; keep them path-scoped.
+- CSS review and resource scanning covers `data/**/*.css`, including CSS stored beside UI resources under `data/ui/`.
 - `po/*.po` and `po/*.pot` are exempt only from generic line-count enforcement; gettext extraction, `msgfmt`, untranslated-catalog checks, and i18n review artifacts still apply.
 
 ## Review Evidence

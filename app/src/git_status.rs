@@ -90,17 +90,14 @@ pub(crate) struct GitPath {
 impl GitPath {
     #[must_use]
     pub(crate) fn from_bytes(bytes: &[u8]) -> Self {
-        match String::from_utf8(bytes.to_vec()) {
-            Ok(value) => Self {
-                raw: bytes.to_vec(),
-                display: value.clone(),
-                utf8: Some(value),
-            },
-            Err(_) => Self {
-                raw: bytes.to_vec(),
-                display: pgettext("git path fallback", "Invalid path encoding"),
-                utf8: None,
-            },
+        let utf8 = std::str::from_utf8(bytes).map(ToOwned::to_owned).ok();
+        let display = utf8
+            .clone()
+            .unwrap_or_else(|| pgettext("git path fallback", "Invalid path encoding"));
+        Self {
+            raw: bytes.to_vec(),
+            display,
+            utf8,
         }
     }
 
@@ -257,8 +254,7 @@ pub(crate) enum GitParseError {
 #[must_use]
 pub(crate) fn parse_status(bytes: &[u8]) -> GitStatusSnapshot {
     let mut snapshot = GitStatusSnapshot::default();
-    let mut records = bytes.split(|byte| *byte == 0);
-    while let Some(record) = records.next() {
+    for record in bytes.split(|byte| *byte == 0) {
         if record.is_empty() {
             continue;
         }
@@ -266,11 +262,6 @@ pub(crate) fn parse_status(bytes: &[u8]) -> GitStatusSnapshot {
             Some(b'#') => parse_branch_line(record, &mut snapshot),
             Some(b'1') => {
                 if let Some(entry) = parse_ordinary_entry(record) {
-                    snapshot.entries.push(entry);
-                }
-            }
-            Some(b'2') => {
-                if let Some(entry) = parse_rename_entry(record, records.next()) {
                     snapshot.entries.push(entry);
                 }
             }
@@ -294,23 +285,19 @@ pub(crate) fn parse_status(bytes: &[u8]) -> GitStatusSnapshot {
 }
 
 pub(crate) fn parse_attrs(bytes: &[u8]) -> Result<GitAttrs, GitParseError> {
-    let parts: Vec<&[u8]> = bytes
+    let mut parts = bytes
         .split(|byte| *byte == 0)
-        .filter(|part| !part.is_empty())
-        .collect();
-    if !parts.len().is_multiple_of(3) {
-        return Err(GitParseError::Malformed);
-    }
+        .filter(|part| !part.is_empty());
     let mut blocked = BTreeSet::new();
-    for triple in parts.chunks(3) {
-        let Some(path) = triple.first() else {
+    while let Some(path) = parts.next() {
+        if parts.next().is_none() {
             return Err(GitParseError::Malformed);
-        };
-        let Some(value) = triple.get(2) else {
+        }
+        let Some(value) = parts.next() else {
             return Err(GitParseError::Malformed);
         };
         if attr_blocks(value) {
-            blocked.insert((*path).to_vec());
+            blocked.insert(path.to_vec());
         }
     }
     Ok(GitAttrs { blocked })
@@ -373,31 +360,6 @@ fn parse_ordinary_entry(record: &[u8]) -> Option<GitStatusEntry> {
     let head_oid = fields.get(6).and_then(oid_field);
     let index_oid = fields.get(7).and_then(oid_field);
     let path = fields.get(8).copied()?;
-    let (status, staged, unstaged) = status_from_xy(xy);
-    let status = if is_submodule(submodule) {
-        GitFileStatus::Unsupported
-    } else {
-        status
-    };
-    Some(GitStatusEntry::with_worktree_mode(
-        GitPath::from_bytes(path),
-        status,
-        head_oid,
-        index_oid,
-        staged,
-        unstaged,
-        worktree_mode,
-    ))
-}
-
-fn parse_rename_entry(record: &[u8], next_record: Option<&[u8]>) -> Option<GitStatusEntry> {
-    let fields = split_fields(record, 10);
-    let xy = fields.get(1).copied()?;
-    let submodule = fields.get(2).copied()?;
-    let worktree_mode = parse_worktree_mode(fields.get(5).copied());
-    let head_oid = fields.get(6).and_then(oid_field);
-    let index_oid = fields.get(7).and_then(oid_field);
-    let path = fields.get(9).copied().or(next_record)?;
     let (status, staged, unstaged) = status_from_xy(xy);
     let status = if is_submodule(submodule) {
         GitFileStatus::Unsupported
@@ -480,7 +442,7 @@ fn eol_supported(autocrlf: &str, eol: &str) -> bool {
 }
 
 fn bytes_to_string(bytes: &[u8]) -> Option<String> {
-    String::from_utf8(bytes.to_vec()).ok()
+    std::str::from_utf8(bytes).map(ToOwned::to_owned).ok()
 }
 
 fn oid_field(bytes: &&[u8]) -> Option<String> {

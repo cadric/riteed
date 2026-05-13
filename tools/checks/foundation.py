@@ -535,7 +535,7 @@ def check_flatpak_and_identity(root: Path, errors: list[str]) -> str | None:
 
 def check_resources(root: Path, app_id: str | None, errors: list[str]) -> None:
     path = root / "data" / "resources.gresource.xml"
-    assets = scoped_files(root, ["data/ui/**/*.ui", "data/ui/**/*.blp", "data/style/**/*.css"])
+    assets = scoped_files(root, ["data/ui/**/*.ui", "data/ui/**/*.blp", "data/**/*.css"])
     if not assets and not path.exists():
         return
     if not path.exists():

@@ -265,8 +265,6 @@ impl EditorTab {
         self.refresh_language_for_file(&monitored_file);
         self.set_loading(false);
         self.sync_presentation();
-        self.sync_compare_reference_after_save(&new_uri);
-        self.sync_presentation();
         self.grab_focus();
         callback(SaveResult::Saved(SaveOutcome { old_uri, new_uri }));
     }

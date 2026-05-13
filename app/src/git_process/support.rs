@@ -42,5 +42,6 @@ pub(super) fn identity_part_is_valid(value: &str) -> bool {
 }
 
 pub(super) fn stderr_text(bytes: &[u8]) -> String {
-    String::from_utf8(bytes.to_vec()).unwrap_or_else(|_| String::from("Git command failed."))
+    std::str::from_utf8(bytes)
+        .map_or_else(|_| String::from("Git command failed."), ToOwned::to_owned)
 }

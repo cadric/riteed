@@ -1,6 +1,6 @@
 ---
 created: 2026-04-19
-updated: 2026-05-12
+updated: 2026-05-13
 status: current
 priority: high
 type: changelog
@@ -27,6 +27,7 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 - Added Source Control staged and unstaged review tabs with multi-file review sessions, file boundaries, skipped-diff reasons, stale-review banners, a Change List navigator, and an Open Reviewed File action.
 
 ### Fixed
+- Made policy CSS scanning cover CSS stored under `data/ui/` and added review evidence for Riteed's bundled CSS resources.
 - Added visible paragraph spacing in Markdown preview while keeping soft line breaks collapsed and hard line breaks explicit.
 - Made Markdown preview H3-H6 headings visually distinct instead of sharing one fallback heading style.
 - Stopped Markdown preview unsupported-extension diagnostics from firing on examples inside fenced or indented code blocks.
@@ -38,6 +39,8 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 - Stabilized the Git process async test helper by acquiring the default main context before starting GIO subprocess operations.
 
 ### Changed
+- Aligned the Cargo/README source version with the existing 0.3.1 AppStream release metadata before the next GitHub build.
+- Replaced the committed `app/vendor/` Cargo dependency tree with a generated Flatpak Cargo source manifest and ignored local vendor directories.
 - Split Preferences into Editor, Appearance, Format, and Source Control pages so appearance and Git identity controls are no longer mixed into unrelated editor settings.
 - Made Source Control rows match the Files sidebar density by removing inline row action buttons and reusing compact sidebar-row styling in both list and tree modes.
 - Kept document search, replace, and project search on one query and Match Case state while preserving Ctrl+F and Ctrl+H as document-scoped actions.

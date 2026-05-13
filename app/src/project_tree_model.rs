@@ -121,10 +121,16 @@ impl ProjectTreeModel {
     }
 
     pub(crate) fn set_root(&self, root: Option<gio::File>) {
+        let show_hidden = self.state.borrow().show_hidden;
+        self.set_root_with_show_hidden(root, show_hidden);
+    }
+
+    pub(crate) fn set_root_with_show_hidden(&self, root: Option<gio::File>, show_hidden: bool) {
         {
             let mut state = self.state.borrow_mut();
             state.generation += 1;
             cancel_transient_state(&mut state);
+            state.show_hidden = show_hidden;
             state.root = root;
             state.root_store.remove_all();
         }
@@ -311,6 +317,7 @@ fn start_directory_load(
     let state = Rc::clone(state);
     glib::idle_add_local_once(move || {
         if state.borrow().generation != generation {
+            remove_active_cancellable(&state, &cancellable);
             return;
         }
 
@@ -336,12 +343,15 @@ fn start_directory_load(
                     },
                     Vec::new(),
                 ),
-                Err(error) => handle_directory_error(
-                    &state_for_callback,
-                    &store_for_callback,
-                    generation,
-                    &error,
-                ),
+                Err(error) => {
+                    remove_active_cancellable(&state_for_callback, &cancellable_for_callback);
+                    handle_directory_error(
+                        &state_for_callback,
+                        &store_for_callback,
+                        generation,
+                        &error,
+                    );
+                }
             },
         );
     });
@@ -360,18 +370,28 @@ fn collect_enumerator_batch(load: &DirectoryLoad, mut collected: Vec<gio::FileIn
             match result {
                 Ok(batch) => {
                     if batch.is_empty() {
+                        remove_active_cancellable(
+                            &load_for_callback.state,
+                            &load_for_callback.cancellable,
+                        );
                         finish_directory_load(&load_for_callback, &collected);
                         return;
                     }
                     collected.extend(batch);
                     collect_enumerator_batch(&load_for_callback, collected);
                 }
-                Err(error) => handle_directory_error(
-                    &load_for_callback.state,
-                    &load_for_callback.store,
-                    load_for_callback.generation,
-                    &error,
-                ),
+                Err(error) => {
+                    remove_active_cancellable(
+                        &load_for_callback.state,
+                        &load_for_callback.cancellable,
+                    );
+                    handle_directory_error(
+                        &load_for_callback.state,
+                        &load_for_callback.store,
+                        load_for_callback.generation,
+                        &error,
+                    );
+                }
             }
         },
     );
@@ -492,6 +512,13 @@ fn cancel_transient_state(state: &mut ModelState) {
     for (_uri, monitor) in state.directory_monitors.drain() {
         monitor.cancel();
     }
+}
+
+fn remove_active_cancellable(state: &Rc<RefCell<ModelState>>, cancellable: &gio::Cancellable) {
+    state
+        .borrow_mut()
+        .active_cancellables
+        .retain(|active| active != cancellable);
 }
 
 fn install_directory_monitor(load: &DirectoryLoad, initial_snapshot: &ProjectDirectorySnapshot) {

@@ -259,7 +259,7 @@
     },
     {
       "path": "src/editor_tab/compare.rs",
-      "line": 84,
+      "line": 83,
       "match": "presentation: Rc<std::cell::RefCell<DiffPresentation>>,",
       "kind": "runtime-shared-state",
       "ownership": "The compare controller owns the tab-local rendered presentation rows and custom line-number gutter model.",
@@ -267,7 +267,7 @@
     },
     {
       "path": "src/editor_tab/compare.rs",
-      "line": 85,
+      "line": 84,
       "match": "display_model: Rc<std::cell::RefCell<CompareDisplayModel>>,",
       "kind": "runtime-shared-state",
       "ownership": "The compare controller owns the tab-local collapsed display model shared by split rendering and hunk navigation.",
@@ -275,7 +275,7 @@
     },
     {
       "path": "src/editor_tab/compare.rs",
-      "line": 86,
+      "line": 85,
       "match": "row_model: Rc<std::cell::RefCell<DiffRowModel>>,",
       "kind": "runtime-shared-state",
       "ownership": "The compare controller owns the tab-local logical diff row model.",
@@ -285,7 +285,7 @@
       "ownership": "Each compare controller owns presentation and view-mode state shared with its pane, gutter, and breakpoint callbacks.",
       "justification": "Compare panes rebuild asynchronously from user actions and settings changes, so small shared cells keep UI callbacks synchronized without global state.",
       "path": "src/editor_tab/compare.rs",
-      "line": 87,
+      "line": 86,
       "match": "unified_presentation: Rc<std::cell::RefCell<UnifiedPresentation>>,",
       "kind": "runtime-shared-state"
     },
@@ -293,7 +293,7 @@
       "ownership": "Each compare controller owns presentation and view-mode state shared with its pane, gutter, and breakpoint callbacks.",
       "justification": "Compare panes rebuild asynchronously from user actions and settings changes, so small shared cells keep UI callbacks synchronized without global state.",
       "path": "src/editor_tab/compare.rs",
-      "line": 100,
+      "line": 99,
       "match": "view_mode_cell: Rc<Cell<CompareViewMode>>,",
       "kind": "runtime-shared-state"
     },

@@ -186,9 +186,8 @@ fn finish_root_change(
             state.browser.tree().selection().clone(),
         )
     };
-    model.set_root(Some(folder.clone()));
+    model.set_root_with_show_hidden(Some(folder.clone()), show_hidden);
     selection.set_selected(gtk4::INVALID_LIST_POSITION);
-    model.set_show_hidden(show_hidden);
     if let Some(handler) = plan.handler {
         handler(Some(folder.clone()));
     }

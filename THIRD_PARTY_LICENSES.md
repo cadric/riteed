@@ -5,12 +5,14 @@ The root `LICENSE` file covers that code.
 
 This file summarizes the third-party license surfaces that matter for the
 current Flatpak-oriented build. It is not a replacement for the upstream license
-texts shipped in `app/vendor/` and installed by the Flatpak build.
+texts fetched from locked crate archives and installed by the Flatpak build.
 
 ## Cargo Dependencies
 
-The Rust dependencies used by Riteed are pinned in `app/Cargo.lock` and vendored
-under `app/vendor/` for deterministic offline Flatpak builds.
+The Rust dependencies used by Riteed are pinned in `app/Cargo.lock`. Flatpak
+uses `app/build-aux/cargo/cargo-sources.json` to fetch those exact crate
+archives and populate a build-local `cargo/vendor/` tree for offline Cargo
+builds.
 
 Important runtime crates:
 
@@ -27,7 +29,8 @@ Important runtime crates:
   `arraydeque` (MIT/Apache-2.0), `hashlink` and `hashbrown` (MIT OR
   Apache-2.0), `foldhash` (Zlib), and `unicase` (MIT OR Apache-2.0).
 - Most support crates are MIT, Apache-2.0, or MIT OR Apache-2.0. Their exact
-  upstream license files remain in `app/vendor/*/`.
+  upstream license files are installed from the build-local `cargo/vendor/*/`
+  tree.
 
 ## GNOME Platform Libraries
 

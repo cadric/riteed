@@ -2,7 +2,7 @@ use gtk4::{gdk, prelude::*};
 use libadwaita as adw;
 
 use super::display::{CompareDisplayModel, CompareDisplayRow, DisplayContentRow};
-use super::model::{DiffRowKind, DiffRowModel, DiffSide};
+use super::model::{DiffRowKind, DiffSide};
 use super::presentation::{DiffPresentation, PresentationSide};
 
 const COLOR_PROBE_CSS_RESOURCE: &str = "/io/github/cadric/Riteed/ui/compare.css";
@@ -104,15 +104,6 @@ pub(super) fn apply_display_tags(
             }
         }
     }
-}
-
-pub(super) fn apply_current_hunk_tags(
-    _left_buffer: &sourceview5::Buffer,
-    _right_buffer: &sourceview5::Buffer,
-    _model: &DiffRowModel,
-    _current_hunk: Option<usize>,
-    _tags: &CompareTags,
-) {
 }
 
 pub(super) fn apply_presentation(

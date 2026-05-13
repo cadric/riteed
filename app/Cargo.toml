@@ -1,6 +1,6 @@
 [package]
 name = "riteed"
-version = "0.3.0"
+version = "0.3.1"
 edition = "2024"
 license = "MIT"
 publish = false
@@ -16,6 +16,9 @@ yaml-rust2 = { version = "=0.11.0", default-features = false }
 
 [build-dependencies]
 glib-build-tools = "=0.22.0"
+
+[patch.crates-io]
+sourceview5 = { path = "build-aux/cargo-patches/sourceview5" }
 
 [lints.rust]
 unsafe_code = "forbid"

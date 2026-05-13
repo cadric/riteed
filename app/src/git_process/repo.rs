@@ -22,7 +22,7 @@ impl GitRepoContext {
         fallback_base: &Path,
         paths_are_absolute: bool,
     ) -> Result<Self, GitProcessError> {
-        let text = String::from_utf8(bytes.to_vec()).map_err(|_| GitProcessError::ParseFailed)?;
+        let text = std::str::from_utf8(bytes).map_err(|_| GitProcessError::ParseFailed)?;
         let lines: Vec<&str> = text
             .lines()
             .filter(|line| !line.trim().is_empty())

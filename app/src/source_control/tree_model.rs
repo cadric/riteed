@@ -1,4 +1,3 @@
-use std::cmp::Ordering;
 use std::collections::BTreeMap;
 
 use gtk4::{gio, glib, prelude::*};
@@ -181,21 +180,23 @@ fn build_store(folder: &FolderBuilder, full_path: &str) -> gio::ListStore {
         }));
     }
 
-    let mut files = folder.files.clone();
-    files.sort_by(compare_files);
-    for entry in files {
+    let mut files = folder
+        .files
+        .iter()
+        .cloned()
+        .map(|entry| (file_basename(&entry).to_lowercase(), entry))
+        .collect::<Vec<_>>();
+    files.sort_by(|(left_key, left), (right_key, right)| {
+        left_key
+            .cmp(right_key)
+            .then_with(|| left.path.raw().cmp(right.path.raw()))
+    });
+    for (_key, entry) in files {
         store.append(&glib::BoxedAnyObject::new(SourceControlNode::File {
             entry,
         }));
     }
     store
-}
-
-fn compare_files(left: &GitStatusEntry, right: &GitStatusEntry) -> Ordering {
-    file_basename(left)
-        .to_lowercase()
-        .cmp(&file_basename(right).to_lowercase())
-        .then_with(|| left.path.raw().cmp(right.path.raw()))
 }
 
 fn depth(path: &str) -> usize {

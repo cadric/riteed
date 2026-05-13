@@ -126,7 +126,7 @@
     "preferred_paths": {
       "gtk_ui": "data/ui/",
       "icons": "data/icons/",
-      "css": "data/style/",
+      "css": "data/ui/ or data/style/",
       "gsettings_schemas": "data/schemas/",
       "desktop_file": "data/{application_id}.desktop.in",
       "metainfo_file": "data/{application_id}.metainfo.xml.in",
@@ -321,8 +321,8 @@
     },
     {
       "file": "libadwaita.policy.json",
-      "sha256": "3fef442f60d47780ff5397d0d575a09d42d294a9779bc319e2741156ffe218d5",
-      "bytes": 4724
+      "sha256": "bd26657d716c46c9fd1c909bec1e740916e05e136e3aa7c1c24a8d690f7b83dc",
+      "bytes": 4718
     },
     {
       "file": "hig.policy.json",

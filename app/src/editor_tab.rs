@@ -384,6 +384,7 @@ impl EditorTab {
         self.state.borrow().external.writability
     }
 
+    #[cfg(test)]
     pub fn set_writability_for_tests(&self, writability: Writability) {
         self.state.borrow_mut().external.writability = writability;
     }

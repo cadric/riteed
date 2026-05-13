@@ -1,7 +1,7 @@
 # Riteed
 
 Riteed is a small native GNOME text editor written in Rust. The current source
-version is `0.3.0`, an early public beta. It is useful for daily local editing
+version is `0.3.1`, an early public beta. It is useful for daily local editing
 and compare work, but it is not feature complete and has only been tested by the
 primary maintainer so far.
 
@@ -44,8 +44,8 @@ Flatpak-first.
 
 ## Layout
 
-- `app/` - Riteed application source, resources, metadata, tests, and vendored
-  Cargo dependencies.
+- `app/` - Riteed application source, resources, metadata, tests, and Flatpak
+  Cargo source manifest.
 - `AGENTS.md` - repository-wide contract for app and policy work.
 - `policy/` - machine-readable policy files used to validate the app.
 - `tools/` - hard-fail validation tooling.
@@ -101,9 +101,10 @@ build.
 Riteed's own source code and repository policy/tooling are licensed under the
 MIT License; see `LICENSE`.
 
-The repository vendors Cargo dependency sources for deterministic Flatpak
-builds. Those dependencies keep their upstream license files under
-`app/vendor/`.
+Cargo dependencies are pinned in `app/Cargo.lock`; the Flatpak build downloads
+the locked crate archives listed in `app/build-aux/cargo/cargo-sources.json`
+into a build-local `cargo/vendor/` tree. Local `app/vendor/` directories are
+ignored and must not be committed.
 
 The Flatpak manifest also bundles a trimmed local-plumbing Git binary for the
 Source Control sidebar. Git is distributed under GPL-2.0-only overall and

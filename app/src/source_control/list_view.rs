@@ -347,15 +347,20 @@ fn activate_position(
 }
 
 fn sorted_entries(entries: &[GitStatusEntry]) -> Vec<GitStatusEntry> {
-    let mut entries = entries.to_vec();
-    entries.sort_by(|left, right| {
-        left.path
-            .display()
-            .to_lowercase()
-            .cmp(&right.path.display().to_lowercase())
+    let mut keyed_entries = entries
+        .iter()
+        .cloned()
+        .map(|entry| (entry.path.display().to_lowercase(), entry))
+        .collect::<Vec<_>>();
+    keyed_entries.sort_by(|(left_key, left), (right_key, right)| {
+        left_key
+            .cmp(right_key)
             .then_with(|| left.path.raw().cmp(right.path.raw()))
     });
-    entries
+    keyed_entries
+        .into_iter()
+        .map(|(_key, entry)| entry)
+        .collect()
 }
 
 fn selected_path(selection: &gtk4::SingleSelection) -> Option<Vec<u8>> {

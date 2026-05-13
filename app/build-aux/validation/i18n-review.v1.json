@@ -290,14 +290,14 @@
     },
     {
       "path": "src/window_project/root.rs",
-      "line": 225,
+      "line": 224,
       "match": "state.browser.set_title(&gettext(\"Project\"));",
       "resolution": "This short title labels the project sidebar when no folder title is available; the surrounding sidebar controls provide the project context.",
       "kind": "i18n-short-string"
     },
     {
       "path": "src/window_project/root.rs",
-      "line": 250,
+      "line": 249,
       "match": "state.browser.set_title(&gettext(\"Project\"));",
       "resolution": "This short title labels the project sidebar when no folder title is available; the surrounding sidebar controls provide the project context.",
       "kind": "i18n-short-string"

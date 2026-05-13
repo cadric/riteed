@@ -7,7 +7,6 @@ use gtk4::{gio, prelude::*};
 use libadwaita::prelude::*;
 use sourceview5::prelude::*;
 
-use super::actions_state::refresh_action_states;
 use super::diff::{DiffOptions, compute_diff_with_options};
 use super::display::{CompareDisplayModel, CompareDisplayOptions, build_display_model};
 use super::gutter::{CompareGutters, UnifiedGutter};
@@ -21,8 +20,7 @@ use super::navigation::{target_hunk_for_navigation, top_visible_row};
 use super::presentation::DiffPresentation;
 use super::presentation_display::build_presentation_from_display;
 use super::render::{
-    CompareTags, apply_current_hunk_tags, apply_display_tags, apply_placeholder_tags,
-    apply_presentation, clear_tags,
+    CompareTags, apply_display_tags, apply_placeholder_tags, apply_presentation, clear_tags,
 };
 use super::render_unified::UnifiedTags;
 use super::scroll::{CompareScrollEndpoint, install_scroll_sync};
@@ -157,7 +155,7 @@ impl CompareController {
         }
     }
 
-    pub(super) fn set_reference_text(&mut self, text: &str, _implicit_trailing_newline: bool) {
+    pub(super) fn set_reference_text(&mut self, text: &str) {
         self.reference_text.clear();
         self.reference_text.push_str(text);
     }
@@ -178,7 +176,6 @@ impl CompareController {
         self.row_model.borrow_mut().clone_from(&model);
         self.apply_display_model(&display);
         self.update_status(computation.hidden_trim_whitespace_differences);
-        refresh_action_states(self);
         if self.current_hunk == Some(0) {
             return self.current_hunk_row();
         }
@@ -206,9 +203,7 @@ impl CompareController {
         };
         drop(model);
         self.current_hunk = Some(next);
-        self.apply_current_hunk();
         self.update_status(false);
-        refresh_action_states(self);
         let _scrolled = self.scroll_current_hunk();
     }
 
@@ -250,16 +245,6 @@ impl CompareController {
         row
     }
 
-    pub(super) fn apply_current_hunk(&self) {
-        apply_current_hunk_tags(
-            &self.left_buffer,
-            &self.right_buffer,
-            &self.row_model.borrow(),
-            self.current_hunk,
-            &self.tags,
-        );
-    }
-
     fn apply_display_model(&mut self, display: &CompareDisplayModel) {
         clear_tags(&self.left_buffer, &self.right_buffer, &self.tags);
         let presentation = build_presentation_from_display(display);
@@ -277,7 +262,6 @@ impl CompareController {
             &presentation,
             &self.tags,
         );
-        self.apply_current_hunk();
     }
 
     fn display_for_model(&self, model: &DiffRowModel) -> CompareDisplayModel {
@@ -448,7 +432,6 @@ impl CompareController {
         self.apply_display_model(&display);
         let cursor = self.remaining_marker_line(marker.hidden_start, marker.hidden_end);
         viewport::restore_with_cursor_line(&viewport, &self.unified_view, cursor);
-        refresh_action_states(self);
     }
 
     fn remaining_marker_line(&self, old_start: usize, old_end: usize) -> Option<usize> {

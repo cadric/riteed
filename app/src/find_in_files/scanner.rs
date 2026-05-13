@@ -210,8 +210,8 @@ fn read_file(state: Rc<RefCell<ScanState>>, candidate: FileCandidate) {
             return;
         }
         match result {
-            Ok((contents, _etag)) => match String::from_utf8(contents.to_vec()) {
-                Ok(text) => collect_matches(&state, &candidate, &text),
+            Ok((contents, _etag)) => match std::str::from_utf8(contents.as_ref()) {
+                Ok(text) => collect_matches(&state, &candidate, text),
                 Err(_error) => state.borrow_mut().summary.skipped += 1,
             },
             Err(error) if error.matches(gio::IOErrorEnum::Cancelled) => {}
@@ -270,9 +270,9 @@ fn case_sensitive_ranges(line: &str, query: &str) -> Vec<(i32, i32)> {
 
 fn folded_ranges(line: &str, query: &[char]) -> Vec<(i32, i32)> {
     let mut ranges = Vec::new();
-    for (byte_start, _) in line.char_indices() {
+    for (char_start, (byte_start, _)) in line.char_indices().enumerate() {
         if let Some(byte_end) = folded_match_end(&line[byte_start..], query) {
-            let start = char_count_i32(&line[..byte_start]);
+            let start = i32::try_from(char_start).map_or(i32::MAX, |value| value);
             let end =
                 start.saturating_add(char_count_i32(&line[byte_start..byte_start + byte_end]));
             ranges.push((start, end));
@@ -285,16 +285,20 @@ fn folded_match_end(candidate: &str, query: &[char]) -> Option<usize> {
     if query.is_empty() {
         return None;
     }
-    let mut folded = Vec::new();
-    let mut end = 0;
+    let mut query_index = 0;
     for (index, character) in candidate.char_indices() {
-        end = index + character.len_utf8();
-        folded.extend(character.to_lowercase());
-        if folded.len() >= query.len() {
-            break;
+        let end = index + character.len_utf8();
+        for folded in character.to_lowercase() {
+            if query.get(query_index) != Some(&folded) {
+                return None;
+            }
+            query_index += 1;
+        }
+        if query_index == query.len() {
+            return Some(end);
         }
     }
-    (folded == query).then_some(end)
+    None
 }
 
 fn folded_chars(text: &str) -> Vec<char> {
@@ -405,6 +409,15 @@ mod tests {
         assert_eq!(
             folded_ranges("Alpha alpha", &folded_chars("alpha")),
             vec![(0, 5), (6, 11)]
+        );
+    }
+
+    #[test]
+    fn folded_ranges_preserve_lowercase_expansion_behavior() {
+        assert!(folded_ranges("\u{0130}", &folded_chars("i")).is_empty());
+        assert_eq!(
+            folded_ranges("\u{0130}", &folded_chars("i\u{0307}")),
+            vec![(0, 1)]
         );
     }
 

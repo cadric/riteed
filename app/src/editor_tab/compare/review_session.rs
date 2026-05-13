@@ -208,37 +208,41 @@ impl ReviewSession {
         current_line: Option<usize>,
         direction: i32,
     ) -> Option<ReviewScrollTarget> {
-        let targets = self
-            .rendered_lines
+        let line = current_line.unwrap_or(0);
+        if direction >= 0 {
+            let first = self.first_navigation_line()?;
+            let next = self
+                .rendered_lines
+                .iter()
+                .enumerate()
+                .skip(line.saturating_add(1))
+                .find_map(|(index, rendered)| self.is_navigation_line(rendered).then_some(index))
+                .unwrap_or(first);
+            return Some(ReviewScrollTarget { line_index: next });
+        }
+        self.rendered_lines
             .iter()
             .enumerate()
-            .filter_map(|(index, line)| {
-                if self.is_navigation_line(line) {
-                    Some(index)
-                } else {
-                    None
-                }
-            })
-            .collect::<Vec<_>>();
-        if targets.is_empty() {
-            return None;
-        }
-        let line = current_line.unwrap_or(0);
-        let target = if direction >= 0 {
-            targets
-                .iter()
-                .copied()
-                .find(|index| *index > line)
-                .or_else(|| targets.first().copied())
-        } else {
-            targets
-                .iter()
-                .rev()
-                .copied()
-                .find(|index| *index < line)
-                .or_else(|| targets.last().copied())
-        }?;
-        Some(ReviewScrollTarget { line_index: target })
+            .take(line)
+            .rev()
+            .find_map(|(index, rendered)| self.is_navigation_line(rendered).then_some(index))
+            .or_else(|| self.last_navigation_line())
+            .map(|target| ReviewScrollTarget { line_index: target })
+    }
+
+    fn first_navigation_line(&self) -> Option<usize> {
+        self.rendered_lines
+            .iter()
+            .enumerate()
+            .find_map(|(index, line)| self.is_navigation_line(line).then_some(index))
+    }
+
+    fn last_navigation_line(&self) -> Option<usize> {
+        self.rendered_lines
+            .iter()
+            .enumerate()
+            .rev()
+            .find_map(|(index, line)| self.is_navigation_line(line).then_some(index))
     }
 
     #[must_use]
@@ -551,8 +555,10 @@ fn path_display(raw_path: &[u8]) -> String {
     if raw_path.is_empty() {
         return pgettext("git review path", "Review limit");
     }
-    String::from_utf8(raw_path.to_vec())
-        .unwrap_or_else(|_error| pgettext("git path fallback", "Invalid path encoding"))
+    std::str::from_utf8(raw_path).map_or_else(
+        |_error| pgettext("git path fallback", "Invalid path encoding"),
+        ToOwned::to_owned,
+    )
 }
 
 fn skip_reason_text(reason: DiffSkipReason) -> String {

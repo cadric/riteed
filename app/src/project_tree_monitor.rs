@@ -44,7 +44,7 @@ struct ProjectDirectorySnapshotEntry {
 }
 
 pub(crate) struct ProjectDirectoryMonitor {
-    monitor: gio::FileMonitor,
+    monitor: Option<gio::FileMonitor>,
     poll_source: RefCell<Option<glib::SourceId>>,
     poll_cancellable: gio::Cancellable,
     poll_cancelled: Rc<Cell<bool>>,
@@ -57,11 +57,24 @@ impl ProjectDirectoryMonitor {
         show_hidden: bool,
         on_structural_change: Rc<dyn Fn()>,
     ) -> Result<Self, glib::Error> {
-        let monitor = directory.monitor_directory(
+        let monitor = match directory.monitor_directory(
             gio::FileMonitorFlags::WATCH_MOVES,
             None::<&gio::Cancellable>,
-        )?;
-        monitor.set_rate_limit(MONITOR_RATE_LIMIT_MS);
+        ) {
+            Ok(monitor) => Some(monitor),
+            Err(error) if uses_document_portal(directory) => {
+                gtk4::glib::g_warning!(
+                    crate::APP_ID,
+                    "Project directory monitor unavailable; using portal polling fallback: {}",
+                    error
+                );
+                None
+            }
+            Err(error) => return Err(error),
+        };
+        if let Some(monitor) = monitor.as_ref() {
+            monitor.set_rate_limit(MONITOR_RATE_LIMIT_MS);
+        }
         let poll_state = Rc::new(RefCell::new(Some(initial_snapshot)));
         let poll_cancellable = gio::Cancellable::new();
         let poll_cancelled = Rc::new(Cell::new(false));
@@ -77,11 +90,13 @@ impl ProjectDirectoryMonitor {
         } else {
             None
         };
-        monitor.connect_changed(move |_, _file, _other_file, event_type| {
-            if normalize_project_tree_event(event_type) {
-                on_structural_change();
-            }
-        });
+        if let Some(monitor) = monitor.as_ref() {
+            monitor.connect_changed(move |_, _file, _other_file, event_type| {
+                if normalize_project_tree_event(event_type) {
+                    on_structural_change();
+                }
+            });
+        }
         Ok(Self {
             monitor,
             poll_source: RefCell::new(poll_source),
@@ -96,7 +111,9 @@ impl ProjectDirectoryMonitor {
         if let Some(source) = self.poll_source.borrow_mut().take() {
             source.remove();
         }
-        let _cancelled = self.monitor.cancel();
+        if let Some(monitor) = self.monitor.as_ref() {
+            let _cancelled = monitor.cancel();
+        }
     }
 }
 

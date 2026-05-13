@@ -11,7 +11,6 @@ use crate::error::AppError;
 
 const COMPARE_SCROLL_LAYOUT_RETRIES: u8 = 8;
 
-mod actions_state;
 mod change_list;
 mod clipboard;
 mod controller;
@@ -318,7 +317,6 @@ impl EditorTab {
             sync_reference_language(&self.text_buffer, &compare.left_buffer);
             sync_reference_language(&self.text_buffer, &compare.right_buffer);
             compare.apply_tag_colors();
-            compare.apply_current_hunk();
             compare.gutters.refresh();
         }
     }
@@ -352,7 +350,7 @@ impl EditorTab {
             && compare.target.uri.as_deref() == Some(saved_uri)
         {
             let snapshot = compare.editable_snapshot.clone();
-            compare.set_reference_text(&snapshot, false);
+            compare.set_reference_text(&snapshot);
             scroll_row = compare.recompute();
         }
         drop(state);
@@ -403,7 +401,7 @@ impl EditorTab {
             let (applied, scroll_row) = {
                 let mut state = self.state.borrow_mut();
                 if let Some(compare) = state.compare.active.as_mut() {
-                    compare.set_reference_text(reference_text, target.implicit_trailing_newline);
+                    compare.set_reference_text(reference_text);
                     (true, compare.recompute())
                 } else {
                     (false, None)
@@ -455,10 +453,7 @@ impl EditorTab {
                                 && compare.target.uri.as_deref() == Some(target_uri.as_str())
                             {
                                 compare.finish_loading();
-                                compare.set_reference_text(
-                                    &document.text,
-                                    document.format.implicit_trailing_newline(),
-                                );
+                                compare.set_reference_text(&document.text);
                                 (true, compare.recompute())
                             } else {
                                 (false, None)

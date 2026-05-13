@@ -163,7 +163,7 @@
     },
     {
       "path": "src/window_project/root.rs",
-      "line": 210,
+      "line": 209,
       "match": "pub(super) fn close_root(state: &Rc<RefCell<ProjectState>>) {",
       "kind": "runtime-shared-state",
       "ownership": "The project controller owns root-change and sidebar state shared across async GIO callbacks.",
@@ -171,7 +171,7 @@
     },
     {
       "path": "src/window_project/root.rs",
-      "line": 241,
+      "line": 240,
       "match": "pub(super) fn sync_root_none(state: &Rc<RefCell<ProjectState>>, clear_settings: bool) {",
       "kind": "runtime-shared-state",
       "ownership": "The project controller owns root-change and sidebar state shared across async GIO callbacks.",

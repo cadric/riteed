@@ -15,7 +15,6 @@ pub(super) struct CompareTarget {
     pub(super) title: String,
     pub(super) file: Option<gio::File>,
     pub(super) text: Option<String>,
-    pub(super) implicit_trailing_newline: bool,
 }
 
 impl CompareTarget {
@@ -34,7 +33,6 @@ impl CompareTarget {
             title,
             file: None,
             text: Some(text),
-            implicit_trailing_newline: false,
         }
     }
 
@@ -54,7 +52,6 @@ impl CompareTarget {
             title,
             file: Some(file),
             text: None,
-            implicit_trailing_newline: false,
         }
     }
 }
