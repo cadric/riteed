@@ -139,15 +139,7 @@
     },
     {
       "path": "src/source_control/tree_view.rs",
-      "line": 18,
-      "match": "type BoundRows = Rc<RefCell<Vec<BoundRow>>>;",
-      "kind": "runtime-shared-state",
-      "ownership": "The Source Control tree view owns recycled tree-row bindings and a weak controller handle.",
-      "justification": "Tree rows are factory-recycled, so folder/file activation and keyboard context menus need current path-to-widget bindings without retaining the window strongly."
-    },
-    {
-      "path": "src/source_control/tree_view.rs",
-      "line": 25,
+      "line": 24,
       "match": "state_weak: Rc<RefCell<Weak<RefCell<SourceControlState>>>>,",
       "kind": "runtime-shared-state",
       "ownership": "The Source Control tree owns a replaceable weak handle to the sidebar state.",
@@ -155,7 +147,7 @@
     },
     {
       "path": "src/source_control/tree_view.rs",
-      "line": 84,
+      "line": 78,
       "match": "pub(super) fn connect_activation(&self, weak: Weak<RefCell<SourceControlState>>) {",
       "kind": "runtime-shared-state",
       "ownership": "The Source Control tree activation hook borrows the controller weak state handle.",
@@ -163,7 +155,7 @@
     },
     {
       "path": "src/source_control/tree_view.rs",
-      "line": 237,
+      "line": 231,
       "match": "fn action_runner(state_weak: &Rc<RefCell<Weak<RefCell<SourceControlState>>>>) -> RowActionRunner {",
       "kind": "runtime-shared-state",
       "ownership": "The Source Control tree factory shares the replaceable weak state handle with row setup and bind callbacks.",
@@ -171,7 +163,7 @@
     },
     {
       "path": "src/source_control/tree_view.rs",
-      "line": 433,
+      "line": 366,
       "match": "weak: &Weak<RefCell<SourceControlState>>,",
       "kind": "runtime-shared-state",
       "ownership": "Source Control activation dispatch borrows the controller weak state handle.",
@@ -227,7 +219,7 @@
     },
     {
       "path": "src/window_compare/dialog.rs",
-      "line": 436,
+      "line": 413,
       "match": "left: RefCell<CompareSlot>,",
       "kind": "runtime-shared-state",
       "ownership": "The compare dialog owns the mutable left-side source selection.",
@@ -235,7 +227,7 @@
     },
     {
       "path": "src/window_compare/dialog.rs",
-      "line": 437,
+      "line": 414,
       "match": "right: RefCell<CompareSlot>,",
       "kind": "runtime-shared-state",
       "ownership": "The compare dialog owns the mutable right-side source selection.",
@@ -375,7 +367,7 @@
       "match": "state: Rc<RefCell<ProjectState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The window project controller owns shared project sidebar state.",
-      "justification": "Sidebar actions, async folder open/restore, refresh, and tab→tree reveal must coordinate through one mutable state cell."
+      "justification": "Sidebar actions, async folder open/restore, refresh, and tab\u2192tree reveal must coordinate through one mutable state cell."
     },
     {
       "path": "src/window_project.rs",

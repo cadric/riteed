@@ -192,7 +192,7 @@
     },
     {
       "path": "src/source_control.rs",
-      "line": 106,
+      "line": 107,
       "match": "let title = adw::WindowTitle::new(&gettext(\"Source Control\"), \"\");",
       "resolution": "This short title labels the Source Control sidebar header above the changed-file tree and commit controls.",
       "kind": "i18n-short-string"
@@ -276,7 +276,7 @@
     },
     {
       "path": "src/window_compare/dialog.rs",
-      "line": 510,
+      "line": 487,
       "match": "row.set_subtitle(&gettext(\"Unavailable\"));",
       "resolution": "This short subtitle appears in the Compare dialog when the Saved Version source is not available for the current left-side selection.",
       "kind": "i18n-short-string"

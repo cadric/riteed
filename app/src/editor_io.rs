@@ -231,6 +231,9 @@ fn map_load_failure(path: &Path, error: &glib::Error) -> LoadFailure {
 }
 
 fn map_save_failure(path: &Path, error: &glib::Error) -> SaveFailure {
+    if error.matches(glib::ConvertError::IllegalSequence) {
+        return SaveFailure::InvalidChars;
+    }
     let message = error.message().to_string();
     match error.kind::<sourceview5::FileSaverError>() {
         Some(sourceview5::FileSaverError::InvalidChars) => SaveFailure::InvalidChars,
@@ -319,6 +322,16 @@ mod tests {
         );
         assert!(matches!(
             map_save_failure(path, &generic),
+            SaveFailure::InvalidChars
+        ));
+    }
+
+    #[test]
+    fn glib_conversion_illegal_sequence_maps_to_invalid_chars() {
+        let path = std::path::Path::new("/tmp/example.txt");
+        let conversion = glib::Error::new(glib::ConvertError::IllegalSequence, "localized");
+        assert!(matches!(
+            map_save_failure(path, &conversion),
             SaveFailure::InvalidChars
         ));
     }

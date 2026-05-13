@@ -333,28 +333,23 @@ fn begin_action(
     gio::Cancellable,
     u64,
 ) {
-    let cancellable = gio::Cancellable::new();
-    let (process, repo, generation) = {
-        let mut state = state.borrow_mut();
-        if let Some(previous) = state.cancellable.take() {
-            previous.cancel();
-        }
-        state.action_generation = state.action_generation.wrapping_add(1);
-        state.cancellable = Some(cancellable.clone());
-        state.status_stale = true;
-        set_commit_controls_enabled(&state, false);
-        (
-            state.process.clone(),
-            state.repo.clone(),
-            state.action_generation,
-        )
-    };
-    fire_state_change_handler(state);
-    (process, repo, cancellable, generation)
+    begin_action_inner(state, true)
 }
 
 fn begin_diff_action(
     state: &SourceStateRef,
+) -> (
+    Option<crate::git_process::GitProcess>,
+    Option<PathBuf>,
+    gio::Cancellable,
+    u64,
+) {
+    begin_action_inner(state, false)
+}
+
+fn begin_action_inner(
+    state: &SourceStateRef,
+    mutates_index: bool,
 ) -> (
     Option<crate::git_process::GitProcess>,
     Option<PathBuf>,
@@ -369,6 +364,10 @@ fn begin_diff_action(
         }
         state.action_generation = state.action_generation.wrapping_add(1);
         state.cancellable = Some(cancellable.clone());
+        if mutates_index {
+            state.status_stale = true;
+            set_commit_controls_enabled(&state, false);
+        }
         (
             state.process.clone(),
             state.repo.clone(),

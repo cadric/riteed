@@ -64,9 +64,12 @@ fn source_control_row_context_actions_keep_keyboard_and_pointer_access() {
         assert!(source.contains("set_button(3)"));
         assert!(source.contains("\"Menu\""));
         assert!(source.contains("\"<Shift>F10\""));
-        assert!(source.contains("ShortcutTrigger::parse_string"));
+        assert!(source.contains("add_context_shortcut"));
         assert!(source.contains("riteed-sidebar-row"));
     }
+
+    let row_widgets = include_str!("row_widgets.rs");
+    assert!(row_widgets.contains("ShortcutTrigger::parse_string"));
 
     let popover = include_str!("row_popover.rs");
     assert!(popover.contains("let Some(bounds) = row_widget.compute_bounds(list_view) else"));

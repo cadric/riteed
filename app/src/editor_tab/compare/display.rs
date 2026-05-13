@@ -245,11 +245,10 @@ fn collapsed_row(
 }
 
 fn visible_rows(model: &DiffRowModel, options: &CompareDisplayOptions) -> Vec<bool> {
-    let mut visible = vec![true; model.rows.len()];
     if !options.collapse_unchanged || model.hunks.is_empty() {
-        return visible;
+        return vec![true; model.rows.len()];
     }
-    visible.fill(false);
+    let mut visible = vec![false; model.rows.len()];
     for (row_index, row) in model.rows.iter().enumerate() {
         if row.kind == DiffRowKind::Equal {
             continue;

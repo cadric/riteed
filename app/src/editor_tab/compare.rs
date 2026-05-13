@@ -28,6 +28,7 @@ mod presentation;
 mod presentation_display;
 mod render;
 mod render_unified;
+mod reveal;
 mod review_session;
 mod review_session_reveal;
 #[cfg(test)]

@@ -100,52 +100,42 @@ impl WindowCompareController {
     }
 
     pub(crate) fn next_diff(&self) {
-        if let Some(tab) = self.workspace.selected_tab() {
-            if tab.kind() == crate::editor_tab::TabKind::GitReview {
-                tab.review_next_change();
-            } else {
-                tab.compare_next_diff();
-            }
-        }
+        self.dispatch_to_selected_tab(EditorTab::review_next_change, EditorTab::compare_next_diff);
     }
 
     pub(crate) fn previous_diff(&self) {
-        if let Some(tab) = self.workspace.selected_tab() {
-            if tab.kind() == crate::editor_tab::TabKind::GitReview {
-                tab.review_previous_change();
-            } else {
-                tab.compare_previous_diff();
-            }
-        }
+        self.dispatch_to_selected_tab(
+            EditorTab::review_previous_change,
+            EditorTab::compare_previous_diff,
+        );
     }
 
     pub(crate) fn reveal_above(&self) {
-        if let Some(tab) = self.workspace.selected_tab() {
-            if tab.kind() == crate::editor_tab::TabKind::GitReview {
-                tab.review_reveal_above();
-            } else {
-                tab.compare_reveal_above();
-            }
-        }
+        self.dispatch_to_selected_tab(
+            EditorTab::review_reveal_above,
+            EditorTab::compare_reveal_above,
+        );
     }
 
     pub(crate) fn reveal_below(&self) {
-        if let Some(tab) = self.workspace.selected_tab() {
-            if tab.kind() == crate::editor_tab::TabKind::GitReview {
-                tab.review_reveal_below();
-            } else {
-                tab.compare_reveal_below();
-            }
-        }
+        self.dispatch_to_selected_tab(
+            EditorTab::review_reveal_below,
+            EditorTab::compare_reveal_below,
+        );
     }
 
     pub(crate) fn reveal_all(&self) {
-        if let Some(tab) = self.workspace.selected_tab() {
-            if tab.kind() == crate::editor_tab::TabKind::GitReview {
-                tab.review_reveal_all();
-            } else {
-                tab.compare_reveal_all();
-            }
+        self.dispatch_to_selected_tab(EditorTab::review_reveal_all, EditorTab::compare_reveal_all);
+    }
+
+    fn dispatch_to_selected_tab(&self, review: fn(&EditorTab), compare: fn(&EditorTab)) {
+        let Some(tab) = self.workspace.selected_tab() else {
+            return;
+        };
+        if tab.kind() == crate::editor_tab::TabKind::GitReview {
+            review(&tab);
+        } else {
+            compare(&tab);
         }
     }
 

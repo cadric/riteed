@@ -30,6 +30,7 @@ mod review;
 mod review_loader;
 mod root;
 mod row_popover;
+mod row_widgets;
 mod status_style;
 #[cfg(test)]
 mod tests;

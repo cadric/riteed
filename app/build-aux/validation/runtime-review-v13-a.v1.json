@@ -379,7 +379,7 @@
     },
     {
       "path": "src/source_control.rs",
-      "line": 46,
+      "line": 47,
       "match": "pub(super) type SourceStateRef = Rc<RefCell<SourceControlState>>;",
       "kind": "runtime-shared-state",
       "ownership": "The Source Control controller owns the sidebar state behind one Rc<RefCell>.",
@@ -402,16 +402,16 @@
       "justification": "A failed recent-commits read must self-heal on the next successful status refresh without refetching on every index-only update."
     },
     {
-      "path": "src/source_control/list_view.rs",
-      "line": 15,
-      "match": "type BoundRows = Rc<RefCell<Vec<BoundRow>>>;",
+      "path": "src/source_control/row_widgets.rs",
+      "line": 11,
+      "match": "pub(super) type BoundRows = Rc<RefCell<Vec<BoundRow>>>;",
       "kind": "runtime-shared-state",
-      "ownership": "The Source Control list view owns recycled-row bindings and a weak controller handle.",
-      "justification": "List rows are factory-recycled, so keyboard context menus, row activation, and the shared popover need current path-to-widget bindings without retaining the window strongly."
+      "ownership": "Shared source-control row module owns the bound-row registry alias.",
+      "justification": "List and tree views both register and look up row widgets via this Rc<RefCell<>>-backed alias; the shared definition removes the prior duplicate alias."
     },
     {
       "path": "src/source_control/list_view.rs",
-      "line": 21,
+      "line": 20,
       "match": "state_weak: Rc<RefCell<Weak<RefCell<SourceControlState>>>>,",
       "kind": "runtime-shared-state",
       "ownership": "The Source Control list view owns recycled-row action state and a weak controller handle.",
@@ -419,7 +419,7 @@
     },
     {
       "path": "src/source_control/list_view.rs",
-      "line": 64,
+      "line": 58,
       "match": "pub(super) fn connect_activation(&self, weak: Weak<RefCell<SourceControlState>>) {",
       "kind": "runtime-shared-state",
       "ownership": "The Source Control list view owns recycled-row action state and a weak controller handle.",
@@ -427,7 +427,7 @@
     },
     {
       "path": "src/source_control/list_view.rs",
-      "line": 215,
+      "line": 209,
       "match": "fn action_runner(state_weak: &Rc<RefCell<Weak<RefCell<SourceControlState>>>>) -> RowActionRunner {",
       "kind": "runtime-shared-state",
       "ownership": "The Source Control list view owns recycled-row action state and a weak controller handle.",
@@ -435,7 +435,7 @@
     },
     {
       "path": "src/source_control/list_view.rs",
-      "line": 339,
+      "line": 273,
       "match": "weak: &Weak<RefCell<SourceControlState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The Source Control list view owns recycled-row action state and a weak controller handle.",

@@ -1,21 +1,20 @@
 use std::cell::RefCell;
 use std::rc::{Rc, Weak};
 
-use gettextrs::pgettext;
-use gtk4::accessible::Property;
 use gtk4::{gio, glib, pango, prelude::*};
 
 use crate::git_status::{GitActionState, GitStatusEntry};
 use crate::source_control::SourceControlState;
 use crate::source_control::actions::{self, GitRowAction};
 use crate::source_control::row_popover::{RowActionRunner, RowPopover};
-use crate::source_control::status_style;
+use crate::source_control::row_widgets::{
+    BoundRows, add_context_shortcut, bind_staged_marker, bind_status_badge, remember_bound_row,
+    row_widget_for_entry,
+};
 use crate::source_control::tree_model::{
     SourceControlNode, build_root_store, file_basename, node_for_position, restore_expanded_paths,
     restore_selected_node, snapshot_expanded_paths, snapshot_selected_node,
 };
-
-type BoundRows = Rc<RefCell<Vec<BoundRow>>>;
 
 pub(super) struct SourceControlTree {
     root_store: gio::ListStore,
@@ -25,11 +24,6 @@ pub(super) struct SourceControlTree {
     state_weak: Rc<RefCell<Weak<RefCell<SourceControlState>>>>,
     _popover: Rc<RowPopover>,
     bound_rows: BoundRows,
-}
-
-struct BoundRow {
-    path: Vec<u8>,
-    widget: glib::WeakRef<gtk4::Widget>,
 }
 
 impl SourceControlTree {
@@ -280,36 +274,6 @@ fn install_keyboard_context_menu(
     list_view.add_controller(controller);
 }
 
-fn add_context_shortcut(
-    controller: &gtk4::ShortcutController,
-    trigger: &str,
-    popup: Rc<dyn Fn() -> bool>,
-) {
-    let Some(trigger) = gtk4::ShortcutTrigger::parse_string(trigger) else {
-        return;
-    };
-    controller.add_shortcut(gtk4::Shortcut::new(
-        Some(trigger),
-        Some(gtk4::CallbackAction::new(move |_, _| {
-            if popup() {
-                glib::Propagation::Stop
-            } else {
-                glib::Propagation::Proceed
-            }
-        })),
-    ));
-}
-
-fn remember_bound_row(bound_rows: &BoundRows, entry: &GitStatusEntry, row_box: &gtk4::Box) {
-    let mut rows = bound_rows.borrow_mut();
-    rows.retain(|row| row.path != entry.path.raw());
-    let widget: gtk4::Widget = row_box.clone().upcast();
-    rows.push(BoundRow {
-        path: entry.path.raw().to_vec(),
-        widget: widget.downgrade(),
-    });
-}
-
 fn bind_node(widgets: &RowWidgets, node: SourceControlNode, bound_rows: &BoundRows) {
     match node {
         SourceControlNode::Folder {
@@ -335,28 +299,6 @@ fn bind_node(widgets: &RowWidgets, node: SourceControlNode, bound_rows: &BoundRo
             bind_staged_marker(&widgets.staged, entry.staged);
             bind_status_badge(&widgets.status, &entry);
         }
-    }
-}
-
-fn bind_staged_marker(staged: &gtk4::Label, visible: bool) {
-    let staged_label = pgettext("git status", "Staged");
-    staged.set_tooltip_text(Some(&staged_label));
-    staged.update_property(&[Property::Label(&staged_label)]);
-    staged.set_visible(visible);
-}
-
-fn bind_status_badge(status: &gtk4::Label, entry: &GitStatusEntry) {
-    let status_label = entry.status.label();
-    status.set_label(entry.status.badge());
-    status.set_tooltip_text(Some(&status_label));
-    status.update_property(&[Property::Label(&status_label)]);
-    status.set_visible(true);
-    for class in status_style::STATUS_CLASSES {
-        status.remove_css_class(class);
-    }
-    status.add_css_class(status_style::status_class_for(entry.status));
-    if status_style::status_is_dim(entry.status) {
-        status.add_css_class("dim-label");
     }
 }
 
@@ -416,15 +358,6 @@ fn unbind_row(object: &glib::Object, bound_rows: &BoundRows) {
     {
         expander.set_list_row(None);
     }
-}
-
-fn row_widget_for_entry(bound_rows: &BoundRows, path: &[u8]) -> Option<gtk4::Widget> {
-    bound_rows
-        .borrow()
-        .iter()
-        .rev()
-        .find(|row| row.path == path)
-        .and_then(|row| row.widget.upgrade())
 }
 
 fn activate_position(

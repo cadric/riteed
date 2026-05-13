@@ -34,6 +34,17 @@ impl CompareSlot {
 }
 
 pub(super) fn present_compare_dialog(controller: &Rc<WindowCompareController>) {
+    let _dialog = present_compare_dialog_impl(controller);
+}
+
+#[cfg(test)]
+pub(super) fn present_compare_dialog_for_tests(
+    controller: &Rc<WindowCompareController>,
+) -> adw::Dialog {
+    present_compare_dialog_impl(controller)
+}
+
+fn present_compare_dialog_impl(controller: &Rc<WindowCompareController>) -> adw::Dialog {
     let (current_document, left_initial, right_initial) = initial_compare_slots(controller);
     let ui = build_compare_dialog_ui(current_document.is_some());
     let state = Rc::new(CompareDialogState {
@@ -51,40 +62,6 @@ pub(super) fn present_compare_dialog(controller: &Rc<WindowCompareController>) {
         right_clear_button: ui.right_clear_button.clone(),
         left_saved_button: ui.left_saved_button.clone(),
         #[cfg(test)]
-        _leak_canary: crate::dialogs::lifecycle::DialogLeakCanary::new(
-            crate::dialogs::lifecycle::DialogLeakKind::Compare,
-        ),
-    });
-
-    sync_compare_dialog(&state);
-    wire_compare_dialog(controller, &state, &ui);
-    let state_for_closed = Rc::clone(&state);
-    ui.dialog.connect_closed(move |_| {
-        let _state = &state_for_closed;
-    });
-    ui.dialog.present(Some(&controller.shell));
-}
-
-#[cfg(test)]
-pub(super) fn present_compare_dialog_for_tests(
-    controller: &Rc<WindowCompareController>,
-) -> adw::Dialog {
-    let (current_document, left_initial, right_initial) = initial_compare_slots(controller);
-    let ui = build_compare_dialog_ui(current_document.is_some());
-    let state = Rc::new(CompareDialogState {
-        controller: Rc::downgrade(controller),
-        dialog: ui.dialog.downgrade(),
-        current_document,
-        autosave_enabled: controller.workspace.settings.autosave_enabled(),
-        left: RefCell::new(left_initial),
-        right: RefCell::new(right_initial),
-        left_row: ui.left_row.clone(),
-        right_row: ui.right_row.clone(),
-        compare_button: ui.compare_button.clone(),
-        swap_button: ui.swap_button.clone(),
-        left_clear_button: ui.left_clear_button.clone(),
-        right_clear_button: ui.right_clear_button.clone(),
-        left_saved_button: ui.left_saved_button.clone(),
         _leak_canary: crate::dialogs::lifecycle::DialogLeakCanary::new(
             crate::dialogs::lifecycle::DialogLeakKind::Compare,
         ),

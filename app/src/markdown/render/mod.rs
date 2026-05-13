@@ -27,6 +27,7 @@ pub(crate) fn render_document(
     buffer: &gtk4::TextBuffer,
     document: &MarkdownDocument,
 ) -> RenderOutput {
+    #[cfg(debug_assertions)]
     document.debug_validate_source_ranges();
     buffer.set_text("");
     let tags = MarkdownTags::new(buffer);

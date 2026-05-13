@@ -28,6 +28,7 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 
 ### Fixed
 - Made policy CSS scanning cover CSS stored under `data/ui/` and added review evidence for Riteed's bundled CSS resources.
+- Mapped GLib illegal-sequence conversion errors to the invalid-characters save flow so encoding retry prompts do not depend on localized error text.
 - Added visible paragraph spacing in Markdown preview while keeping soft line breaks collapsed and hard line breaks explicit.
 - Made Markdown preview H3-H6 headings visually distinct instead of sharing one fallback heading style.
 - Stopped Markdown preview unsupported-extension diagnostics from firing on examples inside fenced or indented code blocks.

@@ -10,6 +10,7 @@ pub(crate) struct MarkdownDocument {
 }
 
 impl MarkdownDocument {
+    #[cfg(debug_assertions)]
     pub(crate) fn debug_validate_source_ranges(&self) {
         if let Some(frontmatter) = self.frontmatter.as_ref() {
             validate_range(&frontmatter.source_range);
@@ -182,12 +183,14 @@ pub(crate) enum UnsupportedMarkdownFeature {
     GfmAdmonition,
 }
 
+#[cfg(debug_assertions)]
 fn validate_blocks(blocks: &[MdBlock]) {
     for block in blocks {
         validate_block(block);
     }
 }
 
+#[cfg(debug_assertions)]
 fn validate_block(block: &MdBlock) {
     match block {
         MdBlock::Paragraph {
@@ -226,12 +229,14 @@ fn validate_block(block: &MdBlock) {
     }
 }
 
+#[cfg(debug_assertions)]
 fn validate_inlines(inlines: &[MdInline]) {
     for inline in inlines {
         validate_inline(inline);
     }
 }
 
+#[cfg(debug_assertions)]
 fn validate_inline(inline: &MdInline) {
     match inline {
         MdInline::Text(_, source_range)
@@ -266,6 +271,7 @@ fn validate_inline(inline: &MdInline) {
     }
 }
 
+#[cfg(debug_assertions)]
 fn validate_range(range: &SourceRange) {
     debug_assert!(range.start <= range.end);
 }
