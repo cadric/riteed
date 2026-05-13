@@ -137,6 +137,16 @@ impl Workspace {
             .is_some_and(|tab| tab.minimap_visible_for_tests())
     }
 
+    pub(crate) fn selected_markdown_preview_active_for_tests(&self) -> bool {
+        self.selected_tab()
+            .is_some_and(|tab| tab.markdown_preview_active_for_tests())
+    }
+
+    pub(crate) fn selected_markdown_preview_text_for_tests(&self) -> String {
+        self.selected_tab()
+            .map_or_else(String::new, |tab| tab.markdown_preview_text_for_tests())
+    }
+
     pub(crate) fn selected_indentation_for_tests(&self) -> Option<(bool, u32, i32)> {
         self.selected_tab().map(|tab| tab.indentation_for_tests())
     }

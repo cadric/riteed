@@ -14,6 +14,11 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 
 ## Unreleased
 
+### V14 — Native Markdown Preview
+- Added native Markdown Preview for `.md` and `.markdown` files with CommonMark parsing, YAML frontmatter metadata, diagnostics, image placeholders, user-triggered links, large-document fallback, vendored offline Markdown parser dependencies, and source-text Compare unchanged.
+- Improved native Markdown preview rendering for CommonMark lists, soft line breaks, fenced code blocks, thematic breaks, blockquotes, link styling, and inline/code block presentation while keeping raw HTML and images non-executing.
+- Polished native Markdown preview after the `docs/test.md` comparison with compact diagnostics, real preview list markers, a clamped reading column, hidden fenced-code language labels, calmer code blocks, and less ASCII-like blockquotes.
+
 ### Added
 - Added the V12.5 sidebar/search pass: the Find bar now has Document and Project scope, Ctrl+Shift+F opens Project scope, and project matches render in a sticky Search Results sidebar page.
 - Added active-tab Source Control actions in the header bar for Git compare, stage, unstage, and discard.
@@ -22,6 +27,10 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 - Added Source Control staged and unstaged review tabs with multi-file review sessions, file boundaries, skipped-diff reasons, stale-review banners, a Change List navigator, and an Open Reviewed File action.
 
 ### Fixed
+- Added visible paragraph spacing in Markdown preview while keeping soft line breaks collapsed and hard line breaks explicit.
+- Made Markdown preview H3-H6 headings visually distinct instead of sharing one fallback heading style.
+- Stopped Markdown preview unsupported-extension diagnostics from firing on examples inside fenced or indented code blocks.
+- Rendered Markdown thematic breaks with a styled preview separator instead of a fixed-width row of spaces.
 - Raised the adaptive Compare breakpoint so unified view is reachable at Riteed's practical minimum window width, and removed Git-review-only actions from the manual Compare toolbar.
 - Made Collapse Unchanged Lines affect manual split Compare too, and disabled unified word wrap controls when the active manual Compare surface is still split.
 - Fixed a Flatpak startup abort during project/session restore by avoiding re-entrant project-tree selection cleanup while project state is borrowed.
@@ -34,7 +43,7 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 - Kept document search, replace, and project search on one query and Match Case state while preserving Ctrl+F and Ctrl+H as document-scoped actions.
 - Hid Source Control commit controls until staged changes are present, and documented that Riteed creates local commits without repository hooks, commit signing, or an external editor.
 - Made Source Control's changed-files area and Recent Commits history share a draggable vertical split so large change lists no longer push commit history out of view.
-- Merged the standalone V12.5 and V13 roadmap drafts into `ROADMAP.md`, removed the loose draft files, and moved the unscheduled backlog beyond V13 as Post-V13.
+- Merged the standalone V12.5 and V13 roadmap drafts into `ROADMAP.md`, promoted Markdown Preview into formal V14, and moved the unscheduled backlog beyond V14 as Post-V14.
 - Capped the roadmap Source Control scope at local status, compare, stage/unstage, safe discard, recent history, and simple local commits until a dedicated architecture milestone expands it.
 - Updated compare/review strings, GSettings schema metadata, validation review artifacts, and Help copy for the V13 review workflow.
 

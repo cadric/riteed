@@ -355,12 +355,19 @@ fn apply_text_filters(dialog: &gtk4::FileDialog) {
     text_filter.add_mime_type("text/plain");
     text_filter.add_suffix("txt");
 
+    let markdown_filter = gtk4::FileFilter::new();
+    markdown_filter.set_name(Some(&pgettext("file filter", "Markdown Source Files")));
+    markdown_filter.add_mime_type("text/markdown");
+    markdown_filter.add_suffix("md");
+    markdown_filter.add_suffix("markdown");
+
     let any_filter = gtk4::FileFilter::new();
     any_filter.set_name(Some(&pgettext("file filter", "All Files")));
     any_filter.add_pattern("*");
 
     let filters: gio::ListStore = gio::ListStore::new::<gtk4::FileFilter>();
     filters.append(&text_filter);
+    filters.append(&markdown_filter);
     filters.append(&any_filter);
 
     dialog.set_filters(Some(&filters));

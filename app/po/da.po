@@ -1495,6 +1495,115 @@ msgctxt "zoom action"
 msgid "Zoom Out"
 msgstr ""
 
+msgctxt "file filter"
+msgid "Markdown Source Files"
+msgstr "Markdown-kildefiler"
+
+msgctxt "markdown diagnostic"
+msgid "A data URI image reference was blocked."
+msgstr "En data-URI-billedreference blev blokeret."
+
+msgctxt "markdown diagnostic"
+msgid "A file URI image reference was blocked."
+msgstr "En file-URI-billedreference blev blokeret."
+
+msgctxt "markdown diagnostic"
+msgid "A local image reference was not loaded automatically."
+msgstr "En lokal billedreference blev ikke indlæst automatisk."
+
+msgctxt "markdown diagnostic"
+msgid "A remote image was blocked and rendered as a placeholder."
+msgstr "Et eksternt billede blev blokeret og vist som en pladsholder."
+
+msgctxt "markdown diagnostic"
+msgid "Raw HTML is shown as literal text."
+msgstr "Rå HTML vises som bogstavelig tekst."
+
+msgctxt "markdown diagnostic"
+msgid "The YAML frontmatter could not be parsed."
+msgstr "YAML-frontmatter kunne ikke parses."
+
+msgctxt "markdown diagnostic"
+msgid "The document is too large for live Markdown preview."
+msgstr "Dokumentet er for stort til live Markdown-forhåndsvisning."
+
+msgctxt "markdown diagnostic"
+msgid "The opening frontmatter delimiter has no closing delimiter."
+msgstr "Startafgrænseren for frontmatter mangler en slutafgrænser."
+
+msgctxt "markdown diagnostic"
+msgid "Markdown preview: unsupported extensions omitted: {features}."
+msgstr ""
+"Markdown-forhåndsvisning: ikke-understøttede udvidelser udeladt: {features}."
+
+msgctxt "markdown diagnostic"
+msgid "Markdown preview: images are shown as placeholders."
+msgstr "Markdown-forhåndsvisning: billeder vises som pladsholdere."
+
+msgctxt "markdown diagnostic"
+msgid "Markdown preview: raw HTML is shown as literal text."
+msgstr "Markdown-forhåndsvisning: rå HTML vises som bogstavelig tekst."
+
+msgctxt "markdown preview"
+msgid "Markdown Frontmatter Metadata"
+msgstr "Markdown-frontmatter-metadata"
+
+msgctxt "markdown preview"
+msgid "Markdown Image Placeholder"
+msgstr "Markdown-billedpladsholder"
+
+msgctxt "markdown preview"
+msgid "Markdown Preview Disabled"
+msgstr "Markdown-forhåndsvisning deaktiveret"
+
+msgctxt "markdown extension label"
+msgid "tables"
+msgstr "tabeller"
+
+msgctxt "markdown extension label"
+msgid "task lists"
+msgstr "opgavelister"
+
+msgctxt "markdown extension label"
+msgid "footnotes"
+msgstr "fodnoter"
+
+msgctxt "markdown extension label"
+msgid "strikethrough"
+msgstr "gennemstregning"
+
+msgctxt "markdown extension label"
+msgid "math"
+msgstr "matematik"
+
+msgctxt "markdown extension label"
+msgid "heading attributes"
+msgstr "overskriftsattributter"
+
+msgctxt "markdown extension label"
+msgid "wiki links"
+msgstr "wiki-links"
+
+msgctxt "markdown extension label"
+msgid "definition lists"
+msgstr "definitionslister"
+
+msgctxt "markdown extension label"
+msgid "subscript"
+msgstr "sænket skrift"
+
+msgctxt "markdown extension label"
+msgid "superscript"
+msgstr "hævet skrift"
+
+msgctxt "markdown extension label"
+msgid "GFM admonitions"
+msgstr "GFM-admonitions"
+
+msgctxt "tab menu item"
+msgid "Toggle Markdown Preview"
+msgstr "Slå Markdown-forhåndsvisning til/fra"
+
 msgid "%d more file skipped (review limit reached)."
 msgid_plural "%d more files skipped (review limit reached)."
 msgstr[0] ""
@@ -1713,12 +1822,3 @@ msgstr ""
 msgctxt "help row"
 msgid "Compare and Review"
 msgstr ""
-
-#~ msgid ""
-#~ "Press Ctrl+Shift+F to search the open folder. Riteed streams results from "
-#~ "the current workspace and skips hidden or generated folders that are not "
-#~ "useful for text search."
-#~ msgstr ""
-#~ "Tryk Ctrl+Skift+F for at søge i den åbne mappe. Riteed streamer "
-#~ "resultater fra det aktuelle arbejdsområde og springer skjulte eller "
-#~ "genererede mapper over, som ikke er nyttige til tekstsøgning."

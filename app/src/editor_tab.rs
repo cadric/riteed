@@ -113,6 +113,9 @@ pub struct EditorTab {
     on_visual_change: RefCell<Option<TabCallback>>,
     on_external_state_change: RefCell<Option<TabCallback>>,
     on_external_action: RefCell<Option<TabCallback>>,
+    preview_buffer: gtk4::TextBuffer,
+    preview_view: gtk4::TextView,
+    preview_scrolled: gtk4::ScrolledWindow,
 }
 
 impl EditorTab {
@@ -172,6 +175,9 @@ impl EditorTab {
             on_visual_change: RefCell::new(None),
             on_external_state_change: RefCell::new(None),
             on_external_action: RefCell::new(None),
+            preview_buffer: view.preview_buffer,
+            preview_view: view.preview_view,
+            preview_scrolled: view.preview_scrolled,
         });
         tab.install_callbacks();
         tab.sync_presentation();
@@ -416,6 +422,7 @@ impl EditorTab {
                 && !tab.state.borrow().ui.suppress_changes
             {
                 tab.sync_presentation();
+                tab.schedule_markdown_preview_update();
             }
         });
 
@@ -474,6 +481,8 @@ impl EditorTab {
         let weak = Rc::downgrade(self);
         install_file_drop_target(&self.root, &weak);
         install_file_drop_target(&self.text_view, &weak);
+        install_file_drop_target(&self.preview_view, &weak);
+        self.install_markdown_preview_link_handler();
     }
 
     fn sync_presentation(&self) {
@@ -524,12 +533,19 @@ fn apply_text_filters(dialog: &gtk4::FileDialog) {
     text_filter.add_mime_type("text/plain");
     text_filter.add_suffix("txt");
 
+    let markdown_filter = gtk4::FileFilter::new();
+    markdown_filter.set_name(Some(&pgettext("file filter", "Markdown Source Files")));
+    markdown_filter.add_mime_type("text/markdown");
+    markdown_filter.add_suffix("md");
+    markdown_filter.add_suffix("markdown");
+
     let any_filter = gtk4::FileFilter::new();
     any_filter.set_name(Some(&pgettext("file filter", "All Files")));
     any_filter.add_pattern("*");
 
     let filters: gio::ListStore = gio::ListStore::new::<gtk4::FileFilter>();
     filters.append(&text_filter);
+    filters.append(&markdown_filter);
     filters.append(&any_filter);
 
     dialog.set_filters(Some(&filters));

@@ -1,12 +1,12 @@
 ---
 created: 2026-04-19
-updated: 2026-05-08
+updated: 2026-05-12
 status: active
 priority: high
 type: roadmap
-completed_through: v13
-next_version: post-v13
-final_scheduled_version: v13
+completed_through: v14
+next_version: post-v14
+final_scheduled_version: v14
 ---
 
 # Complete Roadmap: Mini GNOME Text Editor in Rust
@@ -1372,7 +1372,7 @@ Implement a working v12 of the app with find in files across the workspace, docu
 # V12.5 — Sidebar Density, Contextual Git Actions, and Unified Search
 
 > created: 2026-05-08
-> updated: 2026-05-08
+> updated: 2026-05-12
 > status: complete
 > priority: high
 > type: roadmap-milestone
@@ -1608,10 +1608,134 @@ These are intentionally not part of V13. They should only be promoted when they 
 
 ---
 
-# Post-V13 — Unscheduled Candidates
+# V14 — Native Markdown Preview
+
+> created: 2026-05-12
+> updated: 2026-05-12
+> status: complete
+> priority: high
+> type: roadmap-milestone
+> implementation: working tree — Markdown Preview V1, renderer follow-up, and docs/test.md comparison follow-up
+
+## Purpose
+
+V14 adds Markdown preview as a safe native viewing layer for `.md` and `.markdown` files without changing Riteed's identity as a lightweight text, code, and config editor.
+
+Markdown rendering is intentionally a preview surface, not a document transform. Source text remains authoritative, existing Compare stays source-text based, and the preview never becomes a browser, DOM, or remote-resource surface.
+
+## What V14 adds
+
+* Native Markdown preview for `.md` and `.markdown` files
+* CommonMark-only parsing with YAML frontmatter metadata
+* Secure native GTK rendering without WebKit, DOM, JavaScript, network fetches, or automatic local image reads
+* Literal raw HTML handling, image placeholders, user-triggered links, and source-text Compare unchanged
+* Renderer polish for lists, soft/hard breaks, code blocks, thematic breaks, blockquotes, links, inline code, and headings
+* Comparison-driven polish for compact diagnostics, bullet markers, reading-column clamp, hidden fenced-code labels, calmer code blocks, and less ASCII-like blockquotes
+
+## Why this version matters
+
+Markdown is common in the text and configuration workflows Riteed already targets. A native preview makes those documents easier to read while preserving the editor's safety model: no browser runtime, no automatic resource loading, no hidden document mutation, and no semantic replacement for source-based diff review.
+
+V14 also proves that Riteed can add document-aware viewing without drifting toward an IDE or a rich-document editor. The feature is deliberately scoped to CommonMark plus frontmatter, with extended Markdown and rendered diff held for separate future decisions.
+
+## Prompt for V14
+
+```text
+Build v14 of the GNOME desktop application in Rust by adding a safe native Markdown Preview workflow.
+
+The goal of v14 is to let users preview `.md` and `.markdown` files in Riteed without changing the raw source text, weakening the Flatpak sandbox, or introducing a browser rendering stack. Markdown preview is a viewing layer. The editor remains source-first, and Compare remains based on source text.
+
+What v14 adds:
+- Native Markdown preview for `.md` and `.markdown` files
+- CommonMark-only parsing with YAML frontmatter metadata
+- Native GTK rendering for Markdown blocks and inline formatting
+- Safe handling for raw HTML, images, links, and unsupported extensions
+- Renderer polish for common Markdown reading workflows
+- Comparison-driven polish against common Markdown viewers while preserving Riteed's safety model
+
+Scope for v14:
+- Detect Markdown files by `.md` and `.markdown` extension
+- Split optional YAML frontmatter from the document body when it appears at the start of the file
+- Parse Markdown body as CommonMark only, using no extended Markdown flags
+- Render headings, paragraphs, emphasis, strong, inline code, code blocks, links, images, lists, blockquotes, thematic breaks, escapes, entities, and reference links
+- Show frontmatter as metadata, not normal body content
+- Show images as placeholders with useful text instead of loading remote or local resources
+- Show links as styled/clickable text, but open them only after explicit user action
+- Show raw HTML as literal safe text, never as DOM
+- Keep Markdown file Compare and Source Control review source-text based
+- Keep large-document behavior bounded with debounce, cancellation, or a preview fallback
+
+Renderer completion criteria:
+- List item text, nested list text, soft breaks, and hard breaks render correctly
+- Fenced and indented code blocks render as code blocks without visible fence markers
+- Thematic breaks render as separators, not literal dash text
+- Blockquotes have a native quote affordance instead of plain ASCII styling
+- Inline code, links, code blocks, headings, and paragraphs have readable native TextView styling
+
+Comparison completion criteria:
+- Diagnostics are compact and grouped rather than dominating the first viewport
+- Unordered lists use preview bullet markers rather than literal source markers
+- Markdown preview content is clamped to a readable libadwaita column width
+- Fenced-code language labels are not emitted as visible code-block content
+- Code blocks and blockquotes use calmer presentation that reads closer to GNOME Markdown viewers
+
+Behavior expectations:
+- Preview must never mutate the source document
+- Preview must not rewrite Markdown syntax, links, frontmatter, line endings, or whitespace
+- Preview must not fetch link metadata, images, favicons, remote fonts, CSS, or other remote resources
+- Preview must not automatically read local image paths, `file://` URIs, or `data:` image payloads
+- Diagnostics should explain unsupported or blocked content without treating Markdown as a compile-error language
+- Exiting preview must leave the editor buffer unchanged
+
+Technical expectations:
+- Use Rust, GTK4, libadwaita, and the existing Riteed architecture
+- Use a native GTK preview surface such as TextView/TextBuffer/TextTags or other GTK widgets
+- WebKit, WebKitGTK, WebView, embedded browser, DOM rendering, JavaScript rendering, remote CSS, and remote font loading are forbidden
+- Use CommonMark parser options only; do not enable tables, task lists, footnotes, strikethrough, math, heading attributes, wikilinks, definition lists, subscript, superscript, smart punctuation, or GFM admonitions
+- Keep user-facing strings gettext-ready and update POT/catalogs when implementation strings change
+- Keep all packaged assets resource-backed
+- Preserve hard limits: no source file over 600 lines, no `unsafe`/`unwrap`/`expect`, no broad Flatpak permissions
+- Do not add network permission or broad filesystem permissions to support Markdown preview
+
+Tests and validation:
+- Unit tests for frontmatter split, invalid frontmatter, unclosed frontmatter, and body rendering after frontmatter
+- Parser tests for CommonMark blocks and inlines, including tight lists, reference links, images, raw HTML, code blocks, and thematic breaks
+- Tests proving extended Markdown syntax remains disabled and surfaces diagnostics where appropriate
+- Renderer tests for headings, paragraphs, emphasis, strong, inline code, code blocks, links, image placeholders, lists, blockquotes, thematic breaks, raw HTML, compact diagnostics, and reading-friendly markers
+- Tests proving Markdown preview does not require network permissions, broad filesystem permissions, WebKit/WebView dependencies, or rendered diff behavior
+- Policy validation with `python3 -m tools.policy_check --root app --strict`
+- Coverage validation with `python3 -m tools.coverage_check --root app`
+
+Non-goals for v14:
+- No WebKit/WebView/browser preview
+- No HTML rendering or JavaScript execution
+- No remote image loading
+- No automatic local image loading
+- No link previews or metadata fetching
+- No tables, task lists, footnotes, strikethrough, math, heading attributes, wikilinks, definition lists, subscript, superscript, or GFM admonitions
+- No syntax-highlighted per-code-block composite preview unless it can be done within the native safety model as a later milestone
+- No local image folder grants
+- No rendered Markdown diff or semantic Markdown diff
+- No rich-text editing or Markdown source rewriting
+
+Implementation guidance:
+- Treat Markdown preview as a source-adjacent view mode, not a new document model
+- Keep parser, unsupported-extension detection, frontmatter handling, and renderer behavior separated enough to test independently
+- Prefer CommonMark parser output over ad hoc Markdown heuristics
+- Keep source text as the only persisted representation
+- Keep diagnostics compact and useful instead of building a full warning panel
+- Keep future local-image grants, code-block syntax highlighting, and rendered diff as explicit future decisions with their own safety designs
+
+Deliverable:
+Implement a working v14 of Riteed where `.md` and `.markdown` files can be viewed through a safe native GTK Markdown preview. The preview must support CommonMark basics plus YAML frontmatter metadata, block unsafe or unsupported behavior through placeholders and diagnostics, retain source-text Compare, and include the renderer and comparison polish needed for daily Markdown reading.
+```
+
+---
+
+# Post-V14 — Unscheduled Candidates
 
 > created: 2026-04-27
-> updated: 2026-05-08
+> updated: 2026-05-12
 > status: deferred
 > priority: low
 > type: roadmap-backlog
@@ -1626,14 +1750,14 @@ The rule for promotion is unchanged from the rest of the roadmap: a candidate be
 ## Candidate items
 
 * Optional GTK native spell check
-* Lightweight Markdown preview for `.md` files
+* Markdown preview follow-ups beyond V14, such as local image grants, syntax-highlighted code blocks, or rendered Markdown diff
 * Initial chunk streaming for very large files
 
 ## Why each candidate is deferred
 
 **Spell check** — depends on whether GtkSourceView's native spelling support is available on the bundled platform without sandbox or runtime gaps. Worth holding until there is a forcing reason.
 
-**Markdown preview** — useful but distinct from the editor's identity as a plain-text/code editor; the existing diff/compare infrastructure already provides side-by-side viewing for the cases that matter most today.
+**Markdown preview follow-ups** — useful only if they preserve the V14 safety model. Local images need explicit user grants, code highlighting should reuse existing native syntax infrastructure, and rendered diff would need a separate semantic-review design rather than replacing source-text Compare. Per-code-block syntax highlighting likely needs a widget/composite preview renderer because GtkSourceView highlighting is buffer-wide.
 
 **Initial chunk streaming for very large files** — useful and worth investigating, but it likely needs its own document/viewer mode rather than normal GtkSourceView loading. It should be promoted only when the milestone can focus on large-file architecture, including clear behavior for search, syntax highlighting, minimap, compare, autosave, and session restore.
 
@@ -1645,7 +1769,7 @@ Source Control is intentionally capped at local status, compare, stage, unstage,
 
 If any of these items is promoted to a real version later, the promoting change must:
 
-* Pick a version number (V14, V15, …) and create a full milestone section with Purpose, What it adds, Why this version matters, and Prompt, matching the structure of V1 through V13
+* Pick a version number (V15, V16, …) and create a full milestone section with Purpose, What it adds, Why this version matters, and Prompt, matching the structure of V1 through V14
 * Pull only the items that genuinely belong together in one release; do not promote the whole list at once unless that is the actual decision
 * Re-justify any bundled Git or Flatpak manifest expansion as part of the same change, not as a follow-up
 * Update the header `final_scheduled_version` and the Summary section accordingly
@@ -1654,7 +1778,7 @@ If any of these items is promoted to a real version later, the promoting change 
 
 # Summary of the full progression
 
-V1 through V13 are complete as of 2026-05-08. V13 covers diff review maturity for Compare and local Source Control review. Anything beyond V13, including spell check, Markdown preview, and large-file streaming, sits in the "Post-V13 — Unscheduled Candidates" section and only earns a version number once one of those ideas has a concrete reason to ship next.
+V1 through V14 are complete as of 2026-05-12. V13 covers diff review maturity for Compare and local Source Control review. V14 covers safe native Markdown preview, including initial CommonMark/frontmatter support, renderer correctness polish, and comparison-driven presentation polish. Remaining ideas beyond V14, including spell check, Markdown preview follow-ups, and large-file streaming, sit in the "Post-V14 — Unscheduled Candidates" section and only earn a version number once one of those ideas has a concrete reason to ship next.
 
 ## V1
 
@@ -1712,9 +1836,13 @@ Compact the sidebar, move Source Control actions into contextual header/popover 
 
 Mature diff review with unified diff, adaptive compare layout, collapsed unchanged regions, multi-file local changeset review, compare options, and accessible change navigation.
 
-## Post-V13
+## V14
 
-Unscheduled backlog. Holds spell check, Markdown preview, and initial large-file streaming. Items only promote to a numbered version when one has a concrete reason to ship next.
+Add safe native Markdown preview for `.md` and `.markdown` files with CommonMark plus YAML frontmatter, no browser/DOM/resource loading, source-text Compare, and comparison-driven renderer polish.
+
+## Post-V14
+
+Unscheduled backlog. Holds spell check, Markdown preview follow-ups, and initial large-file streaming. Items only promote to a numbered version when one has a concrete reason to ship next.
 
 ---
 

@@ -74,6 +74,15 @@ impl Window {
             .is_ok()
     }
 
+    pub(crate) fn activate_markdown_preview_for_tests(&self) -> bool {
+        gtk4::prelude::WidgetExt::activate_action(
+            self.widget(),
+            "win.tab-toggle-markdown-preview",
+            None,
+        )
+        .is_ok()
+    }
+
     pub(crate) fn shortcuts_enabled_for_tests(&self) -> bool {
         self.workspace.shortcuts_enabled()
     }
@@ -244,6 +253,14 @@ impl Window {
 
     pub(crate) fn selected_minimap_visible_for_tests(&self) -> bool {
         self.workspace.selected_minimap_visible()
+    }
+
+    pub(crate) fn selected_markdown_preview_active_for_tests(&self) -> bool {
+        self.workspace.selected_markdown_preview_active_for_tests()
+    }
+
+    pub(crate) fn selected_markdown_preview_text_for_tests(&self) -> String {
+        self.workspace.selected_markdown_preview_text_for_tests()
     }
 
     pub(crate) fn selected_language_id_for_tests(&self) -> Option<String> {

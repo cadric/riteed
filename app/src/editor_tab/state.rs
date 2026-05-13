@@ -183,11 +183,20 @@ pub(super) struct ReviewAttachment {
 }
 
 #[derive(Default)]
+pub(super) struct MarkdownPreviewAttachment {
+    pub(super) active: bool,
+    pub(super) generation: u64,
+    pub(super) debounce: Option<gtk4::glib::SourceId>,
+    pub(super) links: Vec<crate::markdown::RenderedLink>,
+}
+
+#[derive(Default)]
 pub(super) struct UiState {
     pub(super) suppress_changes: bool,
     pub(super) external_prompt_active: bool,
     pub(super) banner_syncing: bool,
     pub(super) visible_banner: VisibleBannerState,
+    pub(super) markdown_preview: MarkdownPreviewAttachment,
 }
 
 #[cfg(test)]

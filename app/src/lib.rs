@@ -25,6 +25,7 @@ pub mod error;
 mod find_in_files;
 mod git_process;
 mod git_status;
+mod markdown;
 mod palette_engine;
 mod palette_preview;
 mod project_browser;
@@ -55,6 +56,8 @@ mod workspace_open;
 mod gtk_tests;
 #[cfg(test)]
 mod gtk_tests_dialog_lifecycle;
+#[cfg(test)]
+mod gtk_tests_markdown;
 #[cfg(test)]
 mod gtk_tests_tabs;
 #[cfg(test)]

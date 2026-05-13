@@ -375,6 +375,7 @@ impl EditorTab {
     }
 
     fn enter_compare_layout(self: &Rc<Self>, target: &CompareTarget) {
+        self.exit_markdown_preview();
         self.exit_compare();
         self.root.remove(&self.content);
         self.minimap_holder.set_visible(false);

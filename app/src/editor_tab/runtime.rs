@@ -177,7 +177,7 @@ impl EditorTab {
     }
 
     fn apply_language_detection(
-        &self,
+        self: &Rc<Self>,
         generation: u64,
         identity: &str,
         detection: &LanguageDetection,
@@ -203,6 +203,7 @@ impl EditorTab {
         if should_apply {
             editor_language::apply_detection(&self.text_buffer, detection);
             self.apply_compare_style();
+            self.sync_markdown_preview_availability();
             self.sync_presentation();
         }
     }
@@ -225,6 +226,7 @@ impl EditorTab {
         document: LoadedDocument,
         snapshot: Option<&ReloadSnapshot>,
     ) {
+        self.exit_markdown_preview();
         self.exit_compare();
         let loaded_access_path = document.path.clone();
         {
@@ -277,6 +279,7 @@ impl EditorTab {
             .set_implicit_trailing_newline(saved.format.implicit_trailing_newline());
         self.text_buffer.set_modified(false);
         drop(state);
+        self.sync_markdown_preview_availability();
         self.sync_compare_reference_after_save(&saved_uri);
         self.refresh_writability_for_file(&saved_file);
         self.resolve_display_path_for_access_path(&saved_access_path);

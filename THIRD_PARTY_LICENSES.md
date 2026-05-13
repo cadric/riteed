@@ -20,6 +20,12 @@ Important runtime crates:
   `gettext-rs/gettext-system`, so the build uses system gettext instead of
   statically building the vendored GNU gettext fallback.
 - `similar` is Apache-2.0 licensed and provides the compare/diff engine.
+- `pulldown-cmark` is MIT-licensed and provides CommonMark event parsing for
+  the native Markdown preview.
+- `yaml-rust2` is MIT OR Apache-2.0 licensed and parses optional Markdown
+  frontmatter. Its active support crates are permissively licensed:
+  `arraydeque` (MIT/Apache-2.0), `hashlink` and `hashbrown` (MIT OR
+  Apache-2.0), `foldhash` (Zlib), and `unicase` (MIT OR Apache-2.0).
 - Most support crates are MIT, Apache-2.0, or MIT OR Apache-2.0. Their exact
   upstream license files remain in `app/vendor/*/`.
 

@@ -12,6 +12,7 @@ impl Workspace {
     }
 
     pub(crate) fn refresh_selected_state(&self) {
+        self.sync_tab_action_state();
         let selected = self.selected_tab();
         self.status_bar.update(selected.as_deref());
         if let Some(callback) = self.format_preferences_handler.get() {

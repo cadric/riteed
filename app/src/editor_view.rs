@@ -16,6 +16,9 @@ pub struct EditorView {
     pub minimap_holder: gtk4::Box,
     pub scrolled: gtk4::ScrolledWindow,
     pub content: gtk4::Box,
+    pub preview_buffer: gtk4::TextBuffer,
+    pub preview_view: gtk4::TextView,
+    pub preview_scrolled: gtk4::ScrolledWindow,
 }
 
 impl EditorView {
@@ -87,6 +90,8 @@ impl EditorView {
         content.append(&scrolled);
         content.append(&minimap_holder);
 
+        let preview = build_markdown_preview_widgets();
+
         let root = gtk4::Box::builder()
             .orientation(gtk4::Orientation::Vertical)
             .build();
@@ -104,7 +109,56 @@ impl EditorView {
             minimap_holder,
             scrolled,
             content,
+            preview_buffer: preview.buffer,
+            preview_view: preview.view,
+            preview_scrolled: preview.scrolled,
         }
+    }
+}
+
+struct MarkdownPreviewWidgets {
+    buffer: gtk4::TextBuffer,
+    view: gtk4::TextView,
+    scrolled: gtk4::ScrolledWindow,
+}
+
+fn build_markdown_preview_widgets() -> MarkdownPreviewWidgets {
+    let buffer = gtk4::TextBuffer::new(None::<&gtk4::TextTagTable>);
+    let view = gtk4::TextView::with_buffer(&buffer);
+    view.set_bottom_margin(24);
+    view.set_cursor_visible(false);
+    view.set_editable(false);
+    view.set_hexpand(true);
+    view.set_left_margin(24);
+    view.set_right_margin(24);
+    view.set_top_margin(24);
+    view.set_vexpand(true);
+    view.set_wrap_mode(gtk4::WrapMode::WordChar);
+
+    let clamp = adw::Clamp::builder()
+        .child(&view)
+        .maximum_size(980)
+        .tightening_threshold(640)
+        .build();
+    clamp.set_hexpand(true);
+    clamp.set_vexpand(true);
+
+    let scrolled = gtk4::ScrolledWindow::builder()
+        .hscrollbar_policy(gtk4::PolicyType::Never)
+        .vscrollbar_policy(gtk4::PolicyType::Automatic)
+        .child(&clamp)
+        .build();
+    scrolled.set_hexpand(true);
+    scrolled.set_min_content_height(0);
+    scrolled.set_min_content_width(0);
+    scrolled.set_propagate_natural_height(false);
+    scrolled.set_propagate_natural_width(false);
+    scrolled.set_vexpand(true);
+
+    MarkdownPreviewWidgets {
+        buffer,
+        view,
+        scrolled,
     }
 }
 

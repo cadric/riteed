@@ -564,6 +564,7 @@ fn gtk_surfaces_and_editor_flow_work() {
         .build();
     let _registered = test_app.register(None::<&gio::Cancellable>);
 
+    crate::markdown::render_tests::exercise_markdown_renderer();
     exercise_window_tab_flow(&test_app);
     crate::gtk_tests_dialog_lifecycle::exercise_dialog_lifecycle(&test_app);
     exercise_restore_and_recent_pruning(&test_app);
@@ -585,4 +586,5 @@ fn gtk_surfaces_and_editor_flow_work() {
     crate::gtk_tests_v11_git::exercise_v11_git_compare_renderer_path(&test_app);
     crate::gtk_tests_v12::exercise_v12_power_tools(&test_app);
     crate::gtk_tests_v13::exercise_v13_review_change_list(&test_app);
+    crate::gtk_tests_markdown::exercise_markdown_preview(&test_app);
 }

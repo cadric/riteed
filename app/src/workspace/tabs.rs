@@ -20,6 +20,7 @@ pub(crate) struct TabControls {
     close_other_tabs_action: gio::SimpleAction,
     transfer_window_handler: RefCell<Option<TransferWindowHandler>>,
     transferring_page: RefCell<Option<adw::TabPage>>,
+    markdown_preview_action: gio::SimpleAction,
 }
 
 impl TabControls {
@@ -31,6 +32,7 @@ impl TabControls {
             close_other_tabs_action: gio::SimpleAction::new("close-other-tabs", None),
             transfer_window_handler: RefCell::new(None),
             transferring_page: RefCell::new(None),
+            markdown_preview_action: gio::SimpleAction::new("tab-toggle-markdown-preview", None),
         }
     }
 
@@ -70,6 +72,9 @@ pub(crate) fn install(workspace: &Rc<Workspace>) {
     workspace
         .shell
         .add_action(&workspace.tab_controls.close_other_tabs_action);
+    workspace
+        .shell
+        .add_action(&workspace.tab_controls.markdown_preview_action);
     workspace.tab_view.set_menu_model(Some(&build_tab_menu()));
     install_action_callbacks(workspace);
     install_state_callbacks(workspace);
@@ -114,6 +119,16 @@ fn install_action_callbacks(workspace: &Rc<Workspace>) {
         .connect_activate(move |_, _| {
             if let Some(workspace) = weak.upgrade() {
                 workspace.request_close_other_tabs();
+            }
+        });
+
+    let weak = Rc::downgrade(workspace);
+    workspace
+        .tab_controls
+        .markdown_preview_action
+        .connect_activate(move |_, _| {
+            if let Some(workspace) = weak.upgrade() {
+                workspace.toggle_markdown_preview_for_selected_tab();
             }
         });
 }
@@ -166,6 +181,7 @@ fn install_state_callbacks(workspace: &Rc<Workspace>) {
 fn build_tab_menu() -> gio::Menu {
     let menu = gio::Menu::new();
     menu.append_section(None, &tab_move_section());
+    menu.append_section(None, &tab_markdown_section());
     menu.append_section(None, &tab_compare_section());
     menu.append_section(None, &tab_close_section());
     menu
@@ -185,6 +201,15 @@ fn tab_move_section() -> gio::Menu {
         Some(&pgettext("tab menu item", "Move to _New Window")),
         Some("win.tab-move-to-new-window"),
     );
+    section
+}
+
+fn tab_markdown_section() -> gio::Menu {
+    let section = gio::Menu::new();
+    section.append_item(&hidden_when_disabled_item(
+        &pgettext("tab menu item", "Toggle Markdown Preview"),
+        "win.tab-toggle-markdown-preview",
+    ));
     section
 }
 
@@ -245,6 +270,9 @@ impl Workspace {
             .as_ref()
             .map_or(-1, |page| self.tab_view.page_position(page));
         let can_create_window = self.tab_controls.transfer_window_handler.borrow().is_some();
+        let selected_tab = selected
+            .as_ref()
+            .and_then(|page| self.find_tab_by_page(page));
 
         self.tab_controls
             .move_backward_action
@@ -258,6 +286,22 @@ impl Workspace {
         self.tab_controls
             .close_other_tabs_action
             .set_enabled(!has_flow && n_pages > 1 && selected.is_some());
+        self.tab_controls.markdown_preview_action.set_enabled(
+            !has_flow
+                && selected_tab
+                    .as_ref()
+                    .is_some_and(|tab| tab.can_toggle_markdown_preview()),
+        );
+    }
+
+    fn toggle_markdown_preview_for_selected_tab(&self) {
+        if let Some(tab) = self.selected_tab()
+            && tab.can_toggle_markdown_preview()
+        {
+            tab.toggle_markdown_preview();
+            self.sync_tab_action_state();
+            self.refresh_selected_state();
+        }
     }
 
     pub(crate) fn add_empty_tab(self: &Rc<Self>, select: bool) -> Rc<EditorTab> {
@@ -451,7 +495,7 @@ mod tests {
     #[test]
     fn tab_menu_contains_standard_tab_actions() {
         let menu = build_tab_menu();
-        assert_eq!(menu.n_items(), 3);
+        assert_eq!(menu.n_items(), 4);
 
         assert_menu_section(
             &section(&menu, 0),
@@ -466,7 +510,18 @@ mod tests {
                 "win.tab-move-to-new-window",
             ],
         );
-        let compare = section(&menu, 1);
+        let markdown = section(&menu, 1);
+        assert_menu_section(
+            &markdown,
+            &["Toggle Markdown Preview"],
+            &["win.tab-toggle-markdown-preview"],
+        );
+        assert_eq!(
+            item_string(&markdown, 0, "hidden-when").as_deref(),
+            Some("action-disabled")
+        );
+
+        let compare = section(&menu, 2);
         assert_menu_section(
             &compare,
             &[
@@ -487,7 +542,7 @@ mod tests {
             );
         }
         assert_menu_section(
-            &section(&menu, 2),
+            &section(&menu, 3),
             &["Close _Other Tabs", "_Close"],
             &["win.close-other-tabs", "win.close"],
         );
