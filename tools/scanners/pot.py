@@ -39,6 +39,9 @@ def message_keys(path: Path) -> set[MessageKey]:
             current["msgid"] = _parse_quoted(line)
             field = "msgid"
             continue
+        if line.startswith("msgstr"):
+            field = None
+            continue
         if line.startswith('"') and line.endswith('"') and field is not None:
             current[field] = (current[field] or "") + bytes(line[1:-1], "utf-8").decode("unicode_escape")
     if current["msgid"] not in (None, ""):

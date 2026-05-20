@@ -41,7 +41,7 @@ modules:
     buildsystem: simple
     build-commands:
       - CARGO_HOME="$PWD/cargo" cargo --offline --locked build --release
-      - msgfmt -o po/da.gmo po/da.po
+      - for lang in $(cat po/LINGUAS); do msgfmt -o po/$lang.gmo po/$lang.po && install -Dm644 po/$lang.gmo /app/share/locale/$lang/LC_MESSAGES/io.github.cadric.Riteed.mo; done
       - install -Dm755 target/release/riteed /app/bin/riteed
       - install -Dm644 LICENSE /app/share/licenses/io.github.cadric.Riteed/Riteed-MIT.txt
       - install -Dm644 THIRD_PARTY_LICENSES.md /app/share/licenses/io.github.cadric.Riteed/THIRD_PARTY_LICENSES.md
@@ -64,7 +64,6 @@ modules:
       - install -Dm644 data/icons/hicolor/scalable/apps/io.github.cadric.Riteed.symbolic.svg /app/share/icons/hicolor/scalable/apps/io.github.cadric.Riteed.symbolic.svg
       - install -Dm644 data/schemas/io.github.cadric.Riteed.gschema.xml /app/share/glib-2.0/schemas/io.github.cadric.Riteed.gschema.xml
       - glib-compile-schemas /app/share/glib-2.0/schemas
-      - install -Dm644 po/da.gmo /app/share/locale/da/LC_MESSAGES/io.github.cadric.Riteed.mo
     sources:
       - cargo/cargo-sources.json
       - type: dir

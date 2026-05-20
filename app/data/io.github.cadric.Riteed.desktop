@@ -2,6 +2,7 @@
 Type=Application
 Name=Riteed
 Comment=Edit Text, Code, and Config Files
+Comment[da]=Rediger tekst-, kode- og konfigurationsfiler
 Exec=riteed %U
 Icon=io.github.cadric.Riteed
 StartupNotify=true
@@ -10,3 +11,4 @@ Terminal=false
 Categories=Utility;TextEditor;GNOME;GTK;
 MimeType=text/plain;
 Keywords=text;editor;code;markdown;config;
+Keywords[da]=tekst;redigering;kode;markdown;konfiguration;

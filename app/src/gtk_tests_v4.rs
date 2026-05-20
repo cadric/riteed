@@ -6,8 +6,10 @@ use libadwaita as adw;
 use crate::dialogs::{self, ExternalReloadResponse, StaleSaveResponse};
 use crate::editor_monitor::ExternalFileEvent;
 use crate::gtk_tests::{
-    atomic_replace_file, build_window, drain_events, spin_until, write_temp_file,
+    atomic_replace_file, build_window, build_window_with_settings, drain_events, spin_until,
+    write_temp_file,
 };
+use crate::settings::AppSettings;
 use crate::workspace::OpenSource;
 
 fn exercise_external_banner(test_app: &adw::Application) {
@@ -44,14 +46,32 @@ fn exercise_external_banner(test_app: &adw::Application) {
 }
 
 pub(crate) fn exercise_v4_editor_features(test_app: &adw::Application) {
-    let rust_window = build_window(test_app);
+    let startup_settings = AppSettings::new_for_tests();
+    startup_settings.set_show_minimap(true);
+    let rust_window = build_window_with_settings(test_app, startup_settings);
     assert!(rust_window.is_some());
     let Some(rust_window) = rust_window else {
         return;
     };
     rust_window.ensure_default_tab();
+    assert!(rust_window.selected_minimap_visible_for_tests());
+    assert_eq!(
+        rust_window.selected_minimap_scrollbar_policy_for_tests(),
+        Some(gtk4::PolicyType::External)
+    );
+    rust_window.set_minimap_for_tests(false);
+    assert!(!rust_window.selected_minimap_visible_for_tests());
+    assert_eq!(
+        rust_window.selected_minimap_scrollbar_policy_for_tests(),
+        Some(gtk4::PolicyType::Automatic)
+    );
     rust_window.set_minimap_for_tests(true);
     assert!(rust_window.selected_minimap_visible_for_tests());
+    assert_eq!(
+        rust_window.selected_minimap_scrollbar_policy_for_tests(),
+        Some(gtk4::PolicyType::External)
+    );
+
     let rust_path = write_temp_file("riteed-v4-syntax.rs", b"fn main() {}\n");
     rust_window.request_open_files(vec![gio::File::for_path(&rust_path)], OpenSource::AppOpen);
     spin_until("rust syntax detected", || {

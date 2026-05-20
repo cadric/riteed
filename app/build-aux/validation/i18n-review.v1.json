@@ -283,7 +283,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 409,
+      "line": 420,
       "match": "font_dialog.set_title(&gettext(\"Choose Editor Font\"));",
       "resolution": "This short dialog title appears at the top of the font chooser and the accompanying copy explains that the selection affects only the editor font.",
       "kind": "i18n-short-string"

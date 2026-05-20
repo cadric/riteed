@@ -7,6 +7,8 @@ use crate::APP_ID;
 
 pub use appearance::ThemePreference;
 pub use compare::{CompareReviewSettingsSnapshot, CompareViewMode};
+pub use language::AppLanguage;
+pub(crate) use language::startup_language_preference;
 pub use presentation::{EditorPalette, WindowPalette};
 pub use source_control::SourceControlViewMode;
 
@@ -24,6 +26,7 @@ enum SettingsBackend {
 #[derive(Clone)]
 struct MemorySettings {
     theme: ThemePreference,
+    language: AppLanguage,
     display: MemoryDisplaySettings,
     indentation: MemoryIndentationSettings,
     presentation: MemoryPresentationSettings,
@@ -110,6 +113,7 @@ impl AppSettings {
         Self {
             backend: SettingsBackend::Memory(Rc::new(Mutex::new(MemorySettings {
                 theme: ThemePreference::System,
+                language: AppLanguage::System,
                 display: MemoryDisplaySettings {
                     word_wrap: false,
                     show_line_numbers: false,
@@ -267,6 +271,7 @@ mod display;
 mod editor;
 mod git;
 mod indentation;
+mod language;
 mod presentation;
 mod project;
 mod selected_document;

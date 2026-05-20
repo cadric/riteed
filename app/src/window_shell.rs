@@ -22,6 +22,7 @@ pub struct WindowShell {
     pub git_discard_button: gtk4::Button,
     pub primary_menu_button: gtk4::MenuButton,
     pub preferences_dialog: adw::PreferencesDialog,
+    pub general_preferences_page: adw::PreferencesPage,
     pub appearance_page: adw::PreferencesPage,
     pub style_group: adw::PreferencesGroup,
     pub palette_flow_box: gtk4::FlowBox,
@@ -31,6 +32,7 @@ pub struct WindowShell {
     pub minimap_row: adw::SwitchRow,
     pub editor_font_row: adw::ActionRow,
     pub autosave_row: adw::SwitchRow,
+    pub language_row: adw::ComboRow,
     pub insert_spaces_row: adw::SwitchRow,
     pub tab_width_row: adw::SpinRow,
     pub indent_width_row: adw::SpinRow,
@@ -71,6 +73,8 @@ impl WindowShell {
             gtk4::Builder::from_resource("/io/github/cadric/Riteed/ui/preferences.ui");
         let preferences_dialog: adw::PreferencesDialog =
             builder_object(&preferences_builder, "preferences_dialog")?;
+        let general_preferences_page: adw::PreferencesPage =
+            builder_object(&preferences_builder, "general_preferences_page")?;
         let appearance_page: adw::PreferencesPage =
             builder_object(&preferences_builder, "appearance_page")?;
         let style_group: adw::PreferencesGroup =
@@ -86,6 +90,7 @@ impl WindowShell {
         let editor_font_row: adw::ActionRow =
             builder_object(&preferences_builder, "editor_font_row")?;
         let autosave_row: adw::SwitchRow = builder_object(&preferences_builder, "autosave_row")?;
+        let language_row: adw::ComboRow = builder_object(&preferences_builder, "language_row")?;
         let insert_spaces_row: adw::SwitchRow =
             builder_object(&preferences_builder, "insert_spaces_row")?;
         let tab_width_row: adw::SpinRow = builder_object(&preferences_builder, "tab_width_row")?;
@@ -126,6 +131,7 @@ impl WindowShell {
             git_discard_button,
             primary_menu_button,
             preferences_dialog,
+            general_preferences_page,
             appearance_page,
             style_group,
             palette_flow_box,
@@ -135,6 +141,7 @@ impl WindowShell {
             minimap_row,
             editor_font_row,
             autosave_row,
+            language_row,
             insert_spaces_row,
             tab_width_row,
             indent_width_row,

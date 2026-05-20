@@ -12,7 +12,7 @@ use crate::editor_zoom::{
     EditorZoomController, font_row_subtitle, resolve_editor_font_description, resolve_font_family,
     resolve_font_family_in_map,
 };
-use crate::settings::AppSettings;
+use crate::settings::{AppLanguage, AppSettings};
 use crate::window_shell::WindowShell;
 use crate::workspace::Workspace;
 
@@ -46,6 +46,7 @@ impl WindowPreferencesController {
         install_spin_preferences(shell, settings, workspace, &state);
         install_document_format_preferences(shell, workspace, &state);
         install_font_preference(shell, settings, zoom);
+        install_language_preference(shell, settings, &state);
         install_git_identity_preference(shell, settings);
         Self { _state: state }
     }
@@ -60,9 +61,19 @@ fn initialize_rows(
     let crlf = LineEndingMode::CrLf.menu_label();
     let cr = LineEndingMode::Cr.menu_label();
     let line_endings = gtk4::StringList::new(&[lf.as_str(), crlf.as_str(), cr.as_str()]);
+    let language_labels = AppLanguage::ALL.map(AppLanguage::label);
+    let language_labels = language_labels
+        .iter()
+        .map(String::as_str)
+        .collect::<Vec<_>>();
+    let languages = gtk4::StringList::new(&language_labels);
     with_syncing(state, || {
         shell.line_ending_row.set_model(Some(&line_endings));
         shell.line_ending_row.set_selected(0);
+        shell.language_row.set_model(Some(&languages));
+        shell
+            .language_row
+            .set_selected(settings.language().enum_value().cast_unsigned());
         shell.word_wrap_row.set_active(settings.word_wrap());
         shell
             .line_numbers_row
@@ -445,6 +456,21 @@ fn install_font_preference(
                 }
             },
         );
+    });
+}
+
+fn install_language_preference(
+    shell: &WindowShell,
+    settings: &AppSettings,
+    state: &Rc<RefCell<PreferencesState>>,
+) {
+    let settings = settings.clone();
+    let language_state = Rc::clone(state);
+    shell.language_row.connect_selected_notify(move |row| {
+        if language_state.borrow().syncing {
+            return;
+        }
+        settings.set_language(AppLanguage::from_index(row.selected()));
     });
 }
 

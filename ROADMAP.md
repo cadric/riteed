@@ -5,8 +5,8 @@ status: active
 priority: high
 type: roadmap
 completed_through: v14
-next_version: v15
-final_scheduled_version: v15
+next_version: v14.5
+final_scheduled_version: v16
 ---
 
 # Complete Roadmap: Mini GNOME Text Editor in Rust
@@ -1732,7 +1732,7 @@ Implement a working v14 of Riteed where `.md` and `.markdown` files can be viewe
 
 ---
 
-# V15 — Markdown Split Edit and Preview
+# V14.5 — Minimap Diff Decoration
 
 > created: 2026-05-20
 > updated: 2026-05-20
@@ -1743,11 +1743,191 @@ Implement a working v14 of Riteed where `.md` and `.markdown` files can be viewe
 
 ## Purpose
 
-V15 turns the V14 Markdown preview from a separate viewing layer into a practical writing workflow: edit Markdown source and see the rendered result beside it.
+V14.5 makes the editor minimap show local source control diff state, and re-enables the minimap inside V11's split-diff Compare panes. Today the minimap is disabled in Compare mode entirely, and the normal editor minimap shows nothing about source control state — so scrolling a long file gives no visual orientation about where the modified, added, or deleted regions are.
 
-This is the right next feature because it builds directly on V14's native, safe Markdown renderer while keeping Riteed small. It improves a real document workflow without introducing IDE features, browser rendering, rich text editing, or a general publishing system.
+This is a focused polish/feature milestone in the same pattern as V12.5: small, high-value, and bundled with adjacent shipped work (V10 Source Control + V11 split diff) rather than waiting for a major milestone. It reuses `sourceview5::Map` and the existing source control live monitor; no new widget, no custom renderer, no IDE/LSP scope creep.
+
+## What V14.5 adds
+
+* Minimap re-enabled inside Compare and Git compare presentation panes so users can scan a long diff visually
+* Per-line diff color bands in the editor-mode minimap reflecting local source control state: added, modified, deleted
+* Diff-tag refresh driven by the V10 Source Control live monitor on file save, manual refresh, external change, and source control state change
+* Background colors derived from Adwaita semantic colors with low alpha, with high-contrast theme support reusing V11's color-token strategy
+* The existing minimap preference still respected; users who turn the minimap off see no change
+
+## Why this version matters
+
+VS Code, Builder, Sublime, and most modern editors decorate their minimap with git diff state because it gives instant orientation: "this 4000-line file has changes here, here, and here". Riteed currently has a minimap and full Source Control state but does not connect the two. V14.5 closes that gap with minimum new code while staying inside the GNOME-native widget toolkit.
+
+The feature also naturally completes the V11 split-diff polish story: the diff colors V11 added to presentation buffers will now show up in the minimap automatically as colored bands, because they are already buffer background tags.
+
+## Scope boundaries
+
+V14.5 is **not** a generic minimap-decoration framework.
+
+V14.5 must not add:
+
+* search-result markers in the minimap (potentially Post-V16 candidate)
+* error/lint markers (Riteed has no LSP and is not getting one)
+* a custom minimap widget; the implementation must reuse `sourceview5::Map`
+* clickable navigation gestures beyond what `sourceview5::Map` already provides
+* minimap for non-text views (Markdown preview, future V15 large-file viewer)
+
+## Prompt for V14.5
+
+```text
+Build V14.5 of Riteed by re-enabling the minimap inside Compare/Git compare panes and decorating the editor-mode minimap with local source control diff state.
+
+The goal is to give users instant visual orientation in long files: where are the changes, which side of a diff has insertions or deletions, where in the buffer is the modified region. Reuse `sourceview5::Map` and the existing V10 Source Control live monitor; do not build a custom minimap widget.
+
+What V14.5 adds:
+- Minimap re-enabled in Compare/Git compare presentation panes; visible by default with the existing minimap preference still respected
+- The diff tags already applied to compare presentation buffers (reference-only red, current-only green, modify) render naturally as colored bands in the minimap because they are buffer background tags
+- Editor-mode minimap decorations for normal source files: per-line background tags applied to the editor buffer reflecting added/modified/deleted regions according to `git diff --unified=0` against HEAD/index
+- The live source control monitor from V10 drives refresh of the editor minimap tags on file save, manual refresh, external change, and source control state change
+- Background colors derived from Adwaita semantic colors with low alpha so they read at minimap zoom without dominating the editor itself
+- High-contrast theme support reusing the same color-token strategy that V11 uses for diff highlighting
+
+Technical expectations:
+- Reuse `sourceview5::Map`; do not build a custom widget
+- Apply per-line buffer tags rather than custom paint passes; the minimap inherits styling automatically
+- Source the git diff state from the existing source control live monitor, not a new git invocation path
+- Keep tag priority correct so search highlights, current-line highlight, and diff decorations compose without clobbering each other
+- Refresh diff tags only when the source control snapshot for that file actually changes; do not re-tag on every keystroke
+- Decide between minimap on both compare panes or only the right (current) pane based on visual smoke; favor the less noisy option
+- Keep all user-visible strings gettext-ready
+- Preserve hard limits: 600-line files, no `unsafe`/`unwrap`/`expect`, no broad permissions
+- Tests: unit tests for the diff-to-tag translator, focused tests for minimap visibility in compare mode, and a regression test that minimap tags clear when a file moves out of source control state
+
+Non-goals:
+- No custom minimap widget, no Cairo-based renderer
+- No error/lint markers (no LSP)
+- No search-result markers (potential Post-V16 candidate)
+- No minimap on Markdown preview or any future large-file viewer
+- No new git command verbs in the bundled Git boundary
+- No additional dependencies
+
+Deliverable:
+Implement V14.5 so that the editor minimap shows local source control diff bands and the Compare/Git compare panes show their existing diff colors in a re-enabled minimap, giving users at-a-glance visual orientation across both editing and review workflows.
+```
+
+---
+
+# V15 — Large File Handling
+
+> created: 2026-05-20
+> updated: 2026-05-20
+> status: planned
+> priority: high
+> type: roadmap-milestone
+> implementation: not started
+
+## Purpose
+
+V15 makes Riteed practical for files that today freeze the UI or are refused at open: large logs, big JSON or CSV dumps, multi-megabyte data files. The editor currently uses a single `GtkSourceView`/`GtkTextBuffer` path that handles small source files well but degrades sharply past a few megabytes. V15 introduces tiered behavior so small files stay fully featured, mid-sized files load with feature gating, and very large files open as a fast read-only viewer with an explicit opt-in path back into editor mode.
+
+This is not a buffer replacement. Riteed keeps `GtkSourceView` for normal editing. V15 adds a separate viewer path for files above a size threshold and adds defensive thresholds throughout the editor stack so the existing path stops trying to do expensive work on files that cannot benefit.
 
 ## What V15 adds
+
+* A tiered file-size model with explicit user-visible thresholds: small / medium / large / very large / refuse-edit
+* Background chunked file loading so mid-sized editor opens stay responsive
+* Auto-disable of syntax highlighting, minimap, Markdown preview, and Source Control diff on files above per-feature thresholds, in normal editor mode
+* A native GTK read-only large-file viewer mode for files above the editor threshold, backed by memory-mapped file access and a lazy line-offset index
+* An "Edit anyway" opt-in path from viewer mode back into editor mode, with honest warnings about expected load time and reduced feature availability
+* Placeholder tabs on session restore for large files so app startup is not blocked by eager loads
+* User-configurable thresholds in Preferences for users on capable hardware
+* Hard refusal of edit mode above a final upper limit, with viewer still available up to filesystem limits
+
+## Why this version matters
+
+Today Riteed cannot honestly compete on practical day-to-day use: opening a 25 MB log freezes the UI, 75 MB is unusable, and the existing safety guards only refuse the open rather than offering a fast read path. VS Code, Sublime, and Notepad++ all solved this through tiered behavior, not through one universal buffer. V15 adopts the same approach with a GTK-native implementation that respects Riteed's identity as a lightweight editor.
+
+V15 also unlocks everyday GNOME desktop scenarios where Riteed should feel competent: log review, server config inspection, dump analysis, and read-only data browsing.
+
+## Scope boundaries
+
+V15 is **not** a Monaco-style piece-tree implementation.
+
+V15 must not add:
+
+* a replacement text-buffer datastructure (piece-tree or rope) for editor mode
+* edit support above the hard upper limit
+* virtualized rendering retrofit inside the existing `GtkSourceView` editor mode
+* IDE features, terminal, LSP, debugger, or build tools
+* network access of any kind for file loading
+
+## Prompt for V15
+
+```text
+Build V15 of Riteed by adding tiered large-file handling that keeps small files fully featured while making mid-sized and large files usable.
+
+The goal is for Riteed to remain a lightweight GNOME-native text editor that opens normal files instantly and large files quickly through a separate read-only viewer mode, with an explicit opt-in back into editor mode for users who accept the cost.
+
+What V15 adds:
+- A tiered open model with size-based thresholds: small (default editor with all features), medium (editor with auto-disabled heavy features), large (read-only viewer by default, editor on opt-in), very large (read-only viewer with stronger edit warning), and a hard upper limit where edit is refused entirely while viewer remains available
+- Background chunked file load in editor mode so loading mid-sized files does not freeze the UI
+- Auto-disable behavior for syntax highlighting, minimap, Markdown preview, and Source Control per-file diff above per-feature thresholds, including inside normal editor mode
+- A native GTK read-only large-file viewer mode that uses memory-mapped file access, builds a lazy line-offset index in the background, and renders only visible lines via a virtualized native widget
+- Viewer-mode operations: scroll, copy, select, line jump, find within file
+- An "Edit anyway" path from viewer mode to editor mode with an explicit warning that includes expected load time, estimated memory use, and the list of features that will remain disabled
+- Per-file "remember this choice" opt-in plus a global preference for "always allow editing large files" so power users can skip the prompt
+- Placeholder tabs on session restore so large files restore as a lightweight status page with "Open in Viewer", "Open in Editor", and "Remove" actions instead of blocking startup with eager loads
+- Preferences entries to adjust threshold values for users on capable hardware, with sane defaults for the general case
+- Honest user-facing copy about freeze risk, memory cost, and the editor's hard upper limit
+
+Default thresholds (all configurable in Preferences):
+- < 5 MB: editor with all features
+- 5-25 MB: editor with syntax highlighting, minimap, Markdown preview, and Source Control diff auto-disabled; autosave still active
+- 25-75 MB: read-only viewer by default; edit opt-in with "may take 5-15 seconds and disable several features" warning; autosave off in edit mode
+- 75-500 MB: read-only viewer by default; edit opt-in with stronger "may take 30+ seconds and significantly slow the app" warning; autosave off; all heavy features disabled
+- > 500 MB: read-only viewer only; edit refused with explanation
+
+Compare and Markdown preview on large files:
+- Compare actions remain available but show an explicit warning before running on files above the medium tier; refused outright above the hard upper limit
+- Markdown preview is hard-disabled above 5 MB regardless of mode; the toggle is hidden rather than warning the user
+
+Technical expectations:
+- Keep the existing `GtkSourceView`/`GtkTextBuffer` editor path unchanged for small files
+- Add chunked background load via `glib::idle_add_local` or async file IO into the existing editor buffer for medium-sized files
+- Build the viewer as a separate widget that does not embed `GtkSourceView`; use `memmap2` for the file, a `Vec<u64>` line-offset index built incrementally in a worker, and a virtualized rendering approach (custom widget with Pango per-visible-line layout or a GtkColumnView-backed model that lazy-loads line content)
+- Keep viewer mode strictly read-only; never load the entire file into a `GtkTextBuffer` in viewer mode
+- Make viewer search and selection feel close enough to the editor that switching between modes is not jarring
+- Keep all user-visible strings gettext-ready
+- Persist threshold preferences in GSettings using the existing schema patterns
+- Preserve hard limits: no source file over 600 lines, no `unsafe`/`unwrap`/`expect`, no broad Flatpak permissions, no network access
+- Tests: unit tests for tier-decision logic, focused tests for the line-offset index builder, GTK tests for viewer mode rendering and Edit anyway flow, and a regression test that session restore with a large file produces a placeholder tab rather than freezing
+
+Non-goals:
+- No piece-tree or rope buffer replacement; edit mode remains backed by `GtkTextBuffer`
+- No edit support above the hard upper limit
+- No syntax highlighting, minimap, Markdown preview, or Source Control diff in viewer mode
+- No virtualized rendering retrofit into `GtkSourceView` editor mode
+- No network IO, no host filesystem expansion, no new Flatpak permissions
+- No IDE features, terminal, LSP, debugger, or build tools
+
+Deliverable:
+Implement a tiered large-file workflow where Riteed opens files of any reasonable size quickly, keeps small files fully featured, automatically scales back features on medium files, opens large files in a fast read-only viewer with an honest opt-in path to slower editor mode, and refuses only the most extreme edit operations while still letting users view files of nearly arbitrary size.
+```
+
+---
+
+# V16 — Markdown Split Edit and Preview
+
+> created: 2026-05-20
+> updated: 2026-05-20
+> status: planned
+> priority: high
+> type: roadmap-milestone
+> implementation: not started
+
+## Purpose
+
+V16 turns the V14 Markdown preview from a separate viewing layer into a practical writing workflow: edit Markdown source and see the rendered result beside it.
+
+This is the right feature after V15 because it builds directly on V14's native, safe Markdown renderer while keeping Riteed small. It improves a real document workflow without introducing IDE features, browser rendering, rich text editing, or a general publishing system.
+
+## What V16 adds
 
 * Markdown Source, Preview, and Split modes for `.md` and `.markdown` documents
 * An adaptive split layout with editable source on one side and read-only preview on the other
@@ -1758,15 +1938,15 @@ This is the right next feature because it builds directly on V14's native, safe 
 
 ## Why this version matters
 
-V14 made Markdown readable inside Riteed. V15 makes Markdown comfortable to write.
+V14 made Markdown readable inside Riteed. V16 makes Markdown comfortable to write.
 
 The feature is still editor-centered: the Markdown source remains the only editable document, the preview remains a native GTK read-only rendering, and Compare continues to use source text. This keeps Riteed aligned with its lightweight GNOME text-editor identity while making Markdown one of its strongest daily-use workflows.
 
 ## Scope boundaries
 
-V15 is **not** a WYSIWYG editor.
+V16 is **not** a WYSIWYG editor.
 
-V15 must not add:
+V16 must not add:
 
 * browser/WebKit rendering
 * rich-text editing
@@ -1776,14 +1956,14 @@ V15 must not add:
 * export/publishing workflows
 * LSP, terminal, debugger, plugin, build, or repository expansion
 
-## Prompt for V15
+## Prompt for V16
 
 ```text
-Build V15 of Riteed by extending the existing safe native Markdown preview into a split edit/preview workflow.
+Build V16 of Riteed by extending the existing safe native Markdown preview into a split edit/preview workflow.
 
 The goal is to make Markdown writing comfortable while preserving Riteed's identity as a small GNOME-native text editor. The source buffer remains the authoritative editable document. The preview is a read-only native GTK rendering of the current buffer, not a browser and not a WYSIWYG editor.
 
-What V15 adds:
+What V16 adds:
 - Markdown Source, Preview, and Split modes for `.md` and `.markdown` files
 - Split mode with editable source on one side and rendered preview on the other
 - Adaptive behavior so narrow windows can fall back to a single surface without hiding the active document
@@ -1817,7 +1997,7 @@ Implement a working Markdown split edit/preview workflow where users can edit Ma
 
 ---
 
-# Post-V15 — Unscheduled Candidates
+# Post-V16 — Unscheduled Candidates
 
 > created: 2026-04-27
 > updated: 2026-05-20
@@ -1835,16 +2015,16 @@ The rule for promotion is unchanged from the rest of the roadmap: a candidate be
 ## Candidate items
 
 * Optional GTK native spell check
-* Markdown preview follow-ups beyond V15, such as local image grants, syntax-highlighted code blocks, or rendered Markdown diff
-* Initial chunk streaming for very large files
+* Markdown preview follow-ups beyond V16, such as local image grants, syntax-highlighted code blocks, or rendered Markdown diff
+* Piece-tree or rope buffer replacement to allow editing of very large files above the V15 hard upper limit
 
 ## Why each candidate is deferred
 
 **Spell check** — depends on whether GtkSourceView's native spelling support is available on the bundled platform without sandbox or runtime gaps. Worth holding until there is a forcing reason.
 
-**Markdown preview follow-ups** — useful only if they preserve the V14/V15 safety model. Local images need explicit user grants, code highlighting should reuse existing native syntax infrastructure, and rendered diff would need a separate semantic-review design rather than replacing source-text Compare. Per-code-block syntax highlighting likely needs a widget/composite preview renderer because GtkSourceView highlighting is buffer-wide.
+**Markdown preview follow-ups** — useful only if they preserve the V14/V16 safety model. Local images need explicit user grants, code highlighting should reuse existing native syntax infrastructure, and rendered diff would need a separate semantic-review design rather than replacing source-text Compare. Per-code-block syntax highlighting likely needs a widget/composite preview renderer because GtkSourceView highlighting is buffer-wide.
 
-**Initial chunk streaming for very large files** — useful and worth investigating, but it likely needs its own document/viewer mode rather than normal GtkSourceView loading. It should be promoted only when the milestone can focus on large-file architecture, including clear behavior for search, syntax highlighting, minimap, compare, autosave, and session restore.
+**Piece-tree buffer replacement** — V15 stops short of replacing `GtkTextBuffer`, which means edit mode on very large files remains slow even with features disabled and refuses entirely above the hard upper limit. A Monaco-style piece-tree (or `ropey`-backed rope) would let edit mode scale further, but it requires replacing the editor widget itself because `GtkSourceView` is built on `GtkTextBuffer`. That is a separate architecture milestone and should only be promoted when there is a concrete reason editing 500 MB+ files inside Riteed is the next thing to ship.
 
 ## Source Control ceiling
 
@@ -1854,7 +2034,7 @@ Source Control is intentionally capped at local status, compare, stage, unstage,
 
 If any of these items is promoted to a real version later, the promoting change must:
 
-* Pick a version number (V16, V17, …) and create a full milestone section with Purpose, What it adds, Why this version matters, and Prompt, matching the structure of V1 through V15
+* Pick a version number (V17, V18, …) and create a full milestone section with Purpose, What it adds, Why this version matters, and Prompt, matching the structure of V1 through V16
 * Pull only the items that genuinely belong together in one release; do not promote the whole list at once unless that is the actual decision
 * Re-justify any bundled Git or Flatpak manifest expansion as part of the same change, not as a follow-up
 * Update the header `final_scheduled_version` and the Summary section accordingly
@@ -1863,7 +2043,7 @@ If any of these items is promoted to a real version later, the promoting change 
 
 # Summary of the full progression
 
-V1 through V14 are complete as of 2026-05-12. V13 covers diff review maturity for Compare and local Source Control review. V14 covers safe native Markdown preview, including initial CommonMark/frontmatter support, renderer correctness polish, and comparison-driven presentation polish. V15 is planned as the next focused step: Markdown split edit/preview with source text as the authoritative editable surface. Remaining ideas beyond V15, including spell check, deeper Markdown preview follow-ups, and large-file streaming, sit in the "Post-V15 — Unscheduled Candidates" section and only earn a version number once one of those ideas has a concrete reason to ship next.
+V1 through V14 are complete as of 2026-05-12. V13 covers diff review maturity for Compare and local Source Control review. V14 covers safe native Markdown preview, including initial CommonMark/frontmatter support, renderer correctness polish, and comparison-driven presentation polish. V14.5 is planned as a focused polish step that re-enables the minimap inside Compare panes and decorates the editor-mode minimap with local source control diff state, completing the V11/V10 visual-diff story. V15 is planned as tiered large-file handling so Riteed stays fast on small files, scales features back on mid-sized files, and opens very large files in a native read-only viewer with an explicit opt-in path back into editor mode. V16 is planned as the Markdown split edit/preview workflow with source text as the authoritative editable surface. Remaining ideas beyond V16, including spell check, deeper Markdown preview follow-ups, and a piece-tree buffer replacement for editing very large files, sit in the "Post-V16 — Unscheduled Candidates" section and only earn a version number once one of those ideas has a concrete reason to ship next.
 
 ## V1
 
@@ -1925,13 +2105,21 @@ Mature diff review with unified diff, adaptive compare layout, collapsed unchang
 
 Add safe native Markdown preview for `.md` and `.markdown` files with CommonMark plus YAML frontmatter, no browser/DOM/resource loading, source-text Compare, and comparison-driven renderer polish.
 
+## V14.5
+
+Re-enable the minimap inside Compare/Git compare panes and decorate the editor-mode minimap with local source control diff state so users get instant visual orientation in long files and during review.
+
 ## V15
+
+Add tiered large-file handling so small files stay fully featured, mid-sized files auto-disable heavy features, large files open in a native read-only viewer by default, and editing remains opt-in with honest warnings up to a hard upper limit.
+
+## V16
 
 Add Markdown Source, Preview, and Split modes so `.md` and `.markdown` files can be edited as source text while a native read-only preview updates beside the editor.
 
-## Post-V15
+## Post-V16
 
-Unscheduled backlog. Holds spell check, deeper Markdown preview follow-ups, and initial large-file streaming. Items only promote to a numbered version when one has a concrete reason to ship next.
+Unscheduled backlog. Holds spell check, deeper Markdown preview follow-ups, and a piece-tree buffer replacement for editing very large files. Items only promote to a numbered version when one has a concrete reason to ship next.
 
 ---
 
@@ -1941,7 +2129,7 @@ By the end of the roadmap, the app becomes:
 
 * a GNOME-native Rust editor
 * lightweight but capable
-* suitable for plain text, config files, markdown, and light code editing
+* suitable for plain text, config files, markdown, light code editing, and read-only viewing of very large files
 * stronger in editing, comparison, and repository awareness than a basic notepad
 * intentionally still smaller and simpler than a full IDE or dedicated Git client
 

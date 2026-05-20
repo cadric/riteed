@@ -90,6 +90,8 @@ use std::sync::OnceLock;
 use gettextrs::TextDomain;
 use gtk4 as gtk;
 
+use settings::AppLanguage;
+
 pub const APP_ID: &str = "io.github.cadric.Riteed";
 pub const APP_NAME: &str = "Riteed";
 pub const REPO_URL: &str = "https://github.com/cadric/riteed";
@@ -123,10 +125,13 @@ pub fn bootstrap_runtime() -> RuntimeInitResult {
             gtk::glib::set_application_name(APP_NAME);
             let resource = gtk::gio::resources_register_include!("riteed.gresource")
                 .map_err(|error| error.to_string());
-            let gettext = TextDomain::new(APP_ID)
-                .init()
-                .map(|_locales| ())
-                .map_err(|error| error.to_string());
+            let gettext = match settings::startup_language_preference() {
+                AppLanguage::System => TextDomain::new(APP_ID).init(),
+                AppLanguage::English => TextDomain::new(APP_ID).locale("C").init(),
+                AppLanguage::Danish => TextDomain::new(APP_ID).locale("da_DK.UTF-8").init(),
+            }
+            .map(|_locales| ())
+            .map_err(|error| error.to_string());
             build_runtime_report(resource, gettext)
         })
         .clone()

@@ -14,6 +14,16 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 
 ## Unreleased
 
+### Added
+- Localization: Danish (da) is now fully translated and shipped as a complete locale.
+- Added a General preferences page with an app language choice for System, English, or Danish, applied on next restart.
+
+### Changed
+- Made Flatpak locale installation follow `po/LINGUAS` and added policy validation that shipped locales must have no fuzzy or untranslated catalog entries.
+
+### Fixed
+- Fixed tabs opened while the saved Minimap preference is already enabled so they use the same external scrollbar layout as the live Preferences toggle.
+
 ## 0.3.2 - 2026-05-20
 
 ### V14 — Native Markdown Preview

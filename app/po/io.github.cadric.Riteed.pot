@@ -13,8 +13,25 @@ msgid_plural "%d files skipped."
 msgstr[0] ""
 msgstr[1] ""
 
+msgctxt "compare placeholder"
+msgid "%d line only in current"
+msgid_plural "%d lines only in current"
+msgstr[0] ""
+msgstr[1] ""
+
+msgctxt "compare placeholder"
+msgid "%d line only in reference"
+msgid_plural "%d lines only in reference"
+msgstr[0] ""
+msgstr[1] ""
+
 msgid "%d match"
 msgid_plural "%d matches"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "%d more file skipped (review limit reached)."
+msgid_plural "%d more files skipped (review limit reached)."
 msgstr[0] ""
 msgstr[1] ""
 
@@ -23,13 +40,92 @@ msgid_plural "%d results"
 msgstr[0] ""
 msgstr[1] ""
 
+msgid "%d unchanged line hidden"
+msgid_plural "%d unchanged lines hidden"
+msgstr[0] ""
+msgstr[1] ""
+
+msgctxt "markdown diagnostic"
+msgid "A data URI image reference was blocked."
+msgstr ""
+
+msgctxt "markdown diagnostic"
+msgid "A file URI image reference was blocked."
+msgstr ""
+
+msgctxt "markdown diagnostic"
+msgid "A local image reference was not loaded automatically."
+msgstr ""
+
+msgctxt "markdown diagnostic"
+msgid "A remote image was blocked and rendered as a placeholder."
+msgstr ""
+
+msgctxt "menu item"
+msgid "About Riteed"
+msgstr ""
+
+msgctxt "error title"
+msgid "Action Cancelled"
+msgstr ""
+
+msgctxt "compare mode"
+msgid "Adaptive"
+msgstr ""
+
+msgctxt "git status"
+msgid "Added"
+msgstr ""
+
 msgid "Adds Find in Files, document statistics, and print support while preserving the existing Find and Replace workflow."
 msgstr ""
 
 msgid "Adds native Markdown preview polish, staged and unstaged multi-file review tabs, and a V15 roadmap for split Markdown edit/preview."
 msgstr ""
 
-msgid "Fixes Source Control so ordinary untracked folders expand to changed file paths while nested Git repositories remain visible as guarded directory entries."
+msgctxt "window palette"
+msgid "Adwaita"
+msgstr ""
+
+msgctxt "editor palette"
+msgid "Adwaita Dark"
+msgstr ""
+
+msgctxt "editor palette"
+msgid "Adwaita Light"
+msgstr ""
+
+msgctxt "file filter"
+msgid "All Files"
+msgstr ""
+
+msgid "App"
+msgstr ""
+
+msgid "App Language"
+msgstr ""
+
+msgid "Appearance"
+msgstr ""
+
+msgid "Application"
+msgstr ""
+
+msgid "Applied after restart"
+msgstr ""
+
+msgid "Apply"
+msgstr ""
+
+msgctxt "dialog button"
+msgid "Apply"
+msgstr ""
+
+msgid "Apply Git Identity"
+msgstr ""
+
+msgctxt "editor palette"
+msgid "Auto"
 msgstr ""
 
 msgid "Automatic text decoding was not reliable for this file. Choose a text encoding manually and try again."
@@ -38,7 +134,13 @@ msgstr ""
 msgid "Automatic text detection or safe conversion was not reliable for this file. Choose an encoding manually to try opening it."
 msgstr ""
 
+msgid "Automatically save existing writable files after edits"
+msgstr ""
+
 msgid "Autosave"
+msgstr ""
+
+msgid "Autosave Saved Files"
 msgstr ""
 
 msgid "Autosave is available for already-saved writable files, while read-only and externally changed files stay guarded by explicit user choices."
@@ -59,13 +161,76 @@ msgstr ""
 msgid "Browse project folders from the integrated sidebar"
 msgstr ""
 
+msgctxt "line ending"
+msgid "CR"
+msgstr ""
+
+msgctxt "line ending"
+msgid "CRLF"
+msgstr ""
+
+msgctxt "alert response"
+msgid "Cancel"
+msgstr ""
+
+msgctxt "dialog button"
+msgid "Cancel"
+msgstr ""
+
+msgid "Change List"
+msgstr ""
+
+msgctxt "review action"
+msgid "Change List"
+msgstr ""
+
+msgctxt "help row"
+msgid "Changed Files"
+msgstr ""
+
+msgctxt "change list row"
+msgid "Changed file"
+msgstr ""
+
 msgid "Changed files"
+msgstr ""
+
+msgctxt "change list row"
+msgid "Changed line"
+msgstr ""
+
+msgctxt "statistics row"
+msgid "Characters"
+msgstr ""
+
+msgctxt "statistics row"
+msgid "Characters Without Spaces"
+msgstr ""
+
+msgctxt "file dialog action"
+msgid "Choose"
 msgstr ""
 
 msgid "Choose Editor Font"
 msgstr ""
 
+msgctxt "alert response"
+msgid "Choose Encoding"
+msgstr ""
+
+msgctxt "compare dialog action"
+msgid "Choose File"
+msgstr ""
+
+msgctxt "compare source placeholder"
+msgid "Choose File or Paste Text"
+msgstr ""
+
 msgid "Choose a Different Encoding to Save"
+msgstr ""
+
+msgctxt "file dialog title"
+msgid "Choose a File"
 msgstr ""
 
 msgid "Choose a Save Location Before Saving This Document."
@@ -89,16 +254,153 @@ msgstr ""
 msgid "Choose the encoding to use when saving this document."
 msgstr ""
 
+msgctxt "window palette"
+msgid "Classic"
+msgstr ""
+
+msgctxt "editor palette"
+msgid "Classic Dark"
+msgstr ""
+
+msgctxt "editor palette"
+msgid "Classic Light"
+msgstr ""
+
+msgctxt "line ending menu"
+msgid "Classic Mac (CR)"
+msgstr ""
+
+msgctxt "alert response"
+msgid "Clear"
+msgstr ""
+
+msgctxt "compare dialog action"
+msgid "Clear"
+msgstr ""
+
+msgctxt "dialog button"
+msgid "Clear All"
+msgstr ""
+
 msgid "Clear Recent Files?"
+msgstr ""
+
+msgctxt "alert response"
+msgid "Close"
+msgstr ""
+
+msgctxt "dialog button"
+msgid "Close"
+msgstr ""
+
+msgid "Close Current Tab"
+msgstr ""
+
+msgctxt "search action"
+msgid "Close Find"
 msgstr ""
 
 msgid "Close Folder"
 msgstr ""
 
+msgctxt "tab menu item"
+msgid "Close _Other Tabs"
+msgstr ""
+
+msgid "Collapse Unchanged Compare Lines"
+msgstr ""
+
+msgctxt "compare option"
+msgid "Collapse Unchanged Lines"
+msgstr ""
+
+msgctxt "git commit"
+msgid "Commit"
+msgstr ""
+
+msgctxt "help row"
+msgid "Commit Behavior"
+msgstr ""
+
+msgctxt "git commit"
+msgid "Commit Message"
+msgstr ""
+
 msgid "Compacts Source Control rows, moves active-file Git actions into the header bar, and unifies document and project search in the Find bar."
 msgstr ""
 
+msgctxt "alert response"
+msgid "Compare"
+msgstr ""
+
+msgctxt "compare dialog title"
+msgid "Compare"
+msgstr ""
+
+msgctxt "compare toolbar"
+msgid "Compare"
+msgstr ""
+
+msgctxt "dialog button"
+msgid "Compare"
+msgstr ""
+
+msgid "Compare Context Lines"
+msgstr ""
+
+msgctxt "compare option"
+msgid "Compare Mode"
+msgstr ""
+
+msgctxt "compare action"
+msgid "Compare Options"
+msgstr ""
+
+msgid "Compare View Mode"
+msgstr ""
+
+msgctxt "tab menu item"
+msgid "Compare With F_ile"
+msgstr ""
+
+msgid "Compare With Git"
+msgstr ""
+
+msgctxt "git action tooltip"
+msgid "Compare With Git"
+msgstr ""
+
+msgctxt "tab menu item"
+msgid "Compare With _Pasted Text"
+msgstr ""
+
+msgctxt "tab menu item"
+msgid "Compare With _Saved Version"
+msgstr ""
+
+msgid "Compare Word Wrap"
+msgstr ""
+
+msgid "Compare and Review"
+msgstr ""
+
+msgctxt "help row"
+msgid "Compare and Review"
+msgstr ""
+
+msgctxt "compare menu section"
+msgid "Comparison"
+msgstr ""
+
 msgid "Compatibility Window Palette"
+msgstr ""
+
+msgctxt "git status"
+msgid "Conflict"
+msgstr ""
+
+msgctxt "compare option"
+msgid "Context Lines"
 msgstr ""
 
 msgid "Controls how many columns a tab character occupies in the editor."
@@ -107,10 +409,16 @@ msgstr ""
 msgid "Controls how many columns automatic indentation and indent actions use in the editor."
 msgstr ""
 
+msgid "Controls how many unchanged lines are kept around each visible compare hunk."
+msgstr ""
+
 msgid "Controls the color palette used for editor buffers."
 msgstr ""
 
 msgid "Controls whether Riteed automatically saves already-saved writable files after edits."
+msgstr ""
+
+msgid "Controls whether Riteed follows the system language or uses an explicit application language after restart."
 msgstr ""
 
 msgid "Controls whether Riteed highlights the active line in editable documents."
@@ -123,6 +431,12 @@ msgid "Controls whether Riteed shows line numbers in the editor gutter."
 msgstr ""
 
 msgid "Controls whether Riteed uses the system appearance, a light appearance, or a dark appearance."
+msgstr ""
+
+msgid "Controls whether compare review hides changes that only add or remove leading or trailing whitespace."
+msgstr ""
+
+msgid "Controls whether compare review prefers split view, unified view, or adaptive switching based on available width."
 msgstr ""
 
 msgid "Controls whether long lines wrap inside the editor."
@@ -140,13 +454,78 @@ msgstr ""
 msgid "Controls whether the source control changes view uses a folder tree or a flat list."
 msgstr ""
 
+msgid "Controls whether unchanged stretches between compare hunks are collapsed by default."
+msgstr ""
+
+msgid "Controls whether unified compare review wraps long lines. It does not affect normal editor word wrap."
+msgstr ""
+
+msgctxt "compare dialog side"
+msgid "Current"
+msgstr ""
+
+msgctxt "compare pane"
+msgid "Current"
+msgstr ""
+
+msgctxt "compare source"
+msgid "Current Document"
+msgstr ""
+
 msgid "Current Document Location"
 msgstr ""
 
 msgid "Cursor Position"
 msgstr ""
 
+msgctxt "language option"
+msgid "Danish"
+msgstr ""
+
+msgctxt "theme selector tooltip"
+msgid "Dark Style"
+msgstr ""
+
+msgctxt "theme selector accessibility"
+msgid "Dark style"
+msgstr ""
+
+msgctxt "git status"
+msgid "Deleted"
+msgstr ""
+
+msgctxt "git branch"
+msgid "Detached"
+msgstr ""
+
 msgid "Diff unavailable for this Git state."
+msgstr ""
+
+msgid "Diff was skipped because the files are over the compare byte limit."
+msgstr ""
+
+msgid "Diff was skipped because the files are over the compare line limit."
+msgstr ""
+
+msgid "Diff was too large to compute fully."
+msgstr ""
+
+msgid "Directories, symlinks, and unsupported file modes are visible only."
+msgstr ""
+
+msgctxt "alert response"
+msgid "Discard"
+msgstr ""
+
+msgid "Discard Changes"
+msgstr ""
+
+msgctxt "git action tooltip"
+msgid "Discard Changes"
+msgstr ""
+
+msgctxt "help row"
+msgid "Discard Changes"
 msgstr ""
 
 msgid "Discard File Changes?"
@@ -155,9 +534,25 @@ msgstr ""
 msgid "Discard stays disabled when open tabs, Git filters, working-tree encodings, or line-ending conversion make an exact restore unsafe."
 msgstr ""
 
+msgctxt "compare menu section"
+msgid "Display"
+msgstr ""
+
+msgctxt "search scope"
+msgid "Document"
+msgstr ""
+
+msgctxt "statistics scope"
+msgid "Document"
+msgstr ""
+
 msgid "Document Format"
 msgstr ""
 
+msgid "Document Statistics"
+msgstr ""
+
+msgctxt "menu item"
 msgid "Document Statistics"
 msgstr ""
 
@@ -167,19 +562,133 @@ msgstr ""
 msgid "Edit code with syntax highlighting and a project sidebar"
 msgstr ""
 
+msgid "Editor"
+msgstr ""
+
 msgid "Editor Font"
 msgstr ""
 
 msgid "Editor Palette"
 msgstr ""
 
+msgctxt "help row"
+msgid "Editor Tools"
+msgstr ""
+
+msgid "Editor View"
+msgstr ""
+
+msgid "Email"
+msgstr ""
+
+msgctxt "language option"
+msgid "English"
+msgstr ""
+
 msgid "Enter a commit message first."
+msgstr ""
+
+msgctxt "help section"
+msgid "Everyday Editing"
+msgstr ""
+
+msgctxt "compare action"
+msgid "Exit Compare"
+msgstr ""
+
+msgid "File"
+msgstr ""
+
+msgctxt "compare source"
+msgid "File"
+msgstr ""
+
+msgctxt "sidebar mode"
+msgid "Files"
 msgstr ""
 
 msgid "Files you open will appear here."
 msgstr ""
 
+msgctxt "menu item"
+msgid "Find"
+msgstr ""
+
+msgid "Find Next Match"
+msgstr ""
+
+msgid "Find Previous Match"
+msgstr ""
+
+msgid "Find and Replace"
+msgstr ""
+
+msgctxt "help row"
+msgid "Find and Replace"
+msgstr ""
+
+msgctxt "menu item"
+msgid "Find and Replace"
+msgstr ""
+
+msgid "Find in Current Document"
+msgstr ""
+
+msgid "Find in Files"
+msgstr ""
+
+msgctxt "help row"
+msgid "Find in Files"
+msgstr ""
+
+msgctxt "menu item"
+msgid "Find in Files"
+msgstr ""
+
+msgctxt "help row"
+msgid "Find in Files Limits"
+msgstr ""
+
+msgid "First Tab"
+msgstr ""
+
 msgid "First public beta with tabs, syntax highlighting, folder navigation, split diffs, lightweight local Git source control, autosave, and guarded file monitoring."
+msgstr ""
+
+msgid "Fixes Source Control so ordinary untracked folders expand to changed file paths while nested Git repositories remain visible as guarded directory entries."
+msgstr ""
+
+msgctxt "file filter"
+msgid "Folders"
+msgstr ""
+
+msgctxt "theme selector tooltip"
+msgid "Follow System Style"
+msgstr ""
+
+msgctxt "theme selector accessibility"
+msgid "Follow system style"
+msgstr ""
+
+msgid "Format"
+msgstr ""
+
+msgctxt "status format"
+msgid "Format"
+msgstr ""
+
+msgctxt "markdown extension label"
+msgid "GFM admonitions"
+msgstr ""
+
+msgid "General"
+msgstr ""
+
+msgctxt "help section"
+msgid "Getting Started"
+msgstr ""
+
+msgid "Git Identity"
 msgstr ""
 
 msgid "Git User Email"
@@ -188,31 +697,179 @@ msgstr ""
 msgid "Git User Name"
 msgstr ""
 
+msgctxt "compare source"
+msgid "Git Version"
+msgstr ""
+
 msgid "Git content filters or EOL conversion are configured for this file."
 msgstr ""
 
 msgid "Git output was too large to process safely."
 msgstr ""
 
+msgid "Help"
+msgstr ""
+
+msgctxt "help dialog"
+msgid "Help"
+msgstr ""
+
+msgctxt "menu item"
+msgid "Help"
+msgstr ""
+
+msgctxt "change list row"
+msgid "Hidden unchanged lines"
+msgstr ""
+
 msgid "Highlight Current Line"
+msgstr ""
+
+msgid "Ignore Leading and Trailing Whitespace in Compare"
+msgstr ""
+
+msgctxt "compare option"
+msgid "Ignore Leading/Trailing Whitespace"
 msgstr ""
 
 msgid "Indent Width"
 msgstr ""
 
+msgid "Indentation"
+msgstr ""
+
 msgid "Insert Spaces Instead of Tabs"
+msgstr ""
+
+msgctxt "git path fallback"
+msgid "Invalid path encoding"
 msgstr ""
 
 msgid "It provides tabs, a unified Find bar with Document and Project scope, document statistics, printing, syntax highlighting, native Markdown preview, optional line numbers and minimap, folder navigation, split diffs, lightweight local Git source control, format controls for text encoding and line endings, curated editor palettes, and conservative reload prompts when files change on disk."
 msgstr ""
 
+msgid "Jump to Tab 10"
+msgstr ""
+
+msgid "Jump to a Tab by Number"
+msgstr ""
+
+msgctxt "window palette"
+msgid "Kate"
+msgstr ""
+
+msgctxt "editor palette"
+msgid "Kate Dark"
+msgstr ""
+
+msgctxt "editor palette"
+msgid "Kate Light"
+msgstr ""
+
+msgctxt "alert response"
+msgid "Keep Current"
+msgstr ""
+
+msgid "Keyboard Shortcuts"
+msgstr ""
+
+msgctxt "menu item"
+msgid "Keyboard Shortcuts"
+msgstr ""
+
+msgctxt "line ending"
+msgid "LF"
+msgstr ""
+
+msgid "Language Preference"
+msgstr ""
+
+msgid "Last Tab"
+msgstr ""
+
+msgctxt "theme selector tooltip"
+msgid "Light Style"
+msgstr ""
+
+msgctxt "theme selector accessibility"
+msgid "Light style"
+msgstr ""
+
+msgid "Line Endings"
+msgstr ""
+
+msgid "Line Numbers"
+msgstr ""
+
+msgctxt "statistics row"
+msgid "Lines"
+msgstr ""
+
+msgctxt "source control view"
+msgid "List"
+msgstr ""
+
+msgid "List of changed files and hunks in this review."
+msgstr ""
+
+msgctxt "help row"
+msgid "Live Refresh"
+msgstr ""
+
+msgctxt "status position"
+msgid "Ln %1$d, Col %2$d"
+msgstr ""
+
 msgid "Loading"
+msgstr ""
+
+msgid "Loading Git review"
+msgstr ""
+
+msgctxt "compare status"
+msgid "Loading Reference"
 msgstr ""
 
 msgid "Loading recent commits"
 msgstr ""
 
+msgctxt "help row"
+msgid "Local Git Only"
+msgstr ""
+
 msgid "Main Menu"
+msgstr ""
+
+msgctxt "markdown preview"
+msgid "Markdown Frontmatter Metadata"
+msgstr ""
+
+msgctxt "markdown preview"
+msgid "Markdown Image Placeholder"
+msgstr ""
+
+msgctxt "markdown preview"
+msgid "Markdown Preview Disabled"
+msgstr ""
+
+msgctxt "file filter"
+msgid "Markdown Source Files"
+msgstr ""
+
+msgctxt "markdown diagnostic"
+msgid "Markdown preview: images are shown as placeholders."
+msgstr ""
+
+msgctxt "markdown diagnostic"
+msgid "Markdown preview: raw HTML is shown as literal text."
+msgstr ""
+
+msgctxt "markdown diagnostic"
+msgid "Markdown preview: unsupported extensions omitted: {features}."
+msgstr ""
+
+msgctxt "search option"
+msgid "Match Case"
 msgstr ""
 
 msgid "Modification State"
@@ -221,7 +878,67 @@ msgstr ""
 msgid "Modified"
 msgstr ""
 
+msgctxt "git status"
+msgid "Modified"
+msgstr ""
+
+msgid "Monospace"
+msgstr ""
+
+msgctxt "help row"
+msgid "More Shortcuts"
+msgstr ""
+
+msgid "Move Tab Backward"
+msgstr ""
+
+msgid "Move Tab Forward"
+msgstr ""
+
+msgctxt "tab menu item"
+msgid "Move Tab _Backward"
+msgstr ""
+
+msgctxt "tab menu item"
+msgid "Move Tab _Forward"
+msgstr ""
+
+msgid "Move Tab to New Window"
+msgstr ""
+
+msgctxt "tab menu item"
+msgid "Move to _New Window"
+msgstr ""
+
+msgid "Name"
+msgstr ""
+
 msgid "New Tab"
+msgstr ""
+
+msgid "New Window"
+msgstr ""
+
+msgctxt "menu item"
+msgid "New Window"
+msgstr ""
+
+msgid "Next Difference"
+msgstr ""
+
+msgctxt "compare action"
+msgid "Next Difference"
+msgstr ""
+
+msgctxt "search action"
+msgid "Next Match"
+msgstr ""
+
+msgid "Next Tab"
+msgstr ""
+
+msgctxt "document format"
+msgid "No Document"
 msgstr ""
 
 msgid "No Git action is available for the active tab."
@@ -248,7 +965,42 @@ msgstr ""
 msgid "No matches"
 msgstr ""
 
+msgid "No reviewable text changes were found."
+msgstr ""
+
+msgctxt "git action disabled"
+msgid "No staged change"
+msgstr ""
+
+msgid "No staged changes to review."
+msgstr ""
+
+msgctxt "git action disabled"
+msgid "No unstaged change"
+msgstr ""
+
+msgid "No unstaged changes to review."
+msgstr ""
+
+msgid "Normal Size"
+msgstr ""
+
+msgctxt "compare source"
+msgid "Not Set"
+msgstr ""
+
 msgid "Only Local Files Are Supported"
+msgstr ""
+
+msgctxt "compare placeholder"
+msgid "Only in current"
+msgstr ""
+
+msgctxt "compare placeholder"
+msgid "Only in reference"
+msgstr ""
+
+msgid "Only leading or trailing whitespace differences are hidden."
 msgstr ""
 
 msgid "Only local Git folders are supported."
@@ -260,10 +1012,48 @@ msgstr ""
 msgid "Only one folder can be opened at a time."
 msgstr ""
 
+msgctxt "dialog button"
+msgid "Open"
+msgstr ""
+
+msgctxt "file dialog action"
+msgid "Open"
+msgstr ""
+
+msgid "Open Choices"
+msgstr ""
+
+msgctxt "open menu tooltip"
+msgid "Open Choices"
+msgstr ""
+
 msgid "Open Files"
 msgstr ""
 
+msgctxt "file dialog title"
+msgid "Open Files"
+msgstr ""
+
+msgctxt "menu item"
+msgid "Open Files"
+msgstr ""
+
+msgid "Open Folder"
+msgstr ""
+
+msgctxt "file dialog title"
+msgid "Open Folder"
+msgstr ""
+
+msgctxt "menu item"
+msgid "Open Folder"
+msgstr ""
+
 msgid "Open Keyboard Shortcuts from the main menu to review the available file, tab, find, and app commands."
+msgstr ""
+
+msgctxt "review action"
+msgid "Open Reviewed File"
 msgstr ""
 
 msgid "Open a Git folder to review local changes in the Source Control sidebar. Select a changed file to compare it, or switch between tree and list views when a flat list is easier to scan."
@@ -281,7 +1071,44 @@ msgstr ""
 msgid "Opening folder links is not supported yet."
 msgstr ""
 
+msgctxt "help page"
+msgid "Overview"
+msgstr ""
+
 msgid "Overwrite the Changed File?"
+msgstr ""
+
+msgid "Palette"
+msgstr ""
+
+msgctxt "compare dialog action"
+msgid "Paste Text"
+msgstr ""
+
+msgctxt "paste dialog title"
+msgid "Paste Text"
+msgstr ""
+
+msgctxt "compare source"
+msgid "Pasted Text"
+msgstr ""
+
+msgid "Plain Text Document"
+msgstr ""
+
+msgctxt "document subtitle"
+msgid "Plain Text Document"
+msgstr ""
+
+msgctxt "file filter"
+msgid "Plain Text Files"
+msgstr ""
+
+msgid "Preferences"
+msgstr ""
+
+msgctxt "menu item"
+msgid "Preferences"
 msgstr ""
 
 msgid "Press Ctrl+F to find text in the current document, Ctrl+H to show document replace, and Ctrl+G or Shift+Ctrl+G to move between matches."
@@ -296,9 +1123,34 @@ msgstr ""
 msgid "Preview unavailable"
 msgstr ""
 
+msgid "Previous Difference"
+msgstr ""
+
+msgctxt "compare action"
+msgid "Previous Difference"
+msgstr ""
+
+msgctxt "search action"
+msgid "Previous Match"
+msgstr ""
+
+msgid "Previous Tab"
+msgstr ""
+
+msgctxt "menu item"
+msgid "Print"
+msgstr ""
+
+msgid "Print Current Document"
+msgstr ""
+
 msgid "Printing failed."
 msgstr ""
 
+msgid "Project"
+msgstr ""
+
+msgctxt "search scope"
 msgid "Project"
 msgstr ""
 
@@ -317,10 +1169,52 @@ msgstr ""
 msgid "Project search uses the same find bar query and Match Case option as document search. It searches UTF-8 text without an index and skips generated folders such as .git, target, build, node_modules, vendor, dist, .flatpak-builder, __pycache__, and .venv."
 msgstr ""
 
+msgid "Quit"
+msgstr ""
+
+msgctxt "markdown diagnostic"
+msgid "Raw HTML is shown as literal text."
+msgstr ""
+
+msgctxt "compare toolbar"
+msgid "Read-only - Exit Compare to edit"
+msgstr ""
+
+msgctxt "git history"
+msgid "Recent Commits"
+msgstr ""
+
 msgid "Recent Files"
 msgstr ""
 
+msgctxt "menu item"
+msgid "Recent Files"
+msgstr ""
+
+msgctxt "recent files dialog title"
+msgid "Recent Files"
+msgstr ""
+
+msgctxt "compare dialog side"
+msgid "Reference"
+msgstr ""
+
+msgctxt "compare pane"
+msgid "Reference"
+msgstr ""
+
 msgid "Refresh Project Tree"
+msgstr ""
+
+msgctxt "compare action"
+msgid "Refresh Reference"
+msgstr ""
+
+msgid "Refresh Review"
+msgstr ""
+
+msgctxt "review action"
+msgid "Refresh Review"
 msgstr ""
 
 msgid "Refresh Search Results"
@@ -329,10 +1223,33 @@ msgstr ""
 msgid "Refresh Source Control"
 msgstr ""
 
+msgid "Refresh Source Control before reviewing changes."
+msgstr ""
+
+msgctxt "git action disabled"
+msgid "Refresh required"
+msgstr ""
+
 msgid "Refreshing Git status"
 msgstr ""
 
+msgctxt "alert response"
+msgid "Reload"
+msgstr ""
+
+msgctxt "external action"
+msgid "Reload"
+msgstr ""
+
 msgid "Reload the Changed File?"
+msgstr ""
+
+msgctxt "alert response"
+msgid "Reopen"
+msgstr ""
+
+msgctxt "dialog button"
+msgid "Reopen"
 msgstr ""
 
 msgid "Reopen With a Different Encoding?"
@@ -341,12 +1258,55 @@ msgstr ""
 msgid "Reopening with another encoding will discard unsaved changes in this tab."
 msgstr ""
 
+msgctxt "search action"
+msgid "Replace"
+msgstr ""
+
+msgctxt "search action"
+msgid "Replace All"
+msgstr ""
+
+msgctxt "search field placeholder"
+msgid "Replace With"
+msgstr ""
+
 msgid "Replaced %d match"
 msgid_plural "Replaced %d matches"
 msgstr[0] ""
 msgstr[1] ""
 
 msgid "Results limited; refine the search."
+msgstr ""
+
+msgctxt "review action"
+msgid "Reveal All Hidden Lines"
+msgstr ""
+
+msgctxt "review action"
+msgid "Reveal More Above"
+msgstr ""
+
+msgctxt "review action"
+msgid "Reveal More Below"
+msgstr ""
+
+msgctxt "review toolbar"
+msgid "Review"
+msgstr ""
+
+msgid "Review Source Control Changes"
+msgstr ""
+
+msgctxt "source control menu item"
+msgid "Review Staged Changes"
+msgstr ""
+
+msgctxt "source control menu item"
+msgid "Review Unstaged Changes"
+msgstr ""
+
+msgctxt "git review path"
+msgid "Review limit"
 msgstr ""
 
 msgid "Review local Git changes with source control and split diffs"
@@ -376,13 +1336,70 @@ msgstr ""
 msgid "Riteed tracks unsaved changes per tab, restores saved files from your previous session, and warns before external file changes replace your work."
 msgstr ""
 
+msgctxt "help row"
+msgid "Safe Discard Limits"
+msgstr ""
+
+msgctxt "alert response"
+msgid "Save"
+msgstr ""
+
+msgctxt "dialog button"
+msgid "Save"
+msgstr ""
+
+msgctxt "external action"
+msgid "Save"
+msgstr ""
+
+msgctxt "file dialog action"
+msgid "Save"
+msgstr ""
+
+msgctxt "save safety action"
+msgid "Save"
+msgstr ""
+
+msgctxt "alert response"
+msgid "Save Anyway"
+msgstr ""
+
+msgctxt "save safety action"
+msgid "Save As"
+msgstr ""
+
 msgid "Save Changes Before Continuing?"
 msgstr ""
 
 msgid "Save Current File"
 msgstr ""
 
+msgid "Save Current File As"
+msgstr ""
+
+msgctxt "file dialog title"
+msgid "Save the Document"
+msgstr ""
+
 msgid "Save the open document before using Git actions."
+msgstr ""
+
+msgctxt "compare source"
+msgid "Saved Version"
+msgstr ""
+
+msgid "Saving"
+msgstr ""
+
+msgctxt "help row"
+msgid "Saving Work"
+msgstr ""
+
+msgid "Search"
+msgstr ""
+
+msgctxt "sidebar mode"
+msgid "Search Results"
 msgstr ""
 
 msgid "Search is disabled for very large files."
@@ -395,6 +1412,10 @@ msgid "Select the reference on the left and the current document or text on the 
 msgstr ""
 
 msgid "Selected Session File"
+msgstr ""
+
+msgctxt "statistics scope"
+msgid "Selection"
 msgstr ""
 
 msgid "Session Files"
@@ -412,6 +1433,31 @@ msgstr ""
 msgid "Show Minimap"
 msgstr ""
 
+msgctxt "search action"
+msgid "Show Replace"
+msgstr ""
+
+msgid "Show a narrow document overview beside the editor"
+msgstr ""
+
+msgid "Show each tab character as this many columns"
+msgstr ""
+
+msgid "Show line numbers in the editor gutter"
+msgstr ""
+
+msgctxt "window palette"
+msgid "Solarized"
+msgstr ""
+
+msgctxt "editor palette"
+msgid "Solarized Dark"
+msgstr ""
+
+msgctxt "editor palette"
+msgid "Solarized Light"
+msgstr ""
+
 msgid "Some files could not be opened."
 msgstr ""
 
@@ -421,10 +1467,45 @@ msgstr ""
 msgid "Source Control"
 msgstr ""
 
+msgctxt "help section"
+msgid "Source Control"
+msgstr ""
+
+msgctxt "sidebar mode"
+msgid "Source Control"
+msgstr ""
+
+msgctxt "save file name"
+msgid "Source Control Review"
+msgstr ""
+
 msgid "Source Control View Mode"
 msgstr ""
 
 msgid "Source Control supports local review, diff, stage, unstage, discard, and simple commits. It does not manage remotes, branches, merges, rebases, conflicts, credentials, or build workflows."
+msgstr ""
+
+msgctxt "compare mode"
+msgid "Split"
+msgstr ""
+
+msgid "Stage File"
+msgstr ""
+
+msgctxt "git action tooltip"
+msgid "Stage File"
+msgstr ""
+
+msgctxt "help row"
+msgid "Stage and Commit"
+msgstr ""
+
+msgctxt "git status"
+msgid "Staged"
+msgstr ""
+
+msgctxt "document title"
+msgid "Staged Changes Review"
 msgstr ""
 
 msgid "Start from a clean editor window for local files"
@@ -466,10 +1547,35 @@ msgstr ""
 msgid "Stores the previous window palette setting for compatibility. Riteed now derives window chrome from the editor palette family and app style."
 msgstr ""
 
-msgid "Directories, symlinks, and unsupported file modes are visible only."
+msgid "Style"
+msgstr ""
+
+msgid "Subtly highlight the line with the text cursor"
+msgstr ""
+
+msgctxt "compare dialog action"
+msgid "Swap"
+msgstr ""
+
+msgctxt "language option"
+msgid "System"
 msgstr ""
 
 msgid "Tab Width"
+msgstr ""
+
+msgid "Tabs"
+msgstr ""
+
+msgctxt "help row"
+msgid "Tabs and Files"
+msgstr ""
+
+msgctxt "help page"
+msgid "Technical Notes"
+msgstr ""
+
+msgid "Text Encoding"
 msgstr ""
 
 msgid "That folder could not be opened."
@@ -493,7 +1599,15 @@ msgstr ""
 msgid "The Requested Action Was Cancelled."
 msgstr ""
 
+msgctxt "markdown diagnostic"
+msgid "The YAML frontmatter could not be parsed."
+msgstr ""
+
 msgid "The document contains characters that cannot be saved with the selected encoding."
+msgstr ""
+
+msgctxt "markdown diagnostic"
+msgid "The document is too large for live Markdown preview."
 msgstr ""
 
 msgid "The file changed again on disk and could not be overwritten."
@@ -505,10 +1619,26 @@ msgstr ""
 msgid "The file is too large to open safely."
 msgstr ""
 
+msgctxt "markdown diagnostic"
+msgid "The opening frontmatter delimiter has no closing delimiter."
+msgstr ""
+
 msgid "The previous project folder could not be restored."
 msgstr ""
 
 msgid "Theme Preference"
+msgstr ""
+
+msgctxt "external banner"
+msgid "This File Changed on Disk."
+msgstr ""
+
+msgctxt "external banner"
+msgid "This File Is Missing on Disk."
+msgstr ""
+
+msgctxt "save safety banner"
+msgid "This File Is Read-Only."
 msgstr ""
 
 msgid "This Git repository uses unsupported object or EOL settings."
@@ -541,13 +1671,33 @@ msgstr ""
 msgid "This removes all recent file entries."
 msgstr ""
 
+msgid "This review is out of date."
+msgstr ""
+
+msgid "Toggle Fullscreen"
+msgstr ""
+
+msgctxt "tab menu item"
+msgid "Toggle Markdown Preview"
+msgstr ""
+
+msgid "Toggle Project Sidebar"
+msgstr ""
+
 msgid "Too large to compare differences."
 msgstr ""
 
 msgid "Tracked unstaged files can be discarded after confirmation. Riteed keeps unsafe discard cases disabled when it cannot restore the file predictably."
 msgstr ""
 
+msgctxt "source control view"
+msgid "Tree"
+msgstr ""
+
 msgid "Type to search the open folder."
+msgstr ""
+
+msgid "UTF-8"
 msgstr ""
 
 msgid "Unable to Build the Window"
@@ -556,10 +1706,17 @@ msgstr ""
 msgid "Unable to Open Dropped Files"
 msgstr ""
 
+msgctxt "error title"
+msgid "Unable to Open Help"
+msgstr ""
+
 msgid "Unable to Open the File"
 msgstr ""
 
 msgid "Unable to Save the File"
+msgstr ""
+
+msgid "Unable to load Git blob for review."
 msgstr ""
 
 msgid "Unable to open file for compare."
@@ -580,7 +1737,66 @@ msgstr ""
 msgid "Unable to start Git compare."
 msgstr ""
 
+msgid "Unable to start the Git review."
+msgstr ""
+
 msgid "Unavailable"
+msgstr ""
+
+msgctxt "compare mode"
+msgid "Unified"
+msgstr ""
+
+msgctxt "compare pane"
+msgid "Unified"
+msgstr ""
+
+msgctxt "line ending menu"
+msgid "Unix (LF)"
+msgstr ""
+
+msgid "Unstage File"
+msgstr ""
+
+msgctxt "git action tooltip"
+msgid "Unstage File"
+msgstr ""
+
+msgctxt "document title"
+msgid "Unstaged Changes Review"
+msgstr ""
+
+msgctxt "source control discard dialog"
+msgid "Unstaged changes to \"%s\" will be permanently lost and replaced with the version from the Git index. This cannot be undone."
+msgstr ""
+
+msgctxt "git status"
+msgid "Unsupported"
+msgstr ""
+
+msgid "Untitled"
+msgstr ""
+
+msgctxt "document title"
+msgid "Untitled"
+msgstr ""
+
+msgctxt "save file name"
+msgid "Untitled"
+msgstr ""
+
+msgctxt "git status"
+msgid "Untracked"
+msgstr ""
+
+msgctxt "git action disabled"
+msgid "Untracked file"
+msgstr ""
+
+msgid "Use Compare or Source Control reviews to switch between split and unified diff views, collapse unchanged lines, ignore trim-only whitespace noise, and move through changes with F8 and Shift+F8."
+msgstr ""
+
+msgid "Use spaces when the Tab key inserts indentation"
 msgstr ""
 
 msgid "Use the active tab's header-bar Git actions or a Source Control row context menu to stage or unstage files, then write a commit message and commit local staged changes with the Git identity from the Source Control page in Preferences."
@@ -589,836 +1805,63 @@ msgstr ""
 msgid "Use the main menu to print, view document statistics, or switch System, Light, and Dark appearance. Open Preferences to adjust the appearance style, editor palette, current-line highlight, line numbers, and minimap."
 msgstr ""
 
+msgid "Use this many columns for automatic indentation"
+msgstr ""
+
+msgid "View"
+msgstr ""
+
 msgid "Window Height"
 msgstr ""
 
 msgid "Window Width"
 msgstr ""
 
-msgid "Word Wrap"
-msgstr ""
-
-msgid "Words are separated by whitespace; em dashes and punctuation count with adjacent words."
-msgstr ""
-
-msgid "in %d file"
-msgid_plural "in %d files"
-msgstr[0] ""
-msgstr[1] ""
-
-msgid "text;editor;code;markdown;config;"
-msgstr ""
-
-msgctxt "alert response"
-msgid "Cancel"
-msgstr ""
-
-msgctxt "alert response"
-msgid "Choose Encoding"
-msgstr ""
-
-msgctxt "alert response"
-msgid "Clear"
-msgstr ""
-
-msgctxt "alert response"
-msgid "Close"
-msgstr ""
-
-msgctxt "alert response"
-msgid "Compare"
-msgstr ""
-
-msgctxt "alert response"
-msgid "Discard"
-msgstr ""
-
-msgctxt "alert response"
-msgid "Keep Current"
-msgstr ""
-
-msgctxt "alert response"
-msgid "Reload"
-msgstr ""
-
-msgctxt "alert response"
-msgid "Reopen"
-msgstr ""
-
-msgctxt "alert response"
-msgid "Save"
-msgstr ""
-
-msgctxt "alert response"
-msgid "Save Anyway"
-msgstr ""
-
-msgctxt "compare action"
-msgid "Exit Compare"
-msgstr ""
-
-msgctxt "compare action"
-msgid "Next Difference"
-msgstr ""
-
-msgctxt "compare action"
-msgid "Previous Difference"
-msgstr ""
-
-msgctxt "compare action"
-msgid "Refresh Reference"
-msgstr ""
-
-msgctxt "compare dialog action"
-msgid "Choose File"
-msgstr ""
-
-msgctxt "compare dialog action"
-msgid "Clear"
-msgstr ""
-
-msgctxt "compare dialog action"
-msgid "Paste Text"
-msgstr ""
-
-msgctxt "compare dialog action"
-msgid "Swap"
-msgstr ""
-
-msgctxt "compare dialog side"
-msgid "Current"
-msgstr ""
-
-msgctxt "compare dialog side"
-msgid "Reference"
-msgstr ""
-
-msgctxt "compare dialog title"
-msgid "Compare"
-msgstr ""
-
-msgctxt "compare pane"
-msgid "Current"
-msgstr ""
-
-msgctxt "compare pane"
-msgid "Reference"
-msgstr ""
-
-msgctxt "compare placeholder"
-msgid "%d line only in current"
-msgid_plural "%d lines only in current"
-msgstr[0] ""
-msgstr[1] ""
-
-msgctxt "compare placeholder"
-msgid "%d line only in reference"
-msgid_plural "%d lines only in reference"
-msgstr[0] ""
-msgstr[1] ""
-
-msgctxt "compare placeholder"
-msgid "Only in current"
-msgstr ""
-
-msgctxt "compare placeholder"
-msgid "Only in reference"
-msgstr ""
-
-msgctxt "compare source"
-msgid "Current Document"
-msgstr ""
-
-msgctxt "compare source"
-msgid "File"
-msgstr ""
-
-msgctxt "compare source"
-msgid "Git Version"
-msgstr ""
-
-msgctxt "compare source"
-msgid "Not Set"
-msgstr ""
-
-msgctxt "compare source"
-msgid "Pasted Text"
-msgstr ""
-
-msgctxt "compare source"
-msgid "Saved Version"
-msgstr ""
-
-msgctxt "compare source placeholder"
-msgid "Choose File or Paste Text"
-msgstr ""
-
-msgctxt "compare status"
-msgid "Loading Reference"
-msgstr ""
-
-msgctxt "compare toolbar"
-msgid "Compare"
-msgstr ""
-
-msgctxt "compare toolbar"
-msgid "Read-only - Exit Compare to edit"
-msgstr ""
-
-msgctxt "dialog button"
-msgid "Apply"
-msgstr ""
-
-msgctxt "dialog button"
-msgid "Cancel"
-msgstr ""
-
-msgctxt "dialog button"
-msgid "Close"
-msgstr ""
-
-msgctxt "dialog button"
-msgid "Clear All"
-msgstr ""
-
-msgctxt "dialog button"
-msgid "Compare"
-msgstr ""
-
-msgctxt "dialog button"
-msgid "Open"
-msgstr ""
-
-msgctxt "dialog button"
-msgid "Reopen"
-msgstr ""
-
-msgctxt "dialog button"
-msgid "Save"
-msgstr ""
-
-msgctxt "document format"
-msgid "No Document"
-msgstr ""
-
-msgctxt "document subtitle"
-msgid "Plain Text Document"
-msgstr ""
-
-msgctxt "document title"
-msgid "Untitled"
-msgstr ""
-
-msgctxt "editor palette"
-msgid "Adwaita Dark"
-msgstr ""
-
-msgctxt "editor palette"
-msgid "Adwaita Light"
-msgstr ""
-
-msgctxt "editor palette"
-msgid "Auto"
-msgstr ""
-
-msgctxt "editor palette"
-msgid "Classic Dark"
-msgstr ""
-
-msgctxt "editor palette"
-msgid "Classic Light"
-msgstr ""
-
-msgctxt "editor palette"
-msgid "Kate Dark"
-msgstr ""
-
-msgctxt "editor palette"
-msgid "Kate Light"
-msgstr ""
-
-msgctxt "editor palette"
-msgid "Solarized Dark"
-msgstr ""
-
-msgctxt "editor palette"
-msgid "Solarized Light"
-msgstr ""
-
-msgctxt "error title"
-msgid "Action Cancelled"
-msgstr ""
-
-msgctxt "error title"
-msgid "Unable to Open Help"
-msgstr ""
-
-msgctxt "external action"
-msgid "Reload"
-msgstr ""
-
-msgctxt "external action"
-msgid "Save"
-msgstr ""
-
-msgctxt "external banner"
-msgid "This File Changed on Disk."
-msgstr ""
-
-msgctxt "external banner"
-msgid "This File Is Missing on Disk."
-msgstr ""
-
-msgctxt "file dialog action"
-msgid "Choose"
-msgstr ""
-
-msgctxt "file dialog action"
-msgid "Open"
-msgstr ""
-
-msgctxt "file dialog action"
-msgid "Save"
-msgstr ""
-
-msgctxt "file dialog title"
-msgid "Choose a File"
-msgstr ""
-
-msgctxt "file dialog title"
-msgid "Open Files"
-msgstr ""
-
-msgctxt "file dialog title"
-msgid "Open Folder"
-msgstr ""
-
-msgctxt "file dialog title"
-msgid "Save the Document"
-msgstr ""
-
-msgctxt "file filter"
-msgid "All Files"
-msgstr ""
-
-msgctxt "file filter"
-msgid "Folders"
-msgstr ""
-
-msgctxt "file filter"
-msgid "Plain Text Files"
-msgstr ""
-
-msgctxt "git action disabled"
-msgid "No staged change"
-msgstr ""
-
-msgctxt "git action disabled"
-msgid "No unstaged change"
-msgstr ""
-
-msgctxt "git action disabled"
-msgid "Refresh required"
-msgstr ""
-
-msgctxt "git action disabled"
-msgid "Untracked file"
-msgstr ""
-
-msgctxt "git action tooltip"
-msgid "Compare With Git"
-msgstr ""
-
-msgctxt "git action tooltip"
-msgid "Discard Changes"
-msgstr ""
-
-msgctxt "git action tooltip"
-msgid "Stage File"
-msgstr ""
-
-msgctxt "git action tooltip"
-msgid "Unstage File"
-msgstr ""
-
-msgctxt "git branch"
-msgid "Detached"
-msgstr ""
-
-msgctxt "git commit"
-msgid "Commit"
-msgstr ""
-
-msgctxt "git commit"
-msgid "Commit Message"
-msgstr ""
-
-msgctxt "git history"
-msgid "Recent Commits"
-msgstr ""
-
-msgctxt "git path fallback"
-msgid "Invalid path encoding"
-msgstr ""
-
-msgctxt "git status"
-msgid "Added"
-msgstr ""
-
-msgctxt "git status"
-msgid "Conflict"
-msgstr ""
-
-msgctxt "git status"
-msgid "Deleted"
-msgstr ""
-
-msgctxt "git status"
-msgid "Modified"
-msgstr ""
-
-msgctxt "git status"
-msgid "Staged"
-msgstr ""
-
-msgctxt "git status"
-msgid "Unsupported"
-msgstr ""
-
-msgctxt "git status"
-msgid "Untracked"
-msgstr ""
-
-msgctxt "help dialog"
-msgid "Help"
-msgstr ""
-
-msgctxt "help page"
-msgid "Overview"
-msgstr ""
-
-msgctxt "help page"
-msgid "Technical Notes"
-msgstr ""
-
-msgctxt "help row"
-msgid "Changed Files"
-msgstr ""
-
-msgctxt "help row"
-msgid "Commit Behavior"
-msgstr ""
-
-msgctxt "help row"
-msgid "Discard Changes"
-msgstr ""
-
-msgctxt "help row"
-msgid "Editor Tools"
-msgstr ""
-
-msgctxt "help row"
-msgid "Find and Replace"
-msgstr ""
-
-msgctxt "help row"
-msgid "Find in Files"
-msgstr ""
-
-msgctxt "help row"
-msgid "Find in Files Limits"
-msgstr ""
-
-msgctxt "help row"
-msgid "Live Refresh"
-msgstr ""
-
-msgctxt "help row"
-msgid "Local Git Only"
-msgstr ""
-
-msgctxt "help row"
-msgid "More Shortcuts"
-msgstr ""
-
-msgctxt "help row"
-msgid "Safe Discard Limits"
-msgstr ""
-
-msgctxt "help row"
-msgid "Saving Work"
-msgstr ""
-
-msgctxt "help row"
-msgid "Stage and Commit"
-msgstr ""
-
-msgctxt "help row"
-msgid "Tabs and Files"
-msgstr ""
-
-msgctxt "help section"
-msgid "Everyday Editing"
-msgstr ""
-
-msgctxt "help section"
-msgid "Getting Started"
-msgstr ""
-
-msgctxt "help section"
-msgid "Source Control"
-msgstr ""
-
-msgctxt "line ending"
-msgid "CR"
-msgstr ""
-
-msgctxt "line ending"
-msgid "CRLF"
-msgstr ""
-
-msgctxt "line ending"
-msgid "LF"
-msgstr ""
-
-msgctxt "line ending menu"
-msgid "Classic Mac (CR)"
-msgstr ""
-
-msgctxt "line ending menu"
-msgid "Unix (LF)"
-msgstr ""
-
 msgctxt "line ending menu"
 msgid "Windows (CRLF)"
 msgstr ""
 
-msgctxt "menu item"
-msgid "About Riteed"
-msgstr ""
-
-msgctxt "menu item"
-msgid "Document Statistics"
-msgstr ""
-
-msgctxt "menu item"
-msgid "Find"
-msgstr ""
-
-msgctxt "menu item"
-msgid "Find and Replace"
-msgstr ""
-
-msgctxt "menu item"
-msgid "Find in Files"
-msgstr ""
-
-msgctxt "menu item"
-msgid "Help"
-msgstr ""
-
-msgctxt "menu item"
-msgid "Keyboard Shortcuts"
-msgstr ""
-
-msgctxt "menu item"
-msgid "New Window"
-msgstr ""
-
-msgctxt "menu item"
-msgid "Open Files"
-msgstr ""
-
-msgctxt "menu item"
-msgid "Open Folder"
-msgstr ""
-
-msgctxt "menu item"
-msgid "Preferences"
-msgstr ""
-
-msgctxt "menu item"
-msgid "Print"
-msgstr ""
-
-msgctxt "menu item"
-msgid "Recent Files"
-msgstr ""
-
-msgctxt "open menu tooltip"
-msgid "Open Choices"
-msgstr ""
-
-msgctxt "paste dialog title"
-msgid "Paste Text"
-msgstr ""
-
-msgctxt "recent files dialog title"
-msgid "Recent Files"
-msgstr ""
-
-msgctxt "save file name"
-msgid "Untitled"
-msgstr ""
-
-msgctxt "save safety action"
-msgid "Save"
-msgstr ""
-
-msgctxt "save safety action"
-msgid "Save As"
-msgstr ""
-
-msgctxt "save safety banner"
-msgid "This File Is Read-Only."
-msgstr ""
-
-msgctxt "search action"
-msgid "Close Find"
-msgstr ""
-
-msgctxt "search action"
-msgid "Next Match"
-msgstr ""
-
-msgctxt "search action"
-msgid "Previous Match"
-msgstr ""
-
-msgctxt "search action"
-msgid "Replace"
-msgstr ""
-
-msgctxt "search action"
-msgid "Replace All"
-msgstr ""
-
-msgctxt "search action"
-msgid "Show Replace"
-msgstr ""
-
-msgctxt "search field placeholder"
-msgid "Replace With"
-msgstr ""
-
-msgctxt "search option"
-msgid "Match Case"
-msgstr ""
-
-msgctxt "search scope"
-msgid "Document"
-msgstr ""
-
-msgctxt "search scope"
-msgid "Project"
-msgstr ""
-
-msgctxt "sidebar mode"
-msgid "Files"
-msgstr ""
-
-msgctxt "sidebar mode"
-msgid "Search Results"
-msgstr ""
-
-msgctxt "sidebar mode"
-msgid "Source Control"
-msgstr ""
-
-msgctxt "source control discard dialog"
-msgid "Unstaged changes to \"%s\" will be permanently lost and replaced with the version from the Git index. This cannot be undone."
-msgstr ""
-
-msgctxt "source control view"
-msgid "List"
-msgstr ""
-
-msgctxt "source control view"
-msgid "Tree"
-msgstr ""
-
-msgctxt "statistics row"
-msgid "Characters"
-msgstr ""
-
-msgctxt "statistics row"
-msgid "Characters Without Spaces"
-msgstr ""
-
-msgctxt "statistics row"
-msgid "Lines"
+msgid "Word Wrap"
 msgstr ""
 
 msgctxt "statistics row"
 msgid "Words (whitespace-delimited)"
 msgstr ""
 
-msgctxt "statistics scope"
-msgid "Document"
+msgid "Words are separated by whitespace; em dashes and punctuation count with adjacent words."
 msgstr ""
 
-msgctxt "statistics scope"
-msgid "Selection"
+msgctxt "compare option"
+msgid "Wrap Unified Diff Lines"
 msgstr ""
 
-msgctxt "status format"
-msgid "Format"
-msgstr ""
-
-msgctxt "status position"
-msgid "Ln %1$d, Col %2$d"
+msgid "Wrap long lines inside the editor"
 msgstr ""
 
 msgctxt "status zoom"
 msgid "Zoom"
 msgstr ""
 
-msgctxt "tab menu item"
-msgid "Close _Other Tabs"
-msgstr ""
-
-msgctxt "tab menu item"
-msgid "Compare With F_ile"
-msgstr ""
-
-msgctxt "tab menu item"
-msgid "Compare With _Pasted Text"
-msgstr ""
-
-msgctxt "tab menu item"
-msgid "Compare With _Saved Version"
-msgstr ""
-
-msgctxt "tab menu item"
-msgid "Move Tab _Backward"
-msgstr ""
-
-msgctxt "tab menu item"
-msgid "Move Tab _Forward"
-msgstr ""
-
-msgctxt "tab menu item"
-msgid "Move to _New Window"
-msgstr ""
-
-msgctxt "tab menu item"
-msgid "_Close"
-msgstr ""
-
-msgctxt "theme selector accessibility"
-msgid "Dark style"
-msgstr ""
-
-msgctxt "theme selector accessibility"
-msgid "Follow system style"
-msgstr ""
-
-msgctxt "theme selector accessibility"
-msgid "Light style"
-msgstr ""
-
-msgctxt "theme selector tooltip"
-msgid "Dark Style"
-msgstr ""
-
-msgctxt "theme selector tooltip"
-msgid "Follow System Style"
-msgstr ""
-
-msgctxt "theme selector tooltip"
-msgid "Light Style"
-msgstr ""
-
-msgctxt "window palette"
-msgid "Adwaita"
-msgstr ""
-
-msgctxt "window palette"
-msgid "Classic"
-msgstr ""
-
-msgctxt "window palette"
-msgid "Kate"
-msgstr ""
-
-msgctxt "window palette"
-msgid "Solarized"
+msgid "Zoom In"
 msgstr ""
 
 msgctxt "zoom action"
 msgid "Zoom In"
 msgstr ""
 
+msgid "Zoom Out"
+msgstr ""
+
 msgctxt "zoom action"
 msgid "Zoom Out"
 msgstr ""
 
-msgctxt "file filter"
-msgid "Markdown Source Files"
-msgstr ""
-
-msgctxt "markdown diagnostic"
-msgid "A data URI image reference was blocked."
-msgstr ""
-
-msgctxt "markdown diagnostic"
-msgid "A file URI image reference was blocked."
-msgstr ""
-
-msgctxt "markdown diagnostic"
-msgid "A local image reference was not loaded automatically."
-msgstr ""
-
-msgctxt "markdown diagnostic"
-msgid "A remote image was blocked and rendered as a placeholder."
-msgstr ""
-
-msgctxt "markdown diagnostic"
-msgid "Raw HTML is shown as literal text."
-msgstr ""
-
-msgctxt "markdown diagnostic"
-msgid "The YAML frontmatter could not be parsed."
-msgstr ""
-
-msgctxt "markdown diagnostic"
-msgid "The document is too large for live Markdown preview."
-msgstr ""
-
-msgctxt "markdown diagnostic"
-msgid "The opening frontmatter delimiter has no closing delimiter."
-msgstr ""
-
-msgctxt "markdown diagnostic"
-msgid "Markdown preview: unsupported extensions omitted: {features}."
-msgstr ""
-
-msgctxt "markdown diagnostic"
-msgid "Markdown preview: images are shown as placeholders."
-msgstr ""
-
-msgctxt "markdown diagnostic"
-msgid "Markdown preview: raw HTML is shown as literal text."
-msgstr ""
-
-msgctxt "markdown preview"
-msgid "Markdown Frontmatter Metadata"
-msgstr ""
-
-msgctxt "markdown preview"
-msgid "Markdown Image Placeholder"
-msgstr ""
-
-msgctxt "markdown preview"
-msgid "Markdown Preview Disabled"
+msgctxt "tab menu item"
+msgid "_Close"
 msgstr ""
 
 msgctxt "markdown extension label"
-msgid "tables"
-msgstr ""
-
-msgctxt "markdown extension label"
-msgid "task lists"
+msgid "definition lists"
 msgstr ""
 
 msgctxt "markdown extension label"
@@ -1426,23 +1869,20 @@ msgid "footnotes"
 msgstr ""
 
 msgctxt "markdown extension label"
-msgid "strikethrough"
+msgid "heading attributes"
 msgstr ""
+
+msgid "in %d file"
+msgid_plural "in %d files"
+msgstr[0] ""
+msgstr[1] ""
 
 msgctxt "markdown extension label"
 msgid "math"
 msgstr ""
 
 msgctxt "markdown extension label"
-msgid "heading attributes"
-msgstr ""
-
-msgctxt "markdown extension label"
-msgid "wiki links"
-msgstr ""
-
-msgctxt "markdown extension label"
-msgid "definition lists"
+msgid "strikethrough"
 msgstr ""
 
 msgctxt "markdown extension label"
@@ -1454,216 +1894,16 @@ msgid "superscript"
 msgstr ""
 
 msgctxt "markdown extension label"
-msgid "GFM admonitions"
+msgid "tables"
 msgstr ""
 
-msgctxt "tab menu item"
-msgid "Toggle Markdown Preview"
+msgctxt "markdown extension label"
+msgid "task lists"
 msgstr ""
 
-msgid "%d more file skipped (review limit reached)."
-msgid_plural "%d more files skipped (review limit reached)."
-msgstr[0] ""
-msgstr[1] ""
-
-msgid "%d unchanged line hidden"
-msgid_plural "%d unchanged lines hidden"
-msgstr[0] ""
-msgstr[1] ""
-
-msgid "Change List"
+msgid "text;editor;code;markdown;config;"
 msgstr ""
 
-msgid "Collapse Unchanged Compare Lines"
-msgstr ""
-
-msgid "Compare Context Lines"
-msgstr ""
-
-msgid "Compare View Mode"
-msgstr ""
-
-msgid "Compare Word Wrap"
-msgstr ""
-
-msgid "Controls how many unchanged lines are kept around each visible compare hunk."
-msgstr ""
-
-msgid "Controls whether compare review hides changes that only add or remove leading or trailing whitespace."
-msgstr ""
-
-msgid "Controls whether compare review prefers split view, unified view, or adaptive switching based on available width."
-msgstr ""
-
-msgid "Controls whether unchanged stretches between compare hunks are collapsed by default."
-msgstr ""
-
-msgid "Controls whether unified compare review wraps long lines. It does not affect normal editor word wrap."
-msgstr ""
-
-msgid "Diff was skipped because the files are over the compare byte limit."
-msgstr ""
-
-msgid "Diff was skipped because the files are over the compare line limit."
-msgstr ""
-
-msgid "Diff was too large to compute fully."
-msgstr ""
-
-msgid "Ignore Leading and Trailing Whitespace in Compare"
-msgstr ""
-
-msgid "List of changed files and hunks in this review."
-msgstr ""
-
-msgid "Loading Git review"
-msgstr ""
-
-msgid "No reviewable text changes were found."
-msgstr ""
-
-msgid "No staged changes to review."
-msgstr ""
-
-msgid "No unstaged changes to review."
-msgstr ""
-
-msgid "Only leading or trailing whitespace differences are hidden."
-msgstr ""
-
-msgid "Refresh Review"
-msgstr ""
-
-msgid "Refresh Source Control before reviewing changes."
-msgstr ""
-
-msgid "Review Source Control Changes"
-msgstr ""
-
-msgid "This review is out of date."
-msgstr ""
-
-msgid "Unable to load Git blob for review."
-msgstr ""
-
-msgid "Unable to start the Git review."
-msgstr ""
-
-msgctxt "change list row"
-msgid "Changed file"
-msgstr ""
-
-msgctxt "change list row"
-msgid "Changed line"
-msgstr ""
-
-msgctxt "change list row"
-msgid "Hidden unchanged lines"
-msgstr ""
-
-msgctxt "compare action"
-msgid "Compare Options"
-msgstr ""
-
-msgctxt "compare menu section"
-msgid "Comparison"
-msgstr ""
-
-msgctxt "compare menu section"
-msgid "Display"
-msgstr ""
-
-msgctxt "compare mode"
-msgid "Adaptive"
-msgstr ""
-
-msgctxt "compare mode"
-msgid "Split"
-msgstr ""
-
-msgctxt "compare mode"
-msgid "Unified"
-msgstr ""
-
-msgctxt "compare option"
-msgid "Collapse Unchanged Lines"
-msgstr ""
-
-msgctxt "compare option"
-msgid "Compare Mode"
-msgstr ""
-
-msgctxt "compare option"
-msgid "Context Lines"
-msgstr ""
-
-msgctxt "compare option"
-msgid "Ignore Leading/Trailing Whitespace"
-msgstr ""
-
-msgctxt "compare option"
-msgid "Wrap Unified Diff Lines"
-msgstr ""
-
-msgctxt "compare pane"
-msgid "Unified"
-msgstr ""
-
-msgctxt "document title"
-msgid "Staged Changes Review"
-msgstr ""
-
-msgctxt "document title"
-msgid "Unstaged Changes Review"
-msgstr ""
-
-msgctxt "git review path"
-msgid "Review limit"
-msgstr ""
-
-msgctxt "review action"
-msgid "Change List"
-msgstr ""
-
-msgctxt "review action"
-msgid "Open Reviewed File"
-msgstr ""
-
-msgctxt "review action"
-msgid "Refresh Review"
-msgstr ""
-
-msgctxt "review action"
-msgid "Reveal All Hidden Lines"
-msgstr ""
-
-msgctxt "review action"
-msgid "Reveal More Above"
-msgstr ""
-
-msgctxt "review action"
-msgid "Reveal More Below"
-msgstr ""
-
-msgctxt "review toolbar"
-msgid "Review"
-msgstr ""
-
-msgctxt "save file name"
-msgid "Source Control Review"
-msgstr ""
-
-msgctxt "source control menu item"
-msgid "Review Staged Changes"
-msgstr ""
-
-msgctxt "source control menu item"
-msgid "Review Unstaged Changes"
-msgstr ""
-
-msgid "Use Compare or Source Control reviews to switch between split and unified diff views, collapse unchanged lines, ignore trim-only whitespace noise, and move through changes with F8 and Shift+F8."
-msgstr ""
-
-msgctxt "help row"
-msgid "Compare and Review"
+msgctxt "markdown extension label"
+msgid "wiki links"
 msgstr ""

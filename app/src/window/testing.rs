@@ -233,7 +233,8 @@ impl Window {
     }
 
     pub(crate) fn preferences_page_count_for_tests(&self) -> u32 {
-        u32::from(self.shell.appearance_page.parent().is_some())
+        u32::from(self.shell.general_preferences_page.parent().is_some())
+            + u32::from(self.shell.appearance_page.parent().is_some())
             + u32::from(self.shell.encoding_row.parent().is_some())
             + u32::from(self.shell.git_name_row.parent().is_some())
             + u32::from(self.shell.word_wrap_row.parent().is_some())
@@ -253,6 +254,10 @@ impl Window {
 
     pub(crate) fn selected_minimap_visible_for_tests(&self) -> bool {
         self.workspace.selected_minimap_visible()
+    }
+
+    pub(crate) fn selected_minimap_scrollbar_policy_for_tests(&self) -> Option<gtk4::PolicyType> {
+        self.workspace.selected_minimap_scrollbar_policy()
     }
 
     pub(crate) fn selected_markdown_preview_active_for_tests(&self) -> bool {

@@ -180,6 +180,7 @@ impl EditorTab {
             preview_scrolled: view.preview_scrolled,
         });
         tab.install_callbacks();
+        tab.apply_minimap_visibility();
         tab.sync_presentation();
         tab
     }

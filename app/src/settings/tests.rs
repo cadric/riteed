@@ -1,6 +1,6 @@
 use super::{
-    AppSettings, CompareViewMode, EditorPalette, SourceControlViewMode, ThemePreference,
-    WindowPalette, sanitize_editor_width, sanitize_restored_dimension,
+    AppLanguage, AppSettings, CompareViewMode, EditorPalette, SourceControlViewMode,
+    ThemePreference, WindowPalette, sanitize_editor_width, sanitize_restored_dimension,
 };
 #[test]
 fn theme_preference_roundtrips_enum_values() {
@@ -14,6 +14,20 @@ fn theme_preference_roundtrips_enum_values() {
         assert_eq!(ThemePreference::from_nick(theme.nick()), Some(theme));
     }
     assert_eq!(ThemePreference::from_nick("unknown"), None);
+}
+
+#[test]
+fn app_language_roundtrips_enum_values() {
+    for language in AppLanguage::ALL {
+        assert_eq!(
+            AppLanguage::from_enum_value(language.enum_value()),
+            language,
+            "{}",
+            language.nick()
+        );
+    }
+    assert_eq!(AppLanguage::from_index(2), AppLanguage::Danish);
+    assert_eq!(AppLanguage::from_index(99), AppLanguage::System);
 }
 
 #[test]
@@ -115,6 +129,7 @@ fn invalid_editor_widths_fall_back() {
 fn memory_backend_roundtrips_values() {
     let settings = AppSettings::new_for_tests();
     settings.set_theme(ThemePreference::Dark);
+    settings.set_language(AppLanguage::Danish);
     settings.set_editor_palette(EditorPalette::KateDark);
     settings.set_window_palette(WindowPalette::Solarized);
     settings.set_word_wrap(true);
@@ -146,6 +161,7 @@ fn memory_backend_roundtrips_values() {
     settings.set_project_show_hidden(true);
 
     assert_eq!(settings.theme(), ThemePreference::Dark);
+    assert_eq!(settings.language(), AppLanguage::Danish);
     assert_eq!(settings.editor_palette(), EditorPalette::KateDark);
     assert_eq!(settings.window_palette(), WindowPalette::Solarized);
     assert!(settings.word_wrap());
@@ -197,6 +213,7 @@ fn memory_backend_records_writes_for_tests() {
     let settings = AppSettings::new_for_tests();
     assert!(settings.write_log_for_tests().is_empty());
     settings.set_tab_width(6);
+    settings.set_language(AppLanguage::English);
     settings.set_project_show_hidden(true);
     settings.set_editor_font("Monospace 11");
     settings.set_window_palette(WindowPalette::Classic);
@@ -210,6 +227,7 @@ fn memory_backend_records_writes_for_tests() {
         settings.write_log_for_tests(),
         vec![
             String::from("tab-width"),
+            String::from("language"),
             String::from("project-show-hidden"),
             String::from("editor-font"),
             String::from("window-palette"),

@@ -137,6 +137,11 @@ impl Workspace {
             .is_some_and(|tab| tab.minimap_visible_for_tests())
     }
 
+    pub(crate) fn selected_minimap_scrollbar_policy(&self) -> Option<gtk4::PolicyType> {
+        self.selected_tab()
+            .map(|tab| tab.minimap_scrollbar_policy_for_tests())
+    }
+
     pub(crate) fn selected_markdown_preview_active_for_tests(&self) -> bool {
         self.selected_tab()
             .is_some_and(|tab| tab.markdown_preview_active_for_tests())

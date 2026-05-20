@@ -306,6 +306,11 @@ impl EditorTab {
     }
 
     #[cfg(test)]
+    pub(crate) fn minimap_scrollbar_policy_for_tests(&self) -> gtk4::PolicyType {
+        self.scrolled.vscrollbar_policy()
+    }
+
+    #[cfg(test)]
     pub(crate) fn markdown_preview_active_for_tests(&self) -> bool {
         self.is_markdown_preview_active()
     }

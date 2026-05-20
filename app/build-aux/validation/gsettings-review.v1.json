@@ -146,6 +146,14 @@
       "trigger": "Committed indent-width change from the staged SpinRow in the preferences dialog."
     },
     {
+      "path": "src/settings/language.rs",
+      "line": 79,
+      "match": "let _changed = settings.set_enum(KEY_LANGUAGE, language.enum_value());",
+      "kind": "gsettings-write",
+      "key": "language",
+      "trigger": "Explicit App Language selection from the General preferences page; the selected language applies on the next app start."
+    },
+    {
       "path": "src/settings/presentation.rs",
       "line": 211,
       "match": "let _changed = settings.set_enum(KEY_EDITOR_PALETTE, palette.enum_value());",
@@ -259,7 +267,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 102,
+      "line": 113,
       "match": "row.set_value(f64::from(value));",
       "kind": "gsettings-write",
       "key": "tab-width-or-indent-width",
@@ -267,7 +275,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 296,
+      "line": 307,
       "match": "row.set_value(f64::from(applied));",
       "kind": "gsettings-write",
       "key": "tab-width-or-indent-width",

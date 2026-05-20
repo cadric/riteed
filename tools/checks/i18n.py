@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 from pathlib import Path
 
 from tools.checks.foundation import gettext_bootstrap_present, gettext_policy
@@ -18,6 +19,7 @@ def check_i18n(root: Path, app_id: str | None, errors: list[str]) -> None:
         errors.append("At least one po/*.po catalog is required")
     if not pot_files:
         errors.append("At least one po/*.pot template is required")
+    check_linguas_catalogs(root, errors)
     if not gettext_bootstrap_present(root):
         errors.append("gettext bootstrap is required before UI construction")
     if app_id and not grep_any(root, source, app_id.replace(".", r"\.")):
@@ -34,6 +36,102 @@ def check_i18n(root: Path, app_id: str | None, errors: list[str]) -> None:
         if entry.payload.get("comment_required") is True:
             if not translator_comment_present(root / entry.path, entry.line, prefix):
                 errors.append(f"{entry.source_file}: translator comment {prefix!r} is required for {entry.path}:{entry.line}")
+
+
+def check_linguas_catalogs(root: Path, errors: list[str]) -> None:
+    linguas = root / "po" / "LINGUAS"
+    if not linguas.exists():
+        errors.append("po/LINGUAS is required to declare supported locales")
+        return
+    pot_messages = normalized_pot_messages(root)
+    for locale in _linguas_locales(linguas):
+        po_path = root / "po" / f"{locale}.po"
+        if not po_path.exists():
+            errors.append(f"po/LINGUAS locale {locale}: missing po/{locale}.po")
+            continue
+        missing = pot_messages - message_keys(po_path)
+        if missing:
+            errors.append(f"po/LINGUAS locale {locale}: missing POT entries in po/{locale}.po")
+        fuzzy, untranslated = _po_catalog_state(po_path)
+        if fuzzy:
+            errors.append(f"po/LINGUAS locale {locale}: fuzzy entries remain in po/{locale}.po")
+        if untranslated:
+            errors.append(f"po/LINGUAS locale {locale}: untranslated entries remain in po/{locale}.po")
+
+
+def _linguas_locales(path: Path) -> list[str]:
+    locales: list[str] = []
+    for raw in read_text(path).splitlines():
+        line = raw.split("#", 1)[0].strip()
+        if line:
+            locales.extend(line.split())
+    return locales
+
+
+def _po_catalog_state(path: Path) -> tuple[int, int]:
+    fuzzy = 0
+    untranslated = 0
+    entry: dict[str, object] = {"msgid": None, "msgid_plural": None, "msgstrs": {}, "fuzzy": False}
+    field: tuple[str, str | None] | None = None
+    for raw in [*read_text(path).splitlines(), ""]:
+        line = raw.strip()
+        if not line:
+            entry_fuzzy, entry_untranslated = _po_entry_state(entry)
+            fuzzy += entry_fuzzy
+            untranslated += entry_untranslated
+            entry = {"msgid": None, "msgid_plural": None, "msgstrs": {}, "fuzzy": False}
+            field = None
+            continue
+        if line.startswith("#,"):
+            flags = {flag.strip() for flag in line[2:].split(",")}
+            entry["fuzzy"] = bool(entry["fuzzy"]) or "fuzzy" in flags
+            continue
+        if line.startswith("#"):
+            continue
+        if line.startswith("msgid_plural "):
+            entry["msgid_plural"] = _po_quoted(line)
+            field = ("msgid_plural", None)
+        elif line.startswith("msgid "):
+            entry["msgid"] = _po_quoted(line)
+            field = ("msgid", None)
+        elif line.startswith("msgstr["):
+            key = line.split("]", 1)[0].removeprefix("msgstr[")
+            _msgstrs(entry)[key] = _po_quoted(line)
+            field = ("msgstr", key)
+        elif line.startswith("msgstr "):
+            _msgstrs(entry)[""] = _po_quoted(line)
+            field = ("msgstr", "")
+        elif line.startswith('"') and field is not None:
+            _append_po_continuation(entry, field, _po_quoted(line))
+    return fuzzy, untranslated
+
+
+def _po_entry_state(entry: dict[str, object]) -> tuple[int, int]:
+    msgid = entry["msgid"]
+    if msgid in (None, ""):
+        return 0, 0
+    msgstrs = _msgstrs(entry)
+    return int(bool(entry["fuzzy"])), int(not msgstrs or any(value == "" for value in msgstrs.values()))
+
+
+def _msgstrs(entry: dict[str, object]) -> dict[str, str]:
+    return entry["msgstrs"]  # type: ignore[return-value]
+
+
+def _append_po_continuation(entry: dict[str, object], field: tuple[str, str | None], value: str) -> None:
+    name, key = field
+    if name == "msgstr" and key is not None:
+        _msgstrs(entry)[key] = _msgstrs(entry).get(key, "") + value
+    else:
+        entry[name] = str(entry[name] or "") + value
+
+
+def _po_quoted(line: str) -> str:
+    try:
+        value = ast.literal_eval(line[line.index('"') :])
+    except (SyntaxError, ValueError):
+        return ""
+    return value if isinstance(value, str) else ""
 
 
 def validation_policy(root: Path) -> dict[str, object]:

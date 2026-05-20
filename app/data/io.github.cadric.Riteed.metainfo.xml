@@ -3,6 +3,7 @@
   <id>io.github.cadric.Riteed</id>
   <name>Riteed</name>
   <summary>Edit Text, Code, and Config Files</summary>
+  <summary xml:lang="da">Rediger tekst-, kode- og konfigurationsfiler</summary>
   <metadata_license>MIT</metadata_license>
   <project_license>MIT AND Apache-2.0 AND GPL-2.0-only AND LGPL-2.1-or-later AND BSD-3-Clause</project_license>
   <launchable type="desktop-id">io.github.cadric.Riteed.desktop</launchable>
@@ -13,47 +14,59 @@
   <url type="bugtracker">https://github.com/cadric/riteed/issues</url>
   <description>
     <p>Riteed is an early beta GNOME text editor for editing local text, code, config, and markdown files with encoding-aware open and save behavior.</p>
+    <p xml:lang="da">Riteed er en tidlig GNOME-teksteditor i beta til redigering af lokale tekst-, kode-, konfigurations- og markdownfiler med kodningsbevidst åbne- og gemmeadfærd.</p>
     <p>It provides tabs, a unified Find bar with Document and Project scope, document statistics, printing, syntax highlighting, native Markdown preview, optional line numbers and minimap, folder navigation, split diffs, lightweight local Git source control, format controls for text encoding and line endings, curated editor palettes, and conservative reload prompts when files change on disk.</p>
+    <p xml:lang="da">Den tilbyder faner, en samlet søgelinje med dokument- og projektområde, dokumentstatistik, udskrivning, syntaksfremhævning, native Markdown-forhåndsvisning, valgfrie linjenumre og minimap, mappenavigation, split-diffs, let lokal Git-kildekontrol, formatkontroller til tekstkodning og linjeafslutninger, kuraterede editorpaletter og konservative genindlæsningsprompter, når filer ændres på disken.</p>
     <p>Autosave is available for already-saved writable files, while read-only and externally changed files stay guarded by explicit user choices.</p>
+    <p xml:lang="da">Automatisk gemning er tilgængelig for allerede gemte skrivbare filer, mens skrivebeskyttede og eksternt ændrede filer fortsat beskyttes af eksplicitte brugervalg.</p>
   </description>
   <screenshots>
     <screenshot type="default">
       <image width="930" height="700">https://raw.githubusercontent.com/cadric/riteed/main/docs/screenshots/4.png</image>
       <caption>Edit code with syntax highlighting and a project sidebar</caption>
+      <caption xml:lang="da">Rediger kode med syntaksfremhævning og projektsidebjælke</caption>
     </screenshot>
     <screenshot>
       <image width="930" height="700">https://raw.githubusercontent.com/cadric/riteed/main/docs/screenshots/3.png</image>
       <caption>Review local Git changes with source control and split diffs</caption>
+      <caption xml:lang="da">Gennemgå lokale Git-ændringer med Source Control og split-diffs</caption>
     </screenshot>
     <screenshot>
       <image width="930" height="700">https://raw.githubusercontent.com/cadric/riteed/main/docs/screenshots/2.png</image>
       <caption>Browse project folders from the integrated sidebar</caption>
+      <caption xml:lang="da">Gennemse projektmapper fra den integrerede sidebjælke</caption>
     </screenshot>
     <screenshot>
       <image width="930" height="700">https://raw.githubusercontent.com/cadric/riteed/main/docs/screenshots/1.png</image>
       <caption>Start from a clean editor window for local files</caption>
+      <caption xml:lang="da">Start fra et rent redigeringsvindue til lokale filer</caption>
     </screenshot>
   </screenshots>
   <releases>
     <release version="0.3.2" type="development" date="2026-05-20">
       <description>
         <p>Adds native Markdown preview polish, staged and unstaged multi-file review tabs, and a V15 roadmap for split Markdown edit/preview.</p>
+        <p xml:lang="da">Tilføjer polering af native Markdown-forhåndsvisning, staged og unstaged flerfils-gennemgangsfaner og et V15-roadmap for delt Markdown-redigering og forhåndsvisning.</p>
         <p>Fixes Source Control so ordinary untracked folders expand to changed file paths while nested Git repositories remain visible as guarded directory entries.</p>
+        <p xml:lang="da">Retter Source Control, så almindelige usporrede mapper udvides til ændrede filstier, mens indlejrede Git-arkiver forbliver synlige som beskyttede mappeposter.</p>
       </description>
     </release>
     <release version="0.3.1" type="development" date="2026-05-08">
       <description>
         <p>Compacts Source Control rows, moves active-file Git actions into the header bar, and unifies document and project search in the Find bar.</p>
+        <p xml:lang="da">Kompakterer Source Control-rækker, flytter Git-handlinger for den aktive fil til headerbaren og samler dokument- og projektsøgning i søgelinjen.</p>
       </description>
     </release>
     <release version="0.3.0" type="development" date="2026-05-06">
       <description>
         <p>Adds Find in Files, document statistics, and print support while preserving the existing Find and Replace workflow.</p>
+        <p xml:lang="da">Tilføjer Søg i filer, dokumentstatistik og udskriftsunderstøttelse, mens den eksisterende Søg og erstat-arbejdsgang bevares.</p>
       </description>
     </release>
     <release version="0.2.0" type="development" date="2026-05-05">
       <description>
         <p>First public beta with tabs, syntax highlighting, folder navigation, split diffs, lightweight local Git source control, autosave, and guarded file monitoring.</p>
+        <p xml:lang="da">Første offentlige beta med faner, syntaksfremhævning, mappenavigation, split-diffs, let lokal Git-kildekontrol, automatisk gemning og beskyttet filovervågning.</p>
       </description>
     </release>
   </releases>

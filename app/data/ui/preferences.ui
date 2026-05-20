@@ -8,6 +8,23 @@
     <property name="content-height">640</property>
     <property name="follows-content-size">false</property>
     <child>
+      <object class="AdwPreferencesPage" id="general_preferences_page">
+        <property name="title" translatable="yes">General</property>
+        <property name="icon-name">preferences-system-symbolic</property>
+        <child>
+          <object class="AdwPreferencesGroup">
+            <property name="title" translatable="yes">Application</property>
+            <child>
+              <object class="AdwComboRow" id="language_row">
+                <property name="title" translatable="yes">App Language</property>
+                <property name="subtitle" translatable="yes">Applied after restart</property>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+    <child>
       <object class="AdwPreferencesPage" id="editor_preferences_page">
         <property name="title" translatable="yes">Editor</property>
         <property name="icon-name">document-edit-symbolic</property>

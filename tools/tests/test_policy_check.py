@@ -12,7 +12,7 @@ from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
-from tools.checks import foundation, hig, libadwaita, runtime
+from tools.checks import foundation, hig, i18n, libadwaita, runtime
 from tools.scanners.rust import runtime_review_hits
 from tools.scanners.sites import ReviewEntry, ScanHit, validate_review_links
 from tools.validation_tooling import contract_root, repo_root, run_checked
@@ -319,6 +319,34 @@ class PolicyCheckTests(unittest.TestCase):
             any(rule.get("when_glob") == "po/*.po" for rule in policy["conditional_validators"])
         )
 
+    def test_linguas_catalog_completeness(self) -> None:
+        header = 'msgid ""\nmsgstr ""\n"Language: da\\n"\n\n'
+        cases = [
+            ("complete", {"da.po": header + 'msgid "Hello"\nmsgstr ""\n"Hej"\n\nmsgid "%d file"\nmsgid_plural "%d files"\nmsgstr[0] "%d fil"\nmsgstr[1] "%d filer"\n'}, None),
+            ("missing", {}, "missing"),
+            ("missing_pot_entry", {"da.po": header + 'msgid "%d file"\nmsgid_plural "%d files"\nmsgstr[0] "%d fil"\nmsgstr[1] "%d filer"\n'}, "missing POT entries"),
+            ("untranslated", {"da.po": header + 'msgid "Hello"\nmsgstr ""\n'}, "untranslated"),
+            ("fuzzy", {"da.po": header + '#, fuzzy\nmsgid "Hello"\nmsgstr "Hej"\n'}, "fuzzy"),
+        ]
+        for name, catalogs, needle in cases:
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as tmpdir:
+                root = Path(tmpdir)
+                shutil.copytree(REPO_ROOT / "policy", root / "policy")
+                _write(root / "src" / "main.rs", 'fn main() { TextDomain::new("demo").init(); }\n')
+                _write(root / "po" / "LINGUAS", "# languages\n\nda\n")
+                _write(root / "po" / "demo.pot", 'msgid "Hello"\nmsgstr ""\n')
+                for file_name, text in catalogs.items():
+                    _write(root / "po" / file_name, text)
+                errors: list[str] = []
+                i18n.check_i18n(root, None, errors)
+                if needle is None:
+                    self.assertEqual(errors, [])
+                else:
+                    self.assertTrue(
+                        any("po/LINGUAS" in item and "locale da" in item and needle in item for item in errors),
+                        errors,
+                    )
+
     def test_gettext_system_feature_is_required_by_manifest_policy(self) -> None:
         cases = [
             ({}, True),
@@ -485,6 +513,7 @@ class PolicyCheckTests(unittest.TestCase):
   <summary translate="yes">Visible summary</summary>
   <description>
     <p translate="">Visible paragraph</p>
+    <p xml:lang="da">Skjult oversættelse</p>
     <p translate="no">Hidden paragraph</p>
   </description>
   <developer>
@@ -499,6 +528,7 @@ class PolicyCheckTests(unittest.TestCase):
         self.assertIn((None, "cadric", None), messages)
         self.assertIn((None, "Visible summary", None), messages)
         self.assertIn((None, "Visible paragraph", None), messages)
+        self.assertNotIn((None, "Skjult oversættelse", None), messages)
         self.assertNotIn((None, "Hidden paragraph", None), messages)
         self.assertNotIn((None, "Hidden developer", None), messages)
 

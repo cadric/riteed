@@ -53,6 +53,11 @@ def _xgettext_messages(root: Path) -> set[tuple[str | None, str, str | None]]:
             scoped_files(root, ["data/schemas/**/*.gschema.xml"]),
             [],
         ),
+        (
+            "Glade",
+            scoped_files(root, ["data/**/*.ui"]),
+            [],
+        ),
     ]
     generated: set[tuple[str | None, str, str | None]] = set()
     for language, paths, keywords in files_by_language:
@@ -117,6 +122,8 @@ def _metainfo_messages(root: Path) -> set[tuple[str | None, str, str | None]]:
         for node in tree.iter():
             tag = node.tag.rsplit("}", 1)[-1]
             if tag not in {"name", "summary", "p", "li", "caption"}:
+                continue
+            if any(key.rsplit("}", 1)[-1] == "lang" for key in node.attrib):
                 continue
             if node.attrib.get("translate") == "no":
                 continue
