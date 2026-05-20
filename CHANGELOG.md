@@ -1,6 +1,6 @@
 ---
 created: 2026-04-19
-updated: 2026-05-13
+updated: 2026-05-20
 status: current
 priority: high
 type: changelog
@@ -13,6 +13,8 @@ All notable changes to this repository are documented in this file.
 The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries describe public beta snapshots.
 
 ## Unreleased
+
+## 0.3.2 - 2026-05-20
 
 ### V14 — Native Markdown Preview
 - Added native Markdown Preview for `.md` and `.markdown` files with CommonMark parsing, YAML frontmatter metadata, diagnostics, image placeholders, user-triggered links, large-document fallback, vendored offline Markdown parser dependencies, and source-text Compare unchanged.
@@ -27,6 +29,8 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 - Added Source Control staged and unstaged review tabs with multi-file review sessions, file boundaries, skipped-diff reasons, stale-review banners, a Change List navigator, and an Open Reviewed File action.
 
 ### Fixed
+- Made Source Control request individual untracked files from Git so ordinary untracked folders expand to changed file paths in both Tree and List views.
+- Kept nested untracked Git repositories visible as directory entries with Git actions disabled, so parent repositories do not treat child-repo contents as directly editable files.
 - Made policy CSS scanning cover CSS stored under `data/ui/` and added review evidence for Riteed's bundled CSS resources.
 - Mapped GLib illegal-sequence conversion errors to the invalid-characters save flow so encoding retry prompts do not depend on localized error text.
 - Added visible paragraph spacing in Markdown preview while keeping soft line breaks collapsed and hard line breaks explicit.
@@ -40,7 +44,8 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 - Stabilized the Git process async test helper by acquiring the default main context before starting GIO subprocess operations.
 
 ### Changed
-- Aligned the Cargo/README source version with the existing 0.3.1 AppStream release metadata before the next GitHub build.
+- Promoted Markdown split edit/preview to the planned V15 roadmap milestone, keeping source text authoritative and leaving WYSIWYG editing, local image grants, and rendered Markdown diff out of scope.
+- Bumped Cargo, README, and AppStream metadata to the 0.3.2 beta release.
 - Replaced the committed `app/vendor/` Cargo dependency tree with a generated Flatpak Cargo source manifest and ignored local vendor directories.
 - Split Preferences into Editor, Appearance, Format, and Source Control pages so appearance and Git identity controls are no longer mixed into unrelated editor settings.
 - Made Source Control rows match the Files sidebar density by removing inline row action buttons and reusing compact sidebar-row styling in both list and tree modes.

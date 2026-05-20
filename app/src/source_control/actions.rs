@@ -438,7 +438,7 @@ fn entry_disabled_reason(
     };
     if entry.worktree_mode.blocks_actions(entry.status) {
         return Some(gettext(
-            "Symlinks and unsupported file modes are visible only.",
+            "Directories, symlinks, and unsupported file modes are visible only.",
         ));
     }
     let full_path = repo.join(path);

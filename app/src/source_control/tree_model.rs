@@ -141,6 +141,7 @@ pub(super) fn file_basename(entry: &GitStatusEntry) -> String {
     entry
         .path
         .as_utf8()
+        .map(|path| path.trim_end_matches('/'))
         .and_then(|path| path.rsplit('/').next())
         .filter(|name| !name.is_empty())
         .unwrap_or_else(|| entry.path.display())
@@ -312,6 +313,7 @@ mod tests {
     #[test]
     fn file_basename_uses_utf8_leaf_or_display_fallback() {
         assert_eq!(file_basename(&entry("src/lib.rs")), "lib.rs");
+        assert_eq!(file_basename(&entry("nested-repo/")), "nested-repo");
         let invalid = GitStatusEntry::new(
             GitPath::from_bytes(b"\xff"),
             GitFileStatus::Modified,

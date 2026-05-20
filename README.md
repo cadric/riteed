@@ -1,7 +1,7 @@
 # Riteed
 
 Riteed is a small native GNOME text editor written in Rust. The current source
-version is `0.3.1`, an early public beta. It is useful for daily local editing
+version is `0.3.2`, an early public beta. It is useful for daily local editing
 and compare work, but it is not feature complete and has only been tested by the
 primary maintainer so far.
 
@@ -22,6 +22,7 @@ Flatpak-first.
 - GtkSourceView syntax highlighting with editor palette selection.
 - Find and replace, optional line numbers, optional minimap, and zoom controls.
 - Encoding-aware open/save behavior with line-ending controls.
+- Native Markdown preview for `.md` and `.markdown` files.
 - Session restore, recent files, guarded reload prompts, and large-file safety
   limits.
 - Optional autosave for already-saved writable files.

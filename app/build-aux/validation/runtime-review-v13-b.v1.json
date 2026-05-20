@@ -163,7 +163,7 @@
     },
     {
       "path": "src/source_control/tree_view.rs",
-      "line": 366,
+      "line": 377,
       "match": "weak: &Weak<RefCell<SourceControlState>>,",
       "kind": "runtime-shared-state",
       "ownership": "Source Control activation dispatch borrows the controller weak state handle.",

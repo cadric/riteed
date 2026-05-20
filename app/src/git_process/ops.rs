@@ -23,7 +23,14 @@ impl GitProcess {
         callback: GitCallback<GitStatusSnapshot>,
     ) {
         self.run(
-            ["status", "--porcelain=v2", "-z", "--branch", "--no-renames"],
+            [
+                "status",
+                "--porcelain=v2",
+                "-z",
+                "--branch",
+                "--no-renames",
+                "--untracked-files=all",
+            ],
             None,
             STATUS_CAP,
             false,

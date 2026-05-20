@@ -1,6 +1,12 @@
 # Continuity
 
 ## OUTCOMES
+- Prepared the 0.3.2 beta release: Cargo/lockfile, README, AppStream metadata, CHANGELOG, and gettext catalogs now agree on `0.3.2`, and the GitHub release will be cut from tag `v0.3.2`.
+- 0.3.2 release validation passed: `cargo fmt --all --check`, `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `GTK_A11Y=none GSK_RENDERER=cairo cargo test --workspace --all-targets --all-features`, `glib-compile-schemas --strict --dry-run app/data/schemas`, `msgfmt --check-format --check-header -o /dev/null app/po/da.po`, `desktop-file-validate app/data/io.github.cadric.Riteed.desktop`, `appstreamcli validate --no-net --pedantic app/data/io.github.cadric.Riteed.metainfo.xml` with the known uppercase app-id pedantic note, `flatpak-builder --show-manifest app/build-aux/io.github.cadric.Riteed.yml`, `scripts/policy-check --root app --strict`, `python3 -m tools.coverage_check --root app` (81.5% line coverage), and `git diff --check`.
+- 0.3.2 local user Flatpak rebuild/install passed with app commit `05245446aba16dbe96a7ba6b4c1d8c5181d98914e3733c3a84cb11950611ecba`; `flatpak info --user io.github.cadric.Riteed` reports version `0.3.2`, installed size `9.2 MB` on `org.gnome.Platform//50`, and `/app/bin/git` reports `git version 2.54.0`.
+- Source Control now asks Git for individual untracked files, so ordinary untracked folders such as `apps/` in `/home/cadric/Projects/bedreader` expand into file paths in both Tree and List views.
+- Nested untracked Git repositories such as `/home/cadric/Projects/bedreader/RedReader` remain visible as directory entries from the parent repository, with Git actions disabled instead of treating child-repo contents as parent files.
+- `ROADMAP.md` now schedules V15 as Markdown Split Edit and Preview: source remains authoritative, preview stays native/read-only, and WYSIWYG, local image grants, and rendered Markdown diff remain out of scope.
 - Replaced the committed `app/vendor/` Cargo tree with ignored local vendor directories plus `app/build-aux/cargo/cargo-sources.json`, so Flatpak still gets locked offline crate sources without thousands of vendored files entering commits.
 - Final V14 Markdown preview visual polish passed: code blocks now keep inner padding, H3-H6 heading levels are visually distinct, paragraph blocks have visible separation while soft breaks still collapse and hard breaks stay explicit, and the user completed manual visual review after the local Flatpak rebuild.
 - Final V14 Markdown validation passed: `cargo fmt --all --check`, `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `GTK_A11Y=none GSK_RENDERER=cairo cargo test --workspace --all-targets --all-features`, `glib-compile-schemas --strict --dry-run app/data/schemas`, `glib-compile-resources --sourcedir app/data --target /tmp/riteed.gresource --generate app/data/resources.gresource.xml`, `msgfmt --check-format --check-header -o /dev/null app/po/da.po`, `desktop-file-validate app/data/io.github.cadric.Riteed.desktop`, `appstreamcli validate --no-net --pedantic app/data/io.github.cadric.Riteed.metainfo.xml` with the known uppercase app-id pedantic note, `flatpak-builder --show-manifest app/build-aux/io.github.cadric.Riteed.yml`, `python3 -m tools.policy_check --root app --strict`, `python3 -m tools.coverage_check --root app` (81.4% line coverage), and `git diff --check`.
@@ -81,9 +87,11 @@
 - Auto palette local user Flatpak rebuild/install passed with app commit `c15c4ac0625d116df2b6f51fac61fe443a3dde479f88d5a8c2d9e70b3bcfc6a1`, installed size 7.9 MB on `org.gnome.Platform//50`, and `/app/bin/git` reports `git version 2.54.0`.
 
 ## DECISIONS
-- Markdown preview source ranges are V14 foundation only. Preview-to-source scroll sync remains a Post-V14 follow-up rather than current V14 behavior.
+- V15 is the next scheduled milestone, focused on Markdown Source/Preview/Split modes rather than a general new-feature bundle.
+- Parent Source Control roots do not recurse into nested Git repositories; users should open the nested repository itself when they want its internal Git status.
+- Markdown preview source ranges are V14 foundation only. V15 may use them for basic source/preview scroll orientation, while richer preview-source synchronization remains a separate implementation risk to validate.
 - Markdown preview large-document handling is intentionally two-tier for now: files under 1 MB use live preview, while files at or above 1 MB show the disabled-preview fallback. The earlier 1-10 MB debounced middle tier is not implemented.
-- Markdown Preview is formal V14 completed work, not a rendered/semantic diff feature. It deliberately leaves extended Markdown, local image grants, code-block syntax highlighting, and rendered diff as Post-V14 follow-ups. Per-code-block syntax highlighting is not a simple drop-in while preview is one `gtk4::TextBuffer`; it likely needs a composite renderer with separate read-only `sourceview5::Buffer` widgets for code blocks.
+- Markdown Preview is formal V14 completed work, not a rendered/semantic diff feature. V15 promotes split edit/preview only; extended Markdown, local image grants, code-block syntax highlighting, and rendered diff remain deferred. Per-code-block syntax highlighting is not a simple drop-in while preview is one `gtk4::TextBuffer`; it likely needs a composite renderer with separate read-only `sourceview5::Buffer` widgets for code blocks.
 - v6 split layout is sidebar/editor navigation via `AdwOverlaySplitView`, not an editor/editor split-pane feature.
 - Project state remains window-global through GSettings because Riteed currently has a single-window app model.
 - v7 compare mode is tab-local and ephemeral; it is not persisted in session/GSettings and exits on reload/open/restore.
@@ -108,7 +116,7 @@
 - Project switch is an atomic `Some(new)` Source Control transition, not a visible `None -> Some(new)` close/open sequence; user-close remains the path that emits `handler(None)` and clears close-specific UI/settings.
 - `.agent/CONTINUITY.md` is local continuity state and is ignored by Git unless explicitly force-added.
 - V12.5 header-bar Git path uses four individual flat icon buttons. The row-level actions use one shared list-level popover anchored from `compute_bounds`, and Search Results visibility is pure sidebar UI while scan clearing remains owned by the coordinator/window root-change flow.
-- V14 is implemented as the final scheduled milestone. Post-V14 ideas remain unscheduled until a focused follow-up milestone is justified.
+- V15 is the final scheduled milestone for now. Post-V15 ideas remain unscheduled until a focused follow-up milestone is justified.
 
 ## DISCOVERIES
 - `GtkSingleSelection::set_selected()` can synchronously notify selection listeners, so project restore/root/reveal paths must clone GTK model/selection handles and drop `ProjectState` borrows before clearing or changing selection.

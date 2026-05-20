@@ -75,7 +75,7 @@ fn disabled_reasons_cover_unsupported_paths_and_modes() {
             &[],
         )
         .as_deref(),
-        Some("Symlinks and unsupported file modes are visible only.")
+        Some("Directories, symlinks, and unsupported file modes are visible only.")
     );
 }
 
@@ -232,7 +232,7 @@ fn parsed_worktree_modes_drive_action_guards() {
     assert_eq!(
         entry_disabled_reason(Some(&missing_repo), &absent_modified, &known_attrs(), &[])
             .as_deref(),
-        Some("Symlinks and unsupported file modes are visible only.")
+        Some("Directories, symlinks, and unsupported file modes are visible only.")
     );
 }
 

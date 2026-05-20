@@ -80,6 +80,86 @@ fn read_only_git_ops_work_against_current_repo() {
 }
 
 #[test]
+fn status_expands_untracked_directories_to_files() {
+    let _guard = crate::test_support::lock_for_tests();
+    let repo = temp_repo("riteed-git-process-untracked-files");
+    assert!(run_git_command(&repo, ["init"]).is_ok());
+    assert!(fs::create_dir_all(repo.join("apps/desktop/src/main/kotlin")).is_ok());
+    let nested = repo.join("apps/desktop/src/main/kotlin/Main.kt");
+    assert!(fs::write(&nested, b"fun main() = Unit\n").is_ok());
+
+    let detected = wait_git(|cancellable, callback| {
+        GitProcess::detect_repo(&repo, cancellable, callback);
+    });
+    assert!(detected.is_ok());
+    let Ok(context) = detected else {
+        let _removed = fs::remove_dir_all(&repo);
+        return;
+    };
+    let process = GitProcess::new(context);
+    let status = wait_git(|cancellable, callback| process.status(cancellable, callback));
+    let _removed = fs::remove_dir_all(&repo);
+    assert!(status.is_ok());
+    let Ok(snapshot) = status else {
+        return;
+    };
+
+    assert!(
+        snapshot
+            .entries
+            .iter()
+            .any(|entry| entry.path.as_utf8() == Some("apps/desktop/src/main/kotlin/Main.kt"))
+    );
+    assert!(
+        !snapshot
+            .entries
+            .iter()
+            .any(|entry| entry.path.as_utf8() == Some("apps/"))
+    );
+}
+
+#[test]
+fn status_keeps_nested_untracked_repositories_as_directories() {
+    let _guard = crate::test_support::lock_for_tests();
+    let repo = temp_repo("riteed-git-process-nested-repo-parent");
+    let nested = repo.join("RedReader");
+    assert!(run_git_command(&repo, ["init"]).is_ok());
+    assert!(fs::create_dir_all(&nested).is_ok());
+    assert!(run_git_command(&nested, ["init"]).is_ok());
+    assert!(fs::write(nested.join("README.md"), b"# Nested\n").is_ok());
+
+    let detected = wait_git(|cancellable, callback| {
+        GitProcess::detect_repo(&repo, cancellable, callback);
+    });
+    assert!(detected.is_ok());
+    let Ok(context) = detected else {
+        let _removed = fs::remove_dir_all(&repo);
+        return;
+    };
+    let process = GitProcess::new(context);
+    let status = wait_git(|cancellable, callback| process.status(cancellable, callback));
+    let _removed = fs::remove_dir_all(&repo);
+    assert!(status.is_ok());
+    let Ok(snapshot) = status else {
+        return;
+    };
+
+    assert!(
+        snapshot
+            .entries
+            .iter()
+            .any(|entry| entry.path.as_utf8() == Some("RedReader/")
+                && entry.worktree_mode == crate::git_status::GitWorktreeMode::Directory)
+    );
+    assert!(
+        !snapshot
+            .entries
+            .iter()
+            .any(|entry| entry.path.as_utf8() == Some("RedReader/README.md"))
+    );
+}
+
+#[test]
 fn typed_ops_reject_invalid_inputs_before_spawning() {
     let process = GitProcess::new(context_for(Path::new("/tmp")));
     let bad_path = GitPath::from_bytes(b"\xff");

@@ -7,11 +7,11 @@ use super::{
 fn status_parser_reads_branch_and_entries() {
     let input =
         b"# branch.oid abc\0# branch.head main\0# branch.upstream origin/main\0# branch.ab +1 -0\0\
-1 .M N... 100644 100644 100644 abc def src/lib.rs\0? new.txt\0";
+1 .M N... 100644 100644 100644 abc def src/lib.rs\0? new.txt\0? nested-repo/\0";
     let snapshot = parse_status(input);
     assert_eq!(snapshot.branch.as_deref(), Some("main"));
     assert_eq!(snapshot.head_oid.as_deref(), Some("abc"));
-    assert_eq!(snapshot.entries.len(), 2);
+    assert_eq!(snapshot.entries.len(), 3);
     assert_eq!(snapshot.entries[0].path.display(), "src/lib.rs");
     assert!(snapshot.entries[0].unstaged);
     assert_eq!(
@@ -20,6 +20,11 @@ fn status_parser_reads_branch_and_entries() {
     );
     assert_eq!(snapshot.entries[1].path.display(), "new.txt");
     assert_eq!(snapshot.entries[1].worktree_mode, GitWorktreeMode::Unknown);
+    assert_eq!(snapshot.entries[2].path.display(), "nested-repo/");
+    assert_eq!(
+        snapshot.entries[2].worktree_mode,
+        GitWorktreeMode::Directory
+    );
 }
 
 #[test]

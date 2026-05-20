@@ -251,7 +251,7 @@
     },
     {
       "path": "src/git_process/tests.rs",
-      "line": 207,
+      "line": 287,
       "match": "let slot: Rc<RefCell<Option<Result<T, GitProcessError>>>> = Rc::new(RefCell::new(None));",
       "kind": "runtime-shared-state",
       "ownership": "Git process unit tests own this callback result slot.",
@@ -259,7 +259,7 @@
     },
     {
       "path": "src/git_process/tests.rs",
-      "line": 222,
+      "line": 302,
       "match": "let slot: Rc<RefCell<Option<Result<T, GitProcessError>>>> = Rc::new(RefCell::new(None));",
       "kind": "runtime-shared-state",
       "ownership": "Git process unit tests own this callback result slot.",
@@ -427,7 +427,7 @@
     },
     {
       "path": "src/source_control/list_view.rs",
-      "line": 209,
+      "line": 212,
       "match": "fn action_runner(state_weak: &Rc<RefCell<Weak<RefCell<SourceControlState>>>>) -> RowActionRunner {",
       "kind": "runtime-shared-state",
       "ownership": "The Source Control list view owns recycled-row action state and a weak controller handle.",
@@ -435,7 +435,7 @@
     },
     {
       "path": "src/source_control/list_view.rs",
-      "line": 273,
+      "line": 287,
       "match": "weak: &Weak<RefCell<SourceControlState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The Source Control list view owns recycled-row action state and a weak controller handle.",

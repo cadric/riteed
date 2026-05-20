@@ -54,6 +54,7 @@ impl GitFileStatus {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum GitWorktreeMode {
     Regular(&'static str),
+    Directory,
     Symlink,
     Gitlink,
     Absent,
@@ -66,14 +67,19 @@ impl GitWorktreeMode {
     pub(crate) const fn stage_mode(self) -> Option<&'static str> {
         match self {
             Self::Regular(mode) => Some(mode),
-            _ => None,
+            Self::Directory
+            | Self::Symlink
+            | Self::Gitlink
+            | Self::Absent
+            | Self::Unsupported
+            | Self::Unknown => None,
         }
     }
 
     #[must_use]
     pub(crate) const fn blocks_actions(self, status: GitFileStatus) -> bool {
         match self {
-            Self::Symlink | Self::Gitlink | Self::Unsupported => true,
+            Self::Directory | Self::Symlink | Self::Gitlink | Self::Unsupported => true,
             Self::Absent => !matches!(status, GitFileStatus::Deleted),
             Self::Regular(_) | Self::Unknown => false,
         }
@@ -134,6 +140,7 @@ pub(crate) struct GitStatusEntry {
 }
 
 impl GitStatusEntry {
+    #[cfg(test)]
     #[must_use]
     pub(crate) fn new(
         path: GitPath,
@@ -270,14 +277,18 @@ pub(crate) fn parse_status(bytes: &[u8]) -> GitStatusSnapshot {
                     snapshot.entries.push(entry);
                 }
             }
-            Some(b'?') => snapshot.entries.push(GitStatusEntry::new(
-                GitPath::from_bytes(trim_status_prefix(record)),
-                GitFileStatus::Untracked,
-                None,
-                None,
-                false,
-                true,
-            )),
+            Some(b'?') => {
+                let path = trim_status_prefix(record);
+                snapshot.entries.push(GitStatusEntry::with_worktree_mode(
+                    GitPath::from_bytes(path),
+                    GitFileStatus::Untracked,
+                    None,
+                    None,
+                    false,
+                    true,
+                    untracked_worktree_mode(path),
+                ));
+            }
             _ => {}
         }
     }
@@ -425,6 +436,14 @@ fn split_fields(record: &[u8], limit: usize) -> Vec<&[u8]> {
 
 fn trim_status_prefix(record: &[u8]) -> &[u8] {
     if record.len() > 2 { &record[2..] } else { &[] }
+}
+
+fn untracked_worktree_mode(path: &[u8]) -> GitWorktreeMode {
+    if path.ends_with(b"/") {
+        GitWorktreeMode::Directory
+    } else {
+        GitWorktreeMode::Unknown
+    }
 }
 
 fn is_submodule(field: &[u8]) -> bool {

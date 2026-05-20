@@ -3,7 +3,7 @@ use std::rc::{Rc, Weak};
 
 use gtk4::{gio, glib, pango, prelude::*};
 
-use crate::git_status::GitStatusEntry;
+use crate::git_status::{GitStatusEntry, GitWorktreeMode};
 use crate::source_control::SourceControlState;
 use crate::source_control::actions::{self, GitRowAction};
 use crate::source_control::row_popover::{RowActionRunner, RowPopover};
@@ -172,6 +172,7 @@ fn bind_row(object: &glib::Object, bound_rows: &BoundRows) {
     else {
         return;
     };
+    widgets.icon.set_icon_name(Some(entry_icon_name(&entry)));
     widgets.label.set_label(&list_display_name(&entry));
     widgets.row_box.set_tooltip_text(Some(entry.path.display()));
     remember_bound_row(bound_rows, &entry, &widgets.row_box);
@@ -186,6 +187,7 @@ fn row_widgets(row_box: &gtk4::Box) -> Option<RowWidgets> {
     let label = staged.next_sibling()?.downcast::<gtk4::Label>().ok()?;
     Some(RowWidgets {
         row_box: row_box.clone(),
+        icon,
         label,
         staged,
         status,
@@ -194,6 +196,7 @@ fn row_widgets(row_box: &gtk4::Box) -> Option<RowWidgets> {
 
 struct RowWidgets {
     row_box: gtk4::Box,
+    icon: gtk4::Image,
     label: gtk4::Label,
     staged: gtk4::Label,
     status: gtk4::Label,
@@ -265,6 +268,17 @@ fn unbind_row(object: &glib::Object, bound_rows: &BoundRows) {
 
 fn list_display_name(entry: &GitStatusEntry) -> String {
     file_basename(entry)
+}
+
+fn entry_icon_name(entry: &GitStatusEntry) -> &'static str {
+    match entry.worktree_mode {
+        GitWorktreeMode::Directory | GitWorktreeMode::Gitlink => "folder-symbolic",
+        GitWorktreeMode::Regular(_)
+        | GitWorktreeMode::Symlink
+        | GitWorktreeMode::Absent
+        | GitWorktreeMode::Unsupported
+        | GitWorktreeMode::Unknown => "text-x-generic-symbolic",
+    }
 }
 
 fn activate_position(

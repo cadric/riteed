@@ -26,6 +26,12 @@ msgstr[1] ""
 msgid "Adds Find in Files, document statistics, and print support while preserving the existing Find and Replace workflow."
 msgstr ""
 
+msgid "Adds native Markdown preview polish, staged and unstaged multi-file review tabs, and a V15 roadmap for split Markdown edit/preview."
+msgstr ""
+
+msgid "Fixes Source Control so ordinary untracked folders expand to changed file paths while nested Git repositories remain visible as guarded directory entries."
+msgstr ""
+
 msgid "Automatic text decoding was not reliable for this file. Choose a text encoding manually and try again."
 msgstr ""
 
@@ -197,7 +203,7 @@ msgstr ""
 msgid "Insert Spaces Instead of Tabs"
 msgstr ""
 
-msgid "It provides tabs, a unified Find bar with Document and Project scope, document statistics, printing, syntax highlighting, optional line numbers and minimap, folder navigation, split diffs, lightweight local Git source control, format controls for text encoding and line endings, curated editor palettes, and conservative reload prompts when files change on disk."
+msgid "It provides tabs, a unified Find bar with Document and Project scope, document statistics, printing, syntax highlighting, native Markdown preview, optional line numbers and minimap, folder navigation, split diffs, lightweight local Git source control, format controls for text encoding and line endings, curated editor palettes, and conservative reload prompts when files change on disk."
 msgstr ""
 
 msgid "Loading"
@@ -460,7 +466,7 @@ msgstr ""
 msgid "Stores the previous window palette setting for compatibility. Riteed now derives window chrome from the editor palette family and app style."
 msgstr ""
 
-msgid "Symlinks and unsupported file modes are visible only."
+msgid "Directories, symlinks, and unsupported file modes are visible only."
 msgstr ""
 
 msgid "Tab Width"

@@ -1,12 +1,12 @@
 ---
 created: 2026-04-19
-updated: 2026-05-12
+updated: 2026-05-20
 status: active
 priority: high
 type: roadmap
 completed_through: v14
-next_version: post-v14
-final_scheduled_version: v14
+next_version: v15
+final_scheduled_version: v15
 ---
 
 # Complete Roadmap: Mini GNOME Text Editor in Rust
@@ -1732,10 +1732,95 @@ Implement a working v14 of Riteed where `.md` and `.markdown` files can be viewe
 
 ---
 
-# Post-V14 — Unscheduled Candidates
+# V15 — Markdown Split Edit and Preview
+
+> created: 2026-05-20
+> updated: 2026-05-20
+> status: planned
+> priority: high
+> type: roadmap-milestone
+> implementation: not started
+
+## Purpose
+
+V15 turns the V14 Markdown preview from a separate viewing layer into a practical writing workflow: edit Markdown source and see the rendered result beside it.
+
+This is the right next feature because it builds directly on V14's native, safe Markdown renderer while keeping Riteed small. It improves a real document workflow without introducing IDE features, browser rendering, rich text editing, or a general publishing system.
+
+## What V15 adds
+
+* Markdown Source, Preview, and Split modes for `.md` and `.markdown` documents
+* An adaptive split layout with editable source on one side and read-only preview on the other
+* Debounced live preview updates from the in-memory buffer, with cancellation for stale renders
+* Basic source/preview scroll orientation so editing and reading stay in the same part of the document
+* Clear mode controls that appear only when the active document supports Markdown preview
+* Preservation of existing save, autosave, dirty-state, session, and Compare behavior
+
+## Why this version matters
+
+V14 made Markdown readable inside Riteed. V15 makes Markdown comfortable to write.
+
+The feature is still editor-centered: the Markdown source remains the only editable document, the preview remains a native GTK read-only rendering, and Compare continues to use source text. This keeps Riteed aligned with its lightweight GNOME text-editor identity while making Markdown one of its strongest daily-use workflows.
+
+## Scope boundaries
+
+V15 is **not** a WYSIWYG editor.
+
+V15 must not add:
+
+* browser/WebKit rendering
+* rich-text editing
+* DOM execution
+* automatic local image filesystem grants
+* rendered Markdown diff
+* export/publishing workflows
+* LSP, terminal, debugger, plugin, build, or repository expansion
+
+## Prompt for V15
+
+```text
+Build V15 of Riteed by extending the existing safe native Markdown preview into a split edit/preview workflow.
+
+The goal is to make Markdown writing comfortable while preserving Riteed's identity as a small GNOME-native text editor. The source buffer remains the authoritative editable document. The preview is a read-only native GTK rendering of the current buffer, not a browser and not a WYSIWYG editor.
+
+What V15 adds:
+- Markdown Source, Preview, and Split modes for `.md` and `.markdown` files
+- Split mode with editable source on one side and rendered preview on the other
+- Adaptive behavior so narrow windows can fall back to a single surface without hiding the active document
+- Debounced live preview updates from unsaved buffer contents
+- Cancellation/generation guards so stale Markdown renders cannot replace newer preview output
+- Basic scroll orientation between source and preview, using existing Markdown source ranges where practical
+- Mode controls that appear only for Markdown-capable documents and remain discoverable without crowding non-Markdown files
+- Preservation of existing save, autosave, dirty-state, session restore, and Compare behavior
+
+Technical expectations:
+- Reuse the V14 native Markdown parser and renderer
+- Keep source text as the only editable content
+- Keep preview read-only and non-executing
+- Keep source-text Compare unchanged
+- Use GTK/libadwaita adaptive patterns rather than custom shell architecture
+- Keep user-visible strings gettext-ready
+- Keep preferences and durable lightweight mode defaults in GSettings only if persistence is needed
+- Add focused tests for mode switching, live preview updates, stale-render cancellation, and non-Markdown UI hiding
+
+Non-goals:
+- No WYSIWYG editing
+- No WebKit/browser preview
+- No rendered Markdown diff
+- No automatic local image loading beyond the existing safe placeholder model
+- No export, publishing, or print-specific Markdown layout work
+- No IDE features, LSP, terminal, build tools, or plugin system
+
+Deliverable:
+Implement a working Markdown split edit/preview workflow where users can edit Markdown source and inspect a native rendered preview side by side, while keeping Riteed small, safe, and source-text centered.
+```
+
+---
+
+# Post-V15 — Unscheduled Candidates
 
 > created: 2026-04-27
-> updated: 2026-05-12
+> updated: 2026-05-20
 > status: deferred
 > priority: low
 > type: roadmap-backlog
@@ -1750,14 +1835,14 @@ The rule for promotion is unchanged from the rest of the roadmap: a candidate be
 ## Candidate items
 
 * Optional GTK native spell check
-* Markdown preview follow-ups beyond V14, such as local image grants, syntax-highlighted code blocks, or rendered Markdown diff
+* Markdown preview follow-ups beyond V15, such as local image grants, syntax-highlighted code blocks, or rendered Markdown diff
 * Initial chunk streaming for very large files
 
 ## Why each candidate is deferred
 
 **Spell check** — depends on whether GtkSourceView's native spelling support is available on the bundled platform without sandbox or runtime gaps. Worth holding until there is a forcing reason.
 
-**Markdown preview follow-ups** — useful only if they preserve the V14 safety model. Local images need explicit user grants, code highlighting should reuse existing native syntax infrastructure, and rendered diff would need a separate semantic-review design rather than replacing source-text Compare. Per-code-block syntax highlighting likely needs a widget/composite preview renderer because GtkSourceView highlighting is buffer-wide.
+**Markdown preview follow-ups** — useful only if they preserve the V14/V15 safety model. Local images need explicit user grants, code highlighting should reuse existing native syntax infrastructure, and rendered diff would need a separate semantic-review design rather than replacing source-text Compare. Per-code-block syntax highlighting likely needs a widget/composite preview renderer because GtkSourceView highlighting is buffer-wide.
 
 **Initial chunk streaming for very large files** — useful and worth investigating, but it likely needs its own document/viewer mode rather than normal GtkSourceView loading. It should be promoted only when the milestone can focus on large-file architecture, including clear behavior for search, syntax highlighting, minimap, compare, autosave, and session restore.
 
@@ -1769,7 +1854,7 @@ Source Control is intentionally capped at local status, compare, stage, unstage,
 
 If any of these items is promoted to a real version later, the promoting change must:
 
-* Pick a version number (V15, V16, …) and create a full milestone section with Purpose, What it adds, Why this version matters, and Prompt, matching the structure of V1 through V14
+* Pick a version number (V16, V17, …) and create a full milestone section with Purpose, What it adds, Why this version matters, and Prompt, matching the structure of V1 through V15
 * Pull only the items that genuinely belong together in one release; do not promote the whole list at once unless that is the actual decision
 * Re-justify any bundled Git or Flatpak manifest expansion as part of the same change, not as a follow-up
 * Update the header `final_scheduled_version` and the Summary section accordingly
@@ -1778,7 +1863,7 @@ If any of these items is promoted to a real version later, the promoting change 
 
 # Summary of the full progression
 
-V1 through V14 are complete as of 2026-05-12. V13 covers diff review maturity for Compare and local Source Control review. V14 covers safe native Markdown preview, including initial CommonMark/frontmatter support, renderer correctness polish, and comparison-driven presentation polish. Remaining ideas beyond V14, including spell check, Markdown preview follow-ups, and large-file streaming, sit in the "Post-V14 — Unscheduled Candidates" section and only earn a version number once one of those ideas has a concrete reason to ship next.
+V1 through V14 are complete as of 2026-05-12. V13 covers diff review maturity for Compare and local Source Control review. V14 covers safe native Markdown preview, including initial CommonMark/frontmatter support, renderer correctness polish, and comparison-driven presentation polish. V15 is planned as the next focused step: Markdown split edit/preview with source text as the authoritative editable surface. Remaining ideas beyond V15, including spell check, deeper Markdown preview follow-ups, and large-file streaming, sit in the "Post-V15 — Unscheduled Candidates" section and only earn a version number once one of those ideas has a concrete reason to ship next.
 
 ## V1
 
@@ -1840,9 +1925,13 @@ Mature diff review with unified diff, adaptive compare layout, collapsed unchang
 
 Add safe native Markdown preview for `.md` and `.markdown` files with CommonMark plus YAML frontmatter, no browser/DOM/resource loading, source-text Compare, and comparison-driven renderer polish.
 
-## Post-V14
+## V15
 
-Unscheduled backlog. Holds spell check, Markdown preview follow-ups, and initial large-file streaming. Items only promote to a numbered version when one has a concrete reason to ship next.
+Add Markdown Source, Preview, and Split modes so `.md` and `.markdown` files can be edited as source text while a native read-only preview updates beside the editor.
+
+## Post-V15
+
+Unscheduled backlog. Holds spell check, deeper Markdown preview follow-ups, and initial large-file streaming. Items only promote to a numbered version when one has a concrete reason to ship next.
 
 ---
 

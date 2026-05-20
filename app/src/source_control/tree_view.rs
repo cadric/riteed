@@ -3,7 +3,7 @@ use std::rc::{Rc, Weak};
 
 use gtk4::{gio, glib, pango, prelude::*};
 
-use crate::git_status::{GitActionState, GitStatusEntry};
+use crate::git_status::{GitActionState, GitStatusEntry, GitWorktreeMode};
 use crate::source_control::SourceControlState;
 use crate::source_control::actions::{self, GitRowAction};
 use crate::source_control::row_popover::{RowActionRunner, RowPopover};
@@ -288,7 +288,7 @@ fn bind_node(widgets: &RowWidgets, node: SourceControlNode, bound_rows: &BoundRo
             widgets.status.set_visible(false);
         }
         SourceControlNode::File { entry } => {
-            widgets.icon.set_icon_name(Some("text-x-generic-symbolic"));
+            widgets.icon.set_icon_name(Some(entry_icon_name(&entry)));
             widgets.label.set_label(&file_basename(&entry));
             let tooltip = match &entry.diff_action {
                 GitActionState::Enabled => entry.path.display().to_string(),
@@ -299,6 +299,17 @@ fn bind_node(widgets: &RowWidgets, node: SourceControlNode, bound_rows: &BoundRo
             bind_staged_marker(&widgets.staged, entry.staged);
             bind_status_badge(&widgets.status, &entry);
         }
+    }
+}
+
+fn entry_icon_name(entry: &GitStatusEntry) -> &'static str {
+    match entry.worktree_mode {
+        GitWorktreeMode::Directory | GitWorktreeMode::Gitlink => "folder-symbolic",
+        GitWorktreeMode::Regular(_)
+        | GitWorktreeMode::Symlink
+        | GitWorktreeMode::Absent
+        | GitWorktreeMode::Unsupported
+        | GitWorktreeMode::Unknown => "text-x-generic-symbolic",
     }
 }
 
