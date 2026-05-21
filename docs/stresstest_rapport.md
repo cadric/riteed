@@ -178,10 +178,11 @@ evidence becomes available.
 - **Cargo-fuzz separation is not zero-maintenance**: fuzzing required a
   non-default app `fuzzing` feature, a duplicated `sourceview5` patch in
   `app/fuzz/Cargo.toml`, and manual lockfile alignment after GTK crates resolved
-  to `0.11.3` instead of the app's `0.11.2`. Dependabot ignores direct `gtk4`
-  and `gtk4-sys` updates in `/app/fuzz`; future app GTK dependency updates must
-  update `app/Cargo.lock` first and then check `app/fuzz/Cargo.lock` the same
-  day.
+  to `0.11.3` instead of the app's `0.11.2`. Dependabot allows only
+  `libfuzzer-sys` in `/app/fuzz` because it otherwise follows the local
+  `riteed` path dependency and edits `app/Cargo.toml`; future app dependency
+  updates must update `app/Cargo.lock` first and then check
+  `app/fuzz/Cargo.lock` the same day.
 - **Stress binary needs schemas**: `riteed-stress` is a separate developer
   binary, but it still needs installed or compiled GSettings schemas. Local and
   CI runs compile schemas into a temporary directory and export

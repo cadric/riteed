@@ -42,6 +42,11 @@ updates:
       - "dependencies"
       - "rust"
       - "fuzzing"
+    allow:
+      # Keep the nested fuzz workspace from editing the app crate's manifest
+      # through the local riteed path dependency. App dependency updates belong
+      # to /app first, then app/fuzz/Cargo.lock is synced manually when needed.
+      - dependency-name: "libfuzzer-sys"
     groups:
       fuzz-cargo:
         patterns:
