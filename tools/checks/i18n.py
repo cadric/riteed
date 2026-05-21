@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ast
+import re
 from pathlib import Path
 
 from tools.checks.foundation import gettext_bootstrap_present, gettext_policy
@@ -8,6 +9,8 @@ from tools.scanners.pot import message_keys
 from tools.scanners.rust import rust_files, short_gettext_hits, translator_comment_present
 from tools.scanners.sites import load_review_entries, validate_review_links
 from tools.validation_tooling import grep_any, read_text, relpath, scoped_files
+
+_LOCALE_TOKEN = re.compile(r"^[A-Za-z]{2,3}(?:_[A-Za-z][A-Za-z0-9]*)*(?:\.[A-Za-z0-9_.-]+)?(?:@[A-Za-z0-9_.-]+)?$")
 
 
 def check_i18n(root: Path, app_id: str | None, errors: list[str]) -> None:
@@ -45,6 +48,9 @@ def check_linguas_catalogs(root: Path, errors: list[str]) -> None:
         return
     pot_messages = normalized_pot_messages(root)
     for locale in _linguas_locales(linguas):
+        if not _valid_linguas_locale(locale):
+            errors.append(f"po/LINGUAS locale {locale!r}: invalid locale token")
+            continue
         po_path = root / "po" / f"{locale}.po"
         if not po_path.exists():
             errors.append(f"po/LINGUAS locale {locale}: missing po/{locale}.po")
@@ -66,6 +72,12 @@ def _linguas_locales(path: Path) -> list[str]:
         if line:
             locales.extend(line.split())
     return locales
+
+
+def _valid_linguas_locale(locale: str) -> bool:
+    if not locale or "/" in locale or "\\" in locale or ".." in locale:
+        return False
+    return bool(_LOCALE_TOKEN.fullmatch(locale))
 
 
 def _po_catalog_state(path: Path) -> tuple[int, int]:

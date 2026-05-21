@@ -29,6 +29,23 @@ from tools.validation_tooling import contract_root, load_json, repo_root, requir
 def validation_policy(root: Path) -> dict[str, Any]:
     return load_json(contract_root(root) / "policy" / "validation-tooling.policy.json")
 
+def load_json_summary(path_value: str) -> dict[str, Any]:
+    try:
+        path = Path(path_value).expanduser().resolve(strict=True)
+    except OSError as exc:
+        raise SystemExit(f"[coverage-check] JSON summary is not readable: {path_value} ({exc})") from exc
+    if not path.is_file():
+        raise SystemExit(f"[coverage-check] JSON summary is not a regular file: {path}")
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"[coverage-check] invalid JSON summary {path}: {exc}") from exc
+    except OSError as exc:
+        raise SystemExit(f"[coverage-check] failed to read JSON summary {path}: {exc}") from exc
+    if not isinstance(payload, dict):
+        raise SystemExit(f"[coverage-check] JSON summary must be an object: {path}")
+    return payload
+
 def extract_line_percent(payload: dict[str, Any]) -> float:
     for candidate in (
         payload.get("data", [{}])[0].get("totals", {}).get("lines", {}).get("percent"),
@@ -70,7 +87,7 @@ def main() -> int:
     threshold = float(cfg["thresholds"]["min_line_coverage_percent"])
     coverage = cfg.get("coverage_validation", {})
     if args.json_summary:
-        payload = json.loads(Path(args.json_summary).read_text(encoding="utf-8"))
+        payload = load_json_summary(args.json_summary)
     else:
         for tool in coverage.get("required_tools", ["cargo", "cargo-llvm-cov"]):
             require_tool(str(tool))

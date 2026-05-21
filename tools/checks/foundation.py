@@ -6,6 +6,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any
 
+from tools.scanners.textdomain import textdomain_init_present
 from tools.scanners.ui_xml import translatable_property_errors
 from tools.validation_tooling import (
     cargo_packages,
@@ -74,11 +75,6 @@ def _safe_load_toml(path: Path, errors: list[str], label: str) -> dict[str, Any]
     except SystemExit:
         add(errors, f"Invalid TOML file: {label}")
         return None
-
-
-def _search_text(paths: list[Path], pattern: str) -> bool:
-    regex = re.compile(pattern, re.MULTILINE | re.DOTALL)
-    return any(regex.search(read_text(path)) for path in paths)
 
 
 def _policy_index(root: Path, bundle: dict[str, Any]) -> list[dict[str, Any]]:
@@ -589,4 +585,4 @@ def gettext_bootstrap_present(root: Path) -> bool:
     bootstrap_ok = grep_any(root, source, r"\b(bindtextdomain|textdomain|bind_textdomain_codeset|setlocale)\b")
     if bootstrap_ok:
         return True
-    return _search_text(source, r"TextDomain::new\s*\(.*?\)(?:\s*\.\w+\s*\(.*?\))*\s*\.init\s*\(")
+    return any(textdomain_init_present(read_text(path)) for path in source)

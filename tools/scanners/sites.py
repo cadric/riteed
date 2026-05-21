@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 from tools.validation_tooling import line_text, load_json, normalize_path, read_text, scoped_files
@@ -28,6 +28,25 @@ class ReviewEntry:
 
 def _entry_key(path: str, line: int, kind: str) -> tuple[str, int, str]:
     return normalize_path(path), line, kind.strip()
+
+
+def _review_path(root: Path, rel: str) -> Path | None:
+    normalized = normalize_path(rel)
+    posix_path = PurePosixPath(normalized)
+    if (
+        not normalized
+        or normalized == "."
+        or posix_path.is_absolute()
+        or any(part in {"", ".", ".."} for part in posix_path.parts)
+        or (posix_path.parts and ":" in posix_path.parts[0])
+    ):
+        return None
+    candidate = (root / Path(*posix_path.parts)).resolve()
+    try:
+        candidate.relative_to(root.resolve())
+    except ValueError:
+        return None
+    return candidate
 
 
 def load_review_entries(
@@ -106,8 +125,11 @@ def validate_review_links(root: Path, hits: list[ScanHit], entries: list[ReviewE
                 f"{entry.source_file}: duplicate review entry for {entry.path}:{entry.line}:{entry.kind}"
             )
             continue
+        file_path = _review_path(root, entry.path)
+        if file_path is None:
+            errors.append(f"{entry.source_file}: invalid review entry path: {entry.path!r}")
+            continue
         entry_map[key] = entry
-        file_path = root / entry.path
         if not file_path.exists():
             errors.append(f"{entry.source_file}: review entry path does not exist: {entry.path}")
             continue

@@ -24,11 +24,18 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
   CodeQL default setup, a selected-actions allowlist, and merge-policy cleanup.
   Branch and tag ruleset drafts remain disabled pending future enforcement
   enablement.
+- Local validator helpers now reject absolute paths, parent-traversing inputs,
+  empty review-artifact references, and invalid `po/LINGUAS` locale tokens
+  before reading files.
 - Tightened Dependabot's `/app/fuzz` Cargo strategy so only direct fuzz harness
   tooling is updated there; app dependencies stay coordinated through the main
   app workspace instead of drifting fuzz lockfiles.
 - Moved the superseded Markdown implementation plan from the repository root to
   `docs/`.
+
+### Fixed
+- Replaced a `tools/checks/foundation.py` TextDomain-detection regex with a
+  bounded scanner, closing a `py/redos` CodeQL finding.
 
 ## 0.3.3 - 2026-05-21
 
