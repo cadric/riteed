@@ -19,9 +19,10 @@
 - Moved the tracked superseded Markdown implementation plan from
   `markdown_plan.md` to `docs/markdown_plan.md`. Root scratch audit files remain
   untracked and were moved under ignored `.agent/archive/`.
-- Dependabot version updates deliberately ignore `gtk4-sys` in `app/fuzz`
-  because the stress-test report documents the independent fuzz lockfile's
-  required alignment with the app workspace's GTK sys crates.
+- Dependabot version updates deliberately ignore direct `gtk4` and `gtk4-sys`
+  updates in `app/fuzz` because the stress-test report documents the independent
+  fuzz lockfile's required alignment with the app workspace's GTK binding and
+  sys crates.
 - Prepared the 0.3.3 beta release metadata for the Danish locale/language
   preference and stress-test infrastructure push: `app/Cargo.toml`,
   `app/Cargo.lock`, `app/fuzz/Cargo.lock`, `README.md`, `CHANGELOG.md`, and

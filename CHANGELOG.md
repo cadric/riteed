@@ -24,6 +24,8 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
   CodeQL default setup, a selected-actions allowlist, and merge-policy cleanup.
   Branch and tag ruleset drafts remain disabled pending future enforcement
   enablement.
+- Tightened Dependabot's `/app/fuzz` Cargo strategy so GTK binding updates stay
+  coordinated with the main app workspace instead of drifting fuzz lockfiles.
 - Moved the superseded Markdown implementation plan from the repository root to
   `docs/`.
 
