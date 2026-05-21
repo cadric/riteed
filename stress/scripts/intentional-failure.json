@@ -1,0 +1,5 @@
+{
+  "flow": "open-save-search",
+  "description": "Intentional failure fixture for validating riteed-stress exit behavior.",
+  "expect_failure": true
+}

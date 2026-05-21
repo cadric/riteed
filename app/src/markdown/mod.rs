@@ -15,6 +15,20 @@ pub(crate) use render::{
     RenderedLink, link_target_at, render_document, render_large_document_fallback,
 };
 
+#[cfg(feature = "fuzzing")]
+pub(crate) fn fuzz_split_frontmatter(input: &str) -> usize {
+    let split = frontmatter::split(input);
+    split
+        .body_offset
+        .saturating_add(split.diagnostics.len())
+        .saturating_add(usize::from(split.frontmatter.is_some()))
+}
+
+#[cfg(feature = "fuzzing")]
+pub(crate) fn fuzz_unsupported_diagnostics(input: &str) -> usize {
+    unsupported::diagnostics_for(input, 0).len()
+}
+
 #[must_use]
 pub(crate) fn is_markdown_path(path: &Path) -> bool {
     path.extension()

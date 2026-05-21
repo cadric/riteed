@@ -1,0 +1,52 @@
+[package]
+name = "riteed-fuzz"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "=0.4.12"
+riteed = { path = "..", features = ["fuzzing"] }
+
+[patch.crates-io]
+sourceview5 = { path = "../build-aux/cargo-patches/sourceview5" }
+
+[[bin]]
+name = "markdown_parse"
+path = "fuzz_targets/markdown_parse.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "frontmatter_split"
+path = "fuzz_targets/frontmatter_split.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "git_status_parse"
+path = "fuzz_targets/git_status_parse.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "diff_compute"
+path = "fuzz_targets/diff_compute.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "unsupported_scanner"
+path = "fuzz_targets/unsupported_scanner.rs"
+test = false
+doc = false
+bench = false

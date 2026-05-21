@@ -11,7 +11,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 97,
+      "line": 98,
       "match": "pub(crate) fn install_for_tests(app: &adw::Application, state: &Rc<RefCell<AppState>>) {",
       "kind": "runtime-shared-state",
       "ownership": "GTK tests reuse the shared application-state container.",
@@ -19,7 +19,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 113,
+      "line": 114,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
@@ -27,7 +27,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 156,
+      "line": 157,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
@@ -35,7 +35,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 165,
+      "line": 166,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
@@ -43,7 +43,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 244,
+      "line": 245,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
@@ -51,7 +51,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 307,
+      "line": 308,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
@@ -59,7 +59,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 350,
+      "line": 351,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
@@ -67,7 +67,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 360,
+      "line": 361,
       "match": "fn resolve_window(state: &Rc<RefCell<AppState>>) -> Option<Rc<Window>> {",
       "kind": "runtime-shared-state",
       "ownership": "Active editor window resolution reads shared application state.",
@@ -75,7 +75,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 374,
+      "line": 375,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
@@ -83,7 +83,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 410,
+      "line": 411,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
@@ -91,7 +91,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 424,
+      "line": 425,
       "match": "fn register_window(state: &Rc<RefCell<AppState>>, window: &Rc<Window>) {",
       "kind": "runtime-shared-state",
       "ownership": "Window registration mutates shared application state.",
@@ -99,7 +99,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 463,
+      "line": 464,
       "match": "fn install_display_services(display: &gdk::Display, state: &Rc<RefCell<AppState>>) {",
       "kind": "runtime-shared-state",
       "ownership": "Startup display service installation mutates shared application state.",
@@ -219,7 +219,7 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 110,
+      "line": 115,
       "match": "state: RefCell<EditorTabState>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns one shared mutable state cell split into document runtime, IO, external-file, autosave, compare, and UI owner structs.",
@@ -227,7 +227,7 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 112,
+      "line": 117,
       "match": "on_file_drop: RefCell<Option<FileDropHandler>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns its current workspace file-drop callback.",
@@ -235,7 +235,7 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 113,
+      "line": 118,
       "match": "on_visual_change: RefCell<Option<TabCallback>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns its current workspace visual-state callback.",
@@ -243,7 +243,7 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 114,
+      "line": 119,
       "match": "on_external_state_change: RefCell<Option<TabCallback>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns its current external-state callback.",
@@ -251,7 +251,7 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 115,
+      "line": 120,
       "match": "on_external_action: RefCell<Option<TabCallback>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns its current external-action callback.",
@@ -259,7 +259,7 @@
     },
     {
       "path": "src/editor_tab/compare.rs",
-      "line": 84,
+      "line": 94,
       "match": "presentation: Rc<std::cell::RefCell<DiffPresentation>>,",
       "kind": "runtime-shared-state",
       "ownership": "The compare controller owns the tab-local rendered presentation rows and custom line-number gutter model.",
@@ -267,7 +267,7 @@
     },
     {
       "path": "src/editor_tab/compare.rs",
-      "line": 85,
+      "line": 95,
       "match": "display_model: Rc<std::cell::RefCell<CompareDisplayModel>>,",
       "kind": "runtime-shared-state",
       "ownership": "The compare controller owns the tab-local collapsed display model shared by split rendering and hunk navigation.",
@@ -275,7 +275,7 @@
     },
     {
       "path": "src/editor_tab/compare.rs",
-      "line": 86,
+      "line": 96,
       "match": "row_model: Rc<std::cell::RefCell<DiffRowModel>>,",
       "kind": "runtime-shared-state",
       "ownership": "The compare controller owns the tab-local logical diff row model.",
@@ -285,7 +285,7 @@
       "ownership": "Each compare controller owns presentation and view-mode state shared with its pane, gutter, and breakpoint callbacks.",
       "justification": "Compare panes rebuild asynchronously from user actions and settings changes, so small shared cells keep UI callbacks synchronized without global state.",
       "path": "src/editor_tab/compare.rs",
-      "line": 87,
+      "line": 97,
       "match": "unified_presentation: Rc<std::cell::RefCell<UnifiedPresentation>>,",
       "kind": "runtime-shared-state"
     },
@@ -293,7 +293,7 @@
       "ownership": "Each compare controller owns presentation and view-mode state shared with its pane, gutter, and breakpoint callbacks.",
       "justification": "Compare panes rebuild asynchronously from user actions and settings changes, so small shared cells keep UI callbacks synchronized without global state.",
       "path": "src/editor_tab/compare.rs",
-      "line": 100,
+      "line": 110,
       "match": "view_mode_cell: Rc<Cell<CompareViewMode>>,",
       "kind": "runtime-shared-state"
     },

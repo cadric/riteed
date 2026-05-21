@@ -1,6 +1,64 @@
 # Continuity
 
 ## OUTCOMES
+- Started the `docs/stresstest_plan.md` implementation and added a live
+  progress report at `docs/stresstest_rapport.md`.
+- Completed the planned stress-test infrastructure in the current worktree:
+  first-wave cap/proptest/fatal-critical coverage, independent `app/fuzz/`
+  cargo-fuzz workspace, feature-gated `riteed-stress` developer binary,
+  generated Git stress repos, Flatpak `/app/bin/git` CI smoke coverage, manual
+  Valgrind/ASan scripts, scheduled/manual stress CI, `CHANGELOG.md`, and the
+  live report under `docs/stresstest_rapport.md`.
+- Stress implementation validation passed: `cargo fmt --all --check`,
+  `cargo check --workspace --all-targets --all-features`, `cargo clippy
+  --workspace --all-targets --all-features -- -D warnings`, focused
+  cap/proptest/GTK boundary tests, `python3 -m tools.policy_check --root app
+  --strict`, `python3 -m tools.coverage_check --root app` (81.3% line
+  coverage), corpus/Git stress generator smokes, `riteed-stress` happy and
+  intentional-failure scripts with a temporary compiled GSettings schema dir,
+  `flatpak-builder --show-manifest`, `glib-compile-schemas --strict --dry-run`,
+  `cargo +nightly fuzz list`, `cargo +nightly fmt --all --check` in
+  `app/fuzz`, and `git diff --check`.
+- Local cargo-fuzz execution now passes as a smoke. After `c++`/`g++` were
+  installed, `cargo +nightly fuzz run markdown_parse -- -runs=1` works without
+  `CXX=clang++`; the fuzz lockfile remains aligned to the app workspace's
+  `gtk4-sys 0.11.2`. All five targets have passed `-runs=1` smokes.
+- Known stress-test maintenance burdens are documented in
+  `docs/stresstest_rapport.md`: the real GTK boundary smoke runs inside the
+  single GTK surface test rather than as an independent `#[test]`, the heavy
+  GTK flow adds roughly 42-44 seconds to that validation path, `riteed-stress`
+  requires a compiled `GSETTINGS_SCHEMA_DIR`, and `app/fuzz/` must be kept in
+  sync with the app crate's `fuzzing` exports, `sourceview5` patch, and GTK
+  lockfile versions.
+- Full local user Flatpak rebuild/install for the stress work passed after
+  regenerating `app/build-aux/cargo/cargo-sources.json` for the new
+  `proptest` lockfile entries; installed app commit is
+  `080e23a5861577838d21526226643db0307fea4a469900cad4798f78c4d4d8a3`, and
+  `/app/bin/git` reports `git version 2.54.0`.
+- First-wave stress baseline implementation is complete: module-local
+  cap-1/cap/cap+1 tests cover open/search, compare byte/line/product limits,
+  and Markdown preview fallback; `app/src/gtk_tests_boundaries.rs` supplies
+  the 25 MiB open and 2,000,000-character search flows, which now run inside
+  the existing single GTK surface test to avoid gtk4-rs cross-thread
+  initialization failures; `stress/make_corpus.py` plus committed seed files
+  produce deterministic generated corpus files.
+- Added bounded `proptest` coverage for Markdown parsing, frontmatter
+  splitting, unsupported Markdown diagnostics, Git porcelain parsing, and
+  compare cap behavior with `FileFailurePersistence::SourceParallel`.
+- CI now sets `G_DEBUG=fatal-criticals` for app validation after auditing the
+  current GLib warning/critical call sites. A temporary forced test critical
+  aborted as expected and was removed before the boundary test was rerun clean.
+- Focused stress validation passed so far: `python3 stress/make_corpus.py
+  --root /tmp/riteed-stress-corpus-check`, `cd app && cargo test proptest_ --
+  --test-threads=1`, `cd app && cargo test _at_ -- --test-threads=1`, and
+  `cd app && G_DEBUG=fatal-criticals GTK_A11Y=none GSK_RENDERER=cairo cargo
+  test gtk_surfaces_and_editor_flow_work -- --test-threads=1`. The integrated
+  GTK test takes about 44 seconds locally because it performs the real 25 MiB
+  open path.
+- Added the required cargo-fuzz spike at
+  `.agent/design-spikes/cargo-fuzz-workspace.md`; the recommendation is an
+  independent nested `app/fuzz/` workspace with its own nightly toolchain, and
+  user approval for implementation was received in this thread.
 - Fixed the saved-minimap startup path: newly opened tabs now run the same minimap visibility/layout sync as the Preferences toggle, so a persisted enabled minimap uses the external scrollbar policy immediately; the focused GTK regression covers both live toggle and startup settings.
 - Minimap startup fix validation passed: `cargo fmt --all --check`, `cargo check --workspace --all-targets --all-features`, focused `cargo test --workspace --all-targets --all-features gtk_surfaces_and_editor_flow_work`, `python3 -m tools.policy_check --root app --strict`, `python3 -m tools.coverage_check --root app` (81.5% line coverage), and `git diff --check`.
 - Minimap startup fix local user Flatpak rebuild/install passed with app commit `8fca50cb6d4fd4cce49f2611d0e0a22bb3b4e3489f409f76d0baa526a9b6cedb`; `flatpak run --user --command=/app/bin/git io.github.cadric.Riteed --version` reports `git version 2.54.0`, the installed Danish MO checksum still matches the local `app/po/da.po` build, and a Flatpak smoke activation returned cleanly.

@@ -1,0 +1,5 @@
+{
+  "flow": "git-status-stress",
+  "description": "Open a generated folder used by native and Flatpak Git stress checks.",
+  "expect_failure": false
+}

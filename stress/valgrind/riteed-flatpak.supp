@@ -1,0 +1,68 @@
+{
+   gtk-gvfs-daemon-local-file-startup
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:calloc
+   fun:g_malloc0
+   ...
+   fun:_g_local_file_new
+   fun:g_daemon_vfs_init
+   ...
+}
+{
+   gtk-gvfs-daemon-vfs-startup
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:calloc
+   fun:g_malloc0
+   ...
+   fun:g_daemon_vfs_init
+   ...
+   fun:try_implementation
+   ...
+}
+{
+   fontconfig-pattern-parse-startup
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:FcPatternObjectInsertElt
+   fun:FcPatternObjectAddWithBinding
+   ...
+   fun:FcParsePattern
+   ...
+}
+{
+   pango-fontconfig-family-list-startup
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:FcPatternObjectInsertElt
+   fun:FcPatternObjectAddWithBinding
+   ...
+   fun:FcFontSetList
+   ...
+   fun:ensure_families
+   ...
+}
+{
+   pango-fontconfig-pattern-duplicate-startup
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:realloc
+   fun:FcPatternObjectInsertElt
+   fun:FcPatternObjectAddWithBinding
+   fun:FcPatternDuplicate
+   ...
+}
+{
+   pango-fontconfig-freetype-query-startup
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:realloc
+   fun:FcPatternObjectInsertElt
+   fun:FcPatternObjectAddWithBinding
+   ...
+   fun:FcFreeTypeQueryFaceInternal
+   ...
+}

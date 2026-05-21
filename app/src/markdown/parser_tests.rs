@@ -1,5 +1,17 @@
 use crate::markdown::model::{MarkdownDiagnosticKind, MdBlock, MdInline};
 use crate::markdown::parse_document;
+use proptest::prelude::*;
+use proptest::test_runner::FileFailurePersistence;
+
+fn bounded_proptest_config() -> ProptestConfig {
+    ProptestConfig {
+        cases: 64,
+        failure_persistence: Some(Box::new(FileFailurePersistence::SourceParallel(
+            ".proptest-regressions",
+        ))),
+        ..ProptestConfig::default()
+    }
+}
 
 #[test]
 fn parses_commonmark_blocks_and_inlines() {
@@ -97,6 +109,19 @@ fn inline_contains_text(inline: &MdInline, expected: &str) -> bool {
             .iter()
             .any(|child| inline_contains_text(child, expected)),
         MdInline::SoftBreak(_) | MdInline::HardBreak(_) => false,
+    }
+}
+
+proptest! {
+    #![proptest_config(bounded_proptest_config())]
+
+    #[test]
+    fn proptest_parse_document_no_panic(bytes in prop::collection::vec(any::<u8>(), 0..4096)) {
+        let input = String::from_utf8_lossy(&bytes);
+        let document = parse_document(&input);
+
+        prop_assert!(document.body.source_offset <= input.len());
+        prop_assert!(document.diagnostics.len() <= input.len().saturating_add(16));
     }
 }
 

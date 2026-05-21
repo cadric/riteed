@@ -1,0 +1,5 @@
+{
+  "flow": "open-save-search",
+  "description": "Open a generated text file, let Riteed create a document tab, and keep the main loop alive long enough for document open/search surfaces to settle.",
+  "expect_failure": false
+}

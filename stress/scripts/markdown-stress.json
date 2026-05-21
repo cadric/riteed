@@ -1,0 +1,5 @@
+{
+  "flow": "markdown-stress",
+  "description": "Open generated Markdown with frontmatter, list content, fenced code, image placeholder, and literal HTML.",
+  "expect_failure": false
+}

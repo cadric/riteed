@@ -5,6 +5,11 @@ edition = "2024"
 license = "MIT"
 publish = false
 
+[features]
+default = []
+fuzzing = []
+stress = []
+
 [dependencies]
 gtk4 = { version = "=0.11.2", features = ["v4_10"] }
 libadwaita = { version = "=0.9.1", features = ["v1_6"] }
@@ -14,8 +19,20 @@ similar = { version = "=2.7.0", features = ["inline", "unicode"] }
 pulldown-cmark = { version = "=0.13.3", default-features = false }
 yaml-rust2 = { version = "=0.11.0", default-features = false }
 
+[dev-dependencies]
+proptest = { version = "=1.11.0", default-features = false, features = ["std"] }
+
 [build-dependencies]
 glib-build-tools = "=0.22.0"
+
+[[bin]]
+name = "riteed"
+path = "src/main.rs"
+
+[[bin]]
+name = "riteed-stress"
+path = "src/bin/riteed_stress.rs"
+required-features = ["stress"]
 
 [patch.crates-io]
 sourceview5 = { path = "build-aux/cargo-patches/sourceview5" }

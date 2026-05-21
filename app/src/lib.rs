@@ -52,8 +52,48 @@ mod workspace_menu;
 mod workspace_monitor;
 mod workspace_open;
 
+#[cfg(feature = "fuzzing")]
+pub mod fuzzing {
+    #[must_use]
+    pub fn parse_markdown_bytes(bytes: &[u8]) -> usize {
+        let input = String::from_utf8_lossy(bytes);
+        crate::markdown::parse_document(&input).body.blocks.len()
+    }
+
+    #[must_use]
+    pub fn split_frontmatter_bytes(bytes: &[u8]) -> usize {
+        let input = String::from_utf8_lossy(bytes);
+        crate::markdown::fuzz_split_frontmatter(&input)
+    }
+
+    #[must_use]
+    pub fn unsupported_diagnostics_bytes(bytes: &[u8]) -> usize {
+        let input = String::from_utf8_lossy(bytes);
+        crate::markdown::fuzz_unsupported_diagnostics(&input)
+    }
+
+    #[must_use]
+    pub fn parse_git_status_bytes(bytes: &[u8]) -> usize {
+        crate::git_status::parse_status(bytes).entries.len()
+    }
+
+    #[must_use]
+    pub fn compute_diff_bytes(bytes: &[u8]) -> (bool, usize) {
+        let split = bytes
+            .iter()
+            .position(|byte| *byte == 0)
+            .map_or(bytes.len().saturating_div(2), |index| index);
+        let reference = String::from_utf8_lossy(&bytes[..split]);
+        let current_start = split.saturating_add(usize::from(split < bytes.len()));
+        let current = String::from_utf8_lossy(&bytes[current_start..]);
+        crate::editor_tab::fuzz_compute_diff(&reference, &current)
+    }
+}
+
 #[cfg(test)]
 mod gtk_tests;
+#[cfg(test)]
+mod gtk_tests_boundaries;
 #[cfg(test)]
 mod gtk_tests_dialog_lifecycle;
 #[cfg(test)]

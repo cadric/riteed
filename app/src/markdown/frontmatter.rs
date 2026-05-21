@@ -94,6 +94,18 @@ fn delimiter_matches(line: &str, delimiter: &str) -> bool {
 mod tests {
     use super::split;
     use crate::markdown::model::MarkdownDiagnosticKind;
+    use proptest::prelude::*;
+    use proptest::test_runner::FileFailurePersistence;
+
+    fn bounded_proptest_config() -> ProptestConfig {
+        ProptestConfig {
+            cases: 64,
+            failure_persistence: Some(Box::new(FileFailurePersistence::SourceParallel(
+                ".proptest-regressions",
+            ))),
+            ..ProptestConfig::default()
+        }
+    }
 
     #[test]
     fn frontmatter_is_split_from_body() {
@@ -132,5 +144,19 @@ mod tests {
                 .iter()
                 .any(|item| { matches!(item.kind, MarkdownDiagnosticKind::UnclosedFrontmatter) })
         );
+    }
+
+    proptest! {
+        #![proptest_config(bounded_proptest_config())]
+
+        #[test]
+        fn proptest_split_terminates(bytes in prop::collection::vec(any::<u8>(), 0..1024)) {
+            let input = String::from_utf8_lossy(&bytes);
+            let split = split(&input);
+
+            prop_assert!(split.body_offset <= input.len());
+            prop_assert!(split.body.len() <= input.len());
+            prop_assert!(split.diagnostics.len() <= 1);
+        }
     }
 }

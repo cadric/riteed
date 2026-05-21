@@ -254,7 +254,7 @@ impl EditorTab {
             return;
         }
         let text = self.buffer_text();
-        let output = if text.len() > MARKDOWN_PREVIEW_MAX_BYTES {
+        let output = if markdown_preview_uses_fallback(text.len()) {
             crate::markdown::render_large_document_fallback(&self.preview_buffer)
         } else {
             let document = crate::markdown::parse_document(&text);
@@ -408,6 +408,10 @@ fn markdown_link_is_launchable(target: &str) -> bool {
     lower.starts_with("http://") || lower.starts_with("https://") || lower.starts_with("mailto:")
 }
 
+fn markdown_preview_uses_fallback(len: usize) -> bool {
+    len > MARKDOWN_PREVIEW_MAX_BYTES
+}
+
 fn text_view_coordinate(value: f64) -> i32 {
     if !value.is_finite() {
         return 0;
@@ -416,4 +420,28 @@ fn text_view_coordinate(value: f64) -> i32 {
         .round()
         .clamp(f64::from(i32::MIN), f64::from(i32::MAX));
     rounded.to_string().parse::<i32>().unwrap_or(0)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{MARKDOWN_PREVIEW_MAX_BYTES, markdown_preview_uses_fallback};
+
+    #[test]
+    fn markdown_preview_at_minus_one_renders() {
+        assert!(!markdown_preview_uses_fallback(
+            MARKDOWN_PREVIEW_MAX_BYTES - 1
+        ));
+    }
+
+    #[test]
+    fn markdown_preview_at_exact_renders() {
+        assert!(!markdown_preview_uses_fallback(MARKDOWN_PREVIEW_MAX_BYTES));
+    }
+
+    #[test]
+    fn markdown_preview_at_plus_one_falls_back() {
+        assert!(markdown_preview_uses_fallback(
+            MARKDOWN_PREVIEW_MAX_BYTES + 1
+        ));
+    }
 }

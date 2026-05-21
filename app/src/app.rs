@@ -87,8 +87,9 @@ impl RiteedApp {
         self.app.run()
     }
 
-    #[cfg(test)]
-    pub(crate) fn application(&self) -> &adw::Application {
+    #[cfg(any(test, feature = "stress"))]
+    #[must_use]
+    pub fn application(&self) -> &adw::Application {
         &self.app
     }
 }

@@ -1,0 +1,5 @@
+{
+  "flow": "compare-roundtrip",
+  "description": "Open two generated text files for a lightweight compare workflow smoke.",
+  "expect_failure": false
+}

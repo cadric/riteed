@@ -1,6 +1,6 @@
 ---
 created: 2026-04-19
-updated: 2026-05-20
+updated: 2026-05-21
 status: current
 priority: high
 type: changelog
@@ -17,12 +17,27 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 ### Added
 - Localization: Danish (da) is now fully translated and shipped as a complete locale.
 - Added a General preferences page with an app language choice for System, English, or Danish, applied on next restart.
+- Added stress-test baseline infrastructure with exact boundary cap tests,
+  bounded parser proptests, deterministic corpus seeds/generation, and a live
+  implementation report under `docs/`.
+- Added an opt-in stress-test expansion with an independent cargo-fuzz
+  workspace, a feature-gated `riteed-stress` developer binary, generated Git
+  stress repositories, Flatpak `/app/bin/git` CI smoke coverage, and manual
+  Valgrind/ASan smoke scripts.
+- Added Flatpak Valgrind suppressions for known GVfs, Fontconfig, and Pango
+  startup leaks so manual leak checks still fail on unsuppressed definite
+  leaks.
 
 ### Changed
 - Made Flatpak locale installation follow `po/LINGUAS` and added policy validation that shipped locales must have no fuzzy or untranslated catalog entries.
+- GitHub Actions app validation now runs GTK tests with
+  `G_DEBUG=fatal-criticals` so GLib criticals fail CI instead of being logged
+  silently.
 
 ### Fixed
 - Fixed tabs opened while the saved Minimap preference is already enabled so they use the same external scrollbar layout as the live Preferences toggle.
+- Fixed Compare diff row modelling for lone carriage-return line endings by
+  matching `similar`'s line tokenization, closing a cargo-fuzz-discovered panic.
 
 ## 0.3.2 - 2026-05-20
 

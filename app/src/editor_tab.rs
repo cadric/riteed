@@ -34,6 +34,11 @@ pub(crate) fn compare_row_count_for_texts_for_tests(
     compare::row_count_for_texts_for_tests(editable_text, reference_text)
 }
 
+#[cfg(feature = "fuzzing")]
+pub(crate) fn fuzz_compute_diff(reference_text: &str, current_text: &str) -> (bool, usize) {
+    compare::fuzz_compute_diff(reference_text, current_text)
+}
+
 type FileDropHandler = Rc<dyn Fn(Vec<gio::File>)>;
 type TabCallback = Rc<dyn Fn()>;
 

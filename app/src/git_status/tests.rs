@@ -2,6 +2,18 @@ use super::{
     GitFileStatus, GitWorktreeMode, index_info_line, parse_attrs, parse_ls_tree_entry,
     parse_status, resolve_capabilities,
 };
+use proptest::prelude::*;
+use proptest::test_runner::FileFailurePersistence;
+
+fn bounded_proptest_config() -> ProptestConfig {
+    ProptestConfig {
+        cases: 64,
+        failure_persistence: Some(Box::new(FileFailurePersistence::SourceParallel(
+            ".proptest-regressions",
+        ))),
+        ..ProptestConfig::default()
+    }
+}
 
 #[test]
 fn status_parser_reads_branch_and_entries() {
@@ -126,4 +138,21 @@ fn parsers_do_not_panic_on_pseudo_random_bytes() {
     }
     let _snapshot = parse_status(&data);
     let _attrs = parse_attrs(&data);
+}
+
+proptest! {
+    #![proptest_config(bounded_proptest_config())]
+
+    #[test]
+    fn proptest_porcelain_v2_robust(bytes in prop::collection::vec(any::<u8>(), 0..16_384)) {
+        let snapshot = parse_status(&bytes);
+        let record_count = bytes
+            .split(|byte| *byte == 0)
+            .filter(|record| !record.is_empty())
+            .count();
+        let attrs = parse_attrs(&bytes);
+
+        prop_assert!(snapshot.entries.len() <= record_count);
+        prop_assert!(attrs.is_ok() || attrs == Err(super::GitParseError::Malformed));
+    }
 }

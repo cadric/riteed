@@ -63,14 +63,32 @@ mod tests {
     };
 
     #[test]
-    fn search_limit_is_inclusive() {
+    fn search_at_minus_one_returns_ok() {
+        assert!(char_count_supports_search(SEARCH_CHAR_LIMIT - 1));
+    }
+
+    #[test]
+    fn search_at_exact_returns_ok() {
         assert!(char_count_supports_search(SEARCH_CHAR_LIMIT));
+    }
+
+    #[test]
+    fn search_at_plus_one_returns_too_large() {
         assert!(!char_count_supports_search(SEARCH_CHAR_LIMIT + 1));
     }
 
     #[test]
-    fn open_limit_is_inclusive() {
+    fn open_at_minus_one_returns_ok() {
+        assert!(file_size_supports_open(OPEN_FILE_LIMIT_BYTES - 1));
+    }
+
+    #[test]
+    fn open_at_exact_returns_ok() {
         assert!(file_size_supports_open(OPEN_FILE_LIMIT_BYTES));
+    }
+
+    #[test]
+    fn open_at_plus_one_returns_too_large() {
         assert!(!file_size_supports_open(OPEN_FILE_LIMIT_BYTES + 1));
     }
 }

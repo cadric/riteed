@@ -15,6 +15,13 @@
 # Mutation testing output
 **/mutants.out*/
 
+# Generated stress corpus
+/stress/corpus/*
+!/stress/corpus/.gitkeep
+!/stress/corpus/seeds/
+!/stress/corpus/seeds/**
+/stress/artifacts/*
+
 # Flatpak local build/cache artifacts
 /.flatpak-builder/
 /app/.flatpak-builder/
@@ -33,7 +40,10 @@
 /.cursor/
 /.idea/
 /.vscode/
-/.agent/
+/.agent/*
+!/.agent/CONTINUITY.md
+!/.agent/design-spikes/
+!/.agent/design-spikes/**
 /AUDIT*.md
 
 # Coverage and temporary files

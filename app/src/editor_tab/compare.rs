@@ -60,6 +60,16 @@ pub(crate) use review_session::{ReviewFileInput, ReviewScrollTarget};
 #[cfg(test)]
 pub(crate) use testing::row_count_for_texts_for_tests;
 
+#[cfg(feature = "fuzzing")]
+pub(crate) fn fuzz_compute_diff(reference_text: &str, current_text: &str) -> (bool, usize) {
+    let computation =
+        diff::compute_diff_with_options(reference_text, current_text, diff::DiffOptions::default());
+    (
+        computation.skip_reason.is_some(),
+        computation.model.changed_row_count(),
+    )
+}
+
 pub(in crate::editor_tab) fn review_toolbar() -> gtk4::Box {
     ui::review_toolbar()
 }

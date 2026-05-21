@@ -1,7 +1,7 @@
 #[cfg(test)]
 use std::cell::Cell;
 
-use similar::{DiffTag, TextDiff};
+use similar::{DiffTag, DiffableStr, TextDiff};
 
 use super::model::{DiffLineOp, DiffLineTag, DiffRowModel, build_row_model};
 #[cfg(test)]
@@ -135,19 +135,11 @@ fn compare_skip_reason(reference_text: &str, current_text: &str) -> Option<DiffS
 }
 
 fn line_count(text: &str) -> usize {
-    if text.is_empty() {
-        0
-    } else {
-        text.lines().count().max(1)
-    }
+    line_slices(text).len()
 }
 
 fn line_slices(text: &str) -> Vec<&str> {
-    if text.is_empty() {
-        Vec::new()
-    } else {
-        text.split_inclusive('\n').collect()
-    }
+    text.tokenize_lines()
 }
 
 fn trim_line_sides_text(text: &str) -> String {
@@ -167,6 +159,9 @@ fn split_line_ending(line: &str) -> (&str, &str) {
     if let Some(content) = line.strip_suffix('\n') {
         return (content, "\n");
     }
+    if let Some(content) = line.strip_suffix('\r') {
+        return (content, "\r");
+    }
     (line, "")
 }
 
@@ -174,8 +169,10 @@ fn split_line_ending(line: &str) -> (&str, &str) {
 mod tests {
     use super::{
         DiffOptions, DiffSkipReason, LINE_DIFF_CALLS, MAX_COMPARE_BYTES, MAX_COMPARE_LINE_PRODUCT,
-        compute_diff, compute_diff_with_options,
+        MAX_COMPARE_LINES, compute_diff, compute_diff_with_options,
     };
+    use proptest::prelude::*;
+    use proptest::test_runner::FileFailurePersistence;
 
     fn reset_line_diff_calls() {
         LINE_DIFF_CALLS.with(|calls| calls.set(0));
@@ -183,6 +180,20 @@ mod tests {
 
     fn line_diff_calls() -> usize {
         LINE_DIFF_CALLS.with(std::cell::Cell::get)
+    }
+
+    fn bounded_proptest_config() -> ProptestConfig {
+        ProptestConfig {
+            cases: 64,
+            failure_persistence: Some(Box::new(FileFailurePersistence::SourceParallel(
+                ".proptest-regressions",
+            ))),
+            ..ProptestConfig::default()
+        }
+    }
+
+    fn repeated_lines(count: usize, line: &str) -> String {
+        line.repeat(count)
     }
 
     #[test]
@@ -196,6 +207,90 @@ mod tests {
         assert!(model.too_large);
         assert_eq!(computation.skip_reason, Some(DiffSkipReason::Bytes));
         assert!(model.hunks.is_empty());
+        assert_eq!(line_diff_calls(), 0);
+    }
+
+    #[test]
+    fn bytes_at_minus_one_returns_ok() {
+        let reference = "x".repeat(MAX_COMPARE_BYTES - 1);
+        let computation = compute_diff(&reference, "");
+
+        assert_eq!(computation.skip_reason, None);
+    }
+
+    #[test]
+    fn bytes_at_exact_returns_ok() {
+        let reference = "x".repeat(MAX_COMPARE_BYTES);
+        let computation = compute_diff(&reference, "");
+
+        assert_eq!(computation.skip_reason, None);
+    }
+
+    #[test]
+    fn bytes_at_plus_one_returns_too_large() {
+        reset_line_diff_calls();
+
+        let reference = "x".repeat(MAX_COMPARE_BYTES + 1);
+        let computation = compute_diff(&reference, "");
+
+        assert_eq!(computation.skip_reason, Some(DiffSkipReason::Bytes));
+        assert_eq!(line_diff_calls(), 0);
+    }
+
+    #[test]
+    fn lines_at_minus_one_returns_ok() {
+        let reference = repeated_lines(MAX_COMPARE_LINES - 1, "x\n");
+        let computation = compute_diff(&reference, "");
+
+        assert_eq!(computation.skip_reason, None);
+    }
+
+    #[test]
+    fn lines_at_exact_returns_ok() {
+        let reference = repeated_lines(MAX_COMPARE_LINES, "x\n");
+        let computation = compute_diff(&reference, "");
+
+        assert_eq!(computation.skip_reason, None);
+    }
+
+    #[test]
+    fn lines_at_plus_one_returns_too_large() {
+        reset_line_diff_calls();
+
+        let reference = repeated_lines(MAX_COMPARE_LINES + 1, "x\n");
+        let computation = compute_diff(&reference, "");
+
+        assert_eq!(computation.skip_reason, Some(DiffSkipReason::Lines));
+        assert_eq!(line_diff_calls(), 0);
+    }
+
+    #[test]
+    fn line_product_at_minus_one_returns_ok() {
+        let reference = repeated_lines(9_999, "x\n");
+        let current = repeated_lines(1_000, "x\n");
+        let computation = compute_diff(&reference, &current);
+
+        assert_eq!(computation.skip_reason, None);
+    }
+
+    #[test]
+    fn line_product_at_exact_returns_ok() {
+        let reference = repeated_lines(10_000, "x\n");
+        let current = repeated_lines(1_000, "x\n");
+        let computation = compute_diff(&reference, &current);
+
+        assert_eq!(computation.skip_reason, None);
+    }
+
+    #[test]
+    fn line_product_at_plus_one_returns_too_large() {
+        reset_line_diff_calls();
+
+        let reference = repeated_lines(10_001, "x\n");
+        let current = repeated_lines(1_000, "x\n");
+        let computation = compute_diff(&reference, &current);
+
+        assert_eq!(computation.skip_reason, Some(DiffSkipReason::Computation));
         assert_eq!(line_diff_calls(), 0);
     }
 
@@ -305,6 +400,39 @@ mod tests {
 
         assert_eq!(computation.model.changed_row_count(), 1);
         assert!(!computation.hidden_trim_whitespace_differences);
+    }
+
+    proptest! {
+        #![proptest_config(bounded_proptest_config())]
+
+        #[test]
+        fn proptest_compute_diff_respects_caps(
+            reference in prop::collection::vec(prop_oneof![Just('x'), Just('\n'), Just('\r'), Just('\0')], 0..8192)
+                .prop_map(|chars| chars.into_iter().collect::<String>()),
+            current in prop::collection::vec(prop_oneof![Just('y'), Just('\n'), Just('\r'), Just('\0')], 0..8192)
+                .prop_map(|chars| chars.into_iter().collect::<String>()),
+        ) {
+            let computation = compute_diff_with_options(
+                &reference,
+                &current,
+                DiffOptions::default(),
+            );
+            let expected_skip = super::compare_skip_reason(&reference, &current);
+
+            prop_assert_eq!(computation.skip_reason, expected_skip);
+            prop_assert_eq!(computation.model.too_large, expected_skip.is_some());
+        }
+    }
+
+    #[test]
+    fn fuzz_regression_lone_cr_line_splitting_matches_diff_ops() {
+        let reference = String::from_utf8_lossy(b"al-pha}\xe1\na");
+        let current = "\r\0\0\0\0\0\0\0\n";
+
+        let computation = compute_diff(&reference, current);
+
+        assert_eq!(computation.skip_reason, None);
+        assert!(!computation.model.too_large);
     }
 
     const fn integer_sqrt(value: usize) -> usize {

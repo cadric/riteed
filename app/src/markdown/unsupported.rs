@@ -287,6 +287,18 @@ fn indexed_lines(body: &str, offset: usize) -> Vec<IndexedLine<'_>> {
 mod tests {
     use super::diagnostics_for;
     use crate::markdown::model::{MarkdownDiagnosticKind, UnsupportedMarkdownFeature};
+    use proptest::prelude::*;
+    use proptest::test_runner::FileFailurePersistence;
+
+    fn bounded_proptest_config() -> ProptestConfig {
+        ProptestConfig {
+            cases: 64,
+            failure_persistence: Some(Box::new(FileFailurePersistence::SourceParallel(
+                ".proptest-regressions",
+            ))),
+            ..ProptestConfig::default()
+        }
+    }
 
     #[test]
     fn reports_disabled_extension_markers() {
@@ -378,5 +390,23 @@ mod tests {
                 MarkdownDiagnosticKind::UnsupportedSyntax(candidate) if candidate == feature
             )
         })
+    }
+
+    proptest! {
+        #![proptest_config(bounded_proptest_config())]
+
+        #[test]
+        fn proptest_diagnostics_terminate(bytes in prop::collection::vec(any::<u8>(), 0..4096)) {
+            let input = String::from_utf8_lossy(&bytes);
+            let diagnostics = diagnostics_for(&input, 0);
+            let ranges_are_bounded = diagnostics.iter().all(|item| {
+                item.source_range
+                    .as_ref()
+                    .is_none_or(|range| range.start <= range.end && range.end <= input.len())
+            });
+
+            prop_assert!(diagnostics.len() <= 11);
+            prop_assert!(ranges_are_bounded);
+        }
     }
 }
