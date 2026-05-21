@@ -109,6 +109,7 @@ jobs:
       - uses: actions/checkout@v5
       - name: Build and smoke Flatpak Git path
         run: |
+          dbus-uuidgen --ensure=/etc/machine-id
           flatpak --user remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
           flatpak-builder --user --assumeyes --install-deps-from=flathub --install --force-clean app/build-dir app/build-aux/io.github.cadric.Riteed.yml
           flatpak run --user --command=/app/bin/git io.github.cadric.Riteed --version
