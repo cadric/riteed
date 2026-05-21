@@ -42,7 +42,7 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
   matching `similar`'s line tokenization, closing a cargo-fuzz-discovered panic.
 - Fixed the GitHub Actions Flatpak Git smoke job so direct `flatpak-builder`
   invocations install manifest SDK dependencies from the user Flathub remote
-  and seed a container machine-id before `rofiles-fuse` starts.
+  and start under a seeded D-Bus session before `rofiles-fuse` runs.
 
 ## 0.3.2 - 2026-05-20
 

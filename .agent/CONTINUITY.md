@@ -10,7 +10,8 @@
 - GitHub Actions review after the first 0.3.3 pushes found `flatpak-tests`
   failed before build because the direct `flatpak-builder` job did not install
   manifest SDK dependencies from the user Flatpak remote; the workflow now adds
-  the Flathub user remote, seeds `/etc/machine-id` for `rofiles-fuse`, and uses
+  the Flathub user remote, seeds `/etc/machine-id`, runs `flatpak-builder`
+  under `dbus-run-session` for `rofiles-fuse`, and uses
   `--install-deps-from=flathub` before the Flatpak Git smoke.
 - Started the `docs/stresstest_plan.md` implementation and added a live
   progress report at `docs/stresstest_rapport.md`.
