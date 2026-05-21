@@ -14,6 +14,19 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 
 ## Unreleased
 
+### Added
+- Added GitHub security and contribution hygiene files: `SECURITY.md`,
+  Dependabot version-update configuration, CODEOWNERS, issue templates, and a
+  pull request template.
+
+### Changed
+- Hardened GitHub repository settings with private vulnerability reporting,
+  CodeQL default setup, a selected-actions allowlist, and merge-policy cleanup.
+  Branch and tag ruleset drafts remain disabled pending future enforcement
+  enablement.
+- Moved the superseded Markdown implementation plan from the repository root to
+  `docs/`.
+
 ## 0.3.3 - 2026-05-21
 
 ### Added

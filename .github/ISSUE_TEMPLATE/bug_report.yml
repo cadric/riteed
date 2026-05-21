@@ -1,0 +1,79 @@
+name: Bug report
+description: Report something that is not working as expected.
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please do not report suspected security vulnerabilities here. Use private vulnerability reporting from the Security tab.
+  - type: input
+    id: version
+    attributes:
+      label: Riteed version
+      description: Use the release version, Flatpak version, or commit hash.
+      placeholder: "0.3.3, v0.3.3, or commit SHA"
+    validations:
+      required: true
+  - type: dropdown
+    id: build
+    attributes:
+      label: Build type
+      options:
+        - Flatpak release
+        - Local Flatpak build
+        - Native cargo build
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: other-build
+    attributes:
+      label: Other build type
+      description: If you selected Other above, describe how Riteed was built or installed.
+  - type: input
+    id: platform
+    attributes:
+      label: Platform
+      description: Include distro, GNOME, GTK, and Flatpak versions when known.
+      placeholder: "Fedora 42, GNOME 48, GTK 4.x, Flatpak 1.x"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: Include the smallest file, folder, or Git state needed to reproduce.
+      placeholder: |
+        1. Open ...
+        2. Click ...
+        3. See ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or validation output
+      description: Paste relevant terminal output, journal lines, screenshots, or validation failures.
+      render: shell
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I searched existing issues first.
+          required: true
+        - label: This is not a suspected security vulnerability.
+          required: true

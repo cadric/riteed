@@ -1,6 +1,27 @@
 # Continuity
 
 ## OUTCOMES
+- Implemented the repo-file side of the GitHub settings hardening plan:
+  `SECURITY.md`, `.github/dependabot.yml`, `.github/CODEOWNERS`, issue
+  templates, PR template, and `CHANGELOG.md` now document the intended
+  security, dependency, and contribution workflow.
+- GitHub settings hardening uses repository rulesets, not classic branch
+  protection. GitHub rejected `evaluate` enforcement on this non-Enterprise
+  plan, so the `Protect main` and `Protect version tags` rulesets were created
+  as `disabled` drafts. `Protect main` requires `policy-pack`, `native-tests`,
+  `flatpak`, and `flatpak-tests`, keeps `stress` non-required, and both
+  rulesets include an explicit `@cadric` user bypass.
+- CodeQL default setup is enabled for Actions, Python, and Rust with
+  `remote_and_local`; the first run passed but produced 107 open high-severity
+  alerts (`rust/path-injection`, `py/path-injection`, and `py/redos`). CodeQL is
+  intentionally not a required check until those findings are triaged. Initial
+  CodeQL alert triage remains pending as a separate follow-up.
+- Moved the tracked superseded Markdown implementation plan from
+  `markdown_plan.md` to `docs/markdown_plan.md`. Root scratch audit files remain
+  untracked and were moved under ignored `.agent/archive/`.
+- Dependabot version updates deliberately ignore `gtk4-sys` in `app/fuzz`
+  because the stress-test report documents the independent fuzz lockfile's
+  required alignment with the app workspace's GTK sys crates.
 - Prepared the 0.3.3 beta release metadata for the Danish locale/language
   preference and stress-test infrastructure push: `app/Cargo.toml`,
   `app/Cargo.lock`, `app/fuzz/Cargo.lock`, `README.md`, `CHANGELOG.md`, and
@@ -165,11 +186,19 @@
 - Auto palette local user Flatpak rebuild/install passed with app commit `c15c4ac0625d116df2b6f51fac61fe443a3dde479f88d5a8c2d9e70b3bcfc6a1`, installed size 7.9 MB on `org.gnome.Platform//50`, and `/app/bin/git` reports `git version 2.54.0`.
 
 ## DECISIONS
-- V15 is the next scheduled milestone, focused on Markdown Source/Preview/Split modes rather than a general new-feature bundle.
+- V14.5 is the next scheduled milestone, focused on minimap diff decoration
+  and re-enabling the minimap inside Compare/Git compare panes.
 - Parent Source Control roots do not recurse into nested Git repositories; users should open the nested repository itself when they want its internal Git status.
-- Markdown preview source ranges are V14 foundation only. V15 may use them for basic source/preview scroll orientation, while richer preview-source synchronization remains a separate implementation risk to validate.
+- Markdown preview source ranges are V14 foundation only. V16 may use them for
+  basic source/preview scroll orientation, while richer preview-source
+  synchronization remains a separate implementation risk to validate.
 - Markdown preview large-document handling is intentionally two-tier for now: files under 1 MB use live preview, while files at or above 1 MB show the disabled-preview fallback. The earlier 1-10 MB debounced middle tier is not implemented.
-- Markdown Preview is formal V14 completed work, not a rendered/semantic diff feature. V15 promotes split edit/preview only; extended Markdown, local image grants, code-block syntax highlighting, and rendered diff remain deferred. Per-code-block syntax highlighting is not a simple drop-in while preview is one `gtk4::TextBuffer`; it likely needs a composite renderer with separate read-only `sourceview5::Buffer` widgets for code blocks.
+- Markdown Preview is formal V14 completed work, not a rendered/semantic diff
+  feature. V16 promotes split edit/preview only; extended Markdown, local image
+  grants, code-block syntax highlighting, and rendered diff remain deferred.
+  Per-code-block syntax highlighting is not a simple drop-in while preview is
+  one `gtk4::TextBuffer`; it likely needs a composite renderer with separate
+  read-only `sourceview5::Buffer` widgets for code blocks.
 - v6 split layout is sidebar/editor navigation via `AdwOverlaySplitView`, not an editor/editor split-pane feature.
 - Project state remains window-global through GSettings because Riteed currently has a single-window app model.
 - v7 compare mode is tab-local and ephemeral; it is not persisted in session/GSettings and exits on reload/open/restore.
@@ -194,7 +223,8 @@
 - Project switch is an atomic `Some(new)` Source Control transition, not a visible `None -> Some(new)` close/open sequence; user-close remains the path that emits `handler(None)` and clears close-specific UI/settings.
 - `.agent/CONTINUITY.md` is local continuity state and is ignored by Git unless explicitly force-added.
 - V12.5 header-bar Git path uses four individual flat icon buttons. The row-level actions use one shared list-level popover anchored from `compute_bounds`, and Search Results visibility is pure sidebar UI while scan clearing remains owned by the coordinator/window root-change flow.
-- V15 is the final scheduled milestone for now. Post-V15 ideas remain unscheduled until a focused follow-up milestone is justified.
+- V16 is the final scheduled milestone for now. Post-V16 ideas remain
+  unscheduled until a focused follow-up milestone is justified.
 
 ## DISCOVERIES
 - `GtkSingleSelection::set_selected()` can synchronously notify selection listeners, so project restore/root/reveal paths must clone GTK model/selection handles and drop `ProjectState` borrows before clearing or changing selection.

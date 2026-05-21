@@ -1,0 +1,41 @@
+name: Feature request
+description: Suggest a focused Riteed improvement.
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use case
+      description: Describe the editing workflow this would improve.
+    validations:
+      required: true
+  - type: dropdown
+    id: roadmap
+    attributes:
+      label: Roadmap fit
+      options:
+        - Current planned milestone (V14.5/V15/V16)
+        - Post-V16 unscheduled backlog
+        - Not sure / out of scope
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe the smallest useful version of the feature.
+    validations:
+      required: true
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Native GNOME or Flatpak constraints
+      description: Note any sandbox, portal, localization, or GNOME UI expectations that matter.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I searched existing issues first.
+          required: true

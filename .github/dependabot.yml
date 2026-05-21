@@ -1,0 +1,53 @@
+version: 2
+
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Etc/UTC"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "cargo"
+    directory: "/app"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:20"
+      timezone: "Etc/UTC"
+    labels:
+      - "dependencies"
+      - "rust"
+    groups:
+      app-cargo:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "cargo"
+    directory: "/app/fuzz"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:40"
+      timezone: "Etc/UTC"
+    labels:
+      - "dependencies"
+      - "rust"
+      - "fuzzing"
+    groups:
+      fuzz-cargo:
+        patterns:
+          - "*"
+    ignore:
+      # The independent fuzz workspace must track the app lockfile manually for
+      # gtk4-sys. The stress-test report documents a 0.11.2/0.11.3 ABI mismatch
+      # that broke cargo-fuzz until both lockfiles were aligned.
+      - dependency-name: "gtk4-sys"

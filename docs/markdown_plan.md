@@ -964,10 +964,10 @@ V1 er klar, når:
 # Starter prompt, max 4.000 characters
 
 ```text
-Du er softwarearkitekt og senior Rust/GTK4-udvikler. Læs `markdown_plan.md` og implementér Markdown V1 i editoren ud fra planen.
+Du er softwarearkitekt og senior Rust/GTK4-udvikler. Læs `docs/markdown_plan.md` og implementér Markdown V1 i editoren ud fra planen.
 
 Primære krav:
-- Følg `markdown_plan.md` som kontrakt. Afvig ikke uden at dokumentere hvorfor.
+- Følg `docs/markdown_plan.md` som kontrakt. Afvig ikke uden at dokumentere hvorfor.
 - Syntaxmål er CommonMark V1 + YAML frontmatter i starten af dokumentet.
 - Extended Markdown er ikke V1: tables, task lists, footnotes, strikethrough, math, heading attributes, wikilinks, definition lists, subscript/superscript og GFM-admonitions skal ikke aktiveres.
 - WebKit, WebKitGTK, WebView, embedded browser, DOM-rendering og JavaScript-baseret preview er eksplicit forbudt. Brug kun native GTK4-rendering.
@@ -995,7 +995,7 @@ Acceptkriterier:
 - Store filer håndteres med debounce/cancel eller fallback.
 - Tests dækker parser, renderer, frontmatter, unsupported extensions, Flatpak-permissions og sikkerhedscases.
 
-Start med at læse `markdown_plan.md`, foreslå en modulstruktur, og implementér derefter den mindste V1-kerne først: frontmatter split, parser pipeline, native preview-renderer og tests.
+Start med at læse `docs/markdown_plan.md`, foreslå en modulstruktur, og implementér derefter den mindste V1-kerne først: frontmatter split, parser pipeline, native preview-renderer og tests.
 ```
 
 [1]: https://spec.commonmark.org/0.31.2/ "CommonMark Spec"
