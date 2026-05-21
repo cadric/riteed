@@ -14,13 +14,14 @@
 - CodeQL default setup is enabled for Actions, Python, and Rust with
   `remote_and_local`; the first run passed but produced 107 open high-severity
   alerts (`rust/path-injection`, `py/path-injection`, and `py/redos`). CodeQL is
-  intentionally not a required check until those findings are triaged. Initial
-  CodeQL alert triage remains pending as a separate follow-up.
-- Python CodeQL triage implementation is in progress: `py/redos` is handled by
-  replacing the TextDomain bootstrap regex with a bounded scanner, validator
-  path handling is being hardened, and the remaining Python CodeQL alert state
-  must be rechecked after push. Rust CodeQL alerts remain pending separate
-  triage.
+  intentionally not a required check until the Rust findings are triaged.
+- Python CodeQL triage completed for the current alert set: `py/redos` was
+  fixed by replacing the TextDomain bootstrap regex with a bounded scanner, the
+  validator path helpers were hardened, and the post-push CodeQL run on
+  `79c8452` left 17 Python `py/path-injection` alerts. Those were dismissed
+  with explicit reasons (13 `won't fix` local maintainer-tool reads and 4
+  `false positive` sanitizer-modeling misses), leaving 0 open Python alerts.
+  Rust CodeQL alerts remain pending separate triage.
 - Moved the tracked superseded Markdown implementation plan from
   `markdown_plan.md` to `docs/markdown_plan.md`. Root scratch audit files remain
   untracked and were moved under ignored `.agent/archive/`.
