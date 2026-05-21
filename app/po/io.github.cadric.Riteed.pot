@@ -80,6 +80,9 @@ msgstr ""
 msgid "Adds Find in Files, document statistics, and print support while preserving the existing Find and Replace workflow."
 msgstr ""
 
+msgid "Adds a complete Danish locale, an app language preference for System, English, or Danish, and the first stress-test infrastructure for boundary, parser, fuzz, Flatpak Git, ASan, and Valgrind coverage."
+msgstr ""
+
 msgid "Adds native Markdown preview polish, staged and unstaged multi-file review tabs, and a V15 roadmap for split Markdown edit/preview."
 msgstr ""
 
@@ -653,6 +656,9 @@ msgid "First Tab"
 msgstr ""
 
 msgid "First public beta with tabs, syntax highlighting, folder navigation, split diffs, lightweight local Git source control, autosave, and guarded file monitoring."
+msgstr ""
+
+msgid "Fixes a fuzz-discovered Compare crash with lone carriage-return line endings by aligning Riteed's row model with the diff engine's line tokenization."
 msgstr ""
 
 msgid "Fixes Source Control so ordinary untracked folders expand to changed file paths while nested Git repositories remain visible as guarded directory entries."

@@ -1,6 +1,12 @@
 # Continuity
 
 ## OUTCOMES
+- Prepared the 0.3.3 beta release metadata for the Danish locale/language
+  preference and stress-test infrastructure push: `app/Cargo.toml`,
+  `app/Cargo.lock`, `app/fuzz/Cargo.lock`, `README.md`, `CHANGELOG.md`, and
+  AppStream release notes now agree on `0.3.3`; `VERSIONS.md` needed no change
+  because it delegates target app runtime versions to the app's own release
+  manifests.
 - Started the `docs/stresstest_plan.md` implementation and added a live
   progress report at `docs/stresstest_rapport.md`.
 - Completed the planned stress-test infrastructure in the current worktree:

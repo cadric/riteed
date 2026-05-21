@@ -14,6 +14,8 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 
 ## Unreleased
 
+## 0.3.3 - 2026-05-21
+
 ### Added
 - Localization: Danish (da) is now fully translated and shipped as a complete locale.
 - Added a General preferences page with an app language choice for System, English, or Danish, applied on next restart.

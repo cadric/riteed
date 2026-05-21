@@ -43,6 +43,14 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release version="0.3.3" type="development" date="2026-05-21">
+      <description>
+        <p>Adds a complete Danish locale, an app language preference for System, English, or Danish, and the first stress-test infrastructure for boundary, parser, fuzz, Flatpak Git, ASan, and Valgrind coverage.</p>
+        <p xml:lang="da">Tilføjer en komplet dansk oversættelse, en appsprogindstilling for System, Engelsk eller Dansk og den første stresstest-infrastruktur til grænse-, parser-, fuzz-, Flatpak Git-, ASan- og Valgrind-dækning.</p>
+        <p>Fixes a fuzz-discovered Compare crash with lone carriage-return line endings by aligning Riteed's row model with the diff engine's line tokenization.</p>
+        <p xml:lang="da">Retter et fuzz-fundet Compare-nedbrud med enkeltstående carriage-return-linjeafslutninger ved at afstemme Riteeds rækkemodel med diff-motorens linjeopdeling.</p>
+      </description>
+    </release>
     <release version="0.3.2" type="development" date="2026-05-20">
       <description>
         <p>Adds native Markdown preview polish, staged and unstaged multi-file review tabs, and a V15 roadmap for split Markdown edit/preview.</p>
