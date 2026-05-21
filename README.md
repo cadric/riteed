@@ -1,37 +1,49 @@
 # Riteed
 
+![Riteed editing a project with syntax highlighting and a project sidebar](docs/screenshots/4.png)
+
 Riteed is a small native GNOME text editor written in Rust. The current source
 version is `0.3.3`, an early public beta. It is useful for daily local editing
-and compare work, but it is not feature complete and has only been tested by the
-primary maintainer so far.
+and compare work, but it is not feature complete.
 
 The application lives under `app/`. The repository root also contains the
-policy and validation tooling used to keep the app strict, native, and
-Flatpak-first.
+roadmap, policy, and validation tooling used to keep the app strict, native,
+and Flatpak-first.
 
 ## Status
 
 - Early beta: expect rough edges and missing features.
-- First public source push: no stable release has been published.
+- Released as source through `v0.3.3`; no stable `1.0` yet and no Flathub
+  submission.
 - Target platform: GNOME on Linux, packaged through Flatpak.
-- Current tester base: the maintainer only.
+- External tester feedback welcome; primary maintainer remains the main user.
 
 ## Features
 
-- Tabbed editing for local text, code, config, and markdown files.
+- Tabbed editing for local text, code, config, and Markdown files.
 - GtkSourceView syntax highlighting with editor palette selection.
-- Find and replace, optional line numbers, optional minimap, and zoom controls.
+- Find and Replace plus project-wide Find in Files, with results in a sticky
+  Search Results sidebar page (`Ctrl+F`, `Ctrl+H`, `Ctrl+Shift+F`).
+- Optional line numbers, optional minimap, and zoom controls.
 - Encoding-aware open/save behavior with line-ending controls.
-- Native Markdown preview for `.md` and `.markdown` files.
-- Session restore, recent files, guarded reload prompts, and large-file safety
-  limits.
-- Optional autosave for already-saved writable files.
+- Native Markdown preview for `.md` and `.markdown` files using CommonMark
+  with YAML frontmatter, safe placeholders for images and raw HTML, and no
+  browser engine.
+- Multi-page preferences for General, Editor, Appearance, Format, and Source
+  Control.
+- English and Danish localization with an in-app language choice
+  (System / English / Danish), applied on next restart.
+- Session restore, recent files, guarded reload prompts, autosave for writable
+  saved files, and large-file safety limits.
 - Lightweight folder sidebar with lazy file browsing, hidden-file toggle,
   refresh, and tab/tree reveal.
-- Split compare workflows for saved versions, files, pasted text, and Git
-  changes.
-- Polished split diffs with syntax highlighting, original-line gutters,
-  inline token highlights, full-row changed backgrounds, and filler hatching.
+- Compare workflows for saved versions, files, pasted text, and Git changes
+  with both adaptive split and unified diff layouts.
+- Polished diffs with syntax highlighting, original-line gutters, inline token
+  highlights, full-row changed backgrounds, filler hatching, and collapsed
+  unchanged regions.
+- Multi-file Source Control review tabs for staged and unstaged changes with
+  a Change List navigator and Open Reviewed File action.
 - Local-only Source Control sidebar with Git status, file badges,
   stage/unstage, safe discard, Git compare, recent commit history, and commits.
 - Bundled sandbox-local Git for Flatpak builds; Riteed does not call host Git.
@@ -46,11 +58,19 @@ Flatpak-first.
 ## Layout
 
 - `app/` - Riteed application source, resources, metadata, tests, and Flatpak
-  Cargo source manifest.
-- `AGENTS.md` - repository-wide contract for app and policy work.
+  Cargo source manifest. Includes `app/fuzz/` as an independent nested
+  workspace for cargo-fuzz targets.
+- `docs/` - screenshots, stress-test plan and implementation report, and
+  working notes.
+- `stress/` - corpus generator, JSON stress scripts, Git stress repositories,
+  and Valgrind suppressions used by the `riteed-stress` developer binary and
+  the nightly stress CI job.
 - `policy/` - machine-readable policy files used to validate the app.
 - `tools/` - hard-fail validation tooling.
-- `scripts/` - thin wrappers around the root tooling.
+- `scripts/` - thin wrappers around the root tooling plus small maintenance
+  scripts.
+- `AGENTS.md` - repository-wide contract for app and policy work.
+- `ROADMAP.md` - milestone plan through V16; V14.5 is next.
 - `VERSIONS.md` - versioning rules for this repository.
 - `CHANGELOG.md` - notable repository changes.
 - `THIRD_PARTY_LICENSES.md` - license notes for vendored and bundled
@@ -64,6 +84,7 @@ Riteed is intentionally narrow and GNOME-native:
 - GTK 4 bindings for Rust
 - libadwaita
 - GtkSourceView
+- `pulldown-cmark` + `yaml-rust2` for the native Markdown preview
 - GNU gettext localization
 - GSettings-backed preferences
 - Flatpak-first packaging and sandboxing
@@ -84,18 +105,62 @@ cd app
 cargo fmt --all --check
 cargo check --workspace --all-targets --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
-cargo test --workspace --all-targets --all-features
+GTK_A11Y=none GSK_RENDERER=cairo G_DEBUG=fatal-criticals \
+  cargo test --workspace --all-targets --all-features
+```
+
+Direct metadata and Flatpak checks:
+
+```bash
+glib-compile-schemas --strict --dry-run app/data/schemas
+msgfmt --check-format --check-header -o /dev/null app/po/*.po
+desktop-file-validate app/data/io.github.cadric.Riteed.desktop
+appstreamcli validate --no-net --pedantic \
+  app/data/io.github.cadric.Riteed.metainfo.xml
+flatpak-builder --show-manifest \
+  app/build-aux/io.github.cadric.Riteed.yml
 ```
 
 Build the local Flatpak from the repository root:
 
 ```bash
-flatpak-builder --user --install --force-clean app/build-dir app/build-aux/io.github.cadric.Riteed.yml
+flatpak-builder --user --install --force-clean \
+  app/build-dir app/build-aux/io.github.cadric.Riteed.yml
 flatpak run io.github.cadric.Riteed
 ```
 
-GitHub Actions validates the root tooling, the app subtree, and a full Flatpak
-build.
+GitHub Actions validates the root tooling, the app subtree, GTK tests with
+`G_DEBUG=fatal-criticals`, and a full Flatpak build.
+
+## Stress Testing
+
+Riteed has a layered stress-test setup for boundary caps, parser robustness,
+and large-file flows. See `docs/stresstest_plan.md` for the full plan and
+`docs/stresstest_rapport.md` for the current implementation status.
+
+The `app/fuzz/` workspace holds cargo-fuzz targets for the Markdown, Git
+status, and diff parsers. Local runs require a nightly Rust toolchain:
+
+```bash
+cd app/fuzz
+cargo +nightly fuzz run markdown_parse -- -max_total_time=60
+```
+
+The `riteed-stress` developer binary drives the app through JSON flow scripts
+under `stress/scripts/`. It is feature-gated and never built into the Flatpak
+release:
+
+```bash
+cd app
+cargo build --bin riteed-stress --features stress
+GSETTINGS_SCHEMA_DIR="$(realpath build-dir/files/share/glib-2.0/schemas)" \
+RITEED_STRESS_SCRIPT=../stress/scripts/open-save-search.json \
+  ./target/debug/riteed-stress
+```
+
+The full stress suite (proptest, cargo-fuzz, Git stress repos, Flatpak stress
+smoke) runs as a scheduled GitHub Actions job and can also be triggered
+manually.
 
 ## License
 
@@ -106,6 +171,10 @@ Cargo dependencies are pinned in `app/Cargo.lock`; the Flatpak build downloads
 the locked crate archives listed in `app/build-aux/cargo/cargo-sources.json`
 into a build-local `cargo/vendor/` tree. Local `app/vendor/` directories are
 ignored and must not be committed.
+
+The `app/fuzz/` workspace pins its own dependencies in `app/fuzz/Cargo.lock`;
+those crates are only built when running fuzz targets locally and are not
+included in the Flatpak release artifact.
 
 The Flatpak manifest also bundles a trimmed local-plumbing Git binary for the
 Source Control sidebar. Git is distributed under GPL-2.0-only overall and
