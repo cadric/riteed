@@ -40,6 +40,8 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 - Fixed tabs opened while the saved Minimap preference is already enabled so they use the same external scrollbar layout as the live Preferences toggle.
 - Fixed Compare diff row modelling for lone carriage-return line endings by
   matching `similar`'s line tokenization, closing a cargo-fuzz-discovered panic.
+- Fixed the GitHub Actions Flatpak Git smoke job so it installs manifest SDK
+  extensions before invoking `flatpak-builder` directly.
 
 ## 0.3.2 - 2026-05-20
 

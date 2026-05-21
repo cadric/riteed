@@ -7,6 +7,10 @@
   AppStream release notes now agree on `0.3.3`; `VERSIONS.md` needed no change
   because it delegates target app runtime versions to the app's own release
   manifests.
+- GitHub Actions review after the first 0.3.3 push found `flatpak-tests`
+  failed before build because the direct `flatpak-builder` job did not install
+  `org.freedesktop.Sdk.Extension.rust-stable//50`; the workflow now uses
+  `--install-deps-from=flathub` for that job before the Flatpak Git smoke.
 - Started the `docs/stresstest_plan.md` implementation and added a live
   progress report at `docs/stresstest_rapport.md`.
 - Completed the planned stress-test infrastructure in the current worktree:
