@@ -43,6 +43,14 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release version="0.3.4" type="development" date="2026-05-22">
+      <description>
+        <p>Adds the pre-Flathub GitHub Pages beta Flatpak remote, GitHub security hygiene, Dependabot configuration, contribution templates, and CodeQL triage follow-up notes.</p>
+        <p xml:lang="da">Tilføjer den GitHub Pages-baserede beta-Flatpak-fjernkilde før Flathub, GitHub-sikkerhedshygiejne, Dependabot-konfiguration, bidragsskabeloner og opfølgningsnoter til CodeQL-triage.</p>
+        <p>Fixes a scheduled Markdown fuzz crash by normalizing ASCII control characters before Markdown preview parsing.</p>
+        <p xml:lang="da">Retter et planlagt Markdown-fuzz-nedbrud ved at normalisere ASCII-kontroltegn før parsing til Markdown-forhåndsvisning.</p>
+      </description>
+    </release>
     <release version="0.3.3" type="development" date="2026-05-21">
       <description>
         <p>Adds a complete Danish locale, an app language preference for System, English, or Danish, and the first stress-test infrastructure for boundary, parser, fuzz, Flatpak Git, ASan, and Valgrind coverage.</p>

@@ -8,6 +8,9 @@
   expiring `2028-05-21`, and release signing is gated behind the
   `flatpak-beta-signing` environment with `prevent self-review` intentionally
   left off for the solo-maintainer flow.
+- Prepared `0.3.4` release metadata so `v0.3.4` can publish the first
+  self-updating beta Flatpak remote from a commit that contains the publish
+  workflow.
 - Investigated scheduled GitHub Actions run `26267631813`: required
   `policy-pack`, `native-tests`, `flatpak`, and `flatpak-tests` passed, while
   non-required `stress` failed in the scheduled cargo-fuzz phase. Root cause was

@@ -1913,3 +1913,9 @@ msgstr ""
 msgctxt "markdown extension label"
 msgid "wiki links"
 msgstr ""
+
+msgid "Adds the pre-Flathub GitHub Pages beta Flatpak remote, GitHub security hygiene, Dependabot configuration, contribution templates, and CodeQL triage follow-up notes."
+msgstr ""
+
+msgid "Fixes a scheduled Markdown fuzz crash by normalizing ASCII control characters before Markdown preview parsing."
+msgstr ""

@@ -14,6 +14,8 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 
 ## Unreleased
 
+## 0.3.4 - 2026-05-22
+
 ### Added
 - Added GitHub security and contribution hygiene files: `SECURITY.md`,
   Dependabot version-update configuration, CODEOWNERS, issue templates, and a
