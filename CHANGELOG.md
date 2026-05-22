@@ -1,6 +1,6 @@
 ---
 created: 2026-04-19
-updated: 2026-05-21
+updated: 2026-05-22
 status: current
 priority: high
 type: changelog
@@ -36,6 +36,9 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 ### Fixed
 - Replaced a `tools/checks/foundation.py` TextDomain-detection regex with a
   bounded scanner, closing a `py/redos` CodeQL finding.
+- Prevented Markdown preview parsing from forwarding raw ASCII control
+  characters into `pulldown-cmark`, fixing a scheduled `markdown_parse`
+  cargo-fuzz crash.
 
 ## 0.3.3 - 2026-05-21
 

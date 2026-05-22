@@ -2,6 +2,7 @@ use std::path::Path;
 
 mod frontmatter;
 pub(crate) mod model;
+mod normalize;
 mod parser;
 #[cfg(test)]
 mod parser_tests;

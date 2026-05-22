@@ -5,6 +5,7 @@ use crate::markdown::model::{
     DiagnosticSeverity, MarkdownBody, MarkdownDiagnostic, MarkdownDiagnosticKind, MarkdownDocument,
     MdBlock, MdInline, MdListItem, SourceRange,
 };
+use crate::markdown::normalize::parser_input;
 
 #[must_use]
 pub(crate) fn parse_document(input: &str) -> MarkdownDocument {
@@ -28,7 +29,8 @@ fn parse_body(
     body_offset: usize,
     diagnostics: &mut Vec<MarkdownDiagnostic>,
 ) -> MarkdownBody {
-    let parser = Parser::new_ext(body, Options::empty()).into_offset_iter();
+    let parser_body = parser_input(body);
+    let parser = Parser::new_ext(&parser_body, Options::empty()).into_offset_iter();
     let mut frames = vec![Frame::Document { blocks: Vec::new() }];
     for (event, range) in parser {
         let source_range = absolute_range(range, body_offset);

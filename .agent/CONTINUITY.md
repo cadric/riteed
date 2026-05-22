@@ -1,6 +1,13 @@
 # Continuity
 
 ## OUTCOMES
+- Investigated scheduled GitHub Actions run `26267631813`: required
+  `policy-pack`, `native-tests`, `flatpak`, and `flatpak-tests` passed, while
+  non-required `stress` failed in the scheduled cargo-fuzz phase. Root cause was
+  a `markdown_parse` crash where `pulldown-cmark 0.13.3` panicked inside
+  `into_offset_iter()` on control-character-heavy Markdown input. The local fix
+  normalizes ASCII control characters at the Markdown parser boundary before
+  invoking `pulldown-cmark`, with the crash input covered by a regression test.
 - Implemented the repo-file side of the GitHub settings hardening plan:
   `SECURITY.md`, `.github/dependabot.yml`, `.github/CODEOWNERS`, issue
   templates, PR template, and `CHANGELOG.md` now document the intended

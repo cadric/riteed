@@ -126,6 +126,19 @@ proptest! {
 }
 
 #[test]
+fn parses_fuzz_regression_with_control_char_link_reference() {
+    let input = String::from_utf8_lossy(&[
+        32, 91, 109, 84, 108, 93, 58, 13, 33, 97, 120, 133, 132, 133, 133, 133, 133, 122, 10, 60,
+        72, 32, 91, 59, 100, 105, 60, 58, 45, 10, 62, 32, 91, 59, 45, 45, 10, 45, 11, 11, 109, 84,
+        110, 58, 58, 45, 47, 58, 45, 10, 43, 32, 91, 59, 45, 45, 10, 45, 11, 11, 109, 84, 110, 93,
+        58, 13, 33, 13, 11, 11, 11,
+    ]);
+    let document = parse_document(&input);
+
+    assert!(document.body.source_offset <= input.len());
+}
+
+#[test]
 fn frontmatter_is_not_body() {
     let document = parse_document("---\ntitle: Test\n---\n# Body\n");
     assert!(document.frontmatter.is_some());
