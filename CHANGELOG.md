@@ -18,6 +18,8 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 - Added GitHub security and contribution hygiene files: `SECURITY.md`,
   Dependabot version-update configuration, CODEOWNERS, issue templates, and a
   pull request template.
+- Added a GitHub Pages Flatpak publishing workflow and signed `riteed-beta`
+  remote metadata for self-updating beta installs before Flathub submission.
 
 ### Changed
 - Hardened GitHub repository settings with private vulnerability reporting,

@@ -1,6 +1,13 @@
 # Continuity
 
 ## OUTCOMES
+- Implemented the repository side of the self-updating beta Flatpak remote:
+  `publish-flatpak.yml` publishes a signed `riteed-beta` branch from version
+  tags to GitHub Pages, `site/` is ignored generated output, the beta public
+  key fingerprint is `1A04 CECD 3576 716F F309 0D27 5D2C 311E 81B8 5DC6`
+  expiring `2028-05-21`, and release signing is gated behind the
+  `flatpak-beta-signing` environment with `prevent self-review` intentionally
+  left off for the solo-maintainer flow.
 - Investigated scheduled GitHub Actions run `26267631813`: required
   `policy-pack`, `native-tests`, `flatpak`, and `flatpak-tests` passed, while
   non-required `stress` failed in the scheduled cargo-fuzz phase. Root cause was

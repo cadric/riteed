@@ -30,6 +30,7 @@
 /app/build-dir/
 /_build/
 /app/_build/
+/site/
 *.flatpak
 /app/data/schemas/gschemas.compiled
 /app/vendor/

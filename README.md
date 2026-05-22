@@ -15,6 +15,8 @@ and Flatpak-first.
 - Early beta: expect rough edges and missing features.
 - Released as source through `v0.3.3`; no stable `1.0` yet and no Flathub
   submission.
+- A self-updating beta Flatpak channel is published directly from this
+  repository through GitHub Pages.
 - Target platform: GNOME on Linux, packaged through Flatpak.
 - External tester feedback welcome; primary maintainer remains the main user.
 
@@ -131,6 +133,41 @@ flatpak run io.github.cadric.Riteed
 
 GitHub Actions validates the root tooling, the app subtree, GTK tests with
 `G_DEBUG=fatal-criticals`, and a full Flatpak build.
+
+## Install the Beta Flatpak
+
+Riteed is not on Flathub yet. Beta Flatpak updates are published from the
+project's GitHub Pages Flatpak repository.
+
+Install from the beta ref:
+
+```bash
+flatpak install --user \
+  https://cadric.github.io/riteed/flatpak/io.github.cadric.Riteed.flatpakref
+```
+
+Explicit remote setup:
+
+```bash
+flatpak remote-add --user --if-not-exists riteed-beta \
+  https://cadric.github.io/riteed/flatpak/riteed-beta.flatpakrepo
+flatpak install --user riteed-beta io.github.cadric.Riteed//beta
+```
+
+Update:
+
+```bash
+flatpak update --user io.github.cadric.Riteed
+```
+
+The beta remote signing key fingerprint is:
+
+```text
+1A04 CECD 3576 716F F309  0D27 5D2C 311E 81B8 5DC6
+```
+
+See `app/build-aux/flatpak/README.md` for the beta remote metadata and key
+rotation note.
 
 ## Stress Testing
 

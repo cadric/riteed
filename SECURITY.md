@@ -37,6 +37,21 @@ If the report is accepted, the fix will normally land on `main` first and then
 ship in the next beta release. Public disclosure should wait until a fixed beta
 release or a coordinated advisory is available.
 
+## Release Signing
+
+Riteed's beta Flatpak remote is signed with the dedicated Riteed Flatpak Beta
+key. The public key is committed at
+`app/build-aux/flatpak/riteed-beta-public.asc`.
+
+Fingerprint:
+
+```text
+1A04 CECD 3576 716F F309  0D27 5D2C 311E 81B8 5DC6
+```
+
+The GitHub Pages beta remote is a pre-Flathub distribution channel. Treat a
+fingerprint mismatch as suspicious and report it privately.
+
 ## Security Scope
 
 The following are in scope:

@@ -1,0 +1,228 @@
+name: Publish Flatpak
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  APP_ID: io.github.cadric.Riteed
+  FLATPAK_BRANCH: beta
+  FLATPAK_BASE_URL: https://cadric.github.io/riteed/flatpak/
+  FLATPAK_REPO_URL: https://cadric.github.io/riteed/flatpak/repo/
+  RUNTIME_REPO: https://dl.flathub.org/repo/flathub.flatpakrepo
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+      tag_commit: ${{ steps.release.outputs.tag_commit }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Validate release tag and metadata
+        id: release
+        run: |
+          set -euo pipefail
+
+          if [[ "$GITHUB_REF" != refs/tags/v* ]]; then
+            echo "Flatpak publish must run from a version tag." >&2
+            exit 1
+          fi
+
+          version="$(sed -n 's/^version = "\(.*\)"/\1/p' app/Cargo.toml | head -n 1)"
+          test -n "$version"
+          if [[ "$GITHUB_REF_NAME" != "v$version" ]]; then
+            echo "Tag $GITHUB_REF_NAME does not match app/Cargo.toml version $version." >&2
+            exit 1
+          fi
+
+          git fetch origin +refs/heads/main:refs/remotes/origin/main
+          tag_commit="$(git rev-list -n 1 "$GITHUB_REF_NAME")"
+          git merge-base --is-ancestor "$tag_commit" origin/main
+
+          VERSION="$version" python3 - <<'PY'
+          import datetime as dt
+          import os
+          import sys
+          import xml.etree.ElementTree as ET
+          from zoneinfo import ZoneInfo
+
+          version = os.environ["VERSION"]
+          root = ET.parse("app/data/io.github.cadric.Riteed.metainfo.xml").getroot()
+          releases = root.find("releases")
+          if releases is None:
+              print("AppStream metadata has no <releases> section.", file=sys.stderr)
+              sys.exit(1)
+          first_release = releases.find("release")
+          if first_release is None:
+              print("AppStream metadata has no <release> entries.", file=sys.stderr)
+              sys.exit(1)
+          release_version = first_release.get("version")
+          if release_version != version:
+              print(
+                  f"Top AppStream release {release_version!r} does not match {version!r}.",
+                  file=sys.stderr,
+              )
+              sys.exit(1)
+          release_date_text = first_release.get("date")
+          try:
+              release_date = dt.date.fromisoformat(release_date_text or "")
+          except ValueError:
+              print(f"Invalid AppStream release date {release_date_text!r}.", file=sys.stderr)
+              sys.exit(1)
+          today = dt.datetime.now(ZoneInfo("Europe/Copenhagen")).date()
+          if release_date > today:
+              print(
+                  f"AppStream release date {release_date} is after {today}.",
+                  file=sys.stderr,
+              )
+              sys.exit(1)
+          PY
+
+          {
+            echo "version=$version"
+            echo "tag_commit=$tag_commit"
+          } >> "$GITHUB_OUTPUT"
+
+  build:
+    runs-on: ubuntu-latest
+    needs: preflight
+    environment: flatpak-beta-signing
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/configure-pages@v6
+      - name: Install Flatpak tooling
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y flatpak flatpak-builder gnupg gpg-agent
+      - name: Build signed Flatpak repository
+        env:
+          FLATPAK_GPG_PRIVATE_KEY: ${{ secrets.FLATPAK_GPG_PRIVATE_KEY }}
+          FLATPAK_GPG_PASSPHRASE: ${{ secrets.FLATPAK_GPG_PASSPHRASE }}
+          FLATPAK_GPG_KEY_ID: ${{ secrets.FLATPAK_GPG_KEY_ID }}
+          VERSION: ${{ needs.preflight.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          export GNUPGHOME="$(mktemp -d)"
+          chmod 700 "$GNUPGHOME"
+          cleanup() {
+            gpgconf --homedir "$GNUPGHOME" --kill gpg-agent || true
+            rm -rf "$GNUPGHOME"
+          }
+          trap cleanup EXIT
+
+          printf '%s' "$FLATPAK_GPG_PRIVATE_KEY" | gpg --batch --import
+          echo allow-preset-passphrase >> "$GNUPGHOME/gpg-agent.conf"
+          gpg-connect-agent reloadagent /bye
+
+          PRESET="$(command -v gpg-preset-passphrase || true)"
+          if [[ -z "$PRESET" ]]; then
+            PRESET="$(find /usr/lib -path '*/gpg-preset-passphrase' -type f -print -quit 2>/dev/null || true)"
+          fi
+          [ -x "$PRESET" ] || { echo "gpg-preset-passphrase not found" >&2; exit 1; }
+
+          keygrip="$(gpg --batch --with-keygrip --with-colons --list-secret-keys "$FLATPAK_GPG_KEY_ID" | awk -F: '
+            /^sec:/ || /^ssb:/ {cap=$12}
+            /^grp:/ && cap ~ /s|S/ {print $10; exit}
+          ')"
+          [ -n "$keygrip" ] || { echo "GPG signing keygrip not found" >&2; exit 1; }
+          printf '%s' "$FLATPAK_GPG_PASSPHRASE" | "$PRESET" --preset "$keygrip"
+
+          fingerprint="$(gpg --batch --with-colons --fingerprint "$FLATPAK_GPG_KEY_ID" | awk -F: '/^fpr:/ {print $10; exit}')"
+          [ -n "$fingerprint" ] || { echo "GPG fingerprint not found" >&2; exit 1; }
+          if [[ "$fingerprint" != "$FLATPAK_GPG_KEY_ID" ]]; then
+            echo "FLATPAK_GPG_KEY_ID must be the full fingerprint." >&2
+            exit 1
+          fi
+          printf '%s:6:\n' "$fingerprint" | gpg --batch --import-ownertrust
+          gpg_key_base64="$(gpg --export "$FLATPAK_GPG_KEY_ID" | base64 --wrap=0)"
+
+          rm -rf site
+          python3 app/build-aux/flatpak/generate_site.py \
+            --site-dir site \
+            --base-url "$FLATPAK_BASE_URL" \
+            --repo-url "$FLATPAK_REPO_URL" \
+            --gpg-key-base64 "$gpg_key_base64" \
+            --fingerprint "$FLATPAK_GPG_KEY_ID" \
+            --version "$VERSION"
+
+          flatpak --user remote-add --if-not-exists flathub "$RUNTIME_REPO"
+          flatpak-builder \
+            --disable-rofiles-fuse \
+            --user \
+            --assumeyes \
+            --install-deps-from=flathub \
+            --default-branch="$FLATPAK_BRANCH" \
+            --gpg-sign="$FLATPAK_GPG_KEY_ID" \
+            --gpg-homedir="$GNUPGHOME" \
+            --repo=site/flatpak/repo \
+            --force-clean \
+            app/build-dir \
+            app/build-aux/io.github.cadric.Riteed.yml
+
+          flatpak build-update-repo \
+            --default-branch="$FLATPAK_BRANCH" \
+            --gpg-sign="$FLATPAK_GPG_KEY_ID" \
+            --gpg-homedir="$GNUPGHOME" \
+            --generate-static-deltas \
+            site/flatpak/repo
+
+          test -s site/flatpak/repo/summary
+          test -s site/flatpak/repo/summary.sig
+      - name: Check Pages artifact shape
+        run: |
+          set -euo pipefail
+          if find site -type l -print -quit | grep -q .; then
+            echo "Pages artifact contains symlinks." >&2
+            exit 1
+          fi
+          python3 - <<'PY'
+          import os
+          import sys
+          from pathlib import Path
+
+          bad = []
+          for path in Path("site").rglob("*"):
+              if path.is_file() and os.stat(path).st_nlink > 1:
+                  bad.append(str(path))
+          if bad:
+              print("Pages artifact contains hardlinks:", file=sys.stderr)
+              print("\n".join(bad), file=sys.stderr)
+              sys.exit(1)
+          PY
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
