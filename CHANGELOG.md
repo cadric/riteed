@@ -14,6 +14,16 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 
 ## Unreleased
 
+### Added
+- Added a fast dependency preflight gate and GTK-stack Dependabot grouping so
+  GTK/GNOME binding updates are reported as coordinated PRs while lockfile,
+  safe/sys crate, fuzz-workspace, and Flatpak cargo-source drift fails before
+  the heavy native and Flatpak jobs start.
+- Hardened the dependency preflight against duplicate package entries,
+  non-exact GTK-stack manifest pins, sparse Cargo lockfile sources, malformed
+  policy JSON, and stale or duplicated Flatpak cargo-source entries.
+- Added `docs/dependency-updates.md` with the manual GTK-stack update flow.
+
 ## 0.3.5 - 2026-05-25
 
 ### Changed

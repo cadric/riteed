@@ -19,7 +19,16 @@ if __name__ == "__main__" and (__package__ is None or __package__ == ""):
 
 import argparse
 
-from tools.checks import commands, foundation, gsettings, hig, i18n, libadwaita, runtime
+from tools.checks import (
+    commands,
+    dependency_preflight,
+    foundation,
+    gsettings,
+    hig,
+    i18n,
+    libadwaita,
+    runtime,
+)
 from tools.validation_tooling import repo_root
 
 
@@ -46,6 +55,7 @@ def main() -> int:
     errors: list[str] = []
     foundation.check_policy_stack(root, errors)
     foundation.check_repo_layout(root, errors)
+    dependency_preflight.check_dependency_preflight(root, errors)
     foundation.check_toolchain(root, errors)
     foundation.check_manifests(root, errors)
     foundation.check_crate_roots(root, errors)

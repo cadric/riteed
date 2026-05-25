@@ -11,7 +11,18 @@ permissions:
   contents: read
 
 jobs:
+  dependency-preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Run fast dependency preflight
+        run: scripts/dependency-preflight --root app
+
   policy-pack:
+    needs: dependency-preflight
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -19,9 +30,10 @@ jobs:
         with:
           python-version: "3.12"
       - name: Run root validator tests
-        run: python3 -m unittest tools.tests.test_policy_check tools.tests.test_coverage_check -v
+        run: python3 -m unittest tools.tests.test_policy_check tools.tests.test_coverage_check tools.tests.test_dependency_preflight -v
 
   native-tests:
+    needs: dependency-preflight
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -101,6 +113,7 @@ jobs:
             app/fuzz/artifacts/
 
   flatpak-tests:
+    needs: dependency-preflight
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-50
@@ -118,6 +131,7 @@ jobs:
           test -s /tmp/riteed-flatpak-git-status.bin
 
   flatpak:
+    needs: dependency-preflight
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-50

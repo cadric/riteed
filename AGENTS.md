@@ -109,6 +109,7 @@ The application ID is authoritative and must stay consistent across:
 - Prefer the Rust standard library and GNOME stack crates.
 - New dependencies require a clear reason and must not weaken sandbox, i18n, or safety constraints.
 - `gtk4`, `libadwaita`, and `gettext-rs` are required runtime crates for the primary app package.
+- GTK/GNOME binding updates must follow `docs/dependency-updates.md` so safe bindings, `*-sys` crates, fuzz lockfiles, and Flatpak cargo sources stay coordinated.
 - `gettext`, alternate GUI frameworks, generic config crates, and broad async runtimes are forbidden unless policy is explicitly revised.
 - `Cargo.lock` must be committed.
 

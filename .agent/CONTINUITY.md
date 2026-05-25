@@ -1,6 +1,25 @@
 # Continuity
 
 ## OUTCOMES
+- Added an explicit fast dependency preflight for CI and GTK-stack Dependabot
+  grouping: `/app` Dependabot now separates GTK/GNOME binding updates into
+  `gtk-rs-stack`, `scripts/dependency-preflight` invokes
+  `tools.checks.dependency_preflight`, `tools.policy_check` runs the same
+  checker before heavier policy work, and `.github/workflows/validate.yml` has
+  a `dependency-preflight` job that `policy-pack`, `native-tests`,
+  `flatpak-tests`, and `flatpak` depend on. The check fails early on app/fuzz
+  version drift, exact safe/sys binding drift, non-exact direct stack pins,
+  policy target drift, duplicate lock/source entries, sparse Cargo lockfile
+  sources, malformed policy JSON, and stale Flatpak cargo source manifests.
+  `glib-build-tools` is tracked with the GTK stack, `app/fuzz/Cargo.lock` was
+  synced back to the app lockfile's GLib/Gio/Pango stack versions, and the
+  evergreen manual GTK update flow now lives in `docs/dependency-updates.md`
+  with an `AGENTS.md` link. Validation passed with
+  `scripts/dependency-preflight --root app`, `python3 -m unittest
+  tools.tests.test_policy_check tools.tests.test_coverage_check
+  tools.tests.test_dependency_preflight -v`, `scripts/policy-check --root app
+  --strict`, `python3 -m tools.coverage_check --root app` (81.5% line
+  coverage), and `git diff --check`.
 - Fixed the Markdown preview interaction follow-up: preview zoom now uses a
   dedicated CSS class that inherits only font size, preview Ctrl+C copies the
   selected rendered text without scroll jumps, preview Ctrl+F/Ctrl+H captures a
