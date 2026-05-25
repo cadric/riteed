@@ -15,6 +15,11 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 ## Unreleased
 
 ### Added
+- Added planned V14.6 and V14.7 roadmap milestones so critical release,
+  stress/fuzz, and audit remediation work is scheduled before new feature
+  milestones.
+- Added audit calibration for the disabled GitHub repository rulesets, making
+  the RIT-AUD-001/002 blast radius explicit without active ruleset mitigation.
 - Implemented V14.5 minimap diff decoration: Compare and Git compare panes
   show sourceview minimaps again, and normal editor tabs show faint
   Source Control diff bands for added, modified, and deleted regions using
@@ -29,6 +34,11 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 - Added `docs/dependency-updates.md` with the manual GTK-stack update flow.
 
 ### Changed
+- Set the roadmap `next_version` to V14.6, keeping V15 large-file handling and
+  V16 Markdown split editing behind policy and audit hardening.
+- Clarified the V14.6/V14.7 contract with typed planned remediation,
+  parser-boundary registry review dates, and V14.6 ownership of the
+  RIT-AUD-014 validator path-skip fix.
 - Documented that editor Source Control minimap bands reflect the last saved
   text versus the current Git baseline; unsaved edits dim existing bands until
   save or until the buffer text matches the decorated state again.

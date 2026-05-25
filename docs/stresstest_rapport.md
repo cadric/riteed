@@ -2,15 +2,15 @@
 
 ## Purpose
 
-This report tracks execution of `docs/stresstest_plan.md` against the
+This report tracks execution of `docs/stress-test-plan.md` against the
 current worktree. It is updated as findings appear, fixes land, and validation
 evidence becomes available.
 
 ## Current Status
 
-- Objective: complete `docs/stresstest_plan.md` as written.
+- Objective: complete `docs/stress-test-plan.md` as written.
 - Report created: 2026-05-21.
-- Current worktree finding: `docs/stresstest_plan.md` and this report are
+- Current worktree finding: `docs/stress-test-plan.md` and this report are
   untracked while the stress-test implementation is being built locally.
 - Repo contract loaded: `AGENTS.md`, `.agent/CONTINUITY.md`,
   `policy/README.md`, and matching Rust/GTK/Flatpak validation policies.

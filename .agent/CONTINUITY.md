@@ -1,6 +1,25 @@
 # Continuity
 
 ## OUTCOMES
+- Finalized the audit/roadmap calibration plan before V14.6 implementation:
+  `RIT-AUD-014` is owned by V14.6 Batch 0a and must land with policy-check
+  regression coverage before new policy files, while V14.7 owns clearing typed
+  `planned_remediation` entries left by the V14.6 contracts. GitHub ruleset
+  state was verified read-only and is not hypothetical: `Protect main` and
+  `Protect version tags` exist with `enforcement: disabled`, and classic
+  `main` branch protection reports `Branch not protected`. Validation for this
+  docs-only revision passed with `git diff --check`, a rerun of
+  `python3 -m tools.policy_check --root app --strict` after one transient GTK
+  flow-test failure, and `python3 -m tools.coverage_check --root app` at 81.9%
+  line coverage.
+- Updated the roadmap plan after the security/robustness audit: V14.6 is now
+  the next planned milestone for critical policy updates, covering
+  `policy/release.policy.json` and `policy/stress-fuzz.policy.json` with
+  validator-backed release, GitHub Actions, stress, and fuzz rules. V14.7 now
+  follows as the focused `docs/audit_report.md` remediation milestone before
+  V15 large-file handling and V16 Markdown split editing. `ROADMAP.md`
+  frontmatter now points `next_version` at `v14.6`, and `CHANGELOG.md` records
+  the roadmap scheduling change.
 - Added an explicit fast dependency preflight for CI and GTK-stack Dependabot
   grouping: `/app` Dependabot now separates GTK/GNOME binding updates into
   `gtk-rs-stack`, `scripts/dependency-preflight` invokes
