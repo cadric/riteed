@@ -15,6 +15,9 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 ## Unreleased
 
 ### Changed
+- Updated the `/app` `similar` and `pulldown-cmark` dependencies, including
+  the Compare API compatibility fix, Flatpak cargo sources, and fuzz lockfile
+  sync.
 - Updated the GitHub and AppStream screenshots for the beta Flatpak build:
   default editor, text compare, Source Control, and Appearance themes.
 - Kept `/app` Dependabot from bumping `gtk4` and `gtk4-sys` automatically

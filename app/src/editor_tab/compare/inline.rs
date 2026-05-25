@@ -157,7 +157,7 @@ fn token_ranges(reference: &str, current: &str, budget: &InlineBudget) -> Vec<In
     ranges
 }
 
-fn collect_ranges<'a>(diff: &TextDiff<'a, 'a, '_, str>) -> Vec<InlineRange> {
+fn collect_ranges<'a>(diff: &TextDiff<'a, 'a, str>) -> Vec<InlineRange> {
     let mut left_offset = 0;
     let mut right_offset = 0;
     let mut ranges = Vec::new();

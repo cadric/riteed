@@ -95,7 +95,7 @@ pub(super) fn compute_diff_row_model(reference_text: &str, current_text: &str) -
 fn compute_line_diff<'text>(
     reference_text: &'text str,
     current_text: &'text str,
-) -> TextDiff<'text, 'text, 'text, str> {
+) -> TextDiff<'text, 'text, str> {
     #[cfg(test)]
     LINE_DIFF_CALLS.with(|calls| calls.set(calls.get() + 1));
     TextDiff::from_lines(reference_text, current_text)
