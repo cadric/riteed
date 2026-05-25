@@ -219,7 +219,7 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 116,
+      "line": 117,
       "match": "state: RefCell<EditorTabState>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns one shared mutable state cell split into document runtime, IO, external-file, autosave, compare, and UI owner structs.",
@@ -227,7 +227,7 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 118,
+      "line": 119,
       "match": "on_file_drop: RefCell<Option<FileDropHandler>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns its current workspace file-drop callback.",
@@ -235,7 +235,7 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 119,
+      "line": 120,
       "match": "on_visual_change: RefCell<Option<TabCallback>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns its current workspace visual-state callback.",
@@ -243,7 +243,7 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 120,
+      "line": 121,
       "match": "on_markdown_preview_change: RefCell<Option<TabCallback>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns its current Markdown preview-state callback.",
@@ -251,7 +251,7 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 121,
+      "line": 122,
       "match": "on_external_state_change: RefCell<Option<TabCallback>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns its current external-state callback.",
@@ -259,7 +259,7 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 122,
+      "line": 123,
       "match": "on_external_action: RefCell<Option<TabCallback>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns its current external-action callback.",
@@ -267,7 +267,7 @@
     },
     {
       "path": "src/editor_tab/compare.rs",
-      "line": 94,
+      "line": 104,
       "match": "presentation: Rc<std::cell::RefCell<DiffPresentation>>,",
       "kind": "runtime-shared-state",
       "ownership": "The compare controller owns the tab-local rendered presentation rows and custom line-number gutter model.",
@@ -275,7 +275,7 @@
     },
     {
       "path": "src/editor_tab/compare.rs",
-      "line": 95,
+      "line": 105,
       "match": "display_model: Rc<std::cell::RefCell<CompareDisplayModel>>,",
       "kind": "runtime-shared-state",
       "ownership": "The compare controller owns the tab-local collapsed display model shared by split rendering and hunk navigation.",
@@ -283,7 +283,7 @@
     },
     {
       "path": "src/editor_tab/compare.rs",
-      "line": 96,
+      "line": 106,
       "match": "row_model: Rc<std::cell::RefCell<DiffRowModel>>,",
       "kind": "runtime-shared-state",
       "ownership": "The compare controller owns the tab-local logical diff row model.",
@@ -293,7 +293,7 @@
       "ownership": "Each compare controller owns presentation and view-mode state shared with its pane, gutter, and breakpoint callbacks.",
       "justification": "Compare panes rebuild asynchronously from user actions and settings changes, so small shared cells keep UI callbacks synchronized without global state.",
       "path": "src/editor_tab/compare.rs",
-      "line": 97,
+      "line": 107,
       "match": "unified_presentation: Rc<std::cell::RefCell<UnifiedPresentation>>,",
       "kind": "runtime-shared-state"
     },
@@ -301,7 +301,7 @@
       "ownership": "Each compare controller owns presentation and view-mode state shared with its pane, gutter, and breakpoint callbacks.",
       "justification": "Compare panes rebuild asynchronously from user actions and settings changes, so small shared cells keep UI callbacks synchronized without global state.",
       "path": "src/editor_tab/compare.rs",
-      "line": 110,
+      "line": 120,
       "match": "view_mode_cell: Rc<Cell<CompareViewMode>>,",
       "kind": "runtime-shared-state"
     },
@@ -421,7 +421,7 @@
       "ownership": "The compare layout owns the adaptive breakpoint mode cell shared with breakpoint callbacks.",
       "justification": "Breakpoint apply/unapply signals need to observe the current explicit mode so adaptive resizing does not override user-selected split or unified layout.",
       "path": "src/editor_tab/compare/layout.rs",
-      "line": 45,
+      "line": 48,
       "match": "presentation: &Rc<RefCell<DiffPresentation>>,",
       "kind": "runtime-shared-state"
     },
@@ -429,7 +429,7 @@
       "ownership": "The compare layout owns the adaptive breakpoint mode cell shared with breakpoint callbacks.",
       "justification": "Breakpoint apply/unapply signals need to observe the current explicit mode so adaptive resizing does not override user-selected split or unified layout.",
       "path": "src/editor_tab/compare/layout.rs",
-      "line": 57,
+      "line": 60,
       "match": "presentation: &Rc<RefCell<DiffPresentation>>,",
       "kind": "runtime-shared-state"
     },
@@ -437,7 +437,7 @@
       "ownership": "The compare layout owns the adaptive breakpoint mode cell shared with breakpoint callbacks.",
       "justification": "Breakpoint apply/unapply signals need to observe the current explicit mode so adaptive resizing does not override user-selected split or unified layout.",
       "path": "src/editor_tab/compare/layout.rs",
-      "line": 92,
+      "line": 95,
       "match": "mode: Rc<Cell<CompareViewMode>>,",
       "kind": "runtime-shared-state"
     },
@@ -445,7 +445,7 @@
       "ownership": "The compare layout owns the adaptive breakpoint mode cell shared with breakpoint callbacks.",
       "justification": "Breakpoint apply/unapply signals need to observe the current explicit mode so adaptive resizing does not override user-selected split or unified layout.",
       "path": "src/editor_tab/compare/layout.rs",
-      "line": 173,
+      "line": 176,
       "match": "presentation: &Rc<RefCell<DiffPresentation>>,",
       "kind": "runtime-shared-state"
     },

@@ -117,6 +117,10 @@ fn exercise_compare_with_disk_and_file(test_app: &adw::Application) {
     });
     assert!(!window.selected_minimap_visible_for_tests());
     assert_eq!(
+        window.selected_compare_minimaps_visible_for_tests(),
+        (true, true, true)
+    );
+    assert_eq!(
         window.compare_action_states_for_tests(),
         (false, true, true, true, true)
     );

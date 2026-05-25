@@ -812,6 +812,17 @@ msgstr "Indrykningsbredde"
 msgid "Indentation"
 msgstr "Indrykning"
 
+msgid ""
+"In editor tabs, faint Source Control bands appear in the editor and minimap "
+"for the last saved text compared with the current Git baseline. Unsaved "
+"edits dim the bands until the file is saved or the text returns to the "
+"decorated state."
+msgstr ""
+"I editorfaner vises svage Source Control-bånd i editoren og minikortet for "
+"den sidst gemte tekst sammenlignet med den aktuelle Git-baseline. Ikke-gemte "
+"ændringer dæmper båndene, indtil filen gemmes, eller teksten vender tilbage "
+"til den dekorerede tilstand."
+
 msgid "Insert Spaces Instead of Tabs"
 msgstr "Indsæt mellemrum i stedet for tabulatorer"
 
@@ -927,6 +938,10 @@ msgstr "Markdown-frontmatter-metadata"
 msgctxt "markdown preview"
 msgid "Markdown Image Placeholder"
 msgstr "Markdown-billedpladsholder"
+
+msgctxt "help row"
+msgid "Minimap Diff Bands"
+msgstr "Minikort-diffbånd"
 
 msgctxt "markdown preview"
 msgid "Markdown Preview Disabled"

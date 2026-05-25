@@ -140,6 +140,14 @@ impl Window {
             .map_or((None, None), |tab| tab.compare_line_numbers_for_tests(row))
     }
 
+    pub(crate) fn selected_compare_minimaps_visible_for_tests(&self) -> (bool, bool, bool) {
+        self.workspace
+            .selected_tab()
+            .map_or_else(Default::default, |tab| {
+                tab.compare_minimaps_visible_for_tests()
+            })
+    }
+
     pub(crate) fn selected_compare_views_editable_for_tests(&self) -> (bool, bool) {
         self.workspace
             .selected_tab()

@@ -6,6 +6,7 @@ use gtk4::{gio, glib::SList, prelude::*};
 use super::{
     VisibleBannerState, Writability,
     compare::{CompareController, ReviewSession},
+    minimap_diff::MinimapDiffAttachment,
 };
 use crate::document::DocumentState;
 use crate::editor_format::SavedTextFormat;
@@ -197,6 +198,7 @@ pub(super) struct UiState {
     pub(super) banner_syncing: bool,
     pub(super) visible_banner: VisibleBannerState,
     pub(super) markdown_preview: MarkdownPreviewAttachment,
+    pub(super) minimap_diff: MinimapDiffAttachment,
 }
 
 #[cfg(test)]

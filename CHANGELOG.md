@@ -15,6 +15,10 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 ## Unreleased
 
 ### Added
+- Implemented V14.5 minimap diff decoration: Compare and Git compare panes
+  show sourceview minimaps again, and normal editor tabs show faint
+  Source Control diff bands for added, modified, and deleted regions using
+  the existing local Git snapshot monitor.
 - Added a fast dependency preflight gate and GTK-stack Dependabot grouping so
   GTK/GNOME binding updates are reported as coordinated PRs while lockfile,
   safe/sys crate, fuzz-workspace, and Flatpak cargo-source drift fails before
@@ -23,6 +27,11 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
   non-exact GTK-stack manifest pins, sparse Cargo lockfile sources, malformed
   policy JSON, and stale or duplicated Flatpak cargo-source entries.
 - Added `docs/dependency-updates.md` with the manual GTK-stack update flow.
+
+### Changed
+- Documented that editor Source Control minimap bands reflect the last saved
+  text versus the current Git baseline; unsaved edits dim existing bands until
+  save or until the buffer text matches the decorated state again.
 
 ## 0.3.5 - 2026-05-25
 

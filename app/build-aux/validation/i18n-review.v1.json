@@ -192,7 +192,7 @@
     },
     {
       "path": "src/source_control.rs",
-      "line": 107,
+      "line": 108,
       "match": "let title = adw::WindowTitle::new(&gettext(\"Source Control\"), \"\");",
       "resolution": "This short title labels the Source Control sidebar header above the changed-file tree and commit controls.",
       "kind": "i18n-short-string"

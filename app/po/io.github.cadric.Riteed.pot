@@ -744,6 +744,9 @@ msgstr ""
 msgid "Indentation"
 msgstr ""
 
+msgid "In editor tabs, faint Source Control bands appear in the editor and minimap for the last saved text compared with the current Git baseline. Unsaved edits dim the bands until the file is saved or the text returns to the decorated state."
+msgstr ""
+
 msgid "Insert Spaces Instead of Tabs"
 msgstr ""
 
@@ -852,6 +855,10 @@ msgstr ""
 
 msgctxt "markdown preview"
 msgid "Markdown Image Placeholder"
+msgstr ""
+
+msgctxt "help row"
+msgid "Minimap Diff Bands"
 msgstr ""
 
 msgctxt "markdown preview"

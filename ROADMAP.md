@@ -1,11 +1,11 @@
 ---
 created: 2026-04-19
-updated: 2026-05-20
+updated: 2026-05-25
 status: active
 priority: high
 type: roadmap
-completed_through: v14
-next_version: v14.5
+completed_through: v14.5
+next_version: v15
 final_scheduled_version: v16
 ---
 
@@ -1735,11 +1735,11 @@ Implement a working v14 of Riteed where `.md` and `.markdown` files can be viewe
 # V14.5 — Minimap Diff Decoration
 
 > created: 2026-05-20
-> updated: 2026-05-20
-> status: planned
+> updated: 2026-05-25
+> status: complete
 > priority: high
 > type: roadmap-milestone
-> implementation: not started
+> implementation: working tree — V14.5 minimap diff decoration
 
 ## Purpose
 
@@ -2043,7 +2043,7 @@ If any of these items is promoted to a real version later, the promoting change 
 
 # Summary of the full progression
 
-V1 through V14 are complete as of 2026-05-12. V13 covers diff review maturity for Compare and local Source Control review. V14 covers safe native Markdown preview, including initial CommonMark/frontmatter support, renderer correctness polish, and comparison-driven presentation polish. V14.5 is planned as a focused polish step that re-enables the minimap inside Compare panes and decorates the editor-mode minimap with local source control diff state, completing the V11/V10 visual-diff story. V15 is planned as tiered large-file handling so Riteed stays fast on small files, scales features back on mid-sized files, and opens very large files in a native read-only viewer with an explicit opt-in path back into editor mode. V16 is planned as the Markdown split edit/preview workflow with source text as the authoritative editable surface. Remaining ideas beyond V16, including spell check, deeper Markdown preview follow-ups, and a piece-tree buffer replacement for editing very large files, sit in the "Post-V16 — Unscheduled Candidates" section and only earn a version number once one of those ideas has a concrete reason to ship next.
+V1 through V14.5 are complete as of 2026-05-25. V13 covers diff review maturity for Compare and local Source Control review. V14 covers safe native Markdown preview, including initial CommonMark/frontmatter support, renderer correctness polish, and comparison-driven presentation polish. V14.5 re-enables the minimap inside Compare panes and decorates the editor-mode minimap with local source control diff state, completing the V11/V10 visual-diff story. V15 is planned as tiered large-file handling so Riteed stays fast on small files, scales features back on mid-sized files, and opens very large files in a native read-only viewer with an explicit opt-in path back into editor mode. V16 is planned as the Markdown split edit/preview workflow with source text as the authoritative editable surface. Remaining ideas beyond V16, including spell check, deeper Markdown preview follow-ups, and a piece-tree buffer replacement for editing very large files, sit in the "Post-V16 — Unscheduled Candidates" section and only earn a version number once one of those ideas has a concrete reason to ship next.
 
 ## V1
 

@@ -6,3 +6,7 @@
 .riteed-diff-current-color-probe {
   color: @success_color;
 }
+
+.riteed-diff-modified-color-probe {
+  color: @warning_color;
+}

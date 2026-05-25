@@ -38,9 +38,14 @@ impl EditorTab {
     }
 
     pub fn apply_minimap_visibility(&self) {
-        let show_minimap = self.settings.show_minimap()
-            && !self.is_compare_active()
-            && !self.is_markdown_preview_active();
+        let show_minimap = self.settings.show_minimap();
+        if let Ok(state) = self.state.try_borrow()
+            && let Some(compare) = state.compare.active.as_ref()
+        {
+            compare.apply_minimap_visibility(show_minimap);
+        }
+        let show_minimap =
+            show_minimap && !self.is_compare_active() && !self.is_markdown_preview_active();
         self.minimap_holder.set_visible(show_minimap);
         let policy = if show_minimap {
             gtk4::PolicyType::External
@@ -57,6 +62,7 @@ impl EditorTab {
     pub(crate) fn apply_source_style_scheme(&self) {
         self.settings.apply_source_style_scheme(&self.text_buffer);
         self.apply_compare_style();
+        self.refresh_source_control_minimap_colors();
     }
 
     pub fn apply_current_line_highlight(&self) {
@@ -66,11 +72,21 @@ impl EditorTab {
 
     pub fn apply_minimap_font_desc(&self, font_desc: Option<&pango::FontDescription>) {
         self.minimap.set_font_desc(font_desc);
+        if let Ok(state) = self.state.try_borrow()
+            && let Some(compare) = state.compare.active.as_ref()
+        {
+            compare.apply_minimap_font_desc(font_desc);
+        }
     }
 
     pub fn apply_scroll_past_end_padding(&self, bottom_margin: i32) {
         self.text_view.set_bottom_margin(bottom_margin);
         self.minimap.set_bottom_margin(bottom_margin);
+        if let Ok(state) = self.state.try_borrow()
+            && let Some(compare) = state.compare.active.as_ref()
+        {
+            compare.apply_scroll_past_end_padding(bottom_margin);
+        }
     }
 
     pub fn clear_zoom_style(&self) {

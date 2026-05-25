@@ -137,6 +137,12 @@ fn help_technical_page() -> adw::PreferencesPage {
         ),
     ));
     source_control_notes.add(&help_row(
+        &pgettext("help row", "Minimap Diff Bands"),
+        &gettext(
+            "In editor tabs, faint Source Control bands appear in the editor and minimap for the last saved text compared with the current Git baseline. Unsaved edits dim the bands until the file is saved or the text returns to the decorated state.",
+        ),
+    ));
+    source_control_notes.add(&help_row(
         &pgettext("help row", "Find in Files Limits"),
         &gettext(
             "Project search uses the same find bar query and Match Case option as document search. It searches UTF-8 text without an index and skips generated folders such as .git, target, build, node_modules, vendor, dist, .flatpak-builder, __pycache__, and .venv.",

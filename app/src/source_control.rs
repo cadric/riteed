@@ -24,6 +24,7 @@ pub(crate) mod actions;
 mod history;
 mod list_view;
 mod live;
+mod minimap;
 mod path_target;
 mod refresh;
 mod review;
@@ -219,6 +220,14 @@ impl SourceControlController {
 
     pub(crate) fn set_state_change_handler(&self, handler: Rc<dyn Fn()>) {
         self.state.borrow_mut().state_change_handler = Some(handler);
+    }
+
+    pub(crate) fn refresh_editor_minimap_diffs(&self) {
+        minimap::refresh_open_tabs(&self.state);
+    }
+
+    pub(crate) fn refresh_editor_minimap_diff_for_tab(&self, tab: Option<Rc<EditorTab>>) {
+        minimap::refresh_tab(&self.state, tab);
     }
 
     pub(crate) fn review_refresh_handler(&self) -> Rc<dyn Fn(Rc<EditorTab>)> {

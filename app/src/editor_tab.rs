@@ -14,6 +14,7 @@ use crate::settings::AppSettings;
 mod banner;
 mod compare;
 mod markdown_preview;
+pub(crate) mod minimap_diff;
 mod open;
 mod review;
 mod runtime;
@@ -437,6 +438,7 @@ impl EditorTab {
             {
                 tab.sync_presentation();
                 tab.schedule_markdown_preview_update();
+                tab.schedule_source_control_minimap_stale_check();
             }
         });
 
@@ -446,6 +448,7 @@ impl EditorTab {
                 && !tab.state.borrow().ui.suppress_changes
             {
                 tab.sync_presentation();
+                tab.schedule_source_control_minimap_stale_check();
             }
         });
 

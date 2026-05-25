@@ -69,7 +69,7 @@
       "ownership": "Each review tab owns the optional compare-side ReviewSession for its rendered Git review.",
       "justification": "The session must be shared by cursor actions, stale banners, change-list navigation, and renderer refreshes while staying private to the tab.",
       "path": "src/editor_tab/state.rs",
-      "line": 182,
+      "line": 183,
       "match": "pub(super) session: Option<Rc<RefCell<ReviewSession>>>,",
       "kind": "runtime-shared-state"
     },
@@ -379,7 +379,7 @@
     },
     {
       "path": "src/source_control.rs",
-      "line": 47,
+      "line": 48,
       "match": "pub(super) type SourceStateRef = Rc<RefCell<SourceControlState>>;",
       "kind": "runtime-shared-state",
       "ownership": "The Source Control controller owns the sidebar state behind one Rc<RefCell>.",
