@@ -38,7 +38,7 @@
     },
     {
       "path": "src/editor_search/mod.rs",
-      "line": 418,
+      "line": 495,
       "match": "gettext(\"No matches\")",
       "resolution": "This short result label appears inside the find bar next to the previous/next controls and only after a concrete query produced zero matches.",
       "kind": "i18n-short-string"
@@ -227,35 +227,35 @@
     },
     {
       "path": "src/window.rs",
-      "line": 419,
+      "line": 421,
       "match": ".update_property(&[Property::Label(&gettext(\"New Tab\"))]);",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context.",
       "kind": "i18n-short-string"
     },
     {
       "path": "src/window.rs",
-      "line": 422,
+      "line": 424,
       "match": ".update_property(&[Property::Label(&gettext(\"Open Files\"))]);",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context.",
       "kind": "i18n-short-string"
     },
     {
       "path": "src/window.rs",
-      "line": 425,
+      "line": 427,
       "match": ".update_property(&[Property::Label(&gettext(\"Project Sidebar\"))]);",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context.",
       "kind": "i18n-short-string"
     },
     {
       "path": "src/window.rs",
-      "line": 428,
+      "line": 430,
       "match": ".update_property(&[Property::Label(&gettext(\"Save Current File\"))]);",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context.",
       "kind": "i18n-short-string"
     },
     {
       "path": "src/window.rs",
-      "line": 431,
+      "line": 433,
       "match": ".update_property(&[Property::Label(&gettext(\"Main Menu\"))]);",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context.",
       "kind": "i18n-short-string"

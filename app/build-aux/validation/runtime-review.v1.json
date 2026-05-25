@@ -179,7 +179,7 @@
     },
     {
       "path": "src/editor_search/mod.rs",
-      "line": 47,
+      "line": 55,
       "match": "project_search_dispatch: RefCell<Option<ProjectSearchDispatch>>,",
       "kind": "runtime-shared-state",
       "ownership": "The find bar owns document/project search scope state and callback dispatch.",
@@ -187,7 +187,7 @@
     },
     {
       "path": "src/editor_search/mod.rs",
-      "line": 48,
+      "line": 56,
       "match": "last_replace_mode: Cell<bool>,",
       "kind": "runtime-shared-state",
       "ownership": "The find bar owns document/project search scope state and the project-search dispatch hook.",
@@ -195,7 +195,7 @@
     },
     {
       "path": "src/editor_search/mod.rs",
-      "line": 49,
+      "line": 57,
       "match": "state: RefCell<SearchState>,",
       "kind": "runtime-shared-state",
       "ownership": "The search controller owns one mutable binding to the active tab and active search context.",
@@ -219,7 +219,7 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 115,
+      "line": 116,
       "match": "state: RefCell<EditorTabState>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns one shared mutable state cell split into document runtime, IO, external-file, autosave, compare, and UI owner structs.",
@@ -227,7 +227,7 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 117,
+      "line": 118,
       "match": "on_file_drop: RefCell<Option<FileDropHandler>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns its current workspace file-drop callback.",
@@ -235,7 +235,7 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 118,
+      "line": 119,
       "match": "on_visual_change: RefCell<Option<TabCallback>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns its current workspace visual-state callback.",
@@ -243,7 +243,15 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 119,
+      "line": 120,
+      "match": "on_markdown_preview_change: RefCell<Option<TabCallback>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Each editor tab owns its current Markdown preview-state callback.",
+      "justification": "Preview enter, exit, and render events must rebind search state to the workspace that currently owns the tab after window transfer."
+    },
+    {
+      "path": "src/editor_tab.rs",
+      "line": 121,
       "match": "on_external_state_change: RefCell<Option<TabCallback>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns its current external-state callback.",
@@ -251,7 +259,7 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 120,
+      "line": 122,
       "match": "on_external_action: RefCell<Option<TabCallback>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns its current external-action callback.",

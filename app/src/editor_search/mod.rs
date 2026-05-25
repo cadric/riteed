@@ -11,6 +11,7 @@ use crate::dialogs;
 use crate::editor_tab::EditorTab;
 
 mod callbacks;
+mod preview;
 mod replace;
 mod scope;
 mod state;
@@ -23,6 +24,13 @@ use support::{
 };
 
 pub(crate) type ProjectSearchDispatch = Rc<dyn Fn(ProjectSearchRequest)>;
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub(crate) enum SearchTarget {
+    #[default]
+    Source,
+    Preview,
+}
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) enum ProjectSearchRequest {
@@ -130,11 +138,13 @@ impl EditorSearch {
             last_replace_mode: Cell::new(false),
             state: RefCell::new(SearchState {
                 active_tab: None,
+                active_target: SearchTarget::Source,
                 active_binding: None,
                 manual_message: None,
             }),
         });
         search.install_callbacks(&close_button, &reveal_replace_button);
+        search.install_style_callbacks();
         search.update_result_state();
         search
     }
@@ -144,18 +154,20 @@ impl EditorSearch {
         &self.search_bar
     }
 
-    pub fn open(
+    pub(crate) fn open(
         self: &Rc<Self>,
         tab: Option<Rc<EditorTab>>,
+        target: SearchTarget,
         replace_mode: bool,
         prefill: Option<String>,
     ) {
-        self.open_with_scope(tab, SearchScope::Document, replace_mode, prefill);
+        self.open_with_scope(tab, target, SearchScope::Document, replace_mode, prefill);
     }
 
     pub(crate) fn open_with_scope(
         self: &Rc<Self>,
         tab: Option<Rc<EditorTab>>,
+        target: SearchTarget,
         scope: SearchScope,
         replace_mode: bool,
         prefill: Option<String>,
@@ -164,8 +176,12 @@ impl EditorSearch {
         if let Some(prefill) = prefill {
             self.search_entry.set_text(&prefill);
         }
+        {
+            let mut state = self.state.borrow_mut();
+            state.active_tab = tab;
+            state.active_target = target;
+        }
         self.search_bar.set_search_mode(true);
-        self.state.borrow_mut().active_tab = tab;
         match scope {
             SearchScope::Document => self.enter_document_scope(),
             SearchScope::Project => self.enter_project_scope(),
@@ -185,13 +201,23 @@ impl EditorSearch {
     pub fn bind_tab(self: &Rc<Self>, tab: Option<Rc<EditorTab>>) {
         let search_active = self.search_bar.is_search_mode();
         self.drop_active_context();
-        self.state.borrow_mut().active_tab.clone_from(&tab);
         if search_active && self.scope_bar.current_scope() == SearchScope::Document {
+            let target = tab.as_ref().map_or(SearchTarget::Source, |tab| {
+                tab.capture_search_target_for_rebind()
+            });
+            {
+                let mut state = self.state.borrow_mut();
+                state.active_tab.clone_from(&tab);
+                state.active_target = target;
+            }
+            self.sync_document_replace_visibility();
             self.bind_active_context(tab);
         } else if search_active {
+            self.state.borrow_mut().active_tab.clone_from(&tab);
             self.result_label.set_label("");
             self.set_action_sensitivity(false);
         } else {
+            self.state.borrow_mut().active_tab.clone_from(&tab);
             self.clear_manual_message();
             self.update_result_state();
         }
@@ -199,6 +225,11 @@ impl EditorSearch {
 
     pub fn find_next(self: &Rc<Self>) {
         self.clear_manual_message();
+        if self.state.borrow().active_target == SearchTarget::Preview {
+            self.select_preview_match(true);
+            self.update_result_state();
+            return;
+        }
         let Some(tab) = self.state.borrow().active_tab.clone() else {
             self.update_result_state();
             return;
@@ -219,6 +250,11 @@ impl EditorSearch {
 
     pub fn find_previous(self: &Rc<Self>) {
         self.clear_manual_message();
+        if self.state.borrow().active_target == SearchTarget::Preview {
+            self.select_preview_match(false);
+            self.update_result_state();
+            return;
+        }
         let Some(tab) = self.state.borrow().active_tab.clone() else {
             self.update_result_state();
             return;
@@ -240,6 +276,10 @@ impl EditorSearch {
 
     pub fn replace_current(self: &Rc<Self>) {
         if self.scope_bar.current_scope() == SearchScope::Project {
+            return;
+        }
+        if self.active_target_is_preview() {
+            self.update_result_state();
             return;
         }
         self.clear_manual_message();
@@ -267,6 +307,10 @@ impl EditorSearch {
 
     pub fn replace_all(self: &Rc<Self>) {
         if self.scope_bar.current_scope() == SearchScope::Project {
+            return;
+        }
+        if self.active_target_is_preview() {
+            self.update_result_state();
             return;
         }
         let Some(tab) = self.state.borrow().active_tab.clone() else {
@@ -320,6 +364,24 @@ impl EditorSearch {
             self.update_result_state();
             return;
         }
+
+        if self.state.borrow().active_target == SearchTarget::Preview {
+            let Some((buffer, view, scrolled)) = tab.preview_search_widgets() else {
+                self.update_result_state();
+                return;
+            };
+            let binding = preview::PreviewSearchBinding::new(
+                &buffer,
+                &view,
+                &scrolled,
+                &query,
+                self.match_case_button.is_active(),
+            );
+            self.state.borrow_mut().active_binding = Some(SearchBinding::Preview(binding));
+            self.update_result_state();
+            return;
+        }
+
         if !tab.supports_search() {
             self.state.borrow_mut().manual_message =
                 Some(gettext("Search is disabled for very large files."));
@@ -336,7 +398,7 @@ impl EditorSearch {
             }
         });
 
-        self.state.borrow_mut().active_binding = Some(SearchBinding {
+        self.state.borrow_mut().active_binding = Some(SearchBinding::Source {
             context: context.clone(),
         });
         if let Some((match_start, match_end, _wrapped)) =
@@ -352,13 +414,22 @@ impl EditorSearch {
             .borrow()
             .active_binding
             .as_ref()
-            .map(|binding| binding.context.clone())
+            .and_then(|binding| {
+                if let SearchBinding::Source { context } = binding {
+                    Some(context.clone())
+                } else {
+                    None
+                }
+            })
     }
 
     fn drop_active_context(&self) {
         let binding = self.state.borrow_mut().active_binding.take();
         if let Some(binding) = binding {
-            binding.context.set_highlight(false);
+            match binding {
+                SearchBinding::Source { context } => context.set_highlight(false),
+                SearchBinding::Preview(binding) => binding.clear_highlights(),
+            }
         }
     }
 
@@ -395,13 +466,17 @@ impl EditorSearch {
     }
 
     fn update_result_state(&self) {
-        let (manual_message, occurrences) = {
+        let (manual_message, occurrences, limit_hit) = {
             let state = self.state.borrow();
-            let occurrences = state
-                .active_binding
-                .as_ref()
-                .map_or(-1, |binding| binding.context.occurrences_count());
-            (state.manual_message.clone(), occurrences)
+            let (occurrences, limit_hit) = match state.active_binding.as_ref() {
+                Some(SearchBinding::Source { context }) => (context.occurrences_count(), false),
+                Some(SearchBinding::Preview(binding)) => (
+                    i32::try_from(binding.occurrence_count()).unwrap_or(i32::MAX),
+                    binding.limit_hit(),
+                ),
+                None => (-1, false),
+            };
+            (state.manual_message.clone(), occurrences, limit_hit)
         };
 
         if let Some(message) = manual_message {
@@ -414,6 +489,8 @@ impl EditorSearch {
         let has_query = !query.is_empty();
         let label = if !has_query || occurrences < 0 {
             String::new()
+        } else if limit_hit {
+            gettext("Results limited; refine the search.")
         } else if occurrences == 0 {
             gettext("No matches")
         } else {
@@ -425,12 +502,56 @@ impl EditorSearch {
 
     fn set_action_sensitivity(&self, has_matches: bool) {
         let replace_visible = self.replace_row.is_visible();
+        let replace_allowed = self.state.borrow().active_target == SearchTarget::Source;
         self.previous_button.set_sensitive(has_matches);
         self.next_button.set_sensitive(has_matches);
         self.replace_button
-            .set_sensitive(has_matches && replace_visible);
+            .set_sensitive(has_matches && replace_visible && replace_allowed);
         self.replace_all_button
-            .set_sensitive(has_matches && replace_visible);
+            .set_sensitive(has_matches && replace_visible && replace_allowed);
+    }
+
+    fn select_preview_match(&self, next: bool) {
+        let mut state = self.state.borrow_mut();
+        let Some(SearchBinding::Preview(binding)) = state.active_binding.as_mut() else {
+            return;
+        };
+        if next {
+            binding.select_next();
+        } else {
+            binding.select_previous();
+        }
+    }
+
+    fn install_style_callbacks(self: &Rc<Self>) {
+        let style_manager = adw::StyleManager::default();
+        let weak = Rc::downgrade(self);
+        let _dark_handler = style_manager.connect_dark_notify(move |_| {
+            if let Some(search) = weak.upgrade() {
+                search.refresh_preview_search_style();
+            }
+        });
+        let weak = Rc::downgrade(self);
+        let _contrast_handler = style_manager.connect_high_contrast_notify(move |_| {
+            if let Some(search) = weak.upgrade() {
+                search.refresh_preview_search_style();
+            }
+        });
+        let weak = Rc::downgrade(self);
+        let _accent_handler = style_manager.connect_accent_color_rgba_notify(move |_| {
+            if let Some(search) = weak.upgrade() {
+                search.refresh_preview_search_style();
+            }
+        });
+    }
+
+    pub(crate) fn refresh_preview_search_style(&self) {
+        let mut state = self.state.borrow_mut();
+        let Some(SearchBinding::Preview(binding)) = state.active_binding.as_mut() else {
+            return;
+        };
+        binding.refresh_style();
+        binding.reapply_highlights();
     }
 
     #[cfg(test)]

@@ -12,6 +12,7 @@ use crate::settings::AppSettings;
 use crate::workspace::Workspace;
 
 pub const EDITOR_VIEW_CSS_CLASS: &str = "riteed-editor-view";
+pub const MARKDOWN_PREVIEW_CSS_CLASS: &str = "riteed-markdown-preview";
 pub(crate) const EDITOR_ZOOM_CSS_CLASS_PREFIX: &str = "riteed-editor-view-zoom-";
 
 const DEFAULT_FONT_FAMILY: &str = "Monospace";
@@ -268,6 +269,13 @@ pub(crate) fn restore_zoom_css_class(widget: &impl IsA<gtk4::Widget>, css_class:
     widget.add_css_class(css_class);
 }
 
+pub(crate) fn restore_preview_zoom_css_class(widget: &impl IsA<gtk4::Widget>, css_class: &str) {
+    clear_zoom_css_classes(widget);
+    let widget = widget.as_ref();
+    widget.add_css_class(MARKDOWN_PREVIEW_CSS_CLASS);
+    widget.add_css_class(css_class);
+}
+
 pub(crate) fn clear_zoom_css_classes(widget: &impl IsA<gtk4::Widget>) {
     let widget = widget.as_ref();
     for css_class in widget.css_classes() {
@@ -369,7 +377,7 @@ fn editor_view_css(css_class: &str, desc: &pango::FontDescription) -> String {
     };
     let weight = desc.weight().into_glib();
     format!(
-        ".{css_class}, .{css_class} text {{ font-family: \"{family}\"; font-size: {size_points:.2}pt; font-style: {style}; font-weight: {weight}; }}"
+        ".{EDITOR_VIEW_CSS_CLASS}.{css_class}, .{EDITOR_VIEW_CSS_CLASS}.{css_class} text {{ font-family: \"{family}\"; font-size: {size_points:.2}pt; font-style: {style}; font-weight: {weight}; }}\n.{MARKDOWN_PREVIEW_CSS_CLASS}.{css_class}, .{MARKDOWN_PREVIEW_CSS_CLASS}.{css_class} text {{ font-size: {size_points:.2}pt; }}"
     )
 }
 
@@ -449,9 +457,24 @@ mod tests {
         let desc = resolve_editor_font_description("JetBrains Mono");
         let css_class = format!("{EDITOR_ZOOM_CSS_CLASS_PREFIX}test");
         let css = editor_view_css(&css_class, &desc);
-        assert!(css.contains(".riteed-editor-view-zoom-test"));
-        assert!(css.contains(".riteed-editor-view-zoom-test text"));
+        assert!(css.contains(".riteed-editor-view.riteed-editor-view-zoom-test"));
+        assert!(css.contains(".riteed-editor-view.riteed-editor-view-zoom-test text"));
         assert!(css.contains("font-family: \"JetBrains Mono\""));
+    }
+
+    #[test]
+    fn preview_css_only_sets_zoomed_font_size() {
+        let desc = resolve_editor_font_description("JetBrains Mono");
+        let css_class = format!("{EDITOR_ZOOM_CSS_CLASS_PREFIX}test");
+        let css = editor_view_css(&css_class, &desc);
+        let preview_rule = css
+            .lines()
+            .find(|line| line.contains(".riteed-markdown-preview"))
+            .unwrap_or_default();
+        assert!(preview_rule.contains("font-size: 11.00pt"));
+        assert!(!preview_rule.contains("font-family"));
+        assert!(!preview_rule.contains("font-style"));
+        assert!(!preview_rule.contains("font-weight"));
     }
 
     #[test]

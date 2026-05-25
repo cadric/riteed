@@ -13,6 +13,7 @@ use crate::settings::AppSettings;
 
 mod banner;
 mod compare;
+mod markdown_preview;
 mod open;
 mod review;
 mod runtime;
@@ -116,6 +117,7 @@ pub struct EditorTab {
     page: OnceCell<adw::TabPage>,
     on_file_drop: RefCell<Option<FileDropHandler>>,
     on_visual_change: RefCell<Option<TabCallback>>,
+    on_markdown_preview_change: RefCell<Option<TabCallback>>,
     on_external_state_change: RefCell<Option<TabCallback>>,
     on_external_action: RefCell<Option<TabCallback>>,
     preview_buffer: gtk4::TextBuffer,
@@ -178,6 +180,7 @@ impl EditorTab {
             page: OnceCell::new(),
             on_file_drop: RefCell::new(None),
             on_visual_change: RefCell::new(None),
+            on_markdown_preview_change: RefCell::new(None),
             on_external_state_change: RefCell::new(None),
             on_external_action: RefCell::new(None),
             preview_buffer: view.preview_buffer,
@@ -200,6 +203,10 @@ impl EditorTab {
 
     pub fn set_visual_change_handler(&self, callback: Rc<dyn Fn()>) {
         self.on_visual_change.replace(Some(callback));
+    }
+
+    pub fn set_markdown_preview_change_handler(&self, callback: Rc<dyn Fn()>) {
+        self.on_markdown_preview_change.replace(Some(callback));
     }
 
     pub fn set_file_drop_handler(&self, callback: Rc<dyn Fn(Vec<gio::File>)>) {
@@ -489,7 +496,7 @@ impl EditorTab {
         install_file_drop_target(&self.root, &weak);
         install_file_drop_target(&self.text_view, &weak);
         install_file_drop_target(&self.preview_view, &weak);
-        self.install_markdown_preview_link_handler();
+        self.install_markdown_preview_interactions();
     }
 
     fn sync_presentation(&self) {

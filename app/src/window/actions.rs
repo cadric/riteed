@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::editor_search::SearchScope;
+use crate::editor_search::{SearchScope, SearchTarget};
 use crate::window::Window;
 
 impl Window {
@@ -71,12 +71,19 @@ impl Window {
 
     pub(super) fn open_search_with_scope(self: &Rc<Self>, scope: SearchScope, replace_mode: bool) {
         let selected = self.workspace.selected_tab();
+        let target = if scope == SearchScope::Document {
+            selected.as_ref().map_or(SearchTarget::Source, |tab| {
+                tab.capture_search_target_for_open()
+            })
+        } else {
+            SearchTarget::Source
+        };
         let prefill = selected
             .as_ref()
-            .and_then(|tab| tab.single_line_selection_text());
+            .and_then(|tab| tab.single_line_search_selection_text(target));
         self.workspace
             .search
-            .open_with_scope(selected, scope, replace_mode, prefill);
+            .open_with_scope(selected, target, scope, replace_mode, prefill);
     }
 
     pub(super) fn open_project_search(self: &Rc<Self>) {

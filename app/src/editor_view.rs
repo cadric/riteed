@@ -3,7 +3,8 @@ use libadwaita as adw;
 use sourceview5::prelude::*;
 
 use crate::editor_zoom::{
-    EDITOR_VIEW_CSS_CLASS, resolve_minimap_font_description, resolve_scroll_past_end_padding,
+    EDITOR_VIEW_CSS_CLASS, MARKDOWN_PREVIEW_CSS_CLASS, resolve_minimap_font_description,
+    resolve_scroll_past_end_padding,
 };
 use crate::settings::AppSettings;
 
@@ -125,6 +126,7 @@ struct MarkdownPreviewWidgets {
 fn build_markdown_preview_widgets() -> MarkdownPreviewWidgets {
     let buffer = gtk4::TextBuffer::new(None::<&gtk4::TextTagTable>);
     let view = gtk4::TextView::with_buffer(&buffer);
+    view.add_css_class(MARKDOWN_PREVIEW_CSS_CLASS);
     view.set_bottom_margin(24);
     view.set_cursor_visible(false);
     view.set_editable(false);
@@ -135,7 +137,7 @@ fn build_markdown_preview_widgets() -> MarkdownPreviewWidgets {
     view.set_vexpand(true);
     view.set_wrap_mode(gtk4::WrapMode::WordChar);
 
-    let clamp = adw::Clamp::builder()
+    let clamp = adw::ClampScrollable::builder()
         .child(&view)
         .maximum_size(980)
         .tightening_threshold(640)

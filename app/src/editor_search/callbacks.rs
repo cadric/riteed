@@ -4,7 +4,7 @@ use gtk4::gdk;
 use gtk4::{glib, prelude::*};
 use sourceview5::prelude::*;
 
-use super::{EditorSearch, ProjectSearchRequest, SearchScope, replace};
+use super::{EditorSearch, ProjectSearchRequest, SearchScope, SearchTarget, replace};
 
 impl EditorSearch {
     pub(super) fn install_callbacks(
@@ -12,13 +12,23 @@ impl EditorSearch {
         close_button: &gtk4::Button,
         reveal_replace_button: &gtk4::Button,
     ) {
+        self.install_scope_callbacks();
+        self.install_entry_callbacks();
+        self.install_option_and_navigation_callbacks();
+        self.install_replace_callbacks(close_button, reveal_replace_button);
+        self.install_search_bar_callback();
+    }
+
+    fn install_scope_callbacks(self: &Rc<Self>) {
         let weak = Rc::downgrade(self);
         self.scope_bar.connect_scope_changed(Rc::new(move |scope| {
             if let Some(search) = weak.upgrade() {
                 search.switch_scope(scope);
             }
         }));
+    }
 
+    fn install_entry_callbacks(self: &Rc<Self>) {
         let weak = Rc::downgrade(self);
         self.search_entry.connect_search_changed(move |_| {
             if let Some(search) = weak.upgrade() {
@@ -47,7 +57,9 @@ impl EditorSearch {
             }
         });
         self.search_entry.add_controller(controller);
+    }
 
+    fn install_option_and_navigation_callbacks(self: &Rc<Self>) {
         let weak = Rc::downgrade(self);
         self.match_case_button.connect_toggled(move |_| {
             if let Some(search) = weak.upgrade() {
@@ -82,7 +94,13 @@ impl EditorSearch {
                 search.replace_all();
             }
         });
+    }
 
+    fn install_replace_callbacks(
+        self: &Rc<Self>,
+        close_button: &gtk4::Button,
+        reveal_replace_button: &gtk4::Button,
+    ) {
         close_button.connect_clicked({
             let weak = Rc::downgrade(self);
             move |_| {
@@ -96,6 +114,11 @@ impl EditorSearch {
             let weak = Rc::downgrade(self);
             move |_| {
                 if let Some(search) = weak.upgrade() {
+                    if search.active_target_is_preview() {
+                        replace::set_replace_mode_visible(&search.replace_row, false);
+                        search.update_result_state();
+                        return;
+                    }
                     search.last_replace_mode.set(true);
                     replace::set_replace_mode_visible(&search.replace_row, true);
                     search.replace_entry.grab_focus();
@@ -103,7 +126,9 @@ impl EditorSearch {
                 }
             }
         });
+    }
 
+    fn install_search_bar_callback(self: &Rc<Self>) {
         let weak = Rc::downgrade(self);
         self.search_bar
             .connect_search_mode_enabled_notify(move |bar| {
@@ -142,10 +167,22 @@ impl EditorSearch {
 
     pub(super) fn enter_document_scope(self: &Rc<Self>) {
         self.scope_bar.reset_to_document();
-        self.reveal_replace_button.set_visible(true);
-        replace::set_replace_mode_visible(&self.replace_row, self.last_replace_mode.get());
+        self.sync_document_replace_visibility();
         let active_tab = self.state.borrow().active_tab.clone();
         self.bind_active_context(active_tab);
+    }
+
+    pub(super) fn active_target_is_preview(&self) -> bool {
+        self.state.borrow().active_target == SearchTarget::Preview
+    }
+
+    pub(super) fn sync_document_replace_visibility(&self) {
+        let preview_target = self.active_target_is_preview();
+        self.reveal_replace_button.set_visible(!preview_target);
+        replace::set_replace_mode_visible(
+            &self.replace_row,
+            !preview_target && self.last_replace_mode.get(),
+        );
     }
 
     fn on_search_changed(self: &Rc<Self>) {

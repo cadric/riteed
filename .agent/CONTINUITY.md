@@ -1,6 +1,26 @@
 # Continuity
 
 ## OUTCOMES
+- Fixed the Markdown preview interaction follow-up: preview zoom now uses a
+  dedicated CSS class that inherits only font size, preview Ctrl+C copies the
+  selected rendered text without scroll jumps, preview Ctrl+F/Ctrl+H captures a
+  focus-based target before the find bar takes focus, preview search has its
+  own capped offset-based match model with theme-aware highlights, replace is a
+  hard no-op while the captured target is Preview, preview render
+  rebinds/recomputes search after restoring clamped scroll/selection, and the
+  preview surface now uses `AdwClampScrollable` plus explicit GtkAdjustment
+  restoration/navigation for the real outer scroll position. Prepared the
+  `0.3.5` beta release metadata across Cargo, README, CHANGELOG, AppStream,
+  POT, and Danish PO. Validation passed with `cargo fmt --all --check`,
+  `cargo check --workspace --all-targets --all-features`,
+  `cargo clippy --workspace --all-targets
+  --all-features -- -D warnings`, `cargo test --workspace --all-targets
+  --all-features`, `python3 -m tools.policy_check --root app --strict`, and
+  `python3 -m tools.coverage_check --root app` (81.5% line coverage). Local
+  user Flatpak rebuild/install passed; `flatpak info --user
+  io.github.cadric.Riteed` reports app commit
+  `9bda5b71c7926bbdaec597308bda7788e8016803cc023513f3c0f36951b77943`, version
+  `0.3.5`, installed size `9.4 MB`, and runtime `org.gnome.Platform//50`.
 - Dependabot PR #7 is the expected follow-up after the GTK ignore rules: it
   only bumps `/app` `similar` to 3.1.1 and `pulldown-cmark` to 0.13.4. The
   required fix is to adapt `TextDiff` annotations to the similar 3.x two

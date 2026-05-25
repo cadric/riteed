@@ -451,6 +451,12 @@ impl Workspace {
             }
         }));
         let weak = Rc::downgrade(self);
+        tab.set_markdown_preview_change_handler(Rc::new(move || {
+            if let Some(workspace) = weak.upgrade() {
+                workspace.search.bind_tab(workspace.selected_tab());
+            }
+        }));
+        let weak = Rc::downgrade(self);
         tab.set_file_drop_handler(Rc::new(move |files| {
             if let Some(workspace) = weak.upgrade() {
                 workspace.request_open_files(files, OpenSource::Drop);

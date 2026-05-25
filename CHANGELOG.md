@@ -14,6 +14,8 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 
 ## Unreleased
 
+## 0.3.5 - 2026-05-25
+
 ### Changed
 - Updated the `/app` `similar` and `pulldown-cmark` dependencies, including
   the Compare API compatibility fix, Flatpak cargo sources, and fuzz lockfile
@@ -24,6 +26,10 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
   until GTK binding and ABI updates can be reviewed together.
 
 ### Fixed
+- Fixed Markdown preview zoom, copy, and find behavior so the native preview
+  follows editor zoom, preserves preview scroll while copying or navigating
+  matches, and searches rendered Markdown text without exposing replace
+  controls.
 - Prevented invalid UTF-8 replacement characters from reaching
   `pulldown-cmark`, fixing the current scheduled `markdown_parse` stress crash.
 

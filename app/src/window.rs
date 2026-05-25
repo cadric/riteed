@@ -34,6 +34,8 @@ mod sidebar_wiring;
 mod testing;
 #[cfg(test)]
 mod testing_compare;
+#[cfg(test)]
+mod testing_markdown;
 
 #[derive(Clone, Copy, Debug)]
 pub struct WindowInit {

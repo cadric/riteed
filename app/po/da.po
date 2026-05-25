@@ -2055,6 +2055,12 @@ msgctxt "markdown extension label"
 msgid "wiki links"
 msgstr "wiki-links"
 
+msgid "Fixes Markdown preview zoom, copy, and find behavior so the native preview follows editor zoom, keeps its scroll position while copying or navigating matches, and searches rendered Markdown text without exposing replace controls."
+msgstr "Retter zoom, kopiering og søgning i Markdown-forhåndsvisning, så den native forhåndsvisning følger editorzoom, bevarer sin rulleposition under kopiering og navigation mellem træffere og søger i renderet Markdown-tekst uden at vise erstatningskontroller."
+
+msgid "Updates app dependencies, beta screenshots, and Dependabot rules while preserving the reviewed GTK binding versions."
+msgstr "Opdaterer appafhængigheder, beta-skærmbilleder og Dependabot-regler, mens de gennemgåede GTK-bindingversioner bevares."
+
 msgid ""
 "Adds the pre-Flathub GitHub Pages beta Flatpak remote, GitHub security "
 "hygiene, Dependabot configuration, contribution templates, and CodeQL triage "

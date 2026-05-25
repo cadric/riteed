@@ -26,6 +26,46 @@
       "trigger": "GTK regression tests simulate a local scroll adjustment value; this test helper does not touch GSettings."
     },
     {
+      "path": "src/editor_search/preview.rs",
+      "line": 155,
+      "match": "adjustment.set_value(target.clamp(adjustment.lower(), upper));",
+      "kind": "gsettings-write",
+      "key": "gtk-adjustment",
+      "trigger": "Markdown preview search navigation scrolls only the local preview GtkAdjustment to bring the active match onscreen; this is not a GSettings write."
+    },
+    {
+      "path": "src/editor_tab/markdown_preview.rs",
+      "line": 303,
+      "match": "adjustment.set_value(snapshot.scroll_value.clamp(adjustment.lower(), upper));",
+      "kind": "gsettings-write",
+      "key": "gtk-adjustment",
+      "trigger": "Markdown preview rendering restores only the local GtkAdjustment scroll value after replacing preview buffer contents; this is not a GSettings write."
+    },
+    {
+      "path": "src/editor_tab/markdown_preview.rs",
+      "line": 351,
+      "match": "self.preview_scrolled.vadjustment().set_value(value);",
+      "kind": "gsettings-write",
+      "key": "gtk-adjustment-test-helper",
+      "trigger": "GTK regression tests simulate a local Markdown preview scroll adjustment value; this helper does not touch GSettings."
+    },
+    {
+      "path": "src/editor_tab/markdown_preview.rs",
+      "line": 395,
+      "match": "adjustment.set_value(value.clamp(adjustment.lower(), upper));",
+      "kind": "gsettings-write",
+      "key": "gtk-adjustment",
+      "trigger": "Markdown preview copy restores only the local preview GtkAdjustment after handling copy-clipboard; this is not a GSettings write."
+    },
+    {
+      "path": "src/editor_tab/markdown_preview.rs",
+      "line": 403,
+      "match": "adjustment.set_value(value.clamp(adjustment.lower(), upper));",
+      "kind": "gsettings-write",
+      "key": "gtk-adjustment",
+      "trigger": "Markdown preview copy repeats the local GtkAdjustment restore on the next main-loop turn after default clipboard handlers have settled; this is not a GSettings write."
+    },
+    {
       "path": "src/settings/appearance.rs",
       "line": 70,
       "match": "let _changed = settings.set_enum(KEY_THEME, preference.enum_value());",

@@ -7,7 +7,7 @@ use libadwaita as adw;
 
 use crate::close_flow::CloseCoordinator;
 use crate::editor_format::{EncodingInfo, LineEndingMode};
-use crate::editor_search::EditorSearch;
+use crate::editor_search::{EditorSearch, SearchTarget};
 use crate::editor_status::EditorStatusBar;
 use crate::editor_tab::{EditorTab, SaveKind, SaveResult};
 use crate::settings::AppSettings;
@@ -224,10 +224,13 @@ impl Workspace {
 
     pub fn open_search(self: &Rc<Self>, replace_mode: bool) {
         let selected = self.selected_tab();
+        let target = selected.as_ref().map_or(SearchTarget::Source, |tab| {
+            tab.capture_search_target_for_open()
+        });
         let prefill = selected
             .as_ref()
-            .and_then(|tab| tab.single_line_selection_text());
-        self.search.open(selected, replace_mode, prefill);
+            .and_then(|tab| tab.single_line_search_selection_text(target));
+        self.search.open(selected, target, replace_mode, prefill);
     }
 
     pub fn find_next(self: &Rc<Self>) {
@@ -288,6 +291,7 @@ impl Workspace {
         for tab in &self.state.borrow().tabs {
             tab.apply_source_style_scheme();
         }
+        self.search.refresh_preview_search_style();
     }
 
     fn install_callbacks(self: &Rc<Self>, workspace_box: &gtk4::Box) {
