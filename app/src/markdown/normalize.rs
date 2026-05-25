@@ -1,21 +1,23 @@
 use std::borrow::Cow;
 
 pub(crate) fn parser_input(body: &str) -> Cow<'_, str> {
-    if body.chars().any(markdown_control_needs_normalization) {
-        Cow::Owned(body.chars().map(normalize_markdown_control).collect())
+    if body.chars().any(markdown_character_needs_normalization) {
+        Cow::Owned(body.chars().map(normalize_markdown_character).collect())
     } else {
         Cow::Borrowed(body)
     }
 }
 
-fn normalize_markdown_control(character: char) -> char {
+fn normalize_markdown_character(character: char) -> char {
     match character {
         '\r' => '\n',
-        character if markdown_control_needs_normalization(character) => ' ',
+        std::char::REPLACEMENT_CHARACTER => ' ',
+        character if markdown_character_needs_normalization(character) => ' ',
         character => character,
     }
 }
 
-fn markdown_control_needs_normalization(character: char) -> bool {
-    character.is_ascii_control() && !matches!(character, '\n' | '\t')
+fn markdown_character_needs_normalization(character: char) -> bool {
+    character == std::char::REPLACEMENT_CHARACTER
+        || character.is_ascii_control() && !matches!(character, '\n' | '\t')
 }

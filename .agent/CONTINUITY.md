@@ -1,6 +1,16 @@
 # Continuity
 
 ## OUTCOMES
+- Investigated the current GitHub Actions failures: Dependabot PR #6 fails
+  because the grouped `/app` update bumps `gtk4` to 0.11.3 while the build keeps
+  `gtk4-sys` at 0.11.2, and scheduled Validate run `26382449669` fails only in
+  the non-required `stress` job from a `markdown_parse` cargo-fuzz crash. The
+  local fix now keeps `/app` Dependabot from auto-bumping direct GTK bindings
+  and normalizes lossy UTF-8 replacement characters at the Markdown parser
+  boundary before `pulldown-cmark`, with the crash input covered by regression
+  testing. PR #6 was closed as not mergeable as-is, and repository labels
+  `dependencies`, `rust`, `github-actions`, and `fuzzing` were created so
+  Dependabot can apply every configured label without metadata warnings.
 - Implemented the repository side of the self-updating beta Flatpak remote:
   `publish-flatpak.yml` publishes a signed `riteed-beta` branch from version
   tags to GitHub Pages, `site/` is ignored generated output, the beta public

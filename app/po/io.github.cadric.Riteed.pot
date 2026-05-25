@@ -161,7 +161,7 @@ msgstr ""
 msgid "Binary files cannot be compared."
 msgstr ""
 
-msgid "Browse project folders from the integrated sidebar"
+msgid "Choose app style and editor palettes from Preferences"
 msgstr ""
 
 msgctxt "line ending"
@@ -178,6 +178,9 @@ msgstr ""
 
 msgctxt "dialog button"
 msgid "Cancel"
+msgstr ""
+
+msgid "Compare local text files with split diffs"
 msgstr ""
 
 msgid "Change List"
@@ -560,9 +563,6 @@ msgid "Document Statistics"
 msgstr ""
 
 msgid "Edit Text, Code, and Config Files"
-msgstr ""
-
-msgid "Edit code with syntax highlighting and a project sidebar"
 msgstr ""
 
 msgid "Editor"
@@ -1514,7 +1514,7 @@ msgctxt "document title"
 msgid "Staged Changes Review"
 msgstr ""
 
-msgid "Start from a clean editor window for local files"
+msgid "Edit local project files with syntax highlighting and a project sidebar"
 msgstr ""
 
 msgid "Statistics are disabled for very large files."

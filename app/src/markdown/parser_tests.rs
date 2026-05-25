@@ -139,6 +139,23 @@ fn parses_fuzz_regression_with_control_char_link_reference() {
 }
 
 #[test]
+fn parses_fuzz_regression_with_lossy_utf8_reference_label() {
+    let input = String::from_utf8_lossy(&[
+        45, 45, 45, 66, 1, 0, 0, 0, 0, 0, 0, 255, 100, 255, 255, 255, 255, 47, 0, 10, 10, 45, 0, 0,
+        30, 32, 91, 45, 45, 255, 255, 255, 127, 105, 45, 236, 93, 58, 36, 70, 101, 191, 144, 117,
+        144, 144, 45, 100, 10, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
+        28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28,
+        28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28,
+        28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28,
+        28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28,
+        9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
+    ]);
+    let document = parse_document(&input);
+
+    assert!(document.body.source_offset <= input.len());
+}
+
+#[test]
 fn frontmatter_is_not_body() {
     let document = parse_document("---\ntitle: Test\n---\n# Body\n");
     assert!(document.frontmatter.is_some());

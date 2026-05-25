@@ -1,6 +1,6 @@
 # Riteed
 
-![Riteed editing a project with syntax highlighting and a project sidebar](docs/screenshots/4.png)
+![Riteed editing a Python project from the beta Flatpak build](docs/screenshots/4.png)
 
 Riteed is a small native GNOME text editor written in Rust. The current source
 version is `0.3.4`, an early public beta. It is useful for daily local editing

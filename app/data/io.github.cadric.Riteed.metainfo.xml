@@ -23,8 +23,8 @@
   <screenshots>
     <screenshot type="default">
       <image width="930" height="700">https://raw.githubusercontent.com/cadric/riteed/main/docs/screenshots/4.png</image>
-      <caption>Edit code with syntax highlighting and a project sidebar</caption>
-      <caption xml:lang="da">Rediger kode med syntaksfremhævning og projektsidebjælke</caption>
+      <caption>Edit local project files with syntax highlighting and a project sidebar</caption>
+      <caption xml:lang="da">Rediger lokale projektfiler med syntaksfremhævning og projektsidebjælke</caption>
     </screenshot>
     <screenshot>
       <image width="930" height="700">https://raw.githubusercontent.com/cadric/riteed/main/docs/screenshots/3.png</image>
@@ -33,13 +33,13 @@
     </screenshot>
     <screenshot>
       <image width="930" height="700">https://raw.githubusercontent.com/cadric/riteed/main/docs/screenshots/2.png</image>
-      <caption>Browse project folders from the integrated sidebar</caption>
-      <caption xml:lang="da">Gennemse projektmapper fra den integrerede sidebjælke</caption>
+      <caption>Compare local text files with split diffs</caption>
+      <caption xml:lang="da">Sammenlign lokale tekstfiler med split-diffs</caption>
     </screenshot>
     <screenshot>
       <image width="930" height="700">https://raw.githubusercontent.com/cadric/riteed/main/docs/screenshots/1.png</image>
-      <caption>Start from a clean editor window for local files</caption>
-      <caption xml:lang="da">Start fra et rent redigeringsvindue til lokale filer</caption>
+      <caption>Choose app style and editor palettes from Preferences</caption>
+      <caption xml:lang="da">Vælg appstil og redigeringspaletter fra Indstillinger</caption>
     </screenshot>
   </screenshots>
   <releases>

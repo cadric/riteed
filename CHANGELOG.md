@@ -1,6 +1,6 @@
 ---
 created: 2026-04-19
-updated: 2026-05-22
+updated: 2026-05-25
 status: current
 priority: high
 type: changelog
@@ -13,6 +13,16 @@ All notable changes to this repository are documented in this file.
 The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries describe public beta snapshots.
 
 ## Unreleased
+
+### Changed
+- Updated the GitHub and AppStream screenshots for the beta Flatpak build:
+  default editor, text compare, Source Control, and Appearance themes.
+- Kept `/app` Dependabot from bumping `gtk4` and `gtk4-sys` automatically
+  until GTK binding and ABI updates can be reviewed together.
+
+### Fixed
+- Prevented invalid UTF-8 replacement characters from reaching
+  `pulldown-cmark`, fixing the current scheduled `markdown_parse` stress crash.
 
 ## 0.3.4 - 2026-05-22
 
