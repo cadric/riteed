@@ -1,6 +1,12 @@
 # Continuity
 
 ## OUTCOMES
+- Dependabot PR #7 is the expected follow-up after the GTK ignore rules: it
+  only bumps `/app` `similar` to 3.1.1 and `pulldown-cmark` to 0.13.4. The
+  required fix is to adapt `TextDiff` annotations to the similar 3.x two
+  lifetime type, refresh Flatpak cargo source/license paths, and sync
+  `app/fuzz/Cargo.lock` manually so cargo-fuzz does not retain stale exact app
+  dependency versions.
 - Investigated the current GitHub Actions failures: Dependabot PR #6 fails
   because the grouped `/app` update bumps `gtk4` to 0.11.3 while the build keeps
   `gtk4-sys` at 0.11.2, and scheduled Validate run `26382449669` fails only in

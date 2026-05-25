@@ -1,6 +1,6 @@
 # pulldown-cmark
 
-- Crate: `pulldown-cmark = "=0.13.3"` with `default-features = false`.
+- Crate: `pulldown-cmark = "=0.13.4"` with `default-features = false`.
 - Purpose: parse CommonMark source into events for the native Markdown preview.
 - Justification: V1 needs CommonMark behavior and source ranges without adding a browser, WebKit, DOM renderer, JavaScript runtime, network access, or hand-rolled Markdown parsing.
 - Feature review: `Options::empty()` is the production parser mode. Riteed does not enable tables, task lists, footnotes, strikethrough, math, GFM, heading attributes, wikilinks, definition lists, subscript, superscript, smart punctuation, or the crate's HTML renderer feature.

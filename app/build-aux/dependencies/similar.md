@@ -1,6 +1,6 @@
 # similar
 
-- Crate: `similar = "=2.7.0"` with `inline` and `unicode` features.
+- Crate: `similar = "=3.1.1"` with `inline` and `unicode` features.
 - Purpose: provide the existing line-diff algorithm for Riteed Compare, plus V11 intra-line grapheme/word ranges inside modified rows.
 - Justification: V11 changes compare presentation, not the diff algorithm. Enabling `similar`'s built-in inline and Unicode tools avoids adding a new diff crate or hand-rolling Unicode-sensitive character ranges.
 - Feature review: `inline` keeps using the existing text diff machinery; `unicode` adds `unicode-segmentation` so modified-line ranges can follow grapheme boundaries. `cargo tree -e features -i unicode-segmentation` shows it is pulled only through `similar`'s `unicode` feature.
