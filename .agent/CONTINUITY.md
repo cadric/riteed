@@ -1,6 +1,24 @@
 # Continuity
 
 ## OUTCOMES
+- Implemented V14.6 policy hardening: added and wired
+  `policy/release.policy.json` and `policy/stress-fuzz.policy.json`, updated
+  bundle/load-order/docs/AGENTS overlap ownership, added release and
+  stress/fuzz validator modules, and fixed `RIT-AUD-014` so `src/target/*`
+  remains scanned while root/app/fuzz build-output `target` roots are ignored.
+  The new checks enforce typed `planned_remediation` schema and max-age, with
+  known V14.7 gaps still allowed only through non-expired remediation entries.
+  `ROADMAP.md` now marks V14.6 complete and moves `next_version` to `v14.7`.
+  During validation, repeated parallel GTK flow-test flakes were removed by
+  making policy-check set `RUST_TEST_THREADS=1`, matching CI.
+- Addressed the V14.6 policy-review findings: `RIT-AUD-001` is no longer only
+  planned remediation because `publish-flatpak.yml` now requires exact
+  successful GitHub check runs before signing; malformed `planned_remediation`
+  entries no longer activate their finding; release checks ignore comments for
+  secret/rollback matching and use stricter Pages/key/rollback checks; stress
+  registry paths reject absolute/parent-traversing values; git status corpus
+  seed shape scanning is capped; and patch/stress validators now enforce
+  manifest drift and per-flow fidelity once remediations clear.
 - Finalized the audit/roadmap calibration plan before V14.6 implementation:
   `RIT-AUD-014` is owned by V14.6 Batch 0a and must land with policy-check
   regression coverage before new policy files, while V14.7 owns clearing typed

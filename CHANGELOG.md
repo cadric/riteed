@@ -15,6 +15,8 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 ## Unreleased
 
 ### Added
+- Added V14.6 release and stress/fuzz policy domains with validator wiring,
+  typed planned-remediation max-age checks, and focused regression coverage.
 - Added planned V14.6 and V14.7 roadmap milestones so critical release,
   stress/fuzz, and audit remediation work is scheduled before new feature
   milestones.
@@ -34,14 +36,25 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 - Added `docs/dependency-updates.md` with the manual GTK-stack update flow.
 
 ### Changed
-- Set the roadmap `next_version` to V14.6, keeping V15 large-file handling and
-  V16 Markdown split editing behind policy and audit hardening.
+- Set the roadmap `next_version` to V14.7 after completing the V14.6 policy
+  hardening gate.
 - Clarified the V14.6/V14.7 contract with typed planned remediation,
   parser-boundary registry review dates, and V14.6 ownership of the
   RIT-AUD-014 validator path-skip fix.
 - Documented that editor Source Control minimap bands reflect the last saved
   text versus the current Git baseline; unsaved edits dim existing bands until
   save or until the buffer text matches the decorated state again.
+
+### Fixed
+- Fixed `RIT-AUD-014` by scanning legitimate source paths containing a
+  `target` component while still ignoring known build-output roots.
+- Made the policy-check headless GTK environment run Rust tests with
+  `RUST_TEST_THREADS=1`, matching CI and avoiding parallel GTK flow flakiness.
+- Tightened the new V14.6 release and stress/fuzz validators after review:
+  malformed remediation no longer suppresses gates, release validation now
+  checks exact-commit GitHub check runs before signing, registry paths cannot
+  escape the repo, and future patch/stress manifests get real drift/fidelity
+  checks instead of field-presence-only validation.
 
 ## 0.3.5 - 2026-05-25
 

@@ -1,11 +1,11 @@
 ---
 created: 2026-04-19
-updated: 2026-05-25
+updated: 2026-05-26
 status: active
 priority: high
 type: roadmap
-completed_through: v14.5
-next_version: v14.6
+completed_through: v14.6
+next_version: v14.7
 final_scheduled_version: v16
 ---
 
@@ -1816,11 +1816,11 @@ Implement V14.5 so that the editor minimap shows local source control diff bands
 # V14.6 — Critical Policy Updates
 
 > created: 2026-05-25
-> updated: 2026-05-25
-> status: planned
+> updated: 2026-05-26
+> status: complete
 > priority: high
 > type: roadmap-milestone
-> implementation: not started
+> implementation: complete
 
 ## Purpose
 
@@ -1845,6 +1845,10 @@ This milestone makes those gates explicit and machine-enforced before Riteed mov
 The audit found that Riteed's strongest engineering discipline is its local policy/tooling loop, but that release and stress/fuzz maturity have outgrown the existing policy surface. Signed beta distribution changes the risk model: an unchecked workflow or rollback path can ship a trusted update even when the app code is otherwise careful.
 
 V14.6 keeps the project honest by making release safety and boundary-test fidelity part of the normal validator contract, not a separate checklist.
+
+## Implementation notes
+
+V14.6 landed with `policy/release.policy.json` and `policy/stress-fuzz.policy.json` included in the bundle, documented in the policy README and AGENTS contract, and enforced through `tools.policy_check`. `RIT-AUD-014` is fixed by scanning source paths named `target` while still skipping known build-output roots. The remaining audit gaps are represented as typed, max-age-bounded `planned_remediation` entries for V14.7 rather than prose-only TODOs.
 
 ## Scope boundaries
 

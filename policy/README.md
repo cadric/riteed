@@ -6,6 +6,8 @@ This directory is the canonical contract for policy scope, validator behavior, a
 
 - `gnome-rust-app.bundle.json` is the entrypoint bundle.
 - `validation-tooling.policy.json` owns shared thresholds, required tools, line limits, and review-artifact discovery.
+- `release.policy.json` owns signed Flatpak publishing, GitHub Actions release gates, GPG/OSTree beta remote signing, GitHub Pages artifact safety, rollback behavior, signing-key governance, and local release-critical patch manifests.
+- `stress-fuzz.policy.json` owns parser-boundary registry requirements, fuzz seed fidelity, stress-script boundary fidelity, generated corpus/repo consumption, and stress/fuzz artifact preservation.
 - Domain policies own domain-specific hard-fail and `review_required` rules.
 - `hard_fail_patterns[].exceptions` are narrow repo-relative globs applied before scanner regex matching; keep them path-scoped.
 - CSS review and resource scanning covers `data/**/*.css`, including CSS stored beside UI resources under `data/ui/`.
@@ -19,6 +21,7 @@ The new `review_required` domains use machine-readable evidence only under `buil
 - `i18n-review*.json`
 - `gsettings-review*.json`
 - `runtime-review*.json`
+- `parser-boundaries*.json`
 
 These files are merged by sorted path order.
 
@@ -58,6 +61,8 @@ Review artifacts use fixed semantic tags where a field would otherwise be ambigu
 - GSettings schema keys satisfy the schema-type check with exactly one of `type`, `enum`, or `flags`, matching `glib-compile-schemas`.
 - `runtime.sites[].kind` must match the scanner kinds emitted from policy, currently `runtime-strong-capture`, `runtime-shared-state`, `runtime-git-subprocess`, and `runtime-sync-fs`.
 - `runtime-sync-fs` covers synchronous runtime filesystem probes in `src/**/*.rs`; test-only files and `#[cfg(test)]` ranges are ignored, and reviewed entries must explain the native-only guard.
+- `parser_boundaries` entries use `{id, kind, source_paths, entrypoints, real_input_shape, coverage, gaps, reviewed_exceptions, last_reviewed}`. `reviewed_exceptions` means input shapes or trust-boundary cases intentionally not fuzzed or stressed with review evidence; it is not reviewer approval metadata.
+- `planned_remediation` entries in release and stress/fuzz policies use `{finding_id, target_milestone, review_artifact, created, max_age_days, reason, removal_condition, approval_required?}`. `created + max_age_days` is evaluated against the current UTC date at validator runtime, so stale policy debt expires even when no new commits are made.
 
 Template-source note:
 

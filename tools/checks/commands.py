@@ -153,6 +153,7 @@ def _headless_gtk_env() -> dict[str, str]:
     return {
         "GSK_RENDERER": os.environ.get("GSK_RENDERER", "cairo"),
         "GTK_A11Y": os.environ.get("GTK_A11Y", "none"),
+        "RUST_TEST_THREADS": os.environ.get("RUST_TEST_THREADS", "1"),
     }
 
 

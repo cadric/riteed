@@ -50,6 +50,14 @@ def flatpak_policy(root: Path) -> dict[str, Any]:
     return load_json(_policy_root(root) / "policy" / "flatpak-metadata.policy.json")
 
 
+def release_policy(root: Path) -> dict[str, Any]:
+    return load_json(_policy_root(root) / "policy" / "release.policy.json")
+
+
+def stress_fuzz_policy(root: Path) -> dict[str, Any]:
+    return load_json(_policy_root(root) / "policy" / "stress-fuzz.policy.json")
+
+
 def hig_policy(root: Path) -> dict[str, Any]:
     return load_json(_policy_root(root) / "policy" / "hig.policy.json")
 

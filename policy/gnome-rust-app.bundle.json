@@ -2,7 +2,7 @@
   "$id": "policy/gnome_rust_app.bundle.v3.json",
   "title": "GNOME Rust Application Policy Bundle (Rust 1.95 / GNOME 50)",
   "package_id": "gnome_rust_app_policy_pack.v1",
-  "package_version": "1.1.0",
+  "package_version": "1.2.0",
   "machine_readable_for": [
     "llm_agent",
     "codex",
@@ -41,6 +41,8 @@
     "policy/gettext_i18n.v2.json",
     "policy/gsettings.v2.json",
     "policy/flatpak_metadata.v1.json",
+    "policy/release.v1.json",
+    "policy/stress_fuzz.v1.json",
     "policy/validation_tooling.v2.json"
   ],
   "conflict_resolution": "union_strictest",
@@ -65,6 +67,8 @@
       "gettext-i18n.policy.json",
       "gsettings.policy.json",
       "flatpak-metadata.policy.json",
+      "release.policy.json",
+      "stress-fuzz.policy.json",
       "validation-tooling.policy.json"
     ],
     "generation_requirements": {
@@ -206,6 +210,16 @@
       "role": "sandbox_and_packaging_metadata"
     },
     {
+      "file": "release.policy.json",
+      "$id": "policy/release.v1.json",
+      "role": "signed_flatpak_release_and_supply_chain_governance"
+    },
+    {
+      "file": "stress-fuzz.policy.json",
+      "$id": "policy/stress_fuzz.v1.json",
+      "role": "trust_boundary_fuzz_and_stress_evidence"
+    },
+    {
       "file": "validation-tooling.policy.json",
       "$id": "policy/validation_tooling.v2.json",
       "role": "hard_fail_enforcement_and_ci_validation"
@@ -311,8 +325,8 @@
   "artifact_index": [
     {
       "file": "rust.policy.json",
-      "sha256": "1ff524176f498b6c5a90cbbad101d2b5b275d14d97c9874da7bf01e2a3234e93",
-      "bytes": 12203
+      "sha256": "a8839462951d15bc200801c04a65fb5ffd601c0c579e9fba110a21ef1e7a5c3f",
+      "bytes": 12327
     },
     {
       "file": "gtk4-rs.policy.json",
@@ -341,13 +355,23 @@
     },
     {
       "file": "flatpak-metadata.policy.json",
-      "sha256": "3a2bc3870a2ba62ea8ce47cea757a67b811f848f02fe607ad7192c03d3115c7e",
-      "bytes": 5892
+      "sha256": "f304d1eac57f22dc4fc4ba730d7f5fb0b999d44bb95877204926a8cd322abe08",
+      "bytes": 6028
+    },
+    {
+      "file": "release.policy.json",
+      "sha256": "3149cfe723718da679613b1af6b922cc407596d9869c1c47e85346857ea2a3a0",
+      "bytes": 14208
+    },
+    {
+      "file": "stress-fuzz.policy.json",
+      "sha256": "1a72a41b48e80c541c6ce2958a1a7669bba323832b37af7f049da756964c5034",
+      "bytes": 14351
     },
     {
       "file": "validation-tooling.policy.json",
-      "sha256": "a65e308545b8cdd6241c0889e6c5067f3a439d2cdd7f3365601c25ce3d11eb62",
-      "bytes": 14538
+      "sha256": "6c7b0e679f95de385b5810df65762967197b66ed86eb0018494647ce310ba883",
+      "bytes": 14878
     }
   ]
 }

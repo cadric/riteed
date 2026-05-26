@@ -14,7 +14,6 @@ from typing import Any, Iterable, NoReturn, Sequence
 
 EXCLUDED_PARTS = {
     ".git",
-    "target",
     ".flatpak-builder",
     "__pycache__",
     ".mypy_cache",
@@ -24,6 +23,12 @@ EXCLUDED_PARTS = {
 }
 
 _GLOB_CACHE: dict[str, re.Pattern[str]] = {}
+BUILD_OUTPUT_PREFIXES = (
+    ("target",),
+    ("app", "target"),
+    ("app", "fuzz", "target"),
+    ("fuzz", "target"),
+)
 
 
 def fail(message: str) -> NoReturn:
@@ -147,9 +152,29 @@ def line_text(text: str, line_number: int) -> str | None:
     return lines[line_number - 1]
 
 
+def _is_known_build_output(root: Path, path: Path) -> bool:
+    try:
+        parts = path.relative_to(root).parts
+    except ValueError:
+        return False
+    if any(parts[: len(prefix)] == prefix for prefix in BUILD_OUTPUT_PREFIXES):
+        return True
+    for index, part in enumerate(parts):
+        if part != "target":
+            continue
+        target_dir = root.joinpath(*parts[: index + 1])
+        if (target_dir.parent / "Cargo.toml").exists():
+            return True
+        if any((target_dir / marker).exists() for marker in (".rustc_info.json", "debug", "release")):
+            return True
+    return False
+
+
 def iter_files(root: Path) -> Iterable[Path]:
     for path in root.rglob("*"):
         if not path.is_file():
+            continue
+        if _is_known_build_output(root, path):
             continue
         if any(part in EXCLUDED_PARTS for part in path.parts):
             continue

@@ -30,7 +30,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Run root validator tests
-        run: python3 -m unittest tools.tests.test_policy_check tools.tests.test_coverage_check tools.tests.test_dependency_preflight -v
+        run: python3 -m unittest tools.tests.test_policy_check tools.tests.test_release_stress_policy tools.tests.test_coverage_check tools.tests.test_dependency_preflight -v
 
   native-tests:
     needs: dependency-preflight
