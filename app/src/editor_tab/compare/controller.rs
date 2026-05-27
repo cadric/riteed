@@ -96,10 +96,13 @@ impl CompareController {
             reference_text: String::new(),
             left_view: left.view,
             left_buffer: left.buffer.clone(),
+            left_minimap: left.minimap,
             right_view: right.view,
             right_buffer: right.buffer.clone(),
+            right_minimap: right.minimap,
             unified_view: unified.view,
             unified_buffer: unified.buffer.clone(),
+            unified_minimap: unified.minimap,
             tags: CompareTags::new(&left.buffer, &right.buffer),
             unified_tags: UnifiedTags::new(&unified.buffer),
             presentation,
@@ -132,6 +135,7 @@ impl CompareController {
             &controller.unified_presentation,
         );
         controller.sync_layout();
+        controller.apply_minimap_visibility(tab.settings.show_minimap());
         controller
     }
 
@@ -306,6 +310,12 @@ impl CompareController {
         clear_zoom_css_classes(&self.left_view);
         clear_zoom_css_classes(&self.right_view);
         clear_zoom_css_classes(&self.unified_view);
+        self.left_minimap
+            .set_font_desc(Option::<&gtk4::pango::FontDescription>::None);
+        self.right_minimap
+            .set_font_desc(Option::<&gtk4::pango::FontDescription>::None);
+        self.unified_minimap
+            .set_font_desc(Option::<&gtk4::pango::FontDescription>::None);
         self.gutters.refresh();
         self.unified_gutter.refresh();
         self.hatches.refresh();
@@ -318,6 +328,27 @@ impl CompareController {
         self.gutters.refresh();
         self.unified_gutter.refresh();
         self.hatches.refresh();
+    }
+
+    pub(crate) fn apply_minimap_visibility(&self, visible: bool) {
+        self.left_minimap.set_visible(visible);
+        self.right_minimap.set_visible(visible);
+        self.unified_minimap.set_visible(visible);
+    }
+
+    pub(crate) fn apply_minimap_font_desc(&self, font_desc: Option<&gtk4::pango::FontDescription>) {
+        self.left_minimap.set_font_desc(font_desc);
+        self.right_minimap.set_font_desc(font_desc);
+        self.unified_minimap.set_font_desc(font_desc);
+    }
+
+    pub(crate) fn apply_scroll_past_end_padding(&self, bottom_margin: i32) {
+        self.left_view.set_bottom_margin(bottom_margin);
+        self.right_view.set_bottom_margin(bottom_margin);
+        self.unified_view.set_bottom_margin(bottom_margin);
+        self.left_minimap.set_bottom_margin(bottom_margin);
+        self.right_minimap.set_bottom_margin(bottom_margin);
+        self.unified_minimap.set_bottom_margin(bottom_margin);
     }
 
     pub(super) fn detach_visual_layers(&mut self) {

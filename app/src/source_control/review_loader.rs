@@ -8,12 +8,13 @@ use std::rc::{Rc, Weak};
 use gettextrs::{gettext, ngettext};
 use gtk4::{gio, prelude::*};
 
-use crate::editor_tab::{
-    EditorTab, ReviewFileId, ReviewFileInput, ReviewKind, ReviewSnapshotFingerprint, ReviewTabSpec,
-};
+use crate::editor_tab::{EditorTab, ReviewFileId, ReviewFileInput, ReviewKind, ReviewTabSpec};
 use crate::git_process::{GitProcess, GitProcessError};
 use crate::git_status::{GitFileStatus, GitStatusEntry, GitWorktreeMode};
-use crate::source_control::{SourceControlState, SourceStateRef, git_error_text};
+use crate::source_control::{
+    SourceControlState, SourceStateRef, git_error_text, remove_review_cancellable,
+    track_review_cancellable,
+};
 
 const REVIEW_FILE_CAP: usize = 200;
 const AGGREGATE_DECODED_BYTE_CAP: usize = 4 * 1024 * 1024;
@@ -34,6 +35,9 @@ pub(super) fn start(
     };
     tab.set_git_review_text(&ellipsis_label(gettext("Loading Git review")));
     let generation = spec.snapshot_generation_at_creation;
+    let cancellable = gio::Cancellable::new();
+    tab.set_review_load_cancellable(&cancellable);
+    track_review_cancellable(state, &cancellable);
     let mut queue = VecDeque::from(entries);
     let skipped_for_cap = queue.len().saturating_sub(REVIEW_FILE_CAP);
     queue.truncate(REVIEW_FILE_CAP);
@@ -43,7 +47,7 @@ pub(super) fn start(
         process,
         repo,
         spec,
-        cancellable: gio::Cancellable::new(),
+        cancellable,
         queue,
         inputs: Vec::new(),
         loaded_bytes: 0,
@@ -73,6 +77,7 @@ struct ReviewLoad {
 
 fn pump(load: Rc<RefCell<ReviewLoad>>) {
     if load.borrow().cancellable.is_cancelled() {
+        abort(&load);
         return;
     }
     let Some(entry) = load.borrow_mut().queue.pop_front() else {
@@ -173,23 +178,75 @@ fn record_file(
 }
 
 fn finish(load: &Rc<RefCell<ReviewLoad>>) {
-    let state = load.borrow();
-    state
-        .tab
-        .populate_review_session_with_spec(&state.spec, state.inputs.clone());
-    if review_is_stale(&state) {
-        let stale_generation = state.generation.saturating_add(1);
-        let _shown = state.tab.mark_review_stale_if_mismatch(
-            &ReviewSnapshotFingerprint::new("stale-review-load"),
-            stale_generation,
-        );
+    let current = {
+        let state = load.borrow();
+        review_load_is_current(&state)
+    };
+    if !current {
+        abort(load);
+        return;
+    }
+    let (tab, spec, inputs, cancellable) = {
+        let state = load.borrow();
+        (
+            state.tab.clone(),
+            state.spec.clone(),
+            state.inputs.clone(),
+            state.cancellable.clone(),
+        )
+    };
+    tab.populate_review_session_with_spec(&spec, inputs);
+    tab.clear_review_load_cancellable(&cancellable);
+    if let Some(source) = load.borrow().source.upgrade() {
+        remove_review_cancellable(&source, &cancellable);
     }
 }
 
-fn review_is_stale(load: &ReviewLoad) -> bool {
-    load.source
-        .upgrade()
-        .is_some_and(|state| state.borrow().review_generation != load.generation)
+fn abort(load: &Rc<RefCell<ReviewLoad>>) {
+    let (tab, cancellable, source, show_stale) = {
+        let state = load.borrow();
+        (
+            state.tab.clone(),
+            state.cancellable.clone(),
+            state.source.upgrade(),
+            !state.cancellable.is_cancelled() && review_tab_is_attached(&state),
+        )
+    };
+    tab.clear_review_load_cancellable(&cancellable);
+    if let Some(source) = source {
+        remove_review_cancellable(&source, &cancellable);
+    }
+    if show_stale {
+        tab.set_git_review_text(&gettext("This review is out of date."));
+    }
+}
+
+fn review_load_is_current(load: &ReviewLoad) -> bool {
+    if load.cancellable.is_cancelled() {
+        return false;
+    }
+    let Some(source) = load.source.upgrade() else {
+        return false;
+    };
+    if source.borrow().review_generation != load.generation {
+        return false;
+    }
+    review_tab_is_attached(load)
+}
+
+fn review_tab_is_attached(load: &ReviewLoad) -> bool {
+    let Some(source) = load.source.upgrade() else {
+        return false;
+    };
+    let Some(workspace) = source.borrow().workspace.upgrade() else {
+        return false;
+    };
+    let Some(page) = load.tab.page() else {
+        return false;
+    };
+    workspace
+        .find_tab_by_page(&page)
+        .is_some_and(|tab| Rc::ptr_eq(&tab, &load.tab))
 }
 
 fn load_blob_text(
@@ -231,7 +288,7 @@ fn load_worktree_text(
                 pump(Rc::clone(&load));
             }
         },
-        Err(error) if error.matches(gio::IOErrorEnum::Cancelled) => {}
+        Err(error) if error.matches(gio::IOErrorEnum::Cancelled) => abort(&load),
         Err(error) => {
             append_skip(&load, &entry, error.message());
             pump(Rc::clone(&load));

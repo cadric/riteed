@@ -19,7 +19,7 @@ type CompareHatchViewportsForTests = (CompareHatchViewportForTests, CompareHatch
 type ComparePlaceholderMarkersForTests = (Vec<(usize, usize)>, Vec<(usize, usize)>);
 
 impl Window {
-    pub(crate) fn compare_action_states_for_tests(&self) -> (bool, bool, bool, bool, bool) {
+    pub(crate) fn compare_action_states_for_tests(&self) -> (bool, bool, bool, bool) {
         self.compare.action_states_for_tests()
     }
 
@@ -51,10 +51,6 @@ impl Window {
 
     pub(crate) fn refresh_compare_reference_for_tests(self: &Rc<Self>) {
         self.compare.refresh_reference();
-    }
-
-    pub(crate) fn present_compare_dialog_for_tests(self: &Rc<Self>) -> libadwaita::Dialog {
-        self.compare.present_compare_dialog_for_tests()
     }
 
     pub(crate) fn present_compare_paste_text_dialog_for_tests(&self) -> libadwaita::Dialog {
@@ -138,6 +134,14 @@ impl Window {
         self.workspace
             .selected_tab()
             .map_or((None, None), |tab| tab.compare_line_numbers_for_tests(row))
+    }
+
+    pub(crate) fn selected_compare_minimaps_visible_for_tests(&self) -> (bool, bool, bool) {
+        self.workspace
+            .selected_tab()
+            .map_or_else(Default::default, |tab| {
+                tab.compare_minimaps_visible_for_tests()
+            })
     }
 
     pub(crate) fn selected_compare_views_editable_for_tests(&self) -> (bool, bool) {

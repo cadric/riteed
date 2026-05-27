@@ -7,7 +7,7 @@ import shutil
 import subprocess
 import tempfile
 import unittest
-from contextlib import redirect_stderr
+from contextlib import nullcontext, redirect_stderr
 from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
@@ -561,9 +561,10 @@ class PolicyCheckTests(unittest.TestCase):
                 },
             ):
                 with patch.object(commands, "run_checked", side_effect=fake_run_checked):
-                    with patch.object(commands, "check_xgettext_completeness"):
-                        errors: list[str] = []
-                        commands.run_required_commands(root, errors)
+                    with patch.object(commands, "validation_command_lock", return_value=nullcontext()):
+                        with patch.object(commands, "check_xgettext_completeness"):
+                            errors: list[str] = []
+                            commands.run_required_commands(root, errors)
 
         self.assertEqual(captured["cmd"], ["cargo", "test"])
         self.assertEqual(captured["label"], "cargo test")
@@ -572,6 +573,7 @@ class PolicyCheckTests(unittest.TestCase):
             {
                 "GSK_RENDERER": os.environ.get("GSK_RENDERER", "cairo"),
                 "GTK_A11Y": os.environ.get("GTK_A11Y", "none"),
+                "RUST_TEST_THREADS": os.environ.get("RUST_TEST_THREADS", "1"),
             },
         )
 

@@ -222,6 +222,7 @@ impl Workspace {
         }
     }
 
+    // PARSER-BOUNDARY: id=save_search_ui
     pub fn open_search(self: &Rc<Self>, replace_mode: bool) {
         let selected = self.selected_tab();
         let target = selected.as_ref().map_or(SearchTarget::Source, |tab| {
@@ -370,6 +371,7 @@ impl Workspace {
         callback: Rc<dyn Fn(SaveResult)>,
     ) {
         let weak = Rc::downgrade(self);
+        let saved_tab = tab.clone();
         tab.request_save(
             &self.shell,
             force_save_as,
@@ -387,6 +389,9 @@ impl Workspace {
                                 workspace.remember_recent_uri(&outcome.new_uri);
                                 workspace.persist_session_state_if_needed();
                                 workspace.refresh_selected_state();
+                                if saved_tab.is_dirty() {
+                                    autosave::reschedule_tab_autosave(&workspace, &saved_tab);
+                                }
                                 workspace.show_toast(&gettext("The Document Was Saved."));
                             }
                             SaveResult::CancelledByUser => {}

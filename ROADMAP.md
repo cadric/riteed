@@ -1,11 +1,11 @@
 ---
 created: 2026-04-19
-updated: 2026-05-20
+updated: 2026-05-27
 status: active
 priority: high
 type: roadmap
-completed_through: v14
-next_version: v14.5
+completed_through: v14.7
+next_version: v15
 final_scheduled_version: v16
 ---
 
@@ -1735,11 +1735,11 @@ Implement a working v14 of Riteed where `.md` and `.markdown` files can be viewe
 # V14.5 — Minimap Diff Decoration
 
 > created: 2026-05-20
-> updated: 2026-05-20
-> status: planned
+> updated: 2026-05-25
+> status: complete
 > priority: high
 > type: roadmap-milestone
-> implementation: not started
+> implementation: working tree — V14.5 minimap diff decoration
 
 ## Purpose
 
@@ -1809,6 +1809,226 @@ Non-goals:
 
 Deliverable:
 Implement V14.5 so that the editor minimap shows local source control diff bands and the Compare/Git compare panes show their existing diff colors in a re-enabled minimap, giving users at-a-glance visual orientation across both editing and review workflows.
+```
+
+---
+
+# V14.6 — Critical Policy Updates
+
+> created: 2026-05-25
+> updated: 2026-05-26
+> status: complete
+> priority: high
+> type: roadmap-milestone
+> implementation: complete
+
+## Purpose
+
+V14.6 pauses new feature work to turn the post-audit governance gaps into enforceable policy. The current policy pack is already strong for GNOME/Rust application constraints, but the audit found release-signing, GitHub Actions, stress/fuzz boundary coverage, local patch drift, and policy-overlap gaps that are still too dependent on prose or reviewer memory.
+
+This milestone makes those gates explicit and machine-enforced before Riteed moves on to V15 large-file handling or V16 split Markdown editing.
+
+## What V14.6 adds
+
+* Batch 0a: fix `RIT-AUD-014` first by tightening validator path skipping so only known build-output roots are skipped, with regression coverage before any new policy file lands
+* Batch 0b: confirm the parser-boundary registry format as a JSON review artifact before enforcing stress/fuzz mappings
+* `policy/release.policy.json` for signed Flatpak release, GitHub Actions, GPG/OSTree, GitHub Pages remote, rollback, key pinning, secret scope, and mutable CI input rules
+* `policy/stress-fuzz.policy.json` for trust-boundary fuzz mapping, stress-script boundary fidelity, generated corpus usage, fuzz seed shape, and artifact handling
+* Typed `planned_remediation` arrays for temporary policy debt, using `finding_id`, `target_milestone`, `review_artifact`, `created`, `max_age_days`, `reason`, `removal_condition`, and optional `approval_required`
+* Local patch policy coverage for the `sourceview5` patch manifest, including upstream checksum, allowed changed files, diff checksum, unsafe/FFI baseline, and review evidence
+* A review of all existing policies for overlap, with rules moved or updated where the new release and stress/fuzz policies become authoritative
+* Machine enforcement in `tools/policy_check.py` / `tools/checks/*`, with regression coverage in `tools/tests/test_policy_check.py`
+* Updates to `policy/README.md`, `policy/gnome-rust-app.bundle.json`, `AGENTS.md` if needed, `CHANGELOG.md`, and `.agent/CONTINUITY.md`
+
+## Why this version matters
+
+The audit found that Riteed's strongest engineering discipline is its local policy/tooling loop, but that release and stress/fuzz maturity have outgrown the existing policy surface. Signed beta distribution changes the risk model: an unchecked workflow or rollback path can ship a trusted update even when the app code is otherwise careful.
+
+V14.6 keeps the project honest by making release safety and boundary-test fidelity part of the normal validator contract, not a separate checklist.
+
+## Implementation notes
+
+V14.6 landed with `policy/release.policy.json` and `policy/stress-fuzz.policy.json` included in the bundle, documented in the policy README and AGENTS contract, and enforced through `tools.policy_check`. `RIT-AUD-014` is fixed by scanning source paths named `target` while still skipping known build-output roots. At V14.6 closeout, the remaining audit gaps were represented as typed, max-age-bounded `planned_remediation` entries for V14.7 rather than prose-only TODOs.
+
+## Scope boundaries
+
+V14.6 is **not** an app feature milestone.
+
+V14.6 must not add:
+
+* editor UI features
+* broad Flatpak permissions
+* a separate GitHub Actions policy file; GitHub release workflow rules belong in `release.policy.json`
+* policy prose that is not backed by validator logic or an explicit review-artifact mechanism
+* broad exceptions that make existing policies easier to pass
+
+## Prompt for V14.6
+
+```text
+Build V14.6 of Riteed as a critical policy hardening milestone before new feature work.
+
+The goal is to add two new enforceable policy domains:
+
+Start with Batch 0a and Batch 0b before the new policy files:
+- Batch 0a fixes `RIT-AUD-014` by making policy scanning skip only known build-output roots, not arbitrary path components named `target`. Add focused regression tests and run `python3 -m unittest tools.tests.test_policy_check -v`.
+- Batch 0b confirms the parser-boundary registry as a JSON artifact. The expected entry shape is `{ id, kind, source_paths, entrypoints, real_input_shape, coverage, gaps, reviewed_exceptions, last_reviewed }`. `reviewed_exceptions` means input shapes or trust-boundary cases intentionally not fuzzed/stressed and backed by review evidence, not reviewer approval records. `last_reviewed` is `YYYY-MM-DD` from day one.
+
+1. `policy/release.policy.json`
+   This policy covers signed Flatpak publishing and GitHub Actions release safety. It must include the GitHub workflow rules instead of creating a separate GitHub policy.
+
+   Required policy coverage:
+   - signed Flatpak publish must require green validation for the exact commit, or rerun the release-critical validation suite before signing
+   - older tags or manual reruns must not silently overwrite the beta remote without an explicit rollback path
+   - the imported private signing key must match the committed beta public key
+   - key rotation, revocation, and compromise recovery must be documented
+   - signing secrets must stay in protected environments and never be available to pull request workflows
+   - release-critical GitHub Actions and tool installers must be pinned or explicitly reviewed
+   - Pages artifact safety checks must remain enforced
+   - local patched release-critical dependencies must have a manifest with upstream crate checksum, allowed changed files, diff checksum, unsafe/FFI baseline, and review evidence
+   - temporary gaps must use typed `planned_remediation` entries, not prose-only TODOs
+
+2. `policy/stress-fuzz.policy.json`
+   This policy covers fuzz and stress coverage as trust-boundary evidence, not merely the existence of fuzz targets.
+
+   Required policy coverage:
+   - every parser or untrusted-input boundary must have a fuzz/proptest/stress mapping or a reviewed exception recorded in the JSON registry
+   - fuzz corpora must seed the real wire/input shape where one exists, including Git porcelain v2 `-z`
+   - stress scripts must exercise the real UI or subprocess boundary they are named after
+   - generated stress corpora/repos must be consumed by scheduled/manual stress jobs
+   - fuzz/stress artifacts must be preserved on failure
+   - app and fuzz lockfiles must stay synchronized where dependency preflight already requires it
+
+Use a typed planned-remediation schema wherever V14.6 policy describes a known gap to be fixed in V14.7:
+`{ finding_id, target_milestone, review_artifact, created, max_age_days, reason, removal_condition, approval_required? }`.
+`removal_condition` states what clears the entry. `approval_required` is optional and, when used, is a free-form approver identifier such as a GitHub team, role, or individual. `created` uses ISO `YYYY-MM-DD`; `created + max_age_days` is evaluated against the current UTC date at validator runtime so stale debt expires even when no new commits are made.
+
+Review every current policy file for overlap. Move or cross-reference existing rules so there is one authoritative policy owner for release safety and stress/fuzz coverage. Add deterministic validator enforcement and unit tests. Do not weaken strict mode or add broad exceptions.
+
+Deliverable:
+V14.6 is complete when `RIT-AUD-014` is fixed with regression coverage, the new release and stress/fuzz policy files exist, are included in the bundle/scope documentation, enforce typed planned remediation and parser-boundary registry rules, have test coverage, and the repo passes strict policy validation.
+```
+
+---
+
+# V14.7 — Audit Remediation Pass
+
+> created: 2026-05-25
+> updated: 2026-05-26
+> status: complete
+> priority: high
+> type: roadmap-milestone
+> implementation: working tree — V14.7 audit remediation pass
+
+## Purpose
+
+V14.7 closes every `docs/audit_report.md` finding except `RIT-AUD-014`, which is owned by V14.6 Batch 0a. The milestone changes workflows, code, docs, manifests, and stress/fuzz scripts so that each `planned_remediation` entry V14.6 carries can be removed without re-introducing the underlying gap. Work is structured as small, reviewable PRs grouped by trust boundary, not as one large patch.
+
+The framing "highest-risk findings only" used in earlier drafts is rejected. Every audit finding listed below is in scope. Mediums and Lows do not get a quiet opt-out: each is either fixed or carried forward as a typed `planned_remediation` entry with a maintainer-approved reason and a max-age that survives V14.7's ship date.
+
+V14.7 holds back V15 and V16 so the large-file viewer and Markdown split-edit work are not built on top of known release, lifecycle, save, Git, parser-fuzz, or stress weaknesses.
+
+## Audit findings closed by V14.7
+
+V14.7 closes 16 of 17 audit findings. `RIT-AUD-014` (validator path-scope) is closed in V14.6 Batch 0a and is explicitly out of scope here.
+
+| RIT-AUD-* | Severity | Remediation group | Required outcome |
+|-----------|----------|-------------------|------------------|
+| 001 | High | Release / signing | `publish-flatpak.yml` gates on the exact tag commit's `validate.yml` status, or reruns `dependency-preflight` + `policy_check --strict` + `coverage_check` + `cargo test` + Flatpak build/smoke before importing signing secrets |
+| 002 | High | Release / rollback | publish performs a monotonic OSTree commit/version comparison against the published Pages remote and requires an explicit emergency rollback path with separate approval; `workflow_dispatch` reruns for non-monotonic targets are blocked |
+| 003 | Medium | GTK lifecycle | `on_page_detached` and tab-close paths invoke `EditorTab::cancel_io`; open callbacks verify tab membership and page identity before applying loaded document, recent, or session side effects |
+| 004 | Medium | GTK lifecycle | `ReviewLoad` ownership and its `gio::Cancellable` are stored in tab or source-control state; cancel-on-close/project-switch is wired; `finish` checks tab membership and source generation before populating |
+| 005 | Medium → High if confirmed | Save / session | first action is to reproduce the data-loss path (slow save plus typing during save); if reproduction confirms content loss or false-clean state, severity is bumped to High in `docs/audit_report.md` and the fix shape (snapshot-at-save-start, dirty-generation guard, or temporary edit-disable for manual save) is chosen before code lands |
+| 006 | Medium | Git boundary | every `/app/bin/git` subprocess has both a per-operation `gio::Cancellable` and a wall-clock timeout; minimap/blob/refresh callers retain owner cancellables; explicit process cleanup is verified |
+| 007 | Medium | Git boundary | `parse_status` enforces max-entry and max-attr-path caps, sets `GitStatusSnapshot.too_large`, and the source-control UI renders a degraded "too many changes" state instead of rebuilding the GTK model |
+| 008 | Medium | Stress / fuzz | own reviewable PR; stress scripts open the corpora produced by `stress/make_corpus.py` and the Git repos from `stress/git-repos/make_repos.sh`, drive the named UI flows (preview toggle, compare entry, save, search, source-control refresh), and assert UI state transitions so passing scripts can no longer leave their named boundary untouched |
+| 009 | Medium → High recommended | Supply chain | `app/build-aux/cargo-patches/sourceview5/patch-manifest.json` committed with upstream `sourceview5` crate checksum, allowed-changed-files list, full-tree diff checksum, and `unsafe_ffi_count` baseline; `tools/checks/release.py` patch validator computes drift against each field instead of only checking presence |
+| 010 | Medium | Release / key governance | publish workflow compares the exported signing public key against the committed `app/build-aux/flatpak/riteed-beta-public.asc` and fails on mismatch; `app/build-aux/flatpak/README.md` replaces every `TBD` with concrete rotation, revocation, and emergency cutover procedures |
+| 011 | Medium | CI / supply chain | release-critical GitHub Actions in `publish-flatpak.yml` are pinned to immutable commit SHAs; cargo-installed CI tools (`cargo-llvm-cov` and peers) get pinned versions; the same hardening is applied to `validate.yml` jobs that gate releases |
+| 012 | Low/Medium | GTK lifecycle | source-control minimap blob requests are stored per tab/source generation and cancelled on tab close, source refresh churn, and project switch |
+| 013 | Low/Medium | Save / session | session restore persistence is deferred until startup/user-visible state has settled, or the session-restore path receives a narrow enforced GSettings policy exception with reviewed evidence |
+| 015 | Low/Medium | Stress / fuzz | parser-boundary registry enforcement is closed so a new parser/untrusted-input boundary module without a matching registry entry hard-fails `policy_check`; the Git status fuzz corpus is reseeded with valid NUL-delimited porcelain v2 records including control characters, non-UTF-8 paths, and unmerged entries |
+| 016 | Low | Git boundary | source-control list and tree labels and tooltips render display names with escaped controls or replacement glyphs while keeping raw bytes for Git identity |
+| 017 | High | Release / governance | `Protect main` and `Protect version tags` rulesets are enabled with exact required checks, strict status policy, pull-request-only reviewed branch bypass, no tag bypass actors, and live governance verification, or remain disabled only via a typed `planned_remediation` entry that survives V14.7 with active max-age and a stated owner |
+
+## Validation-tooling stability follow-up
+
+The audit recorded a `SIGSEGV` from `python3 -m tools.policy_check --strict` when running concurrently with `coverage_check`. V14.7 must produce a reproducer (or document why one cannot be produced), then either fix the crash or document the safe sequence in `AGENTS.md` and the workflows. This is not a RIT-AUD-* but is in V14.7 scope because the V14.6 contract assumes `policy_check` is reliable.
+
+## Why this version matters
+
+The audit found maturity gaps, not architectural rot. Disciplined follow-through across every finding — not triage by severity — is the right next move. Several Medium findings carry High-impact failure modes if left to compound: `RIT-AUD-005` is the only data-loss class found; `RIT-AUD-006`/`007` are Git resource-exhaustion vectors; `RIT-AUD-009` is supply-chain drift on a generated FFI surface. Deferring them past V14.7 means V15's large-file viewer and V16's Markdown split-edit work would be built on top of release governance gaps, stale async callbacks, weak Git resource caps, and false stress assurance.
+
+V14.7 is the containment milestone. Its job is to make V14.6's policy contract real by changing workflows, code, docs, manifests, and scripts until the active `planned_remediation` arrays clear.
+
+## Scope boundaries
+
+V14.7 is **not** a catch-all refactor milestone. V14.7 consumes the V14.6 policy contracts and implements the workflow, code, docs, and manifest changes needed to satisfy them. It does not own the `RIT-AUD-014` validator blind-spot fix; that belongs only to V14.6 Batch 0a.
+
+V14.7 must not add:
+
+* V15 large-file viewer behavior
+* V16 Markdown split editing
+* unrelated UI polish, refactors, or rename passes
+* new dependencies unless they directly close an audited trust-boundary gap
+* broad `planned_remediation` exceptions or advisory-only entries that exist to make remediation easier
+* new findings without first updating `docs/audit_report.md` and the appropriate policy file
+
+## PR staging
+
+Each remediation group ships as its own reviewable PR. Findings inside a group can be split further when diff size warrants. Suggested order:
+
+1. `RIT-AUD-005` reproduction artifact (must precede the save-fix PR)
+2. Release / governance PRs — `RIT-AUD-001`, `002`, `010`, `011`, `017` — required before signing-key trust changes
+3. Supply-chain PR — `RIT-AUD-009` `sourceview5` patch manifest
+4. GTK lifecycle PRs — `RIT-AUD-003`, `004`, `012` — small and independent
+5. Save / session PRs — `RIT-AUD-005` fix (only after the reproduction artifact lands) and `RIT-AUD-013`
+6. Git boundary PRs — `RIT-AUD-006`, `007`, `016`
+7. Stress / fuzz PRs — `RIT-AUD-008` as its own reviewable change; `RIT-AUD-015` bundled with `008` or shipped separately if scope warrants
+8. Validation-tooling stability follow-up — `policy_check` `SIGSEGV` reproducer and fix or documented sequence
+
+## Completion criteria
+
+V14.7 is complete when **all** of the following hold:
+
+* every `RIT-AUD-*` finding in the table above has either landed code/workflow/docs/scripts that satisfy the recommendation, or has a typed `planned_remediation` entry in the relevant policy file with a max-age that survives past V14.7's expected ship date and a maintainer-approved reason
+* the active `planned_remediation` arrays in `policy/release.policy.json` and `policy/stress-fuzz.policy.json` are either empty or contain only deferred-with-reason entries explicitly enumerated in `docs/audit_report.md`
+* `docs/audit_report.md` is updated so each closed finding has a "closed by V14.7" reference to the implementing commit or PR
+* the validation-tooling stability follow-up has shipped either a fix or a documented mitigation
+* `python3 -m tools.policy_check --root app --strict` passes cleanly against the cleared `planned_remediation` state
+
+## Prompt for V14.7
+
+```text
+Build V14.7 of Riteed by closing every docs/audit_report.md finding except RIT-AUD-014 (owned by V14.6 Batch 0a). Make the V14.6 policy contract real: change workflows, code, docs, manifests, and stress/fuzz scripts so each active planned_remediation entry can be removed without re-introducing the underlying gap.
+
+The framing "highest-risk findings only" is rejected. Every finding below is in scope. Mediums and Lows do not get a quiet opt-out: each is either fixed or carried forward as a typed planned_remediation entry with a documented reason and a max-age that survives V14.7.
+
+Required outcome per finding:
+- RIT-AUD-001: publish-flatpak.yml gates on validate.yml status for the exact tag commit, or reruns dependency-preflight + policy_check --strict + coverage_check + cargo test + Flatpak build/smoke before importing signing secrets
+- RIT-AUD-002: publish performs monotonic OSTree/version comparison against the published Pages remote and requires explicit emergency rollback approval; workflow_dispatch reruns for non-monotonic targets are blocked
+- RIT-AUD-003: tab close/detach cancels open IO and verifies tab membership/page identity before applying open callbacks
+- RIT-AUD-004: Git review loads are owner-cancellable and guarded by tab/source generation at finish
+- RIT-AUD-005: first save/session action is to reproduce the data-loss path; fix shape (snapshot, dirty-generation guard, or temporary edit-disable) is chosen after repro; severity in audit_report.md is bumped to High if reproduction confirms loss
+- RIT-AUD-006: every git subprocess has per-operation cancellable plus wall-clock timeout; all callers retain owner cancellables
+- RIT-AUD-007: parse_status enforces entry caps, sets too_large, and surfaces a degraded UI state
+- RIT-AUD-008: own reviewable PR; stress scripts consume generated corpora/repos and assert UI transitions for preview, compare, Git status, save, and search
+- RIT-AUD-009: sourceview5 patch manifest committed with upstream checksum, allowed changed files, diff checksum, and unsafe/FFI baseline; release.py drift validator enforces each field
+- RIT-AUD-010: workflow compares exported public key against committed riteed-beta-public.asc and fails on mismatch; flatpak README replaces TBD with rotation/revocation/emergency procedures
+- RIT-AUD-011: release-critical actions pinned to commit SHAs; cargo-installed CI tools pinned to versions
+- RIT-AUD-012: source-control minimap blob requests are owner-cancellable per tab/source generation
+- RIT-AUD-013: session restore persistence is deferred until startup settles or gets a narrow reviewed GSettings exception
+- RIT-AUD-015: a new parser boundary module without a matching registry entry hard-fails policy_check; git_status_parse corpus is reseeded with valid NUL-delimited porcelain v2 records
+- RIT-AUD-016: source-control labels/tooltips render display names with escaped controls while keeping raw bytes for Git identity
+- RIT-AUD-017: Protect main and Protect version tags rulesets are enabled with exact required checks, strict status policy, pull-request-only reviewed branch bypass, no tag bypass actors, and live governance verification, or remain disabled only via a typed planned_remediation entry surviving V14.7
+
+Plus: produce a reproducer for the policy_check SIGSEGV under concurrent coverage and either fix it or document the safe sequence in AGENTS.md and the workflows.
+
+Ship work as small reviewable PRs in the staging order documented in the milestone. RIT-AUD-005 reproduction must precede the RIT-AUD-005 fix. Release/governance PRs precede the signing-key trust changes.
+
+Deliverable:
+V14.7 is complete when every RIT-AUD-* in the table is either fixed (with tests) or carried as a typed planned_remediation entry with a maintainer-approved reason and a max-age beyond V14.7's expected ship date; the active planned_remediation arrays in policy/release.policy.json and policy/stress-fuzz.policy.json reach the empty-or-deferred-with-reason state; docs/audit_report.md gains "closed by V14.7" references; the validation-tooling stability follow-up has shipped a fix or documented mitigation; and policy_check --strict passes cleanly against the cleared state.
+
+Do not start V15 or V16 work inside this milestone.
 ```
 
 ---
@@ -2043,7 +2263,7 @@ If any of these items is promoted to a real version later, the promoting change 
 
 # Summary of the full progression
 
-V1 through V14 are complete as of 2026-05-12. V13 covers diff review maturity for Compare and local Source Control review. V14 covers safe native Markdown preview, including initial CommonMark/frontmatter support, renderer correctness polish, and comparison-driven presentation polish. V14.5 is planned as a focused polish step that re-enables the minimap inside Compare panes and decorates the editor-mode minimap with local source control diff state, completing the V11/V10 visual-diff story. V15 is planned as tiered large-file handling so Riteed stays fast on small files, scales features back on mid-sized files, and opens very large files in a native read-only viewer with an explicit opt-in path back into editor mode. V16 is planned as the Markdown split edit/preview workflow with source text as the authoritative editable surface. Remaining ideas beyond V16, including spell check, deeper Markdown preview follow-ups, and a piece-tree buffer replacement for editing very large files, sit in the "Post-V16 — Unscheduled Candidates" section and only earn a version number once one of those ideas has a concrete reason to ship next.
+V1 through V14.7 are complete as of 2026-05-26. V13 covers diff review maturity for Compare and local Source Control review. V14 covers safe native Markdown preview, including initial CommonMark/frontmatter support, renderer correctness polish, and comparison-driven presentation polish. V14.5 re-enables the minimap inside Compare panes and decorates the editor-mode minimap with local source control diff state, completing the V11/V10 visual-diff story. V14.6 added enforceable release and stress/fuzz policy coverage, and V14.7 closes every `docs/audit_report.md` finding except `RIT-AUD-014`, which was already closed by V14.6 Batch 0a. V15 follows that hardening work with tiered large-file handling so Riteed stays fast on small files, scales features back on mid-sized files, and opens very large files in a native read-only viewer with an explicit opt-in path back into editor mode. V16 is planned as the Markdown split edit/preview workflow with source text as the authoritative editable surface. Remaining ideas beyond V16, including spell check, deeper Markdown preview follow-ups, and a piece-tree buffer replacement for editing very large files, sit in the "Post-V16 — Unscheduled Candidates" section and only earn a version number once one of those ideas has a concrete reason to ship next.
 
 ## V1
 
@@ -2108,6 +2328,16 @@ Add safe native Markdown preview for `.md` and `.markdown` files with CommonMark
 ## V14.5
 
 Re-enable the minimap inside Compare/Git compare panes and decorate the editor-mode minimap with local source control diff state so users get instant visual orientation in long files and during review.
+
+## V14.6
+
+Add enforceable release and stress/fuzz policy coverage before new feature work, including signed Flatpak publishing, GitHub Actions release safety, key/rollback rules, trust-boundary fuzz mapping, and stress-script boundary fidelity.
+
+## V14.7
+
+Closed every `docs/audit_report.md` finding except `RIT-AUD-014` (owned and closed by V14.6 Batch 0a) through release/governance, supply-chain, GTK async lifecycle, save/session, Git boundary, and stress/fuzz remediation. The release and stress/fuzz `planned_remediation` arrays are empty, and `audit_report.md` carries closed-by-V14.7 status for each fixed finding.
+
+Post-review hardening tightened the same V14.7 surfaces: release publishing now records and checks source ref/commit metadata, requires exact GitHub Actions check-run contexts for the tag commit, routes emergency rollback through a separate reviewed environment, keeps live GitHub governance out of offline policy-check, requires strict reviewed ruleset shape in the live job, parser-boundary source markers hard-fail registry drift, stress scripts must encode executable UI actions/assertions, and the legacy window-level Compare dialog action is removed in favor of tab compare flows. Save now fails explicitly beyond the 25 MiB editor limit instead of using a live-buffer write path.
 
 ## V15
 

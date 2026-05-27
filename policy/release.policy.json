@@ -1,0 +1,316 @@
+{
+  "$id": "policy/release.v1.json",
+  "title": "Release and Signed Flatpak Policy",
+  "package_id": "gnome_rust_app_policy_pack.v1",
+  "machine_readable_for": [
+    "llm_agent",
+    "codex",
+    "claude"
+  ],
+  "purpose": "Strict policy for signed Flatpak beta publishing, GitHub Actions release safety, GitHub Pages remote updates, signing-key governance, and local release-critical patch drift.",
+  "audit_context": {
+    "source": "docs/audit_report.md",
+    "primary_findings": [
+      "RIT-AUD-001",
+      "RIT-AUD-002",
+      "RIT-AUD-009",
+      "RIT-AUD-010",
+      "RIT-AUD-011",
+      "RIT-AUD-017"
+    ],
+    "governance_note": "Release infrastructure is security-critical because the beta Flatpak remote can ship trusted updates. Known gaps must be represented as typed planned_remediation entries, not prose-only TODOs."
+  },
+  "applies_to": [
+    ".github/workflows/publish-flatpak.yml",
+    ".github/workflows/validate.yml",
+    ".github/dependabot.yml",
+    ".github/PULL_REQUEST_TEMPLATE.md",
+    "README.md",
+    "CHANGELOG.md",
+    "VERSIONS.md",
+    "SECURITY.md",
+    "app/Cargo.toml",
+    "app/Cargo.lock",
+    "app/fuzz/Cargo.lock",
+    "app/build-aux/io.github.cadric.Riteed.yml",
+    "app/build-aux/cargo/cargo-sources.json",
+    "app/build-aux/cargo-patches/**",
+    "app/build-aux/dependencies/**",
+    "app/build-aux/flatpak/**",
+    "policy/**",
+    "tools/checks/dependency_preflight.py",
+    "tools/policy_check.py"
+  ],
+  "overlaps_with": [
+    "policy/gnome_rust_app.bundle.v3.json",
+    "policy/flatpak_metadata.v1.json",
+    "policy/rust.v4.json",
+    "policy/validation_tooling.v2.json",
+    "policy/stress_fuzz.v1.json"
+  ],
+  "conflict_resolution": "union_strictest",
+  "severity": "error",
+  "authority": {
+    "owns": [
+      "signed_flatpak_publish",
+      "github_actions_release_safety",
+      "gpg_ostree_beta_remote",
+      "github_pages_release_artifact",
+      "release_secret_scope",
+      "mutable_ci_release_inputs",
+      "local_release_critical_patch_manifest",
+      "release_planned_remediation"
+    ],
+    "delegates": [
+      {
+        "policy": "policy/flatpak_metadata.v1.json",
+        "scope": "Flatpak manifest identity, sandbox permissions, and source hash pinning outside release workflow signing behavior."
+      },
+      {
+        "policy": "policy/rust.v4.json",
+        "scope": "Runtime Rust unsafe/FFI rules for app source; local patched dependency drift is owned here."
+      },
+      {
+        "policy": "policy/validation_tooling.v2.json",
+        "scope": "Shared command execution, policy bundle integrity, and required policy file enumeration."
+      },
+      {
+        "policy": "policy/stress_fuzz.v1.json",
+        "scope": "Fuzz/stress lockfile and corpus evidence used by release validation gates."
+      }
+    ]
+  },
+  "release_identity": {
+    "repository_full_name": "cadric/riteed",
+    "application_id": "io.github.cadric.Riteed",
+    "flatpak_branch": "beta",
+    "pages_remote_base_url": "https://cadric.github.io/riteed/flatpak/",
+    "pages_repo_url": "https://cadric.github.io/riteed/flatpak/repo/",
+    "committed_beta_public_key": "app/build-aux/flatpak/riteed-beta-public.asc",
+    "public_key_fingerprint_required": true,
+    "tag_format": "v{app/Cargo.toml.package.version}",
+    "appstream_top_release_must_match_tag": true,
+    "tag_commit_must_be_ancestor_of_main": true
+  },
+  "signed_flatpak_publish": {
+    "signing_environment": "flatpak-beta-signing",
+    "signing_secrets": [
+      "FLATPAK_GPG_PRIVATE_KEY",
+      "FLATPAK_GPG_PASSPHRASE",
+      "FLATPAK_GPG_KEY_ID"
+    ],
+    "hard_requirements": {
+      "exact_commit_validation_gate": "Before importing signing secrets, publish must require a successful validation result for the exact tag commit or rerun the release-critical validation suite inside the publish workflow.",
+      "required_validate_check_contexts": [
+        "dependency-preflight",
+        "policy-pack",
+        "native-tests",
+        "ruleset-governance",
+        "flatpak-tests",
+        "flatpak"
+      ],
+      "release_critical_validation_suite": [
+        "scripts/dependency-preflight --root app",
+        "python3 -m tools.policy_check --root app --strict",
+        "python3 -m tools.coverage_check --root app",
+        "cargo test --workspace --all-targets --all-features",
+        "Flatpak build or smoke test for app/build-aux/io.github.cadric.Riteed.yml"
+      ],
+      "secret_access_after_validation_only": true,
+      "pull_request_workflows_must_not_receive_signing_secrets": true,
+      "tag_or_dispatch_publish_only": true,
+      "workflow_dispatch_requires_tag_ref": true,
+      "manual_rerun_must_validate_same_commit": true,
+      "ostree_commits_and_summary_must_be_signed": true,
+      "generated_repo_must_contain_summary_and_summary_sig": true
+    },
+    "monotonic_remote_update": {
+      "older_tag_overwrite": "forbidden_by_default",
+      "required_check": "Compare candidate version/ref against the currently published beta Pages remote before deleting or overwriting site/flatpak/repo.",
+      "manual_rerun_behavior": "Must be idempotent for the same release and must fail for older releases unless emergency_rollback is explicitly active.",
+      "emergency_rollback": {
+        "allowed": true,
+        "requires_separate_approval": true,
+        "requires_documented_target_ref": true,
+        "requires_user_visible_release_note": true,
+        "must_not_share_normal_publish_path_silently": true
+      }
+    }
+  },
+  "github_actions_release_safety": {
+    "release_workflow": ".github/workflows/publish-flatpak.yml",
+    "validation_workflow": ".github/workflows/validate.yml",
+    "permissions": {
+      "default_contents_read": true,
+      "pages_write_only_in_deploy_job": true,
+      "id_token_write_only_in_deploy_job": true,
+      "pull_request_permissions_must_not_include_pages_or_id_token_write": true
+    },
+    "pinning": {
+      "release_critical_actions": "pin_to_commit_sha_or_reviewed_exception",
+      "release_critical_tool_installers": "pin_version_and_integrity_or_reviewed_exception",
+      "major_version_action_tags": "forbidden_without_planned_remediation",
+      "curl_pipe_shell_installers": "forbidden_without_version_integrity_and_review"
+    },
+    "mutable_inputs": {
+      "allowed_unpinned_inputs": [],
+      "github_hosted_runner_required_until_self_hosted_policy_exists": true,
+      "self_hosted_runner_requirements_if_added": [
+        "ephemeral runner",
+        "isolated signing environment",
+        "attested image or documented runner provenance",
+        "no persistent signing material"
+      ]
+    },
+    "repository_governance": {
+      "main_branch_protection_or_ruleset_required": true,
+      "version_tag_ruleset_required": true,
+      "disabled_rulesets_are_not_mitigation": true,
+      "bypass_permissions_must_be_reviewed": true,
+      "reviewed_bypass_actors": [
+        {
+          "ruleset": "Protect main",
+          "actor": "cadric",
+          "actor_id": 964797,
+          "actor_type": "User",
+          "bypass_mode": "pull_request",
+          "review_artifact": "docs/github-ruleset-governance.md",
+          "reason": "Solo-maintainer break-glass merges must use a pull request with audit trail; direct always-bypass is forbidden."
+        }
+      ]
+    },
+    "rollback_environment": {
+      "name": "flatpak-beta-rollback",
+      "normal_signing_environment": "flatpak-beta-signing",
+      "reviewed_required_reviewers": [
+        {
+          "actor": "cadric",
+          "actor_id": 964797,
+          "actor_type": "User",
+          "review_artifact": "docs/github-ruleset-governance.md",
+          "reason": "Emergency beta rollback publishing requires a separate reviewed environment approval path."
+        }
+      ]
+    }
+  },
+  "signing_key_governance": {
+    "private_key_import": {
+      "temporary_gnupg_home_required": true,
+      "kill_agent_on_exit_required": true,
+      "passphrase_preset_must_not_log_secret": true,
+      "secret_key_fingerprint_must_equal_full_FLATPAK_GPG_KEY_ID": true
+    },
+    "public_key_pin": {
+      "committed_public_key_must_exist": true,
+      "exported_secret_public_key_must_match_committed_public_key": true,
+      "fingerprint_must_match_committed_public_key": true,
+      "remote_metadata_must_use_committed_public_key": true
+    },
+    "incident_response_docs": {
+      "key_rotation_documented": true,
+      "revocation_documented": true,
+      "compromise_recovery_documented": true,
+      "emergency_cutover_documented": true,
+      "tbd_markers_for_key_governance": "forbidden"
+    }
+  },
+  "github_pages_artifact": {
+    "artifact_root": "site",
+    "checks_required_before_upload": [
+      "no_symlinks",
+      "no_hardlinks",
+      "summary_exists",
+      "summary_sig_exists",
+      "generated_remote_metadata_references_pinned_public_key"
+    ],
+    "deploy_environment": "github-pages",
+    "upload_pages_artifact_path_must_be_site": true,
+    "deploy_pages_action_must_run_after_artifact_shape_check": true
+  },
+  "local_patch_policy": {
+    "release_critical_local_patches": [
+      {
+        "crate": "sourceview5",
+        "path": "app/build-aux/cargo-patches/sourceview5",
+        "manifest": "app/build-aux/cargo-patches/sourceview5/patch-manifest.json",
+        "dependency_doc": "app/build-aux/dependencies/sourceview5.md",
+        "required_manifest_fields": [
+          "crate",
+          "version",
+          "upstream_source",
+          "upstream_crate_checksum",
+          "allowed_changed_files",
+          "diff_checksum_sha256",
+          "unsafe_ffi_baseline",
+          "review_evidence",
+          "last_reviewed"
+        ],
+        "unsafe_ffi_baseline": {
+          "command": "rg -o '\\bunsafe\\b|\\bextern\\s+\"C\"|\\btransmute\\b' app/build-aux/cargo-patches/sourceview5/src -g '*.rs' | wc -l",
+          "audited_total_matches": 1853,
+          "future_drift_requires_manifest_update": true
+        }
+      }
+    ],
+    "manifest_drift": {
+      "unlisted_changed_file": "error",
+      "diff_checksum_mismatch": "error",
+      "unsafe_ffi_count_increase": "error_without_review_evidence",
+      "missing_review_evidence": "error"
+    }
+  },
+  "planned_remediation_schema": {
+    "type": "array",
+    "items": {
+      "type": "object",
+      "required": [
+        "finding_id",
+        "target_milestone",
+        "review_artifact",
+        "created",
+        "max_age_days",
+        "reason",
+        "removal_condition"
+      ],
+      "optional": [
+        "approval_required"
+      ],
+      "field_semantics": {
+        "finding_id": "Stable audit or policy finding identifier, for example RIT-AUD-001.",
+        "target_milestone": "Milestone expected to clear or re-authorize the entry.",
+        "review_artifact": "Repo-relative evidence path that will prove closure or intentional deferral.",
+        "created": "ISO YYYY-MM-DD date. The validator evaluates created + max_age_days against current UTC date.",
+        "max_age_days": "Positive integer. Expired remediation is a hard failure.",
+        "reason": "Specific current gap; prose-only TODOs are not allowed.",
+        "removal_condition": "Concrete machine or review evidence that clears the entry.",
+        "approval_required": "Optional free-form approver identifier such as a GitHub team, role, or individual."
+      }
+    }
+  },
+  "planned_remediation": [],
+  "verifiers": {
+    "workflow_static_checks": [
+      "publish workflow tag/version/AppStream consistency",
+      "validation gate before signing secret access",
+      "signing environment scoping",
+      "GPG public key pin against committed public key",
+      "Pages artifact shape checks before upload",
+      "action and tool installer pinning",
+      "monotonic remote update and rollback mode"
+    ],
+    "artifact_checks": [
+      "planned_remediation schema and max-age enforcement",
+      "local patch manifest schema and drift checks",
+      "key governance docs contain no release-blocking TBD markers"
+    ]
+  },
+  "prohibited": [
+    "pull_request_access_to_flatpak_signing_secrets",
+    "signing_before_validation_gate",
+    "silent_beta_remote_rollback",
+    "unreviewed_release_critical_mutable_actions_or_tool_installers",
+    "remote_metadata_signed_by_key_not_matching_committed_public_key",
+    "sourceview5_patch_drift_without_manifest_update",
+    "prose_only_release_TODOs_for_known_audit_gaps"
+  ]
+}

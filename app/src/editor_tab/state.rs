@@ -6,6 +6,7 @@ use gtk4::{gio, glib::SList, prelude::*};
 use super::{
     VisibleBannerState, Writability,
     compare::{CompareController, ReviewSession},
+    minimap_diff::MinimapDiffAttachment,
 };
 use crate::document::DocumentState;
 use crate::editor_format::SavedTextFormat;
@@ -20,12 +21,22 @@ pub(super) struct EditorTabState {
     pub(super) compare: CompareAttachment,
     pub(super) review: ReviewAttachment,
     pub(super) ui: UiState,
+    dirty_generation: u64,
 }
 
 impl EditorTabState {
     #[must_use]
     pub(super) fn is_dirty(&self, buffer_modified: bool) -> bool {
         buffer_modified || self.document.format_is_dirty()
+    }
+
+    #[must_use]
+    pub(super) const fn dirty_generation(&self) -> u64 {
+        self.dirty_generation
+    }
+
+    pub(super) fn mark_dirty_generation(&mut self) {
+        self.dirty_generation = self.dirty_generation.saturating_add(1);
     }
 }
 
@@ -76,6 +87,7 @@ pub(super) struct EditorIoState {
 impl EditorIoState {
     pub(super) fn cancel_request(&mut self) -> Option<gio::Cancellable> {
         self.candidate_encodings = None;
+        self.generation = self.generation.saturating_add(1);
         self.cancellable.take()
     }
 
@@ -180,6 +192,7 @@ impl CompareAttachment {
 #[derive(Default)]
 pub(super) struct ReviewAttachment {
     pub(super) session: Option<Rc<RefCell<ReviewSession>>>,
+    pub(super) load_cancellable: Option<gio::Cancellable>,
 }
 
 #[derive(Default)]
@@ -197,12 +210,14 @@ pub(super) struct UiState {
     pub(super) banner_syncing: bool,
     pub(super) visible_banner: VisibleBannerState,
     pub(super) markdown_preview: MarkdownPreviewAttachment,
+    pub(super) minimap_diff: MinimapDiffAttachment,
 }
 
 #[cfg(test)]
 mod tests {
     use super::{
-        AutosaveState, CompareAttachment, DocumentRuntimeState, EditorIoState, ExternalFileState,
+        AutosaveState, CompareAttachment, DocumentRuntimeState, EditorIoState, EditorTabState,
+        ExternalFileState,
     };
     use crate::editor_format::LineEndingMode;
     use gtk4::prelude::*;
@@ -220,6 +235,16 @@ mod tests {
     }
 
     #[test]
+    fn editor_tab_state_tracks_dirty_generation() {
+        let mut state = EditorTabState::default();
+        assert_eq!(state.dirty_generation(), 0);
+
+        state.mark_dirty_generation();
+
+        assert_eq!(state.dirty_generation(), 1);
+    }
+
+    #[test]
     fn editor_io_rejects_stale_generation() {
         let mut state = EditorIoState::default();
         let (first_generation, first_cancellable) = state.start_request(None);
@@ -228,6 +253,10 @@ mod tests {
         assert!(first_cancellable.is_cancelled());
         assert!(!state.finish_request(first_generation));
         assert!(state.finish_request(second_generation));
+
+        let (third_generation, third_cancellable) = state.start_request(None);
+        assert_eq!(state.cancel_request(), Some(third_cancellable));
+        assert!(!state.finish_request(third_generation));
     }
 
     #[test]

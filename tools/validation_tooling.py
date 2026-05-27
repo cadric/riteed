@@ -8,13 +8,14 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import tomllib
+from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Iterable, NoReturn, Sequence
+from typing import Any, Iterable, Iterator, NoReturn, Sequence
 
 EXCLUDED_PARTS = {
     ".git",
-    "target",
     ".flatpak-builder",
     "__pycache__",
     ".mypy_cache",
@@ -24,6 +25,13 @@ EXCLUDED_PARTS = {
 }
 
 _GLOB_CACHE: dict[str, re.Pattern[str]] = {}
+BUILD_OUTPUT_PREFIXES = (
+    ("target",),
+    ("app", "target"),
+    ("app", "fuzz", "target"),
+    ("fuzz", "target"),
+)
+AMBIENT_SECRET_ENV = ("GITHUB_TOKEN", "GH_TOKEN")
 
 
 def fail(message: str) -> NoReturn:
@@ -147,9 +155,29 @@ def line_text(text: str, line_number: int) -> str | None:
     return lines[line_number - 1]
 
 
+def _is_known_build_output(root: Path, path: Path) -> bool:
+    try:
+        parts = path.relative_to(root).parts
+    except ValueError:
+        return False
+    if any(parts[: len(prefix)] == prefix for prefix in BUILD_OUTPUT_PREFIXES):
+        return True
+    for index, part in enumerate(parts):
+        if part != "target":
+            continue
+        target_dir = root.joinpath(*parts[: index + 1])
+        if (target_dir.parent / "Cargo.toml").exists():
+            return True
+        if any((target_dir / marker).exists() for marker in (".rustc_info.json", "debug", "release")):
+            return True
+    return False
+
+
 def iter_files(root: Path) -> Iterable[Path]:
     for path in root.rglob("*"):
         if not path.is_file():
+            continue
+        if _is_known_build_output(root, path):
             continue
         if any(part in EXCLUDED_PARTS for part in path.parts):
             continue
@@ -214,6 +242,8 @@ def require_tool(name: str) -> None:
 def run_capture(cmd: Sequence[str], cwd: Path, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
     try:
         merged_env = os.environ.copy()
+        for name in AMBIENT_SECRET_ENV:
+            merged_env.pop(name, None)
         if env:
             merged_env.update(env)
         return subprocess.run(
@@ -235,6 +265,33 @@ def run_checked(cmd: Sequence[str], cwd: Path, label: str | None = None, env: di
         detail = failure_detail(result.stdout, result.stderr)
         fail(f"[validation] {label or 'command failed'}: {' '.join(cmd)} :: {detail}")
     return result.stdout
+
+
+@contextmanager
+def validation_command_lock(root: Path, label: str) -> Iterator[None]:
+    lock_root = Path(tempfile.gettempdir()) / "riteed-validation-locks"
+    lock_root.mkdir(parents=True, exist_ok=True)
+    key = hashlib.sha256(str(contract_root(root).resolve()).encode("utf-8")).hexdigest()[:16]
+    lock_path = lock_root / f"{key}.lock"
+    with lock_path.open("a+", encoding="utf-8") as handle:
+        try:
+            import fcntl
+        except ImportError:
+            fcntl = None
+        if fcntl is not None:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        handle.seek(0)
+        handle.truncate()
+        handle.write(f"{label}\npid={os.getpid()}\n")
+        handle.flush()
+        try:
+            yield
+        finally:
+            handle.seek(0)
+            handle.truncate()
+            handle.flush()
+            if fcntl is not None:
+                fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
 
 
 def failure_detail(stdout: str, stderr: str) -> str:

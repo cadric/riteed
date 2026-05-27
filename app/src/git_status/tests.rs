@@ -1,6 +1,6 @@
 use super::{
-    GitFileStatus, GitWorktreeMode, index_info_line, parse_attrs, parse_ls_tree_entry,
-    parse_status, resolve_capabilities,
+    GitFileStatus, GitParseError, GitPath, GitWorktreeMode, MAX_ATTR_PATHS, MAX_STATUS_ENTRIES,
+    index_info_line, parse_attrs, parse_ls_tree_entry, parse_status, resolve_capabilities,
 };
 use proptest::prelude::*;
 use proptest::test_runner::FileFailurePersistence;
@@ -79,6 +79,40 @@ u UU N... 100644 100644 100644 000000 abc def ghi conflict.txt\0\
 }
 
 #[test]
+fn status_parser_caps_entries_and_marks_snapshot_too_large() {
+    let mut input = b"# branch.oid abc\0# branch.head main\0".to_vec();
+    for index in 0..=MAX_STATUS_ENTRIES {
+        input.extend_from_slice(
+            format!("1 .M N... 100644 100644 100644 abc def f{index}\0").as_bytes(),
+        );
+    }
+
+    let snapshot = parse_status(&input);
+
+    assert_eq!(snapshot.branch.as_deref(), Some("main"));
+    assert_eq!(snapshot.entries.len(), MAX_STATUS_ENTRIES);
+    assert!(snapshot.too_large);
+}
+
+#[test]
+fn git_path_display_escapes_controls_and_preserves_identity_bytes() {
+    let path = GitPath::from_bytes(b"dir\tname/file\nname\x7f.rs");
+
+    assert_eq!(path.as_utf8(), Some("dir\tname/file\nname\x7f.rs"));
+    assert_eq!(path.raw(), b"dir\tname/file\nname\x7f.rs");
+    assert_eq!(path.display(), "dir\\tname/file\\nname\\u{7f}.rs");
+    assert_eq!(path.display_basename(), "file\\nname\\u{7f}.rs");
+}
+
+#[test]
+fn git_path_display_escapes_bidi_controls_and_backslashes() {
+    let path = GitPath::from_bytes("safe\\path\u{202e}gnp.txt".as_bytes());
+
+    assert_eq!(path.display(), "safe\\\\path\\u{202e}gnp.txt");
+    assert_eq!(path.as_utf8(), Some("safe\\path\u{202e}gnp.txt"));
+}
+
+#[test]
 fn status_labels_and_badges_cover_all_states() {
     let states = [
         (GitFileStatus::Added, "A", "Added"),
@@ -101,6 +135,28 @@ fn attr_parser_blocks_content_conversion() {
     let attrs = attrs.ok();
     assert!(attrs.as_ref().is_some_and(|attrs| attrs.blocks(b"a.bin")));
     assert!(attrs.as_ref().is_some_and(|attrs| !attrs.blocks(b"b.txt")));
+}
+
+#[test]
+fn attr_parser_caps_path_count() {
+    let mut input = Vec::new();
+    for index in 0..=MAX_ATTR_PATHS {
+        input.extend_from_slice(format!("f{index}\0filter\0unset\0").as_bytes());
+    }
+
+    assert_eq!(parse_attrs(&input), Err(GitParseError::TooLarge));
+}
+
+#[test]
+fn attr_parser_caps_unique_paths_not_attr_triplets() {
+    let mut input = Vec::new();
+    for index in 0..MAX_ATTR_PATHS {
+        for attr in ["filter", "working-tree-encoding", "text", "eol"] {
+            input.extend_from_slice(format!("f{index}\0{attr}\0unset\0").as_bytes());
+        }
+    }
+
+    assert!(parse_attrs(&input).is_ok());
 }
 
 #[test]
@@ -153,6 +209,10 @@ proptest! {
         let attrs = parse_attrs(&bytes);
 
         prop_assert!(snapshot.entries.len() <= record_count);
-        prop_assert!(attrs.is_ok() || attrs == Err(super::GitParseError::Malformed));
+        prop_assert!(
+            attrs.is_ok()
+                || attrs == Err(super::GitParseError::Malformed)
+                || attrs == Err(super::GitParseError::TooLarge)
+        );
     }
 }

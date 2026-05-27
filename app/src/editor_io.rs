@@ -57,6 +57,7 @@ pub enum SaveFailure {
     Failed(AppError),
 }
 
+// PARSER-BOUNDARY: id=document_file_load
 pub fn load_text_file(
     file: &gio::File,
     candidate_encodings: Option<&SList<sourceview5::Encoding>>,

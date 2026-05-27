@@ -1,6 +1,129 @@
 # Continuity
 
 ## OUTCOMES
+- 2026-05-27 PR #8 governance follow-up: the live
+  `flatpak-beta-rollback` environment now exists with required reviewer
+  `User:964797`, `wait_timer=0`, and `prevent_self_review=false`. Local live
+  governance verification passed with `GITHUB_TOKEN="$(gh auth token)"
+  python3 -m tools.ruleset_governance_check`. The validation workflow now routes
+  the CI governance job through the `RULESET_GOVERNANCE_TOKEN` repository secret;
+  create that secret with a least-privilege token before expecting the CI
+  `ruleset-governance` job to pass. CodeQL follow-up is also in progress:
+  release/stress tooling now contains policy-relative paths, the stress runner
+  parses fixture/artifact declarations structurally, and the local CodeQL triage
+  test records the remaining maintainer-tool false-positive classifications.
+- 2026-05-27 follow-up V14.7 hardening is in progress locally. Release
+  validation now uses scoped workflow structure parsing for publish/validate
+  jobs, fail-closes malformed Pages metadata, streams local `.crate` extraction
+  with 1 MiB chunks and size caps, rejects future remediation/review dates,
+  and requires live rulesets to use strict exact status checks, signed-commit
+  enforcement, `pull_request` branch bypass only, and no tag bypass actors.
+  App-side follow-up fixes remove the live-buffer save path: saves now use a
+  bounded 25 MiB snapshot or return an explicit too-large error, autosave
+  pauses on that condition, session-restore completion retries after transient
+  borrow contention, and over-cap Source Control snapshots keep visible capped
+  entries while disabling commit/mutating/review/minimap work. Focused
+  validation passed for release/ruleset unit tests, release/stress hardening
+  unit tests, Python compile checks, focused Rust `document_limits`,
+  `source_control`, and save-completion tests, `scripts/policy-check --root app
+  --strict`, and `python3 -m tools.coverage_check --root app` at 80.7% line
+  coverage. Remote ruleset updates for the new `pull_request`/signed/strict
+  shape have not been written in this local step; `RIT-AUD-017` remains closed
+  only after `tools.ruleset_governance_check` is green against the live API.
+- Post-review hardening for the current V14.7 closeout is implemented:
+  `GITHUB_TOKEN` was removed from the privileged native validation container
+  and moved to an isolated `ruleset-governance` job; `publish-flatpak.yml`
+  now gates on exact tag-commit GitHub Actions check-runs,
+  version/ref/source-commit Pages metadata, and a separate
+  `flatpak-beta-rollback` environment for emergency rollback; the live
+  `Protect main` ruleset was updated on 2026-05-26 to require
+  `ruleset-governance`; ruleset bypass actors and rollback reviewers are
+  exact-policy matched; offline policy-check no longer requires GitHub auth;
+  stress scripts now require executable action/assertion contracts and safe
+  artifact paths; parser registry entries are bidirectionally tied to
+  `PARSER-BOUNDARY` markers; the legacy `win.compare` dialog action was
+  removed; async reused-tab opens check dirty-generation before applying; and
+  Git timeouts surface as Source Control errors instead of cancellations.
+  Follow-up validation passed with release/stress/validation unit tests,
+  `scripts/dependency-preflight --root app`, JSON parsing, `git diff --check`,
+  `cargo fmt --all --check`, `cargo check --workspace --all-targets
+  --all-features`, `cargo clippy` with `-D warnings`, single-threaded `cargo
+  test --workspace --all-targets --all-features`, no-token `python3 -m
+  tools.policy_check --root app --strict`, and `python3 -m tools.coverage_check
+  --root app` (80.7% line coverage). The coverage wrapper now defaults Rust tests to
+  `RUST_TEST_THREADS=1`, and the GTK search/replace flow waits for the
+  remaining-match count before Replace All.
+- V14.7 remediation is implemented for every audit item except V14.6-owned
+  `RIT-AUD-014`. After repository-owner approval on 2026-05-26, the
+  `Protect main` and `Protect version tags` GitHub repository rulesets were
+  enabled through the ruleset API and `RIT-AUD-017` was removed from release
+  planned remediation. `ROADMAP.md` now marks `completed_through: v14.7` and
+  `next_version: v15`. Strict policy validation and coverage passed locally
+  after adding validation command locking, release/stress hardening,
+  sourceview5 patch-manifest validation, GTK async lifecycle cancellation,
+  save dirty-generation guards, Git subprocess timeout cleanup, Git status
+  caps, escaped Git path display, parser/stress registry enforcement, and
+  live ruleset API verification. Final validation for this closeout passed
+  with release/stress/policy/coverage unit tests, dependency preflight, JSON
+  parsing, `git diff --check`, `python3 -m tools.policy_check --root app
+  --strict`, and `python3 -m tools.coverage_check --root app` at 81.4% line
+  coverage.
+- Implemented V14.6 policy hardening: added and wired
+  `policy/release.policy.json` and `policy/stress-fuzz.policy.json`, updated
+  bundle/load-order/docs/AGENTS overlap ownership, added release and
+  stress/fuzz validator modules, and fixed `RIT-AUD-014` so `src/target/*`
+  remains scanned while root/app/fuzz build-output `target` roots are ignored.
+  The new checks enforce typed `planned_remediation` schema and max-age, with
+  known V14.7 gaps still allowed only through non-expired remediation entries.
+  `ROADMAP.md` now marks V14.6 complete and moves `next_version` to `v14.7`.
+  During validation, repeated parallel GTK flow-test flakes were removed by
+  making policy-check set `RUST_TEST_THREADS=1`, matching CI.
+- Addressed the V14.6 policy-review findings: `RIT-AUD-001` is no longer only
+  planned remediation because `publish-flatpak.yml` now requires exact
+  successful GitHub check runs before signing; malformed `planned_remediation`
+  entries no longer activate their finding; release checks ignore comments for
+  secret/rollback matching and use stricter Pages/key/rollback checks; stress
+  registry paths reject absolute/parent-traversing values; git status corpus
+  seed shape scanning is capped; and patch/stress validators now enforce
+  manifest drift and per-flow fidelity once remediations clear.
+- Finalized the audit/roadmap calibration plan before V14.6 implementation:
+  `RIT-AUD-014` is owned by V14.6 Batch 0a and must land with policy-check
+  regression coverage before new policy files, while V14.7 owns clearing typed
+  `planned_remediation` entries left by the V14.6 contracts. GitHub ruleset
+  state was verified read-only and is not hypothetical: `Protect main` and
+  `Protect version tags` exist with `enforcement: disabled`, and classic
+  `main` branch protection reports `Branch not protected`. Validation for this
+  docs-only revision passed with `git diff --check`, a rerun of
+  `python3 -m tools.policy_check --root app --strict` after one transient GTK
+  flow-test failure, and `python3 -m tools.coverage_check --root app` at 81.9%
+  line coverage.
+- Updated the roadmap plan after the security/robustness audit: V14.6 is now
+  the next planned milestone for critical policy updates, covering
+  `policy/release.policy.json` and `policy/stress-fuzz.policy.json` with
+  validator-backed release, GitHub Actions, stress, and fuzz rules. V14.7 now
+  follows as the focused `docs/audit_report.md` remediation milestone before
+  V15 large-file handling and V16 Markdown split editing. `ROADMAP.md`
+  frontmatter now points `next_version` at `v14.6`, and `CHANGELOG.md` records
+  the roadmap scheduling change.
+- Added an explicit fast dependency preflight for CI and GTK-stack Dependabot
+  grouping: `/app` Dependabot now separates GTK/GNOME binding updates into
+  `gtk-rs-stack`, `scripts/dependency-preflight` invokes
+  `tools.checks.dependency_preflight`, `tools.policy_check` runs the same
+  checker before heavier policy work, and `.github/workflows/validate.yml` has
+  a `dependency-preflight` job that `policy-pack`, `native-tests`,
+  `flatpak-tests`, and `flatpak` depend on. The check fails early on app/fuzz
+  version drift, exact safe/sys binding drift, non-exact direct stack pins,
+  policy target drift, duplicate lock/source entries, sparse Cargo lockfile
+  sources, malformed policy JSON, and stale Flatpak cargo source manifests.
+  `glib-build-tools` is tracked with the GTK stack, `app/fuzz/Cargo.lock` was
+  synced back to the app lockfile's GLib/Gio/Pango stack versions, and the
+  evergreen manual GTK update flow now lives in `docs/dependency-updates.md`
+  with an `AGENTS.md` link. Validation passed with
+  `scripts/dependency-preflight --root app`, `python3 -m unittest
+  tools.tests.test_policy_check tools.tests.test_coverage_check
+  tools.tests.test_dependency_preflight -v`, `scripts/policy-check --root app
+  --strict`, `python3 -m tools.coverage_check --root app` (81.5% line
+  coverage), and `git diff --check`.
 - Fixed the Markdown preview interaction follow-up: preview zoom now uses a
   dedicated CSS class that inherits only font size, preview Ctrl+C copies the
   selected rendered text without scroll jumps, preview Ctrl+F/Ctrl+H captures a
@@ -358,3 +481,5 @@
 - V11 reference/current side-order local user Flatpak rebuild/install passed with app commit `43ea8273b740cca78c8f2b8365cd3f74d79ed4c6c3fb10ea5734619b4b05be10`, installed size 8.0 MB on `org.gnome.Platform//50`, and `/app/bin/git` reports `git version 2.54.0`.
 - V11 gutter marker follow-up validation passed after splitting line numbers and +/- markers into separate gutter renderers: `git diff --check`, `cd app && cargo fmt --all --check`, `cd app && cargo check --workspace --all-targets --all-features`, `cd app && cargo clippy --workspace --all-targets --all-features -- -D warnings`, `GTK_A11Y=none GSK_RENDERER=cairo cargo test --workspace --all-targets --all-features`, `python3 -m tools.policy_check --root app --strict`, and `python3 -m tools.coverage_check --root app` (82.5% line coverage).
 - V11 gutter marker follow-up local user Flatpak rebuild/install passed with app commit `be7433b3b49c73ded3114488032db172b792b3a7a9d03be467da326be51c75b8`, installed size 8.0 MB on `org.gnome.Platform//50`, and `/app/bin/git` reports `git version 2.54.0`.
+- V14.5 validation passed: Compare/Git compare panes now use `sourceview5::Map` again with the existing minimap preference, and editor Source Control minimap bands reuse the V10 snapshot plus typed `cat_blob` reads. The editor bands are buffer tags by design, so they appear faintly in the editor body as well as the minimap, use deterministic FNV-1a+length fingerprints, dim while the buffer text differs from the decorated saved text, skip binary/invalid/oversized inputs, and clear when a file leaves Source Control state. Validation included `cargo fmt --all --check`, `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `GTK_A11Y=none GSK_RENDERER=cairo cargo test --workspace --all-targets --all-features`, `scripts/policy-check --root app --strict`, `python3 -m tools.coverage_check --root app` (81.9% line coverage), and `git diff --check`.
+- V14.5 local user Flatpak rebuild/install passed with app commit `892c3a6f126d109b2c69b9b55dd68fc26ed526eedb89883583f69514e786f164`, installed size 9.4 MB on `org.gnome.Platform//50`, and `/app/bin/git` reports `git version 2.54.0`.

@@ -7,6 +7,7 @@ use libadwaita as adw;
 use libadwaita::prelude::*;
 use sourceview5::prelude::*;
 
+use super::minimap::CompareMinimap;
 use super::presentation::{DiffPresentation, PresentationSide};
 use super::ui::configure_presentation_view;
 use super::viewport;
@@ -21,12 +22,14 @@ pub(super) struct PresentationPane {
     pub(super) buffer: sourceview5::Buffer,
     pub(super) view: sourceview5::View,
     pub(super) scrolled: gtk4::ScrolledWindow,
+    pub(super) minimap: CompareMinimap,
 }
 
 pub(super) struct UnifiedPane {
     pub(super) root: gtk4::Box,
     pub(super) buffer: sourceview5::Buffer,
     pub(super) view: sourceview5::View,
+    pub(super) minimap: CompareMinimap,
 }
 
 pub(super) struct StyleHandlers {
@@ -190,12 +193,14 @@ fn build_presentation_pane(
     scrolled.set_hexpand(true);
     scrolled.set_vexpand(true);
     scrolled.set_min_content_width(0);
-    let root = titled_pane_root(title, &scrolled);
+    let minimap = CompareMinimap::new(tab, &view).with_scrolled(&scrolled);
+    let root = titled_pane_root(title, &scrolled, &minimap.holder);
     PresentationPane {
         root,
         buffer,
         view,
         scrolled,
+        minimap,
     }
 }
 
@@ -216,11 +221,21 @@ fn build_unified_pane_with_title(tab: &EditorTab, title: &str) -> UnifiedPane {
     scrolled.set_hexpand(true);
     scrolled.set_vexpand(true);
     scrolled.set_min_content_width(0);
-    let root = titled_pane_root(title, &scrolled);
-    UnifiedPane { root, buffer, view }
+    let minimap = CompareMinimap::new(tab, &view).with_scrolled(&scrolled);
+    let root = titled_pane_root(title, &scrolled, &minimap.holder);
+    UnifiedPane {
+        root,
+        buffer,
+        view,
+        minimap,
+    }
 }
 
-fn titled_pane_root(title: &str, scrolled: &gtk4::ScrolledWindow) -> gtk4::Box {
+fn titled_pane_root(
+    title: &str,
+    scrolled: &gtk4::ScrolledWindow,
+    minimap_holder: &gtk4::Box,
+) -> gtk4::Box {
     let label = gtk4::Label::builder()
         .label(title)
         .xalign(0.0)
@@ -232,8 +247,16 @@ fn titled_pane_root(title: &str, scrolled: &gtk4::ScrolledWindow) -> gtk4::Box {
     let root = gtk4::Box::builder()
         .orientation(gtk4::Orientation::Vertical)
         .build();
+    let content = gtk4::Box::builder()
+        .orientation(gtk4::Orientation::Horizontal)
+        .spacing(6)
+        .build();
+    content.set_hexpand(true);
+    content.set_vexpand(true);
+    content.append(scrolled);
+    content.append(minimap_holder);
     root.append(&label);
-    root.append(scrolled);
+    root.append(&content);
     root
 }
 

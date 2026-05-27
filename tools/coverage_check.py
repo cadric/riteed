@@ -24,7 +24,14 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-from tools.validation_tooling import contract_root, load_json, repo_root, require_tool, run_checked
+from tools.validation_tooling import (
+    contract_root,
+    load_json,
+    repo_root,
+    require_tool,
+    run_checked,
+    validation_command_lock,
+)
 
 def validation_policy(root: Path) -> dict[str, Any]:
     return load_json(contract_root(root) / "policy" / "validation-tooling.policy.json")
@@ -93,16 +100,20 @@ def main() -> int:
             require_tool(str(tool))
         with tempfile.TemporaryDirectory(prefix="cargo-llvm-cov-") as tmpdir:
             out = Path(tmpdir) / "coverage.json"
+            target_dir = Path(tmpdir) / "target"
             command = [str(out) if part == "<output-path>" else str(part) for part in coverage.get("default_command", ["cargo", "llvm-cov", "--workspace", "--all-features", "--json", "--summary-only", "--output-path", "<output-path>"])]
-            run_checked(
-                command,
-                root,
-                "cargo llvm-cov failed",
-                env={
-                    "GSK_RENDERER": os.environ.get("GSK_RENDERER", "cairo"),
-                    "GTK_A11Y": os.environ.get("GTK_A11Y", "none"),
-                },
-            )
+            with validation_command_lock(root, "coverage_check"):
+                run_checked(
+                    command,
+                    root,
+                    "cargo llvm-cov failed",
+                    env={
+                        "GSK_RENDERER": os.environ.get("GSK_RENDERER", "cairo"),
+                        "GTK_A11Y": os.environ.get("GTK_A11Y", "none"),
+                        "RUST_TEST_THREADS": os.environ.get("RUST_TEST_THREADS", "1"),
+                        "CARGO_LLVM_COV_TARGET_DIR": str(target_dir),
+                    },
+                )
             payload = json.loads(out.read_text(encoding="utf-8"))
     percent = extract_line_percent(payload)
     if percent < threshold:

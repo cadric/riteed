@@ -32,6 +32,10 @@ pub(crate) fn install_tab_autosave(workspace: &Rc<Workspace>, tab: &Rc<EditorTab
     });
 }
 
+pub(crate) fn reschedule_tab_autosave(workspace: &Rc<Workspace>, tab: &Rc<EditorTab>) {
+    schedule_autosave(workspace, tab);
+}
+
 fn schedule_autosave(workspace: &Rc<Workspace>, tab: &Rc<EditorTab>) {
     let generation = tab.next_autosave_generation();
     let weak_workspace = Rc::downgrade(workspace);

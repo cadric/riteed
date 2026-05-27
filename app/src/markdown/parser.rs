@@ -8,6 +8,7 @@ use crate::markdown::model::{
 use crate::markdown::normalize::parser_input;
 
 #[must_use]
+// PARSER-BOUNDARY: id=markdown_parse
 pub(crate) fn parse_document(input: &str) -> MarkdownDocument {
     let split = frontmatter::split(input);
     let mut diagnostics = split.diagnostics;

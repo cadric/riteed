@@ -64,12 +64,16 @@ pub(super) fn install(
 
     let git_actions = git_actions::install(shell, source_control.clone(), Rc::clone(workspace));
     let git_actions_for_workspace = Rc::clone(&git_actions);
-    workspace.set_git_action_sync_handler(Rc::new(move |_| {
+    let source_control_for_workspace = source_control.clone();
+    workspace.set_git_action_sync_handler(Rc::new(move |tab| {
         git_actions_for_workspace.recompute_visibility();
+        source_control_for_workspace.refresh_editor_minimap_diff_for_tab(tab);
     }));
     let git_actions_for_source = Rc::clone(&git_actions);
+    let source_control_for_source = source_control.clone();
     source_control.set_state_change_handler(Rc::new(move || {
         git_actions_for_source.recompute_visibility();
+        source_control_for_source.refresh_editor_minimap_diffs();
     }));
 
     WindowSidebarControllers {

@@ -5,6 +5,7 @@ use crate::markdown::model::{
 };
 
 #[must_use]
+// PARSER-BOUNDARY: id=unsupported_scanner
 pub(crate) fn diagnostics_for(body: &str, body_offset: usize) -> Vec<MarkdownDiagnostic> {
     let mut diagnostics = Vec::new();
     let mut seen = BTreeSet::new();

@@ -27,7 +27,8 @@
     "policy/hig.v2.json",
     "policy/gettext_i18n.v2.json",
     "policy/gsettings.v2.json",
-    "policy/flatpak_metadata.v1.json"
+    "policy/flatpak_metadata.v1.json",
+    "policy/stress_fuzz.v1.json"
   ],
   "conflict_resolution": "union_strictest",
   "severity": "error",
@@ -263,6 +264,7 @@
     "integration_tests_required_for_io_network_storage_and_ffi_edges": true,
     "gtk_widget_tests_must_follow_gtk_policy": true,
     "property_or_fuzz_tests_required_for_parsers_and_untrusted_inputs": true,
+    "parser_and_untrusted_input_boundary_mapping_owned_by": "policy/stress_fuzz.v1.json",
     "coverage_mode": "enforced",
     "unsafe_code_requires_additional_verification": [
       "cargo test --release",

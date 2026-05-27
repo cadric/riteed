@@ -22,17 +22,9 @@ impl WindowCompareController {
         self.shell.add_action(&self.tab_compare_file_action);
         self.shell.add_action(&self.tab_compare_saved_action);
         self.shell.add_action(&self.tab_compare_pasted_text_action);
-        self.shell.add_action(&self.compare_action);
-        self.compare_action_installed.set(true);
     }
 
     pub(super) fn install_callbacks(self: &Rc<Self>) {
-        let weak = Rc::downgrade(self);
-        self.compare_action.connect_activate(move |_, _| {
-            if let Some(controller) = weak.upgrade() {
-                controller.present_compare_dialog();
-            }
-        });
         let weak = Rc::downgrade(self);
         self.refresh_reference_action.connect_activate(move |_, _| {
             if let Some(controller) = weak.upgrade() {
@@ -130,7 +122,6 @@ impl WindowCompareController {
             }
         });
         let can_start = selected.is_some_and(|tab| !tab.is_compare_active());
-        self.set_compare_action_visible(!active);
         self.tab_compare_file_action.set_enabled(can_start);
         self.tab_compare_pasted_text_action.set_enabled(can_start);
         self.tab_compare_saved_action
@@ -158,19 +149,5 @@ impl WindowCompareController {
                 && tab.is_dirty()
                 && !self.workspace.settings.autosave_enabled()
         })
-    }
-
-    fn set_compare_action_visible(&self, visible: bool) {
-        if visible {
-            if !self.compare_action_installed.get() {
-                self.shell.add_action(&self.compare_action);
-                self.compare_action_installed.set(true);
-            }
-            return;
-        }
-        if self.compare_action_installed.get() {
-            self.shell.remove_action("compare");
-            self.compare_action_installed.set(false);
-        }
     }
 }

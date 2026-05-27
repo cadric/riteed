@@ -1,0 +1,297 @@
+{
+  "$id": "policy/stress_fuzz.v1.json",
+  "title": "Stress and Fuzz Boundary Policy",
+  "package_id": "gnome_rust_app_policy_pack.v1",
+  "machine_readable_for": [
+    "llm_agent",
+    "codex",
+    "claude"
+  ],
+  "purpose": "Strict policy for fuzz, proptest, and stress evidence over parser and untrusted-input trust boundaries. This policy treats boundary fidelity as the requirement, not merely the existence of fuzz targets or stress scripts.",
+  "audit_context": {
+    "source": "docs/audit_report.md",
+    "primary_findings": [
+      "RIT-AUD-008",
+      "RIT-AUD-015"
+    ],
+    "related_findings": [
+      "RIT-AUD-006",
+      "RIT-AUD-007",
+      "RIT-AUD-016"
+    ],
+    "governance_note": "The audit found useful fuzz/proptest infrastructure, but missing machine mapping from trust boundaries to fuzz/property/stress evidence and under-fidelity in scheduled stress flows."
+  },
+  "applies_to": [
+    ".github/workflows/validate.yml",
+    "app/Cargo.lock",
+    "app/Cargo.toml",
+    "app/fuzz/**",
+    "app/src/**",
+    "app/tests/**",
+    "app/build-aux/validation/parser-boundaries*.json",
+    "stress/**",
+    "tools/checks/dependency_preflight.py",
+    "tools/policy_check.py"
+  ],
+  "overlaps_with": [
+    "policy/gnome_rust_app.bundle.v3.json",
+    "policy/rust.v4.json",
+    "policy/validation_tooling.v2.json",
+    "policy/release.v1.json"
+  ],
+  "conflict_resolution": "union_strictest",
+  "severity": "error",
+  "authority": {
+    "owns": [
+      "parser_boundary_registry",
+      "fuzz_target_boundary_mapping",
+      "fuzz_seed_real_input_shape",
+      "stress_script_boundary_fidelity",
+      "generated_corpus_and_repo_consumption",
+      "stress_fuzz_artifact_preservation",
+      "stress_fuzz_planned_remediation"
+    ],
+    "delegates": [
+      {
+        "policy": "policy/rust.v4.json",
+        "scope": "General Rust testing expectations and property/fuzz requirement statement. This policy owns the machine-readable boundary mapping."
+      },
+      {
+        "policy": "policy/validation_tooling.v2.json",
+        "scope": "Shared review-artifact discovery, line limits, and strict validator execution."
+      },
+      {
+        "policy": "policy/release.v1.json",
+        "scope": "Release-critical use of stress/fuzz results as a signing gate."
+      }
+    ]
+  },
+  "parser_boundary_registry": {
+    "globs": [
+      "app/build-aux/validation/parser-boundaries*.json"
+    ],
+    "required": true,
+    "entry_shape": {
+      "required_fields": [
+        "id",
+        "kind",
+        "source_paths",
+        "entrypoints",
+        "real_input_shape",
+        "coverage",
+        "gaps",
+        "reviewed_exceptions",
+        "last_reviewed"
+      ],
+      "field_semantics": {
+        "id": "Stable lowercase identifier, unique across all parser-boundary registry files.",
+        "kind": "One of parser, subprocess-output, file-load, filename, markdown-preview, diff, project-tree, save-reload, generated-ui-flow, or other-reviewed-boundary.",
+        "source_paths": "Repo-relative files or globs containing the boundary implementation.",
+        "entrypoints": "Functions, binaries, scripts, UI flows, or subprocess commands where untrusted data enters the boundary.",
+        "real_input_shape": "Concrete wire/file/UI/subprocess shape that production accepts, including delimiters, encodings, size limits, and source of bytes.",
+        "coverage": "Array of fuzz, proptest, unit, integration, Flatpak, or stress evidence entries with repo paths and target names.",
+        "gaps": "Known missing cases; each must be empty or linked to planned_remediation or reviewed_exceptions.",
+        "reviewed_exceptions": "Input shapes or trust-boundary cases intentionally not fuzzed/stressed and backed by review evidence; this is not reviewer approval metadata.",
+        "last_reviewed": "ISO YYYY-MM-DD date from day one."
+      }
+    },
+    "minimum_boundary_ids": [
+      "markdown_parse",
+      "frontmatter_split",
+      "git_status_porcelain_v2_z",
+      "diff_compute",
+      "unsupported_scanner",
+      "document_file_load",
+      "markdown_preview_render",
+      "compare_roundtrip_ui",
+      "git_status_ui",
+      "save_search_ui",
+      "git_path_display"
+    ],
+    "coverage_entry_required_fields": [
+      "type",
+      "path",
+      "target",
+      "input_shape_asserted"
+    ],
+    "reviewed_exception_required_fields": [
+      "case",
+      "reason",
+      "review_artifact",
+      "last_reviewed"
+    ]
+  },
+  "fuzz_targets": {
+    "workspace": "app/fuzz",
+    "targets_required": [
+      "markdown_parse",
+      "frontmatter_split",
+      "git_status_parse",
+      "diff_compute",
+      "unsupported_scanner"
+    ],
+    "seed_contract": {
+      "corpus_root": "app/fuzz/corpus",
+      "each_target_must_have_seed": true,
+      "seed_must_represent_real_input_shape_when_one_exists": true,
+      "git_status_parse": {
+        "real_shape": "git status --porcelain=v2 -z output: NUL-delimited records, control fields, ordinary paths, unmerged entries, control-character paths, and non-UTF-8 path bytes.",
+        "newline_only_seed": "forbidden_without_planned_remediation"
+      },
+      "markdown_parse": {
+        "real_shape": "UTF-8 or replacement-decoded document text after SourceView file loading and Riteed document limits, including CommonMark, frontmatter-adjacent text, code fences, images, links, and literal HTML."
+      },
+      "frontmatter_split": {
+        "real_shape": "Markdown file start bytes and decoded text with YAML-style delimiters, malformed delimiters, and body transitions."
+      },
+      "diff_compute": {
+        "real_shape": "Line-oriented editor and Git comparison text, including large line counts, empty files, binary-adjacent replacement text, and control characters."
+      },
+      "unsupported_scanner": {
+        "real_shape": "Markdown source bytes containing HTML, image/link targets, unsupported syntax, and malformed UTF-8 after app decoding."
+      }
+    },
+    "lockfile_sync": {
+      "app_lockfile": "app/Cargo.lock",
+      "fuzz_lockfile": "app/fuzz/Cargo.lock",
+      "gtk_rs_stack_versions_must_match_app_when_present": true,
+      "dependency_preflight_is_authoritative_for_version_comparison": true
+    }
+  },
+  "stress_scripts": {
+    "script_root": "stress/scripts",
+    "runner": "app/src/bin/riteed_stress.rs",
+    "required_scripts": [
+      "stress/scripts/open-save-search.json",
+      "stress/scripts/compare-roundtrip.json",
+      "stress/scripts/markdown-stress.json",
+      "stress/scripts/git-status-stress.json"
+    ],
+    "script_schema": {
+      "required_fields": [
+        "flow",
+        "description",
+        "expect_failure",
+        "fixtures",
+        "actions",
+        "assertions",
+        "artifact_dir"
+      ],
+      "flow_must_match_runner_branch": true,
+      "description_is_not_evidence": true,
+      "actions_and_assertions_are_exact_types": true,
+      "artifact_dir_must_reject_parent_traversal": true
+    },
+    "boundary_fidelity": {
+      "open_save_search": {
+        "must_open_generated_corpus_file": true,
+        "must_perform_search_action": true,
+        "must_perform_save_or_save_as_boundary": true,
+        "must_assert_document_or_search_state": true
+      },
+      "compare_roundtrip": {
+        "must_start_compare_workflow": true,
+        "must_assert_compare_pane_or_diff_state": true,
+        "must_use_input_files_from_declared_fixtures": true
+      },
+      "markdown_stress": {
+        "must_open_generated_markdown_corpus": true,
+        "must_toggle_or_render_preview_boundary": true,
+        "must_assert_preview_or_fallback_state": true
+      },
+      "git_status_stress": {
+        "must_open_generated_git_repos": true,
+        "must_include_many_untracked_many_modified_conflicted_non_utf8_submodule_and_lock_cases": true,
+        "must_assert_source_control_or_degraded_state": true
+      }
+    }
+  },
+  "generated_inputs": {
+    "markdown_and_file_corpus_generator": "stress/make_corpus.py",
+    "git_repo_generator": "stress/git-repos/make_repos.sh",
+    "generated_paths": [
+      "stress/corpus/generated/",
+      "stress/git-repos/generated/"
+    ],
+    "scheduled_and_manual_stress_jobs_must_consume_generated_paths": true,
+    "temp_only_runner_fixtures_are_forbidden_for_named_boundary_flows": true
+  },
+  "ci_artifacts": {
+    "workflow": ".github/workflows/validate.yml",
+    "upload_on_failure_required": true,
+    "required_failure_artifact_paths": [
+      "stress/artifacts/",
+      "stress/corpus/generated/",
+      "stress/git-repos/generated/",
+      "app/fuzz/artifacts/"
+    ],
+    "intentional_failure_fixture_must_validate_artifact_path": true,
+    "fuzz_crash_artifacts_must_not_be_ignored_by_upload": true
+  },
+  "planned_remediation_schema": {
+    "type": "array",
+    "items": {
+      "type": "object",
+      "required": [
+        "finding_id",
+        "target_milestone",
+        "review_artifact",
+        "created",
+        "max_age_days",
+        "reason",
+        "removal_condition"
+      ],
+      "optional": [
+        "approval_required"
+      ],
+      "field_semantics": {
+        "finding_id": "Stable audit or policy finding identifier, for example RIT-AUD-001.",
+        "target_milestone": "Milestone expected to clear or re-authorize the entry.",
+        "review_artifact": "Repo-relative evidence path that will prove closure or intentional deferral.",
+        "created": "ISO YYYY-MM-DD date. The validator evaluates created + max_age_days against current UTC date.",
+        "max_age_days": "Positive integer. Expired remediation is a hard failure.",
+        "reason": "Specific current gap; prose-only TODOs are not allowed.",
+        "removal_condition": "Concrete machine or review evidence that clears the entry.",
+        "approval_required": "Optional free-form approver identifier such as a GitHub team, role, or individual."
+      }
+    }
+  },
+  "planned_remediation": [],
+  "verifiers": {
+    "registry_checks": [
+      "parser-boundary JSON files exist and have unique ids",
+      "all minimum_boundary_ids are present",
+      "each source_path exists or expands to at least one file",
+      "coverage entries point to existing fuzz targets, tests, or stress scripts",
+      "gaps are empty or linked to planned remediation/reviewed exception",
+      "last_reviewed and reviewed_exception dates use YYYY-MM-DD"
+    ],
+    "fuzz_checks": [
+      "required fuzz target files exist",
+      "each target has a seed corpus",
+      "git_status_parse seeds contain NUL-delimited porcelain v2 examples",
+      "app/fuzz/Cargo.lock stays synchronized with app/Cargo.lock via dependency preflight"
+    ],
+    "stress_checks": [
+      "stress scripts satisfy the declared schema",
+      "runner consumes declared fixtures rather than creating unrelated temp-only inputs for named boundary flows",
+      "scheduled/manual stress invokes corpus and Git repo generators before running scripts",
+      "failure artifacts include stress and fuzz reproducer directories"
+    ],
+    "planned_remediation_checks": [
+      "schema required fields are present",
+      "created dates are valid ISO dates",
+      "created + max_age_days has not expired",
+      "review_artifact paths exist unless the entry explicitly creates that artifact"
+    ]
+  },
+  "prohibited": [
+    "parser_or_untrusted_input_boundary_without_registry_mapping_or_reviewed_exception",
+    "fuzz_target_existence_without_real_input_shape_evidence",
+    "newline_only_git_porcelain_v2_z_seed_without_planned_remediation",
+    "stress_script_that_does_not_exercise_its_named_boundary",
+    "generated_stress_corpus_not_consumed_by_scheduled_or_manual_stress_job",
+    "failure_artifact_upload_missing_fuzz_or_stress_reproducer_paths",
+    "prose_only_stress_fuzz_TODOs_for_known_audit_gaps"
+  ]
+}

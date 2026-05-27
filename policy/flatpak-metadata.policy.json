@@ -29,7 +29,8 @@
     "policy/libadwaita.v2.json",
     "policy/hig.v2.json",
     "policy/gettext_i18n.v2.json",
-    "policy/gsettings.v2.json"
+    "policy/gsettings.v2.json",
+    "policy/release.v1.json"
   ],
   "conflict_resolution": "union_strictest",
   "severity": "error",
@@ -105,6 +106,7 @@
   "module_and_source_rules": {
     "all_downloaded_sources_must_be_pinned_and_hash_verified": true,
     "git_sources_must_be_pinned_to_commit": true,
+    "release_signing_pages_rollback_and_local_release_patch_manifest_owned_by": "policy/release.v1.json",
     "build_commands_must_not_download_unpinned_artifacts": true,
     "prefer_cargo_vendor_or_flatpak_cargo_generator_style_locking": true
   },

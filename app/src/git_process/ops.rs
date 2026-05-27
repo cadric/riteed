@@ -65,7 +65,13 @@ impl GitProcess {
                     true,
                     &cancellable_for_autocrlf,
                     Rc::new(move |autocrlf| {
-                        let autocrlf = optional_text(autocrlf);
+                        let autocrlf = match optional_config_text(autocrlf) {
+                            Ok(autocrlf) => autocrlf,
+                            Err(error) => {
+                                callback_for_eol(Err(error));
+                                return;
+                            }
+                        };
                         let object_format = object_format.clone();
                         let callback_for_eol = Rc::clone(&callback_for_eol);
                         repo_for_eol.run_text(
@@ -73,7 +79,13 @@ impl GitProcess {
                             true,
                             &cancellable_for_eol,
                             Rc::new(move |eol| {
-                                let eol = optional_text(eol);
+                                let eol = match optional_config_text(eol) {
+                                    Ok(eol) => eol,
+                                    Err(error) => {
+                                        callback_for_eol(Err(error));
+                                        return;
+                                    }
+                                };
                                 callback_for_eol(Ok(resolve_capabilities(
                                     &object_format,
                                     &autocrlf,
@@ -432,6 +444,45 @@ impl GitProcess {
                     );
                 }
             }),
+        );
+    }
+}
+
+fn optional_config_text(
+    result: Result<String, GitProcessError>,
+) -> Result<String, GitProcessError> {
+    match result {
+        Ok(text) => Ok(text),
+        Err(GitProcessError::CommandFailed(_)) => Ok(String::new()),
+        Err(error) => Err(error),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{GitProcessError, optional_config_text};
+
+    #[test]
+    fn optional_config_keeps_unset_config_optional() {
+        assert_eq!(
+            optional_config_text(Err(GitProcessError::CommandFailed(String::new()))),
+            Ok(String::new())
+        );
+        assert_eq!(
+            optional_config_text(Ok(String::from("input\n"))),
+            Ok(String::from("input\n"))
+        );
+    }
+
+    #[test]
+    fn optional_config_propagates_inconclusive_failures() {
+        assert_eq!(
+            optional_config_text(Err(GitProcessError::TimedOut)),
+            Err(GitProcessError::TimedOut)
+        );
+        assert_eq!(
+            optional_config_text(Err(GitProcessError::Cancelled)),
+            Err(GitProcessError::Cancelled)
         );
     }
 }

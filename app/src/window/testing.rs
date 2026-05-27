@@ -18,6 +18,12 @@ impl Window {
         self.workspace.selected_text()
     }
 
+    pub(crate) fn selected_dirty_for_tests(&self) -> bool {
+        self.workspace
+            .selected_tab()
+            .is_some_and(|tab| tab.is_dirty())
+    }
+
     pub(crate) fn selected_style_scheme_id_for_tests(&self) -> Option<String> {
         self.workspace.selected_style_scheme_id()
     }
@@ -260,6 +266,26 @@ impl Window {
         self.workspace.selected_minimap_scrollbar_policy()
     }
 
+    pub(crate) fn selected_source_control_minimap_tag_counts_for_tests(
+        &self,
+    ) -> (usize, usize, usize) {
+        self.workspace.selected_tab().map_or((0, 0, 0), |tab| {
+            tab.source_control_minimap_tag_counts_for_tests()
+        })
+    }
+
+    pub(crate) fn selected_source_control_minimap_stale_for_tests(&self) -> bool {
+        self.workspace
+            .selected_tab()
+            .is_some_and(|tab| tab.source_control_minimap_stale_for_tests())
+    }
+
+    pub(crate) fn selected_source_control_minimap_tags_compose_for_tests(&self) -> bool {
+        self.workspace
+            .selected_tab()
+            .is_some_and(|tab| tab.source_control_minimap_tags_compose_for_tests())
+    }
+
     pub(crate) fn selected_markdown_preview_active_for_tests(&self) -> bool {
         self.workspace.selected_markdown_preview_active_for_tests()
     }
@@ -274,6 +300,10 @@ impl Window {
 
     pub(crate) fn selected_banner_visible_for_tests(&self) -> bool {
         self.workspace.selected_banner_visible()
+    }
+
+    pub(crate) fn selected_loading_for_tests(&self) -> bool {
+        self.workspace.selected_loading_for_tests()
     }
 
     pub(crate) fn selected_writability_for_tests(&self) -> Option<crate::editor_tab::Writability> {

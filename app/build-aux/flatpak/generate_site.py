@@ -56,6 +56,10 @@ def main() -> int:
     parser.add_argument("--gpg-key-base64", required=True)
     parser.add_argument("--fingerprint", required=True)
     parser.add_argument("--version", required=True)
+    parser.add_argument("--source-ref", required=True)
+    parser.add_argument("--source-commit", required=True)
+    parser.add_argument("--rollback-ref")
+    parser.add_argument("--rollback-reason")
     args = parser.parse_args()
 
     site_dir = Path(args.site_dir)
@@ -66,6 +70,14 @@ def main() -> int:
     spaced_fingerprint = " ".join(
         fingerprint[index : index + 4] for index in range(0, len(fingerprint), 4)
     )
+    rollback = ""
+    if args.rollback_ref or args.rollback_reason:
+        if not args.rollback_ref or not args.rollback_reason:
+            parser.error("--rollback-ref and --rollback-reason must be provided together")
+        rollback = (
+            f"Rollback ref: <code>{html.escape(args.rollback_ref)}</code><br>\n"
+            f"Rollback reason: <code>{html.escape(args.rollback_reason)}</code><br>\n"
+        )
 
     write(site_dir / ".nojekyll", "")
     write(
@@ -87,7 +99,10 @@ repository until the app is ready for Flathub.</p>
             f"""<h1>Riteed Flatpak Repository</h1>
 <p>Remote: <code>{REMOTE_NAME}</code><br>
 Branch: <code>{BRANCH}</code><br>
-Version: <code>{html.escape(args.version)}</code></p>
+Version: <code>{html.escape(args.version)}</code><br>
+Source ref: <code>{html.escape(args.source_ref)}</code><br>
+Source commit: <code>{html.escape(args.source_commit)}</code><br>
+{rollback}</p>
 {install_block(ref_url)}
 <p>Explicit remote setup:</p>
 <pre><code>flatpak remote-add --user --if-not-exists {REMOTE_NAME} {html.escape(repo_file_url)}

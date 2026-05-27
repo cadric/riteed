@@ -5,7 +5,7 @@ use gtk4::prelude::FileExt;
 
 use super::{
     commit_sensitive, discard_state, entry_disabled_reason, reference_oid, reference_text,
-    should_stage_delete, stage_mode_for_entry,
+    should_stage_delete, stage_mode_for_entry, too_many_changes_text,
 };
 use crate::git_process::GitProcessError;
 use crate::git_status::{
@@ -104,6 +104,15 @@ fn unavailable_attrs_disable_git_actions_and_commit() {
     assert!(commit_sensitive(&snapshot, &known_attrs(), false));
     assert!(!commit_sensitive(&snapshot, &attrs, false));
     assert!(!commit_sensitive(&snapshot, &known_attrs(), true));
+    assert!(!commit_sensitive(
+        &GitStatusSnapshot {
+            too_large: true,
+            ..snapshot
+        },
+        &known_attrs(),
+        false,
+    ));
+    assert_eq!(too_many_changes_text(), "Too many Git changes to display.");
 }
 
 #[test]

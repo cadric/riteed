@@ -29,6 +29,7 @@ pub(crate) enum GitRowAction {
 pub(super) fn apply_entry_actions(state: &mut SourceControlState) {
     let repo = state.repo.clone();
     let dirty_uris = dirty_open_uris(state);
+    let too_large = state.snapshot.too_large;
     for entry in &mut state.snapshot.entries {
         let disabled = entry_disabled_reason(repo.as_deref(), entry, &state.attrs, &dirty_uris);
         if let Some(reason) = disabled {
@@ -36,6 +37,14 @@ pub(super) fn apply_entry_actions(state: &mut SourceControlState) {
             entry.unstage_action = GitActionState::Disabled(reason.clone());
             entry.discard_action = GitActionState::Disabled(reason.clone());
             entry.diff_action = GitActionState::Disabled(reason);
+            continue;
+        }
+        if too_large {
+            let reason = too_many_changes_text();
+            entry.stage_action = GitActionState::Disabled(reason.clone());
+            entry.unstage_action = GitActionState::Disabled(reason.clone());
+            entry.discard_action = GitActionState::Disabled(reason);
+            entry.diff_action = GitActionState::Enabled;
             continue;
         }
         entry.stage_action = if entry.unstaged {
@@ -61,6 +70,7 @@ fn commit_sensitive(
     status_stale: bool,
 ) -> bool {
     !status_stale
+        && !snapshot.too_large
         && !attrs.is_unavailable()
         && snapshot
             .entries
@@ -447,6 +457,10 @@ fn entry_disabled_reason(
         return Some(gettext("Save the open document before using Git actions."));
     }
     None
+}
+
+fn too_many_changes_text() -> String {
+    gettext("Too many Git changes to display.")
 }
 
 fn dirty_open_uris(state: &SourceControlState) -> Vec<String> {

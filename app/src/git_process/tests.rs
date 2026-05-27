@@ -8,7 +8,8 @@ use gtk4::{gio, glib};
 
 use super::support::base_args;
 use super::{
-    GitCallback, GitIdentity, GitProcess, GitProcessError, GitRepoContext, GitSpec, run_git,
+    GIT_CANCEL_KILL_GRACE, GIT_OPERATION_TIMEOUT, GitCallback, GitIdentity, GitProcess,
+    GitProcessError, GitRepoContext, GitSpec, run_git,
 };
 use crate::git_status::GitPath;
 
@@ -26,6 +27,19 @@ fn identity_rejects_config_injection_bytes() {
     assert!(GitIdentity::new(String::from("Ada\nBad"), String::from("ada@example.test")).is_err());
     assert!(GitIdentity::new(String::from("Ada"), String::from("a\rb")).is_err());
     assert!(GitIdentity::new(String::from("Ada"), String::from("a\0b")).is_err());
+}
+
+#[test]
+fn git_operations_have_wall_clock_timeout_and_kill_grace() {
+    assert_eq!(GIT_OPERATION_TIMEOUT, Duration::from_secs(30));
+    assert_eq!(GIT_CANCEL_KILL_GRACE, Duration::from_secs(2));
+}
+
+#[test]
+fn detect_repo_does_not_retry_cancel_or_timeout() {
+    let source = include_str!("../git_process.rs");
+    assert!(source.contains("GitProcessError::Cancelled | GitProcessError::TimedOut"));
+    assert!(source.contains("callback(Err(error));"));
 }
 
 #[test]

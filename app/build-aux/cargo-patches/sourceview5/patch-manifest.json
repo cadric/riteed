@@ -1,0 +1,25 @@
+{
+  "crate": "sourceview5",
+  "version": "0.11.0",
+  "upstream_source": {
+    "crate_archive": "upstream/sourceview5-0.11.0.crate",
+    "url": "https://static.crates.io/crates/sourceview5/sourceview5-0.11.0.crate"
+  },
+  "upstream_crate_checksum": "523d92c25045879b653b3b1233649cb3bb0050c37c0b7ccee4e2a8e9be7f17e4",
+  "allowed_changed_files": [
+    ".cargo-checksum.json",
+    "src/file_loader.rs",
+    "src/file_saver.rs"
+  ],
+  "diff_checksum_sha256": "d4be680dc4df5afb7d242c30df286dfa0a155f3e4ed4043ad1615116a1ab5ee8",
+  "unsafe_ffi_baseline": {
+    "audited_total_matches": 1853,
+    "command": "rg -o '\\bunsafe\\b|\\bextern\\s+\"C\"|\\btransmute\\b' app/build-aux/cargo-patches/sourceview5/src -g '*.rs' | wc -l"
+  },
+  "review_evidence": {
+    "finding_id": "RIT-AUD-009",
+    "reason": "The local patch only adds candidate encoding support and removes Send-bound async callbacks so SourceView callbacks stay on the owning main context.",
+    "review_artifact": "app/build-aux/dependencies/sourceview5.md"
+  },
+  "last_reviewed": "2026-05-26"
+}

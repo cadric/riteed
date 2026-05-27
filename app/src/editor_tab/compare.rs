@@ -22,6 +22,8 @@ mod inline;
 mod interaction;
 mod layout;
 mod menu;
+mod minimap;
+mod minimap_rows;
 mod model;
 mod navigation;
 mod presentation;
@@ -39,6 +41,8 @@ mod target;
 #[cfg(test)]
 mod testing;
 #[cfg(test)]
+mod testing_minimap;
+#[cfg(test)]
 mod testing_render;
 mod ui;
 mod unified;
@@ -55,6 +59,9 @@ use target::{CompareTarget, CompareTargetKind};
 use unified::UnifiedPresentation;
 
 pub(in crate::editor_tab) use change_list::present as present_change_list_dialog;
+pub(in crate::editor_tab) use minimap_rows::{
+    MinimapRow, MinimapRowKind, compute as compute_minimap_rows,
+};
 pub(in crate::editor_tab) use review_session::ReviewSession;
 pub(crate) use review_session::{ReviewFileInput, ReviewScrollTarget};
 #[cfg(test)]
@@ -85,10 +92,13 @@ pub(crate) struct CompareController {
     reference_text: String,
     left_view: sourceview5::View,
     left_buffer: sourceview5::Buffer,
+    left_minimap: minimap::CompareMinimap,
     right_view: sourceview5::View,
     right_buffer: sourceview5::Buffer,
+    right_minimap: minimap::CompareMinimap,
     unified_view: sourceview5::View,
     unified_buffer: sourceview5::Buffer,
+    unified_minimap: minimap::CompareMinimap,
     tags: CompareTags,
     unified_tags: UnifiedTags,
     presentation: Rc<std::cell::RefCell<DiffPresentation>>,

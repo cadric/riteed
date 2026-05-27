@@ -17,11 +17,6 @@ pub(crate) fn exercise_dialog_lifecycle(test_app: &adw::Application) {
     reset_dialog_leak_counters_for_tests();
 
     for _ in 0..10 {
-        close_dialog(window.present_compare_dialog_for_tests());
-        wait_for_clear("compare dialog state drops after close");
-    }
-
-    for _ in 0..10 {
         close_dialog(window.present_compare_paste_text_dialog_for_tests());
         wait_for_clear("paste text dialog state drops after close");
     }

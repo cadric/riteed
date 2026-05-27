@@ -38,6 +38,7 @@ pub(crate) enum DiffSkipReason {
 
 // Keep this as the single runtime full-line diff entry point so near-limit
 // compares do not duplicate the expensive line-diff work.
+// PARSER-BOUNDARY: id=diff_compute
 #[cfg(test)]
 pub(super) fn compute_diff(reference_text: &str, current_text: &str) -> DiffComputation {
     compute_diff_with_options(reference_text, current_text, DiffOptions::default())

@@ -24,6 +24,7 @@ pub(crate) mod actions;
 mod history;
 mod list_view;
 mod live;
+mod minimap;
 mod path_target;
 mod refresh;
 mod review;
@@ -50,6 +51,12 @@ pub(crate) type DetectRepoForTests =
     Rc<dyn Fn(&Path, &gio::Cancellable, GitCallback<GitRepoContext>)>;
 type GitStatusHandler = Rc<dyn Fn(Vec<(String, String)>)>;
 
+pub(super) struct MinimapRequest {
+    tab: Weak<EditorTab>,
+    source: String,
+    cancellable: gio::Cancellable,
+}
+
 #[derive(Clone)]
 pub(crate) struct SourceControlController {
     state: SourceStateRef,
@@ -74,6 +81,8 @@ pub(super) struct SourceControlState {
     pub(super) attrs: GitAttrState,
     pub(super) snapshot: GitStatusSnapshot,
     pub(super) cancellable: Option<gio::Cancellable>,
+    pub(super) review_cancellables: Vec<gio::Cancellable>,
+    pub(super) minimap_cancellables: Vec<MinimapRequest>,
     pub(super) live_refresh: Option<SourceControlLiveRefresh>,
     pub(super) status_stale: bool,
     pub(super) action_generation: u64,
@@ -172,6 +181,8 @@ impl SourceControlController {
             attrs: GitAttrState::default(),
             snapshot: GitStatusSnapshot::default(),
             cancellable: None,
+            review_cancellables: Vec::new(),
+            minimap_cancellables: Vec::new(),
             live_refresh: None,
             status_stale: true,
             action_generation: 0,
@@ -219,6 +230,14 @@ impl SourceControlController {
 
     pub(crate) fn set_state_change_handler(&self, handler: Rc<dyn Fn()>) {
         self.state.borrow_mut().state_change_handler = Some(handler);
+    }
+
+    pub(crate) fn refresh_editor_minimap_diffs(&self) {
+        minimap::refresh_open_tabs(&self.state);
+    }
+
+    pub(crate) fn refresh_editor_minimap_diff_for_tab(&self, tab: Option<Rc<EditorTab>>) {
+        minimap::refresh_tab(&self.state, tab);
     }
 
     pub(crate) fn review_refresh_handler(&self) -> Rc<dyn Fn(Rc<EditorTab>)> {
@@ -459,6 +478,7 @@ fn commit(state: &SourceStateRef) {
 pub(super) fn git_error_text(error: &GitProcessError) -> String {
     match error {
         GitProcessError::InvalidIdentity => gettext("The Git identity is not valid."),
+        GitProcessError::TimedOut => gettext("The Git operation timed out."),
         GitProcessError::OutputTooLarge => gettext("Git output was too large to process safely."),
         GitProcessError::BinaryContent => gettext("Binary files cannot be compared."),
         _ => gettext("The Git operation failed."),
@@ -476,5 +496,80 @@ fn saved_file_in_repo(state: &SourceControlState, file: &gio::File) -> bool {
 fn cancel_refresh(state: &SourceStateRef) {
     if let Some(cancellable) = state.borrow_mut().cancellable.take() {
         cancellable.cancel();
+    }
+}
+
+pub(super) fn track_review_cancellable(state: &SourceStateRef, cancellable: &gio::Cancellable) {
+    state
+        .borrow_mut()
+        .review_cancellables
+        .push(cancellable.clone());
+}
+
+pub(super) fn remove_review_cancellable(state: &SourceStateRef, cancellable: &gio::Cancellable) {
+    state
+        .borrow_mut()
+        .review_cancellables
+        .retain(|active| active != cancellable);
+}
+
+pub(super) fn track_minimap_cancellable(
+    state: &SourceStateRef,
+    tab: &Rc<EditorTab>,
+    source: &str,
+    cancellable: &gio::Cancellable,
+) {
+    state
+        .borrow_mut()
+        .minimap_cancellables
+        .push(MinimapRequest {
+            tab: Rc::downgrade(tab),
+            source: source.to_string(),
+            cancellable: cancellable.clone(),
+        });
+}
+
+pub(super) fn remove_minimap_cancellable(state: &SourceStateRef, cancellable: &gio::Cancellable) {
+    state
+        .borrow_mut()
+        .minimap_cancellables
+        .retain(|active| &active.cancellable != cancellable);
+}
+
+pub(super) fn cancel_minimap_requests_for_tab(
+    state: &SourceStateRef,
+    tab: &Rc<EditorTab>,
+    source: Option<&str>,
+) {
+    let mut state = state.borrow_mut();
+    let mut retained = Vec::new();
+    for request in state.minimap_cancellables.drain(..) {
+        let same_tab = request
+            .tab
+            .upgrade()
+            .is_some_and(|active| Rc::ptr_eq(&active, tab));
+        let same_source = source.is_none_or(|source| request.source == source);
+        if same_tab && same_source {
+            request.cancellable.cancel();
+        } else {
+            retained.push(request);
+        }
+    }
+    state.minimap_cancellables = retained;
+}
+
+pub(super) fn cancel_minimap_requests(state: &SourceStateRef) {
+    cancel_minimap_requests_locked(&mut state.borrow_mut());
+}
+
+pub(super) fn cancel_review_requests_locked(state: &mut SourceControlState) {
+    for cancellable in state.review_cancellables.drain(..) {
+        cancellable.cancel();
+    }
+}
+
+pub(super) fn cancel_minimap_requests_locked(state: &mut SourceControlState) {
+    for request in state.minimap_cancellables.drain(..) {
+        request.cancellable.cancel();
     }
 }

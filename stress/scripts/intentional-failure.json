@@ -1,5 +1,24 @@
 {
   "flow": "open-save-search",
   "description": "Intentional failure fixture for validating riteed-stress exit behavior.",
-  "expect_failure": true
+  "expect_failure": true,
+  "fixtures": [
+    {
+      "role": "document generated corpus",
+      "path": "stress/corpus/generated/open-save-search.txt"
+    }
+  ],
+  "actions": [
+    {
+      "type": "open",
+      "path": "stress/corpus/generated/open-save-search.txt"
+    }
+  ],
+  "assertions": [
+    {
+      "type": "artifact-exists",
+      "path": "stress/artifacts/intentional-failure/stress-run.log"
+    }
+  ],
+  "artifact_dir": "stress/artifacts/intentional-failure"
 }

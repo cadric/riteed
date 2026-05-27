@@ -172,7 +172,7 @@ rotation note.
 ## Stress Testing
 
 Riteed has a layered stress-test setup for boundary caps, parser robustness,
-and large-file flows. See `docs/stresstest_plan.md` for the full plan and
+and large-file flows. See `docs/stress-test-plan.md` for the full plan and
 `docs/stresstest_rapport.md` for the current implementation status.
 
 The `app/fuzz/` workspace holds cargo-fuzz targets for the Markdown, Git

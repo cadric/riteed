@@ -107,6 +107,39 @@ impl EditorTab {
         self.sync_presentation();
     }
 
+    pub(crate) fn set_review_load_cancellable(&self, cancellable: &gio::Cancellable) {
+        if self.kind() != TabKind::GitReview {
+            return;
+        }
+        if let Some(previous) = self
+            .state
+            .borrow_mut()
+            .review
+            .load_cancellable
+            .replace(cancellable.clone())
+        {
+            previous.cancel();
+        }
+    }
+
+    pub(crate) fn clear_review_load_cancellable(&self, cancellable: &gio::Cancellable) {
+        let mut state = self.state.borrow_mut();
+        if state
+            .review
+            .load_cancellable
+            .as_ref()
+            .is_some_and(|active| active == cancellable)
+        {
+            state.review.load_cancellable = None;
+        }
+    }
+
+    pub(crate) fn cancel_review_load(&self) {
+        if let Some(cancellable) = self.state.borrow_mut().review.load_cancellable.take() {
+            cancellable.cancel();
+        }
+    }
+
     pub(crate) fn populate_review_session_with_spec(
         &self,
         spec: &ReviewTabSpec,

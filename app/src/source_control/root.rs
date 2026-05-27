@@ -3,17 +3,19 @@ use std::rc::Rc;
 use gettextrs::gettext;
 use gtk4::{gio, prelude::*};
 
-use crate::git_process::{GitCallback, GitProcess, GitRepoContext};
+use crate::git_process::{GitCallback, GitProcess, GitProcessError, GitRepoContext};
 use crate::git_status::{GitAttrState, GitStatusSnapshot};
 
 use super::refresh::{
     RefreshOrigin, ellipsis_label, emit_project_statuses, rebuild_views, refresh_status_with_origin,
 };
 use super::{
-    SourceControlState, SourceStateRef, actions, cancel_refresh, git_error_is_cancelled, live,
+    SourceControlState, SourceStateRef, actions, cancel_minimap_requests_locked, cancel_refresh,
+    cancel_review_requests_locked, git_error_is_cancelled, git_error_text, live,
     set_commit_controls_enabled,
 };
 
+// PARSER-BOUNDARY: id=git_status_ui
 pub(super) fn set_project_root(state: &SourceStateRef, folder: Option<gio::File>) {
     cancel_refresh(state);
     live::cancel(state);
@@ -40,6 +42,8 @@ pub(super) fn set_project_root(state: &SourceStateRef, folder: Option<gio::File>
         state.status_stale = true;
         state.action_generation = state.action_generation.wrapping_add(1);
         state.review_generation = state.review_generation.wrapping_add(1);
+        cancel_review_requests_locked(&mut state);
+        cancel_minimap_requests_locked(&mut state);
         state
             .status_label
             .set_label(&ellipsis_label(gettext("Refreshing Git status")));
@@ -53,7 +57,8 @@ pub(super) fn set_project_root(state: &SourceStateRef, folder: Option<gio::File>
     let weak = Rc::downgrade(state);
     let cancellable_for_callback = cancellable.clone();
     let callback: GitCallback<GitRepoContext> = Rc::new(move |result| {
-        if cancellable_for_callback.is_cancelled() {
+        let timed_out = matches!(&result, Err(error) if error == &GitProcessError::TimedOut);
+        if cancellable_for_callback.is_cancelled() && !timed_out {
             return;
         }
         let Some(state) = weak.upgrade() else {
@@ -73,6 +78,9 @@ pub(super) fn set_project_root(state: &SourceStateRef, folder: Option<gio::File>
                 refresh_status_with_origin(&state, RefreshOrigin::Initial);
             }
             Err(error) if git_error_is_cancelled(&error) => {}
+            Err(error) if matches!(error, GitProcessError::TimedOut) => {
+                reset_project_state(&state, &git_error_text(&error), true);
+            }
             Err(_error) => {
                 reset_project_state(
                     &state,
@@ -101,6 +109,8 @@ fn reset_project_state(state: &SourceStateRef, label: &str, mark_stale: bool) {
         state.status_stale = mark_stale;
         state.action_generation = state.action_generation.wrapping_add(1);
         state.review_generation = state.review_generation.wrapping_add(1);
+        cancel_review_requests_locked(&mut state);
+        cancel_minimap_requests_locked(&mut state);
         state.status_label.set_label(label);
         set_commit_controls_enabled(&state, false);
         emit_project_statuses(&state);

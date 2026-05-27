@@ -2,11 +2,7 @@
   "$id": "policy/validation_tooling.v2.json",
   "title": "Validation Tooling Policy",
   "package_id": "gnome_rust_app_policy_pack.v1",
-  "machine_readable_for": [
-    "llm_agent",
-    "codex",
-    "claude"
-  ],
+  "machine_readable_for": ["llm_agent", "codex", "claude"],
   "purpose": "Hard-fail enforcement policy for AGENTS.md and validation tooling in a strict GNOME Rust application repository.",
   "applies_to": [
     "AGENTS.md",
@@ -48,7 +44,9 @@
     "policy/hig.v2.json",
     "policy/gettext_i18n.v2.json",
     "policy/gsettings.v2.json",
-    "policy/flatpak_metadata.v1.json"
+    "policy/flatpak_metadata.v1.json",
+    "policy/release.v1.json",
+    "policy/stress_fuzz.v1.json"
   ],
   "conflict_resolution": "union_strictest",
   "severity": "error",
@@ -72,18 +70,11 @@
     "policy/gettext-i18n.policy.json",
     "policy/gsettings.policy.json",
     "policy/flatpak-metadata.policy.json",
+    "policy/release.policy.json",
+    "policy/stress-fuzz.policy.json",
     "policy/validation-tooling.policy.json"
   ],
-  "required_tools": [
-    "cargo",
-    "rustc",
-    "xgettext",
-    "desktop-file-validate",
-    "appstreamcli",
-    "glib-compile-schemas",
-    "msgfmt",
-    "flatpak-builder"
-  ],
+  "required_tools": ["cargo", "rustc", "xgettext", "desktop-file-validate", "appstreamcli", "glib-compile-schemas", "msgfmt", "flatpak-builder"],
   "line_limit_globs": [
     "AGENTS.md",
     "policy/README.md",
@@ -271,6 +262,10 @@
           ]
         }
       }
+    },
+    "parser_boundaries": {
+      "globs": ["build-aux/validation/parser-boundaries*.json"],
+      "entry_required_fields": ["id", "kind", "source_paths", "entrypoints", "real_input_shape", "coverage", "gaps", "reviewed_exceptions", "last_reviewed"]
     }
   },
   "forbidden_source_patterns": [

@@ -1,0 +1,160 @@
+{
+  "version": 1,
+  "boundaries": [
+    {
+      "id": "markdown_parse",
+      "kind": "parser",
+      "source_paths": ["app/src/markdown/parser.rs", "app/src/markdown/normalize.rs"],
+      "entrypoints": ["riteed::fuzzing::parse_markdown_bytes", "markdown::parse_document"],
+      "real_input_shape": "Replacement-decoded Markdown document text after file loading and document limits, including CommonMark blocks, code fences, links, images, literal HTML, and frontmatter-adjacent body text.",
+      "coverage": [
+        {"type": "fuzz", "path": "app/fuzz/fuzz_targets/markdown_parse.rs", "target": "markdown_parse", "input_shape_asserted": "Markdown document bytes decoded with replacement before pulldown-cmark parsing"},
+        {"type": "corpus", "path": "app/fuzz/corpus/markdown_parse/basic.md", "target": "markdown_parse", "input_shape_asserted": "Seed includes frontmatter-adjacent CommonMark, links, inline code, lists, and fenced code"}
+      ],
+      "gaps": [],
+      "reviewed_exceptions": [],
+      "last_reviewed": "2026-05-26"
+    },
+    {
+      "id": "frontmatter_split",
+      "kind": "parser",
+      "source_paths": ["app/src/markdown/frontmatter.rs"],
+      "entrypoints": ["riteed::fuzzing::split_frontmatter_bytes", "markdown::fuzz_split_frontmatter"],
+      "real_input_shape": "Markdown file-start text with optional YAML-style --- delimiters, malformed delimiters, and body transitions after app decoding.",
+      "coverage": [
+        {"type": "fuzz", "path": "app/fuzz/fuzz_targets/frontmatter_split.rs", "target": "frontmatter_split", "input_shape_asserted": "Markdown start bytes and decoded text with frontmatter delimiter transitions"},
+        {"type": "corpus", "path": "app/fuzz/corpus/frontmatter_split/frontmatter.md", "target": "frontmatter_split", "input_shape_asserted": "Seed starts with frontmatter delimiters and body handoff"}
+      ],
+      "gaps": [],
+      "reviewed_exceptions": [],
+      "last_reviewed": "2026-05-26"
+    },
+    {
+      "id": "git_status_porcelain_v2_z",
+      "kind": "subprocess-output",
+      "source_paths": ["app/src/git_status.rs"],
+      "entrypoints": ["git status --porcelain=v2 -z", "riteed::fuzzing::parse_git_status_bytes"],
+      "real_input_shape": "NUL-delimited Git porcelain v2 records with branch headers, ordinary entries, unmerged entries, untracked paths, control-character path bytes, non-UTF-8 paths, submodules, and entry caps.",
+      "coverage": [
+        {"type": "fuzz", "path": "app/fuzz/fuzz_targets/git_status_parse.rs", "target": "git_status_parse", "input_shape_asserted": "Raw porcelain v2 -z byte stream, not newline-normalized text"},
+        {"type": "corpus", "path": "app/fuzz/corpus/git_status_parse/status-z-real.bin", "target": "git_status_parse", "input_shape_asserted": "NUL-delimited ordinary, unmerged, untracked, control-character, and non-UTF-8 records"},
+        {"type": "unit", "path": "app/src/git_status/tests.rs", "target": "status_parser_reads_branch_and_entries", "input_shape_asserted": "NUL-delimited porcelain v2 records"}
+      ],
+      "gaps": [],
+      "reviewed_exceptions": [],
+      "last_reviewed": "2026-05-26"
+    },
+    {
+      "id": "diff_compute",
+      "kind": "diff",
+      "source_paths": ["app/src/editor_tab/compare/diff.rs"],
+      "entrypoints": ["riteed::fuzzing::compute_diff_bytes", "editor_tab::compare::diff::compute_diff"],
+      "real_input_shape": "Line-oriented editor, saved-file, and Git comparison text split into reference/current sides with byte, line-count, and line-product limits.",
+      "coverage": [
+        {"type": "fuzz", "path": "app/fuzz/fuzz_targets/diff_compute.rs", "target": "diff_compute", "input_shape_asserted": "Raw bytes split into reference/current texts around NUL or midpoint"},
+        {"type": "unit", "path": "app/src/editor_tab/compare/diff.rs", "target": "proptest_compute_diff_respects_caps", "input_shape_asserted": "Bounded random text pairs and compare cap boundaries"}
+      ],
+      "gaps": [],
+      "reviewed_exceptions": [],
+      "last_reviewed": "2026-05-26"
+    },
+    {
+      "id": "unsupported_scanner",
+      "kind": "parser",
+      "source_paths": ["app/src/markdown/unsupported.rs"],
+      "entrypoints": ["riteed::fuzzing::unsupported_diagnostics_bytes", "markdown::fuzz_unsupported_diagnostics"],
+      "real_input_shape": "Markdown source bytes after app decoding that may contain HTML, image/link targets, unsupported extensions, task lists, tables, footnotes, malformed UTF-8 replacement text, and code spans/blocks.",
+      "coverage": [
+        {"type": "fuzz", "path": "app/fuzz/fuzz_targets/unsupported_scanner.rs", "target": "unsupported_scanner", "input_shape_asserted": "Markdown source bytes decoded with replacement before unsupported-feature scanning"},
+        {"type": "corpus", "path": "app/fuzz/corpus/unsupported_scanner/unsupported.md", "target": "unsupported_scanner", "input_shape_asserted": "Seed includes unsupported table, task, strikethrough, and footnote syntax"}
+      ],
+      "gaps": [],
+      "reviewed_exceptions": [],
+      "last_reviewed": "2026-05-26"
+    },
+    {
+      "id": "document_file_load",
+      "kind": "file-load",
+      "source_paths": ["app/src/editor_io.rs", "app/src/workspace_open.rs", "app/src/document_limits.rs"],
+      "entrypoints": ["Gio file open", "Workspace::open_files", "EditorTab::load_file"],
+      "real_input_shape": "User-selected local, portal, or mounted document file bytes decoded with selected encoding and bounded by open-size policy.",
+      "coverage": [
+        {"type": "integration", "path": "app/src/gtk_tests_boundaries.rs", "target": "exercise_open_file_at_cap", "input_shape_asserted": "Generated file at the open byte cap is opened through the real GTK flow"},
+        {"type": "stress", "path": "stress/scripts/open-save-search.json", "target": "open-save-search", "input_shape_asserted": "Stress runner opens a declared generated corpus file through GApplication open"}
+      ],
+      "gaps": [],
+      "reviewed_exceptions": [],
+      "last_reviewed": "2026-05-26"
+    },
+    {
+      "id": "markdown_preview_render",
+      "kind": "markdown-preview",
+      "source_paths": ["app/src/editor_tab/markdown_preview.rs", "app/src/markdown/render/mod.rs"],
+      "entrypoints": ["win.tab-toggle-markdown-preview", "MarkdownPreview::render"],
+      "real_input_shape": "Currently opened Markdown document text rendered into a native read-only TextView with unsupported-feature diagnostics, placeholders, and large-preview fallback.",
+      "coverage": [
+        {"type": "integration", "path": "app/src/gtk_tests_markdown.rs", "target": "exercise_markdown_preview", "input_shape_asserted": "GTK flow toggles preview and asserts rendered text, copy, search, and scroll state"},
+        {"type": "stress", "path": "stress/scripts/markdown-stress.json", "target": "markdown-stress", "input_shape_asserted": "Stress runner opens declared generated Markdown and toggles preview"}
+      ],
+      "gaps": [],
+      "reviewed_exceptions": [],
+      "last_reviewed": "2026-05-26"
+    },
+    {
+      "id": "compare_roundtrip_ui",
+      "kind": "generated-ui-flow",
+      "source_paths": ["app/src/window_compare.rs", "app/src/editor_tab/compare/*.rs"],
+      "entrypoints": ["win.tab-compare-with-saved-version", "WindowCompareController::compare_two_files_for_tests", "tab compare actions"],
+      "real_input_shape": "Two editor or file texts used as reference/current inputs and rendered through split or unified native compare panes.",
+      "coverage": [
+        {"type": "integration", "path": "app/src/gtk_tests_v7.rs", "target": "exercise_compare_two_files", "input_shape_asserted": "GTK compare opens two files and asserts compare pane and diff state"},
+        {"type": "stress", "path": "stress/scripts/compare-roundtrip.json", "target": "compare-roundtrip", "input_shape_asserted": "Stress script declares generated reference/current fixtures and compare assertions"}
+      ],
+      "gaps": [],
+      "reviewed_exceptions": [],
+      "last_reviewed": "2026-05-26"
+    },
+    {
+      "id": "git_status_ui",
+      "kind": "project-tree",
+      "source_paths": ["app/src/source_control/*.rs", "app/src/source_control/**/*.rs", "app/src/git_process.rs", "app/src/git_status.rs"],
+      "entrypoints": ["open_source_control", "git-refresh", "git status --porcelain=v2 -z"],
+      "real_input_shape": "Generated and user-selected Git worktrees whose source-control sidebar consumes Git status subprocess output, attrs/tree metadata, and degraded states.",
+      "coverage": [
+        {"type": "integration", "path": "app/src/gtk_tests_v9.rs", "target": "exercise_source_control_folder_flow", "input_shape_asserted": "GTK flow opens a Git folder and asserts source-control rows and review compare state"},
+        {"type": "stress", "path": "stress/scripts/git-status-stress.json", "target": "git-status-stress", "input_shape_asserted": "Stress script opens generated repos for many-untracked, many-modified, conflicted, non-UTF-8, submodule, index-lock, and huge-status cases"}
+      ],
+      "gaps": [],
+      "reviewed_exceptions": [],
+      "last_reviewed": "2026-05-26"
+    },
+    {
+      "id": "save_search_ui",
+      "kind": "save-reload",
+      "source_paths": ["app/src/editor_search/**/*.rs", "app/src/editor_tab/save.rs", "app/src/workspace.rs"],
+      "entrypoints": ["win.search", "win.find-next", "win.save"],
+      "real_input_shape": "Open document text searched through the document search bar and saved through the Gio-backed save boundary with dirty/clean state transitions.",
+      "coverage": [
+        {"type": "integration", "path": "app/src/gtk_tests_boundaries.rs", "target": "exercise_search_at_cap", "input_shape_asserted": "GTK flow opens search at the configured character cap and asserts search result state"},
+        {"type": "stress", "path": "stress/scripts/open-save-search.json", "target": "open-save-search", "input_shape_asserted": "Stress script declares generated open/search fixtures plus search, save, and document-state assertions"}
+      ],
+      "gaps": [],
+      "reviewed_exceptions": [],
+      "last_reviewed": "2026-05-26"
+    },
+    {
+      "id": "git_path_display",
+      "kind": "filename",
+      "source_paths": ["app/src/git_status.rs", "app/src/source_control/list_view.rs", "app/src/source_control/tree_model.rs", "app/src/source_control/tree_view.rs"],
+      "entrypoints": ["GitPath::from_bytes", "Source Control list rows", "Source Control tree rows"],
+      "real_input_shape": "Git path bytes from porcelain v2 -z output, including valid UTF-8 controls, Unicode bidi controls, and invalid UTF-8 bytes that must preserve raw Git identity while producing safe labels/tooltips.",
+      "coverage": [
+        {"type": "unit", "path": "app/src/git_status/tests.rs", "target": "git_path_display_escapes_controls_and_preserves_identity_bytes", "input_shape_asserted": "Valid UTF-8 control bytes preserve raw identity while display text is escaped"},
+        {"type": "stress", "path": "stress/scripts/git-status-stress.json", "target": "git-status-stress", "input_shape_asserted": "Generated non-UTF-8 and control-path Git repos are opened through Source Control stress"}
+      ],
+      "gaps": [],
+      "reviewed_exceptions": [],
+      "last_reviewed": "2026-05-26"
+    }
+  ]
+}

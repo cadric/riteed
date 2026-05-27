@@ -138,6 +138,9 @@ fn build_spec(state: &SourceControlState, kind: ReviewKind) -> Result<Option<Rev
     if state.status_stale {
         return Err(gettext("Refresh Source Control before reviewing changes."));
     }
+    if state.snapshot.too_large {
+        return Err(gettext("Too many Git changes to display."));
+    }
     if state.attrs.is_unavailable() {
         return Err(git_attrs_unavailable_text());
     }
@@ -179,7 +182,11 @@ fn build_spec(state: &SourceControlState, kind: ReviewKind) -> Result<Option<Rev
 }
 
 fn can_review(state: &SourceControlState, kind: ReviewKind) -> bool {
-    if state.repo.is_none() || state.status_stale || state.attrs.is_unavailable() {
+    if state.repo.is_none()
+        || state.status_stale
+        || state.snapshot.too_large
+        || state.attrs.is_unavailable()
+    {
         return false;
     }
     let dirty_uris = dirty_open_uris(state);
@@ -304,6 +311,12 @@ pub(super) fn mark_open_reviews(state: &SourceControlState) {
             continue;
         };
         if spec.repo_root != *repo {
+            continue;
+        }
+        if state.snapshot.too_large {
+            let fingerprint =
+                ReviewSnapshotFingerprint::new(format!("too-large-{}", state.review_generation));
+            let _stale = tab.mark_review_stale_if_mismatch(&fingerprint, state.review_generation);
             continue;
         }
         let fingerprint = match spec.review_kind {

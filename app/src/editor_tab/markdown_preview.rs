@@ -42,6 +42,7 @@ impl EditorTab {
         self.state.borrow().ui.markdown_preview.active
     }
 
+    // PARSER-BOUNDARY: id=markdown_preview_render
     pub fn toggle_markdown_preview(self: &Rc<Self>) {
         if self.is_markdown_preview_active() {
             self.exit_markdown_preview();

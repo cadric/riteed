@@ -35,7 +35,7 @@
     },
     {
       "path": "src/editor_tab/markdown_preview.rs",
-      "line": 303,
+      "line": 304,
       "match": "adjustment.set_value(snapshot.scroll_value.clamp(adjustment.lower(), upper));",
       "kind": "gsettings-write",
       "key": "gtk-adjustment",
@@ -43,7 +43,7 @@
     },
     {
       "path": "src/editor_tab/markdown_preview.rs",
-      "line": 351,
+      "line": 352,
       "match": "self.preview_scrolled.vadjustment().set_value(value);",
       "kind": "gsettings-write",
       "key": "gtk-adjustment-test-helper",
@@ -51,7 +51,7 @@
     },
     {
       "path": "src/editor_tab/markdown_preview.rs",
-      "line": 395,
+      "line": 396,
       "match": "adjustment.set_value(value.clamp(adjustment.lower(), upper));",
       "kind": "gsettings-write",
       "key": "gtk-adjustment",
@@ -59,7 +59,7 @@
     },
     {
       "path": "src/editor_tab/markdown_preview.rs",
-      "line": 403,
+      "line": 404,
       "match": "adjustment.set_value(value.clamp(adjustment.lower(), upper));",
       "kind": "gsettings-write",
       "key": "gtk-adjustment",

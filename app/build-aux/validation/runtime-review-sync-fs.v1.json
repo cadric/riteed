@@ -1,4 +1,13 @@
 {
   "version": 1,
-  "sites": []
+  "sites": [
+    {
+      "path": "src/bin/riteed_stress.rs",
+      "line": 388,
+      "match": ".canonicalize()",
+      "kind": "runtime-sync-fs",
+      "ownership": "The stress runner owns canonicalization of its developer-supplied script path.",
+      "justification": "The stress binary is a CI/developer tool gated by the stress feature; it canonicalizes only the explicit RITEED_STRESS_SCRIPT path before requiring it to live under the repo-local stress/scripts directory."
+    }
+  ]
 }

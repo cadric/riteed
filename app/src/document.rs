@@ -125,16 +125,6 @@ pub(crate) fn display_path(path: &Path) -> String {
     display_path_with_home(path, home.as_deref())
 }
 
-pub(crate) fn display_path_for_file(file: &gio::File) -> String {
-    file.path().map_or_else(
-        || file.uri().to_string(),
-        |path| {
-            let display_source = portal_host_display_path(&path).unwrap_or(path);
-            display_path(&display_source)
-        },
-    )
-}
-
 pub(crate) fn portal_host_display_path(path: &Path) -> Option<PathBuf> {
     crate::document_portal::cached_display_path(path)
 }

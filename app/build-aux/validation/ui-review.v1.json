@@ -55,8 +55,8 @@
       "path": "data/ui/compare.css",
       "line": 2,
       "match": ".riteed-diff-reference-color-probe {",
-      "reason": "Compare rendering resolves libadwaita semantic colors for transient text-buffer diff tags through harmless CSS probe widgets.",
-      "scope": "Riteed-prefixed color probe classes used only for compare tag color lookup."
+      "reason": "Compare rendering and editor Source Control minimap bands resolve libadwaita semantic colors for transient text-buffer diff tags through harmless CSS probe widgets.",
+      "scope": "Riteed-prefixed color probe classes used only for compare and editor Source Control minimap tag color lookup."
     }
   ]
 }

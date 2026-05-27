@@ -1,6 +1,38 @@
+use std::rc::Rc;
+
+use gtk4::glib;
+
 use super::Workspace;
 
 impl Workspace {
+    pub(crate) fn finish_session_restore_without_startup_write(self: &Rc<Self>) {
+        Self::schedule_session_restore_finish(self);
+    }
+
+    fn schedule_session_restore_finish(workspace: &Rc<Self>) {
+        let weak = Rc::downgrade(workspace);
+        glib::idle_add_local_once(move || {
+            if let Some(workspace) = weak.upgrade() {
+                workspace.mark_session_restore_finished();
+            }
+        });
+    }
+
+    fn mark_session_restore_finished(self: &Rc<Self>) {
+        if self.try_mark_session_restore_finished() {
+            return;
+        }
+        Self::schedule_session_restore_finish(self);
+    }
+
+    fn try_mark_session_restore_finished(&self) -> bool {
+        let Ok(mut state) = self.state.try_borrow_mut() else {
+            return false;
+        };
+        state.restoring_session = false;
+        true
+    }
+
     pub(crate) fn persist_session_state_if_needed(&self) {
         let snapshot = crate::session::session_snapshot(
             &self

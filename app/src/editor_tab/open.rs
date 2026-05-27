@@ -193,6 +193,7 @@ impl EditorTab {
             return;
         }
         self.set_loading(true);
+        let start_dirty_generation = self.dirty_generation();
         let (generation, cancellable) = self.start_io_request(candidate_encodings);
         let weak = Rc::downgrade(self);
         let opened_file = file.clone();
@@ -209,6 +210,12 @@ impl EditorTab {
                         }
                         match result {
                             Ok(document) => {
+                                if tab.dirty_generation() != start_dirty_generation {
+                                    tab.set_loading(false);
+                                    tab.sync_presentation();
+                                    callback(Err(AppError::Cancelled));
+                                    return;
+                                }
                                 let monitored_file = gio::File::for_path(&document.path);
                                 let uri = document.uri.clone();
                                 tab.apply_loaded_document(document, None);

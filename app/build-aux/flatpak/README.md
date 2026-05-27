@@ -22,10 +22,37 @@ remote.
 
 GitHub Actions imports the private key only inside the protected
 `flatpak-beta-signing` environment, signs both OSTree commits and repository
-summary metadata, and exports the binary public key into `GPGKey=` fields.
+summary metadata, verifies that the imported secret key matches the committed
+public key, and exports the committed binary public key into `GPGKey=` fields.
 
-Key rotation procedure: TBD. Start rotation at least 3 months before expiry and
-document the client migration path before replacing this key.
+## Key Rotation And Recovery
+
+Start planned rotation at least 3 months before the key expires.
+
+1. Generate the replacement beta key offline and record its full fingerprint,
+   expiry date, and user ID in this file.
+2. Replace `riteed-beta-public.asc` with the new armored public key and update
+   the `FLATPAK_GPG_KEY_ID` environment secret to the full new fingerprint.
+3. Replace `FLATPAK_GPG_PRIVATE_KEY` and `FLATPAK_GPG_PASSPHRASE` in the
+   protected `flatpak-beta-signing` environment.
+4. Publish the next beta from a normal version tag. The publish workflow must
+   fail before signing if the imported secret key does not match
+   `riteed-beta-public.asc`.
+5. Keep the old public key and release notes available until the previous beta
+   is no longer a supported update source.
+
+For revocation or suspected compromise, disable the `flatpak-beta-signing`
+environment first so no further signed updates can publish. Commit the revoked
+public key material and a replacement `riteed-beta-public.asc`, rotate all three
+signing secrets, and publish only from an explicitly reviewed recovery tag.
+
+Emergency cutover uses the same key-pin check as planned rotation. If the Pages
+remote must move backwards or switch keys because a bad beta already shipped,
+use the emergency rollback input on the publish workflow, document the target
+version/ref in the release notes, and preserve the previous Pages artifact for
+post-incident comparison. Emergency rollback publishing routes through the
+separate `flatpak-beta-rollback` GitHub environment; its required reviewer
+identity is policy-pinned and verified by the live `ruleset-governance` job.
 
 ## Install
 

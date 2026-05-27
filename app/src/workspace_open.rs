@@ -6,6 +6,7 @@ use gtk4::{gio, glib, prelude::*};
 use libadwaita as adw;
 
 use crate::dialogs;
+use crate::editor_tab::EditorTab;
 use crate::error::AppError;
 use crate::workspace::{OpenSource, Workspace};
 
@@ -105,11 +106,16 @@ pub(crate) fn request_open_file_then(
     let weak = Rc::downgrade(workspace);
     let opened_file = file.clone();
     let tab_for_result = tab.clone();
+    let expected_page = tab.page();
     tab.clone().load_file(
         &workspace.shell,
         file,
         Rc::new(move |result| {
             if let Some(workspace) = weak.upgrade() {
+                if !open_target_is_current(&workspace, &tab_for_result, expected_page.as_ref()) {
+                    callback(Err(AppError::Cancelled));
+                    return;
+                }
                 match result {
                     Ok(uri) => {
                         if source != OpenSource::SessionRestore {
@@ -189,11 +195,17 @@ fn process_open_request(workspace: &Rc<Workspace>, request: Rc<RefCell<OpenReque
     let weak = Rc::downgrade(workspace);
     let opened_file = file.clone();
     let tab_for_result = tab.clone();
+    let expected_page = tab.page();
     tab.clone().load_file(
         &workspace.shell,
         &file,
         Rc::new(move |result| {
             if let Some(workspace) = weak.upgrade() {
+                if !open_target_is_current(&workspace, &tab_for_result, expected_page.as_ref()) {
+                    request.borrow_mut().failures += 1;
+                    process_open_request(&workspace, request.clone());
+                    return;
+                }
                 match result {
                     Ok(uri) => {
                         request.borrow_mut().successes += 1;
@@ -222,6 +234,22 @@ fn process_open_request(workspace: &Rc<Workspace>, request: Rc<RefCell<OpenReque
             }
         }),
     );
+}
+
+fn open_target_is_current(
+    workspace: &Workspace,
+    tab: &Rc<EditorTab>,
+    expected_page: Option<&adw::TabPage>,
+) -> bool {
+    let Some(expected_page) = expected_page else {
+        return false;
+    };
+    tab.page()
+        .as_ref()
+        .is_some_and(|page| page == expected_page)
+        && workspace
+            .find_tab_by_page(expected_page)
+            .is_some_and(|current| Rc::ptr_eq(&current, tab))
 }
 
 fn finish_open_request(workspace: &Rc<Workspace>, request: &Rc<RefCell<OpenRequest>>) {
@@ -275,9 +303,8 @@ fn finish_restore(
             "Some files from the last session could not be reopened.",
         )));
     }
-    workspace.state.borrow_mut().restoring_session = false;
+    workspace.finish_session_restore_without_startup_write();
     workspace.refresh_selected_state();
-    workspace.persist_session_state_if_needed();
 }
 
 fn acquire_open_target(workspace: &Rc<Workspace>) -> (Rc<crate::editor_tab::EditorTab>, bool) {

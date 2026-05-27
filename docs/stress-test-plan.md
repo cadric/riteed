@@ -69,7 +69,7 @@ Pure cap-tests skal ligge **i modulet hvor cap'en bor**, ikke i et separat GTK-t
   - `editor_tab/view.rs::tests` — Markdown preview fallback predicate test. Tilføj en lille private helper `markdown_preview_uses_fallback(len: usize) -> bool` der wrapper `len > MARKDOWN_PREVIEW_MAX_BYTES`-checket fra `view.rs:257`, og test den lokalt i samme module
 - **GTK boundary smoke** (1-2 tests max, faktisk store buffers): `app/src/gtk_tests_boundaries.rs` med kun "open 25 MiB" + "search 2M chars" end-to-end, der beviser flows ikke blot returner-tal stemmer. Disse to tests bruger eksisterende helpers.
 
-**Tung-test-disciplin**: pure cap tests kører på pure-Rust niveau (millisekunder). Kun 1-2 GTK flows åbner faktisk en 25 MiB buffer. Den tunge GTK boundary smoke er bevidst samlet med den eksisterende GTK surface-test, så der kun er ét GTK init-entrypoint; full GTK validation bliver derfor målbart langsommere, mens de rene boundary/proptest-kommandoer skal forblive lette.
+**Tung-test-disciplin**: pure cap tests kører på pure-Rust niveau (millisekunder). Kun 1-2 GTK tests åbner faktisk en 25 MiB buffer. Almindelig `cargo test` må ikke blive målbart langsommere af denne fase.
 
 **Nye filer**:
 - `app/src/gtk_tests_boundaries.rs` — kun de 1-2 end-to-end GTK smokes
@@ -170,7 +170,7 @@ Baseret på spike-konklusion. Hvis spike viser separat workspace er bedste valg:
 - `app/fuzz/Cargo.toml` med egen `[workspace]` root (ikke linked til `app/`)
 - `app/fuzz/rust-toolchain.toml` pinner nightly
 - `app/fuzz/fuzz_targets/`: `markdown_parse.rs`, `frontmatter_split.rs`, `git_status_parse.rs`, `diff_compute.rs`, `unsupported_scanner.rs`
-- `app/fuzz/.gitignore` — ignore `target/` og `artifacts/`; corpus seeds holdes tracked
+- `app/fuzz/.gitignore` — ignore `target/`, `corpus/`, `artifacts/`
 - `app/fuzz/corpus/<target>/` — deterministiske seed inputs committed for repro
 - Eksklusion fra stable gates verificeret i CI-config
 
@@ -294,7 +294,7 @@ Anbefaling: **#1** — stress-binary er et separat program der driver appen via 
 - AGENTS.md 600-line limit pr. ny Rust-fil.
 - `proptest` som `[dev-dependencies]` i `app/Cargo.toml`. `app/fuzz/` må tilføje `libfuzzer-sys` og `arbitrary` i sin egen Cargo.toml.
 - Generated corpus gitignored. Generator + small seeds committed.
-- Stress runner bruger separat developer-binary og midlertidige filer; den er ikke del af `riteed` runtime/Flatpak release path.
+- Stress runner FS-probes via async Gio paths (per AGENTS runtime-sync-fs rule).
 - Fuzz crashes med deterministisk repro seed for CI triage.
 - `tight proptest configs` (64 cases, persistence file) — ellers CI-langsom.
 - "Closes policy-intention" formulering, ikke "closes hard gate" — Phase 3a leverer coverage; håndhævelse i policy_check.py er separat opgave.
