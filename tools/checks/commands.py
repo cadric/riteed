@@ -25,6 +25,7 @@ from tools.validation_tooling import (
     run_capture,
     run_checked,
     scoped_files,
+    validation_command_lock,
 )
 
 RUST_GETTEXT_KEYWORDS = [
@@ -161,34 +162,35 @@ def run_required_commands(root: Path, errors: list[str]) -> None:
     cfg = validation_policy(root)
     for tool in cfg["required_tools"]:
         require_tool(tool)
-    for command in cfg["required_commands"]:
-        run_checked(shlex.split(command), root, command, env=_headless_gtk_env())
+    with validation_command_lock(root, "policy_check_required_commands"):
+        for command in cfg["required_commands"]:
+            run_checked(shlex.split(command), root, command, env=_headless_gtk_env())
 
-    check_xgettext_completeness(root, errors)
+        check_xgettext_completeness(root, errors)
 
-    ran_flatpak_manifest = False
-    for item in cfg.get("conditional_validators", []):
-        paths = scoped_files(root, [item["when_glob"]])
-        if not paths:
-            continue
-        require_tool(item["tool"])
-        mode = item["mode"]
-        if mode == "gsettings":
-            run_checked(["glib-compile-schemas", "--strict", "--dry-run", "data/schemas"], root, "glib-compile-schemas")
-        elif mode == "po":
-            for path in paths:
-                run_checked(["msgfmt", "--check-format", "--check-header", "-o", "/dev/null", str(path)], root, f"msgfmt {relpath(path, root)}")
-        elif mode == "desktop":
-            for path in paths:
-                run_checked(["desktop-file-validate", str(path)], root, f"desktop-file-validate {relpath(path, root)}")
-        elif mode == "metainfo":
-            for path in paths:
-                run_checked(["appstreamcli", "validate", "--no-net", "--pedantic", str(path)], root, f"appstreamcli {relpath(path, root)}")
-        elif mode == "flatpak-manifest" and not ran_flatpak_manifest:
-            manifest = find_flatpak_manifest(root)
-            if manifest is not None:
-                run_checked(["flatpak-builder", "--show-manifest", str(manifest)], root, "flatpak-builder --show-manifest")
-                ran_flatpak_manifest = True
+        ran_flatpak_manifest = False
+        for item in cfg.get("conditional_validators", []):
+            paths = scoped_files(root, [item["when_glob"]])
+            if not paths:
+                continue
+            require_tool(item["tool"])
+            mode = item["mode"]
+            if mode == "gsettings":
+                run_checked(["glib-compile-schemas", "--strict", "--dry-run", "data/schemas"], root, "glib-compile-schemas")
+            elif mode == "po":
+                for path in paths:
+                    run_checked(["msgfmt", "--check-format", "--check-header", "-o", "/dev/null", str(path)], root, f"msgfmt {relpath(path, root)}")
+            elif mode == "desktop":
+                for path in paths:
+                    run_checked(["desktop-file-validate", str(path)], root, f"desktop-file-validate {relpath(path, root)}")
+            elif mode == "metainfo":
+                for path in paths:
+                    run_checked(["appstreamcli", "validate", "--no-net", "--pedantic", str(path)], root, f"appstreamcli {relpath(path, root)}")
+            elif mode == "flatpak-manifest" and not ran_flatpak_manifest:
+                manifest = find_flatpak_manifest(root)
+                if manifest is not None:
+                    run_checked(["flatpak-builder", "--show-manifest", str(manifest)], root, "flatpak-builder --show-manifest")
+                    ran_flatpak_manifest = True
 
 
 def run_update_artifact_index(root: Path, args: argparse.Namespace) -> int:

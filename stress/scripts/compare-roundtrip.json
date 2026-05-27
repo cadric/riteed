@@ -1,5 +1,37 @@
 {
   "flow": "compare-roundtrip",
   "description": "Open two generated text files for a lightweight compare workflow smoke.",
-  "expect_failure": false
+  "expect_failure": false,
+  "fixtures": [
+    {
+      "role": "fixtures compare reference generated corpus",
+      "path": "stress/corpus/generated/compare-reference.txt"
+    },
+    {
+      "role": "fixtures compare current generated corpus",
+      "path": "stress/corpus/generated/compare-current.txt"
+    }
+  ],
+  "actions": [
+    {
+      "type": "open",
+      "path": "stress/corpus/generated/compare-current.txt"
+    },
+    {
+      "type": "start-compare-workflow",
+      "reference": "stress/corpus/generated/compare-reference.txt",
+      "current": "stress/corpus/generated/compare-current.txt"
+    }
+  ],
+  "assertions": [
+    {
+      "type": "compare-pane-diff-state",
+      "state": "diff-visible"
+    },
+    {
+      "type": "artifact-exists",
+      "path": "stress/artifacts/compare-roundtrip/stress-run.log"
+    }
+  ],
+  "artifact_dir": "stress/artifacts/compare-roundtrip"
 }

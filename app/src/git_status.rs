@@ -1,6 +1,10 @@
 use std::collections::BTreeSet;
+use std::fmt::Write as _;
 
 use gettextrs::pgettext;
+
+pub(crate) const MAX_STATUS_ENTRIES: usize = 10_000;
+pub(crate) const MAX_ATTR_PATHS: usize = MAX_STATUS_ENTRIES;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) enum GitActionState {
@@ -95,11 +99,13 @@ pub(crate) struct GitPath {
 
 impl GitPath {
     #[must_use]
+    // PARSER-BOUNDARY: id=git_path_display
     pub(crate) fn from_bytes(bytes: &[u8]) -> Self {
         let utf8 = std::str::from_utf8(bytes).map(ToOwned::to_owned).ok();
-        let display = utf8
-            .clone()
-            .unwrap_or_else(|| pgettext("git path fallback", "Invalid path encoding"));
+        let display = utf8.as_deref().map_or_else(
+            || pgettext("git path fallback", "Invalid path encoding"),
+            escape_git_path_display,
+        );
         Self {
             raw: bytes.to_vec(),
             display,
@@ -118,9 +124,47 @@ impl GitPath {
     }
 
     #[must_use]
+    pub(crate) fn display_basename(&self) -> String {
+        self.utf8
+            .as_deref()
+            .map(|path| path.trim_end_matches('/'))
+            .and_then(|path| path.rsplit('/').next())
+            .filter(|name| !name.is_empty())
+            .map_or_else(|| self.display.clone(), escape_git_path_display)
+    }
+
+    #[must_use]
     pub(crate) fn raw(&self) -> &[u8] {
         &self.raw
     }
+}
+
+#[must_use]
+pub(crate) fn escape_git_path_display(text: &str) -> String {
+    let mut display = String::with_capacity(text.len());
+    for character in text.chars() {
+        match character {
+            '\\' => display.push_str("\\\\"),
+            '\n' => display.push_str("\\n"),
+            '\r' => display.push_str("\\r"),
+            '\t' => display.push_str("\\t"),
+            character if escaped_git_control(character) => {
+                display.push_str("\\u{");
+                let _ = write!(&mut display, "{:x}", u32::from(character));
+                display.push('}');
+            }
+            character => display.push(character),
+        }
+    }
+    display
+}
+
+fn escaped_git_control(character: char) -> bool {
+    matches!(character, '\u{0}'..='\u{1f}' | '\u{7f}')
+        || matches!(
+            character,
+            '\u{061c}' | '\u{200e}' | '\u{200f}' | '\u{202a}'..='\u{202e}' | '\u{2066}'..='\u{2069}'
+        )
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -256,9 +300,11 @@ pub(crate) struct GitCapabilities {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) enum GitParseError {
     Malformed,
+    TooLarge,
 }
 
 #[must_use]
+// PARSER-BOUNDARY: id=git_status_porcelain_v2_z
 pub(crate) fn parse_status(bytes: &[u8]) -> GitStatusSnapshot {
     let mut snapshot = GitStatusSnapshot::default();
     for record in bytes.split(|byte| *byte == 0) {
@@ -268,18 +314,22 @@ pub(crate) fn parse_status(bytes: &[u8]) -> GitStatusSnapshot {
         match record.first().copied() {
             Some(b'#') => parse_branch_line(record, &mut snapshot),
             Some(b'1') => {
-                if let Some(entry) = parse_ordinary_entry(record) {
-                    snapshot.entries.push(entry);
+                if let Some(entry) = parse_ordinary_entry(record)
+                    && !push_status_entry(&mut snapshot, entry)
+                {
+                    break;
                 }
             }
             Some(b'u') => {
-                if let Some(entry) = parse_unmerged_entry(record) {
-                    snapshot.entries.push(entry);
+                if let Some(entry) = parse_unmerged_entry(record)
+                    && !push_status_entry(&mut snapshot, entry)
+                {
+                    break;
                 }
             }
             Some(b'?') => {
                 let path = trim_status_prefix(record);
-                snapshot.entries.push(GitStatusEntry::with_worktree_mode(
+                let entry = GitStatusEntry::with_worktree_mode(
                     GitPath::from_bytes(path),
                     GitFileStatus::Untracked,
                     None,
@@ -287,7 +337,10 @@ pub(crate) fn parse_status(bytes: &[u8]) -> GitStatusSnapshot {
                     false,
                     true,
                     untracked_worktree_mode(path),
-                ));
+                );
+                if !push_status_entry(&mut snapshot, entry) {
+                    break;
+                }
             }
             _ => {}
         }
@@ -300,7 +353,11 @@ pub(crate) fn parse_attrs(bytes: &[u8]) -> Result<GitAttrs, GitParseError> {
         .split(|byte| *byte == 0)
         .filter(|part| !part.is_empty());
     let mut blocked = BTreeSet::new();
+    let mut seen_paths = BTreeSet::new();
     while let Some(path) = parts.next() {
+        if seen_paths.insert(path.to_vec()) && seen_paths.len() > MAX_ATTR_PATHS {
+            return Err(GitParseError::TooLarge);
+        }
         if parts.next().is_none() {
             return Err(GitParseError::Malformed);
         }
@@ -312,6 +369,15 @@ pub(crate) fn parse_attrs(bytes: &[u8]) -> Result<GitAttrs, GitParseError> {
         }
     }
     Ok(GitAttrs { blocked })
+}
+
+fn push_status_entry(snapshot: &mut GitStatusSnapshot, entry: GitStatusEntry) -> bool {
+    if snapshot.entries.len() >= MAX_STATUS_ENTRIES {
+        snapshot.too_large = true;
+        return false;
+    }
+    snapshot.entries.push(entry);
+    true
 }
 
 #[must_use]

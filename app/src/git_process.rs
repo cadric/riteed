@@ -1,7 +1,9 @@
+use std::cell::{Cell, RefCell};
 use std::path::Path;
 use std::rc::Rc;
+use std::time::Duration;
 
-use gtk4::{gio, glib};
+use gtk4::{gio, glib, prelude::*};
 
 mod log;
 mod ops;
@@ -15,12 +17,48 @@ use repo::fallback_base;
 use support::{base_args, git_env, identity_part_is_valid, stderr_text};
 
 const STDERR_CAP: usize = 64 * 1024;
+const GIT_OPERATION_TIMEOUT: Duration = Duration::from_secs(30);
+const GIT_CANCEL_KILL_GRACE: Duration = Duration::from_secs(2);
+
+#[derive(Clone, Default)]
+struct GitTimeoutHandle {
+    operation: Rc<RefCell<Option<glib::SourceId>>>,
+    grace: Rc<RefCell<Option<glib::SourceId>>>,
+}
+
+impl GitTimeoutHandle {
+    fn cancel(&self) {
+        if let Some(source) = self.operation.borrow_mut().take() {
+            source.remove();
+        }
+        if let Some(source) = self.grace.borrow_mut().take() {
+            source.remove();
+        }
+    }
+
+    fn clear_operation(&self) {
+        let _source = self.operation.borrow_mut().take();
+    }
+
+    fn set_operation(&self, source: glib::SourceId) {
+        *self.operation.borrow_mut() = Some(source);
+    }
+
+    fn clear_grace(&self) {
+        let _source = self.grace.borrow_mut().take();
+    }
+
+    fn set_grace(&self, source: glib::SourceId) {
+        *self.grace.borrow_mut() = Some(source);
+    }
+}
 
 pub(crate) type GitCallback<T> = Rc<dyn Fn(Result<T, GitProcessError>)>;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) enum GitProcessError {
     Cancelled,
+    TimedOut,
     InvalidPath,
     InvalidIdentity,
     OutputTooLarge,
@@ -93,8 +131,8 @@ impl GitProcess {
         run_git(
             detect_repo_spec(&folder, true),
             cancellable,
-            Rc::new(move |result| {
-                match result.and_then(|output| GitRepoContext::parse(&output.stdout, &base, true)) {
+            Rc::new(move |result| match result {
+                Ok(output) => match GitRepoContext::parse(&output.stdout, &base, true) {
                     Ok(repo) => callback(Ok(repo)),
                     Err(_error) => run_git(
                         detect_repo_spec(&folder_for_retry, false),
@@ -109,7 +147,23 @@ impl GitProcess {
                             }
                         }),
                     ),
+                },
+                Err(error @ (GitProcessError::Cancelled | GitProcessError::TimedOut)) => {
+                    callback(Err(error));
                 }
+                Err(_error) => run_git(
+                    detect_repo_spec(&folder_for_retry, false),
+                    &cancellable_for_retry,
+                    Rc::new({
+                        let base = base_for_retry.clone();
+                        let callback = Rc::clone(&callback_for_retry);
+                        move |fallback| {
+                            callback(fallback.and_then(|output| {
+                                GitRepoContext::parse(&output.stdout, &base, false)
+                            }));
+                        }
+                    }),
+                ),
             }),
         );
     }
@@ -245,10 +299,19 @@ fn run_git(spec: GitSpec, cancellable: &gio::Cancellable, callback: GitCallback<
     let stdin_bytes = glib::Bytes::from_owned(spec.stdin.unwrap_or_default());
     let callback_for_result = callback;
     let subprocess_for_result = subprocess.clone();
-    subprocess.communicate_async(
-        Some(&stdin_bytes),
-        Some(cancellable),
-        move |result| match result {
+    let finished = Rc::new(Cell::new(false));
+    let timed_out = Rc::new(Cell::new(false));
+    let timeout_handle = install_git_timeout(
+        &subprocess,
+        cancellable,
+        Rc::clone(&finished),
+        Rc::clone(&timed_out),
+    );
+    let finished_for_result = Rc::clone(&finished);
+    subprocess.communicate_async(Some(&stdin_bytes), Some(cancellable), move |result| {
+        finished_for_result.set(true);
+        timeout_handle.cancel();
+        match result {
             Ok((stdout, stderr)) => {
                 let stdout = stdout.map_or_else(Vec::new, |bytes| bytes.as_ref().to_vec());
                 let stderr = stderr.map_or_else(Vec::new, |bytes| bytes.as_ref().to_vec());
@@ -265,15 +328,61 @@ fn run_git(spec: GitSpec, cancellable: &gio::Cancellable, callback: GitCallback<
             }
             Err(error) => {
                 if error.matches(gio::IOErrorEnum::Cancelled) {
-                    callback_for_result(Err(GitProcessError::Cancelled));
+                    kill_unfinished_git(&subprocess_for_result);
+                    let error = if timed_out.get() {
+                        GitProcessError::TimedOut
+                    } else {
+                        GitProcessError::Cancelled
+                    };
+                    callback_for_result(Err(error));
                 } else {
                     callback_for_result(Err(GitProcessError::CommandFailed(
                         error.message().to_string(),
                     )));
                 }
             }
-        },
-    );
+        }
+    });
+}
+
+fn install_git_timeout(
+    subprocess: &gio::Subprocess,
+    cancellable: &gio::Cancellable,
+    finished: Rc<Cell<bool>>,
+    timed_out: Rc<Cell<bool>>,
+) -> GitTimeoutHandle {
+    let handle = GitTimeoutHandle::default();
+    let handle_for_timeout = handle.clone();
+    let subprocess_for_timeout = subprocess.clone();
+    let cancellable_for_timeout = cancellable.clone();
+    let timeout_source = glib::timeout_add_local_once(GIT_OPERATION_TIMEOUT, move || {
+        handle_for_timeout.clear_operation();
+        if finished.get() {
+            return;
+        }
+        timed_out.set(true);
+        cancellable_for_timeout.cancel();
+        let subprocess_for_kill = subprocess_for_timeout.clone();
+        let finished_for_kill = Rc::clone(&finished);
+        let handle_for_grace = handle_for_timeout.clone();
+        let grace_source = glib::timeout_add_local_once(GIT_CANCEL_KILL_GRACE, move || {
+            handle_for_grace.clear_grace();
+            if !finished_for_kill.get() {
+                kill_unfinished_git(&subprocess_for_kill);
+            }
+        });
+        handle_for_timeout.set_grace(grace_source);
+    });
+    handle.set_operation(timeout_source);
+    handle
+}
+
+fn kill_unfinished_git(subprocess: &gio::Subprocess) {
+    if subprocess.has_exited() {
+        return;
+    }
+    subprocess.force_exit();
+    subprocess.wait_async(None::<&gio::Cancellable>, |_result| {});
 }
 
 #[cfg(test)]

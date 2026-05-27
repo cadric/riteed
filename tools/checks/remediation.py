@@ -60,6 +60,9 @@ def validate_planned_remediation(
         created = _parse_date(_string(entry, "created"), prefix, "created", errors)
         if created is None:
             valid = False
+        elif created > today:
+            errors.append(f"{prefix}: created must not be after {today}")
+            valid = False
         max_age = entry.get("max_age_days")
         if isinstance(max_age, bool) or not isinstance(max_age, int) or max_age <= 0:
             errors.append(f"{prefix}: max_age_days must be a positive integer")

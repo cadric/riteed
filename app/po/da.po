@@ -181,6 +181,9 @@ msgid ""
 "saved with the selected encoding."
 msgstr "Autogem er sat på pause, fordi dokumentet indeholder tegn, der ikke kan gemmes med den valgte kodning."
 
+msgid "Autosave paused because the document is too large to save safely."
+msgstr "Autogem er sat på pause, fordi dokumentet er for stort til at blive gemt sikkert."
+
 msgid "Autosave paused because the file changed on disk."
 msgstr "Autogem er sat på pause, fordi filen blev ændret på disken."
 
@@ -253,14 +256,6 @@ msgctxt "alert response"
 msgid "Choose Encoding"
 msgstr "Vælg kodning"
 
-msgctxt "compare dialog action"
-msgid "Choose File"
-msgstr "Vælg fil"
-
-msgctxt "compare source placeholder"
-msgid "Choose File or Paste Text"
-msgstr "Vælg fil eller indsæt tekst"
-
 msgid "Choose a Different Encoding to Save"
 msgstr "Vælg en anden kodning til gemning"
 
@@ -306,10 +301,6 @@ msgid "Classic Mac (CR)"
 msgstr "Klassisk Mac (CR)"
 
 msgctxt "alert response"
-msgid "Clear"
-msgstr "Ryd"
-
-msgctxt "compare dialog action"
 msgid "Clear"
 msgstr "Ryd"
 
@@ -367,10 +358,6 @@ msgid ""
 msgstr "Gør Source Control-rækker mere kompakte, flytter Git-handlinger for den aktive fil til headerbjælken og samler dokument- og projektsøgning i søgelinjen."
 
 msgctxt "alert response"
-msgid "Compare"
-msgstr "Sammenlign"
-
-msgctxt "compare dialog title"
 msgid "Compare"
 msgstr "Sammenlign"
 
@@ -524,17 +511,9 @@ msgid ""
 "normal editor word wrap."
 msgstr "Styrer om samlet sammenligningsgennemgang ombryder lange linjer. Det påvirker ikke normal tekstombrydning i redigeringen."
 
-msgctxt "compare dialog side"
-msgid "Current"
-msgstr "Aktuel"
-
 msgctxt "compare pane"
 msgid "Current"
 msgstr "Aktuel"
-
-msgctxt "compare source"
-msgid "Current Document"
-msgstr "Aktuelt dokument"
 
 msgid "Current Document Location"
 msgstr "Aktuel dokumentplacering"
@@ -659,10 +638,6 @@ msgctxt "compare action"
 msgid "Exit Compare"
 msgstr "Afslut sammenligning"
 
-msgid "File"
-msgstr "Fil"
-
-msgctxt "compare source"
 msgid "File"
 msgstr "Fil"
 
@@ -1080,10 +1055,6 @@ msgstr "Ingen ustagede ændringer at gennemgå."
 msgid "Normal Size"
 msgstr "Normal størrelse"
 
-msgctxt "compare source"
-msgid "Not Set"
-msgstr "Ikke angivet"
-
 msgid "Only Local Files Are Supported"
 msgstr "Kun lokale filer understøttes"
 
@@ -1180,10 +1151,6 @@ msgstr "Overskriv den ændrede fil?"
 
 msgid "Palette"
 msgstr "Palette"
-
-msgctxt "compare dialog action"
-msgid "Paste Text"
-msgstr "Indsæt tekst"
 
 msgctxt "paste dialog title"
 msgid "Paste Text"
@@ -1305,10 +1272,6 @@ msgstr "Seneste filer"
 msgctxt "recent files dialog title"
 msgid "Recent Files"
 msgstr "Seneste filer"
-
-msgctxt "compare dialog side"
-msgid "Reference"
-msgstr "Reference"
 
 msgctxt "compare pane"
 msgid "Reference"
@@ -1508,10 +1471,6 @@ msgstr "Gem dokumentet"
 msgid "Save the open document before using Git actions."
 msgstr "Gem det åbne dokument, før du bruger Git-handlinger."
 
-msgctxt "compare source"
-msgid "Saved Version"
-msgstr "Gemt version"
-
 msgid "Saving"
 msgstr "Gemning"
 
@@ -1531,11 +1490,6 @@ msgstr "Søgning er slået fra for meget store filer."
 
 msgid "Searching"
 msgstr "Søger"
-
-msgid ""
-"Select the reference on the left and the current document or text on the "
-"right."
-msgstr "Vælg referencen til venstre og det aktuelle dokument eller den aktuelle tekst til højre."
 
 msgid "Selected Session File"
 msgstr "Valgt sessionsfil"
@@ -1694,10 +1648,6 @@ msgstr "Stil"
 msgid "Subtly highlight the line with the text cursor"
 msgstr "Fremhæv diskret linjen med tekstmarkøren"
 
-msgctxt "compare dialog action"
-msgid "Swap"
-msgstr "Byt om"
-
 msgctxt "language option"
 msgid "System"
 msgstr "System"
@@ -1737,6 +1687,9 @@ msgstr "Git-identiteten er ikke gyldig."
 msgid "The Git operation failed."
 msgstr "Git-handlingen mislykkedes."
 
+msgid "The Git operation timed out."
+msgstr "Git-handlingen udløb."
+
 msgid "The Requested Action Was Cancelled."
 msgstr "Den anmodede handling blev annulleret."
 
@@ -1761,6 +1714,9 @@ msgstr "Filen blev ændret på disken."
 
 msgid "The file is too large to open safely."
 msgstr "Filen er for stor til at åbne sikkert."
+
+msgid "The document is too large to save safely."
+msgstr "Dokumentet er for stort til at blive gemt sikkert."
 
 msgctxt "markdown diagnostic"
 msgid "The opening frontmatter delimiter has no closing delimiter."
@@ -1832,6 +1788,9 @@ msgstr "Slå projektsidebjælke til/fra"
 
 msgid "Too large to compare differences."
 msgstr "For stor til at sammenligne forskelle."
+
+msgid "Too many Git changes to display."
+msgstr "Der er for mange Git-ændringer at vise."
 
 msgid ""
 "Tracked unstaged files can be discarded after confirmation. Riteed keeps "

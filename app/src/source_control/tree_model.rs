@@ -2,13 +2,14 @@ use std::collections::BTreeMap;
 
 use gtk4::{gio, glib, prelude::*};
 
-use crate::git_status::GitStatusEntry;
+use crate::git_status::{GitStatusEntry, escape_git_path_display};
 
 #[derive(Clone)]
 pub(super) enum SourceControlNode {
     Folder {
         display_name: String,
         full_path: String,
+        display_path: String,
         children_store: gio::ListStore,
     },
     File {
@@ -138,14 +139,7 @@ pub(super) fn node_for_position(
 }
 
 pub(super) fn file_basename(entry: &GitStatusEntry) -> String {
-    entry
-        .path
-        .as_utf8()
-        .map(|path| path.trim_end_matches('/'))
-        .and_then(|path| path.rsplit('/').next())
-        .filter(|name| !name.is_empty())
-        .unwrap_or_else(|| entry.path.display())
-        .to_string()
+    entry.path.display_basename()
 }
 
 fn insert_entry(root: &mut FolderBuilder, entry: GitStatusEntry) {
@@ -173,10 +167,12 @@ fn build_store(folder: &FolderBuilder, full_path: &str) -> gio::ListStore {
         } else {
             format!("{full_path}/{name}")
         };
+        let display_path = escape_git_path_display(&child_path);
         let children_store = build_store(child, &child_path);
         store.append(&glib::BoxedAnyObject::new(SourceControlNode::Folder {
-            display_name: name.clone(),
+            display_name: escape_git_path_display(name),
             full_path: child_path,
+            display_path,
             children_store,
         }));
     }
@@ -314,6 +310,7 @@ mod tests {
     fn file_basename_uses_utf8_leaf_or_display_fallback() {
         assert_eq!(file_basename(&entry("src/lib.rs")), "lib.rs");
         assert_eq!(file_basename(&entry("nested-repo/")), "nested-repo");
+        assert_eq!(file_basename(&entry("src/file\nname.rs")), "file\\nname.rs");
         let invalid = GitStatusEntry::new(
             GitPath::from_bytes(b"\xff"),
             GitFileStatus::Modified,
@@ -323,6 +320,30 @@ mod tests {
             true,
         );
         assert_eq!(file_basename(&invalid), "Invalid path encoding");
+    }
+
+    #[test]
+    fn folder_labels_escape_controls_but_keep_raw_paths() {
+        let store = build_root_store(&[entry("dir\tname/file\nname.rs")]);
+        let root = node_at(&store, 0);
+        assert!(matches!(root, Some(SourceControlNode::Folder { .. })));
+        let Some(SourceControlNode::Folder {
+            display_name,
+            full_path,
+            display_path,
+            children_store,
+        }) = root
+        else {
+            return;
+        };
+
+        assert_eq!(display_name, "dir\\tname");
+        assert_eq!(full_path, "dir\tname");
+        assert_eq!(display_path, "dir\\tname");
+        assert_eq!(
+            node_name(&children_store, 0).as_deref(),
+            Some("file\\nname.rs")
+        );
     }
 
     #[test]

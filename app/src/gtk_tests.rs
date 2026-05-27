@@ -244,12 +244,16 @@ fn exercise_restore_and_recent_pruning(test_app: &adw::Application) {
     let Some(restore_window) = restore_window else {
         return;
     };
+    let restore_writes = restore_window.preferences_write_log_for_tests();
     restore_window.restore_session();
     spin_until("restore session", || {
         restore_window.tab_count_for_tests() == 2
-            && restore_window.session_files_for_tests().len() == 2
             && restore_window.selected_saved_uri_for_tests() == second_uri
     });
+    assert_eq!(
+        restore_window.preferences_write_log_for_tests(),
+        restore_writes
+    );
     assert_eq!(restore_window.selected_saved_uri_for_tests(), second_uri);
     assert_eq!(
         restore_window.recent_files_for_tests(),
@@ -260,6 +264,10 @@ fn exercise_restore_and_recent_pruning(test_app: &adw::Application) {
             .selected_title_for_tests()
             .contains("two.txt")
     );
+    restore_window.request_new();
+    spin_until("deferred session prune", || {
+        restore_window.session_files_for_tests().len() == 2
+    });
 
     let prune_settings = AppSettings::new_for_tests();
     prune_settings.set_recent_files(std::slice::from_ref(&missing_uri));
@@ -490,19 +498,17 @@ fn exercise_search_and_status(test_app: &adw::Application) {
             String::from("Ln 1, Col 1")
         )
     );
-
     search_window.set_selected_text_for_tests("alpha beta alpha");
     search_window.select_offsets_for_tests(0, 5);
     search_window.open_search(false);
+    let search_result = || search_window.search_result_for_tests();
     spin_until("search opens with prefill", || {
         search_window.search_visible_for_tests()
             && search_window.search_query_for_tests() == "alpha"
     });
     assert!(!search_window.replace_visible_for_tests());
-    spin_until("search count becomes known", || {
-        !search_window.search_result_for_tests().is_empty()
-    });
-    assert_eq!(search_window.search_result_for_tests(), "2 matches");
+    spin_until("search count becomes known", || !search_result().is_empty());
+    assert_eq!(search_result(), "2 matches");
 
     search_window.open_search(true);
     drain_events(8);
@@ -510,12 +516,14 @@ fn exercise_search_and_status(test_app: &adw::Application) {
     search_window.replace_current_for_tests();
     drain_events(8);
     assert_eq!(search_window.selected_text_for_tests(), "omega beta alpha");
-
+    spin_until("remaining match count updates", || {
+        search_result() == "1 match"
+    });
     search_window.set_replace_text_for_tests("z");
     search_window.replace_all_for_tests();
     spin_until("replace all result appears", || {
         search_window.selected_text_for_tests() == "omega beta z"
-            && search_window.search_result_for_tests() == "Replaced 1 match"
+            && search_result() == "Replaced 1 match"
     });
     search_window.undo_selected_for_tests();
     drain_events(8);

@@ -14,8 +14,8 @@ jobs:
   dependency-preflight:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with:
           python-version: "3.12"
       - name: Run fast dependency preflight
@@ -25,18 +25,18 @@ jobs:
     needs: dependency-preflight
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with:
           python-version: "3.12"
       - name: Run root validator tests
-        run: python3 -m unittest tools.tests.test_policy_check tools.tests.test_release_stress_policy tools.tests.test_coverage_check tools.tests.test_dependency_preflight -v
+        run: python3 -m unittest tools.tests.test_policy_check tools.tests.test_release_rulesets tools.tests.test_release_hardening tools.tests.test_release_stress_policy tools.tests.test_stress_fuzz_hardening tools.tests.test_validation_tooling_security tools.tests.test_coverage_check tools.tests.test_dependency_preflight -v
 
   native-tests:
     needs: dependency-preflight
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       - name: Validate app subtree
         run: |
           docker run --rm \
@@ -75,11 +75,19 @@ jobs:
                 python3 \
                 xorg-x11-server-Xvfb \
                 xz
-              curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs \
-                | sh -s -- -y --profile minimal --default-toolchain 1.95.0 \
-                  --component rustfmt --component clippy --component llvm-tools-preview
+              rustup_version=1.28.2
+              rustup_arch=x86_64-unknown-linux-gnu
+              rustup_sha256=20a06e644b0d9bd2fbdbfd52d42540bdde820ea7df86e92e533c073da0cdd43c
+              curl --proto "=https" --tlsv1.2 -sSf \
+                -o rustup-init \
+                "https://static.rust-lang.org/rustup/archive/${rustup_version}/${rustup_arch}/rustup-init"
+              echo "${rustup_sha256}  rustup-init" | sha256sum -c -
+              chmod +x rustup-init
+              ./rustup-init -y --profile minimal --default-toolchain 1.95.0 \
+                --component rustfmt --component clippy --component llvm-tools-preview
+              rm rustup-init
               . "$HOME/.cargo/env"
-              cargo install cargo-llvm-cov --locked
+              cargo install cargo-llvm-cov --version 0.8.7 --locked
               cargo install xtr --version 0.1.11 --locked
               mkdir -p stress/artifacts
               Xvfb :99 -screen 0 1280x1024x24 >stress/artifacts/xvfb.log 2>&1 &
@@ -93,6 +101,7 @@ jobs:
               cp -R app/data/schemas/. /tmp/riteed-schemas/
               glib-compile-schemas --strict /tmp/riteed-schemas
               export GSETTINGS_SCHEMA_DIR=/tmp/riteed-schemas
+              python3 stress/make_corpus.py
               cd app
               cargo build --bin riteed-stress --features stress
               dbus-run-session -- env RITEED_STRESS_SCRIPT=../stress/scripts/open-save-search.json ./target/debug/riteed-stress
@@ -102,7 +111,7 @@ jobs:
             '
       - name: Upload stress artifacts
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: riteed-native-stress-artifacts
           if-no-files-found: ignore
@@ -112,6 +121,22 @@ jobs:
             stress/git-repos/generated/
             app/fuzz/artifacts/
 
+  ruleset-governance:
+    needs: dependency-preflight
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+        with:
+          python-version: "3.12"
+      - name: Verify GitHub ruleset governance
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 -m tools.ruleset_governance_check
+
   flatpak-tests:
     needs: dependency-preflight
     runs-on: ubuntu-latest
@@ -119,7 +144,7 @@ jobs:
       image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-50
       options: --privileged
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       - name: Build and smoke Flatpak Git path
         run: |
           flatpak --user remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
@@ -137,7 +162,7 @@ jobs:
       image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-50
       options: --privileged
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       - name: Read app version
         id: app-version
         run: |
@@ -145,7 +170,7 @@ jobs:
           test -n "$version"
           echo "version=$version" >> "$GITHUB_OUTPUT"
       - name: Build Flatpak
-        uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        uses: flatpak/flatpak-github-actions/flatpak-builder@d6f00ee69d6c8a7f875ec233e9a8ffea74c6ccef # v6
         with:
           bundle: riteed-${{ steps.app-version.outputs.version }}.flatpak
           manifest-path: app/build-aux/io.github.cadric.Riteed.yml
@@ -156,7 +181,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: flatpak-tests
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       - name: Run scheduled stress suite
         run: |
           docker run --rm \
@@ -195,11 +220,19 @@ jobs:
                 python3 \
                 xorg-x11-server-Xvfb \
                 xz
-              curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs \
-                | sh -s -- -y --profile minimal --default-toolchain 1.95.0 \
-                  --component rustfmt --component clippy --component llvm-tools-preview
+              rustup_version=1.28.2
+              rustup_arch=x86_64-unknown-linux-gnu
+              rustup_sha256=20a06e644b0d9bd2fbdbfd52d42540bdde820ea7df86e92e533c073da0cdd43c
+              curl --proto "=https" --tlsv1.2 -sSf \
+                -o rustup-init \
+                "https://static.rust-lang.org/rustup/archive/${rustup_version}/${rustup_arch}/rustup-init"
+              echo "${rustup_sha256}  rustup-init" | sha256sum -c -
+              chmod +x rustup-init
+              ./rustup-init -y --profile minimal --default-toolchain 1.95.0 \
+                --component rustfmt --component clippy --component llvm-tools-preview
+              rm rustup-init
               . "$HOME/.cargo/env"
-              cargo install cargo-llvm-cov --locked
+              cargo install cargo-llvm-cov --version 0.8.7 --locked
               cargo install xtr --version 0.1.11 --locked
               mkdir -p stress/artifacts
               Xvfb :99 -screen 0 1280x1024x24 >stress/artifacts/xvfb.log 2>&1 &
@@ -223,7 +256,7 @@ jobs:
               done
               if [ -d fuzz ]; then
                 rustup toolchain install nightly --profile minimal --component rust-src
-                cargo install cargo-fuzz --locked
+                cargo install cargo-fuzz --version 0.13.1 --locked
                 for target in markdown_parse frontmatter_split git_status_parse diff_compute unsupported_scanner; do
                   (cd fuzz && cargo +nightly fuzz run "$target" -- -max_total_time=1800)
                 done
@@ -231,7 +264,7 @@ jobs:
             '
       - name: Upload stress artifacts
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: riteed-scheduled-stress-artifacts
           if-no-files-found: ignore

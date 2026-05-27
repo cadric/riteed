@@ -11,6 +11,16 @@ pub(crate) fn buffer_supports_search(buffer: &sourceview5::Buffer) -> bool {
     char_count_supports_search(buffer.char_count())
 }
 
+#[must_use]
+pub(crate) fn buffer_char_count_supports_save_snapshot(char_count: i32) -> bool {
+    u64::try_from(char_count).is_ok_and(file_size_supports_open)
+}
+
+#[must_use]
+pub(crate) fn text_len_supports_save_snapshot(len: usize) -> bool {
+    u64::try_from(len).is_ok_and(file_size_supports_open)
+}
+
 pub(crate) fn query_file_supports_open(
     file: &gio::File,
     cancellable: Option<&gio::Cancellable>,
@@ -58,8 +68,8 @@ fn file_size_supports_open(size: u64) -> bool {
 #[cfg(test)]
 mod tests {
     use super::{
-        OPEN_FILE_LIMIT_BYTES, SEARCH_CHAR_LIMIT, char_count_supports_search,
-        file_size_supports_open,
+        OPEN_FILE_LIMIT_BYTES, SEARCH_CHAR_LIMIT, buffer_char_count_supports_save_snapshot,
+        char_count_supports_search, file_size_supports_open, text_len_supports_save_snapshot,
     };
 
     #[test]
@@ -90,5 +100,26 @@ mod tests {
     #[test]
     fn open_at_plus_one_returns_too_large() {
         assert!(!file_size_supports_open(OPEN_FILE_LIMIT_BYTES + 1));
+    }
+
+    #[test]
+    fn save_snapshot_char_count_uses_open_limit() {
+        assert!(
+            i32::try_from(OPEN_FILE_LIMIT_BYTES)
+                .is_ok_and(buffer_char_count_supports_save_snapshot)
+        );
+        assert!(match i32::try_from(OPEN_FILE_LIMIT_BYTES + 1) {
+            Ok(value) => !buffer_char_count_supports_save_snapshot(value),
+            Err(_) => true,
+        });
+    }
+
+    #[test]
+    fn save_snapshot_text_len_uses_open_limit() {
+        assert!(usize::try_from(OPEN_FILE_LIMIT_BYTES).is_ok_and(text_len_supports_save_snapshot));
+        assert!(match usize::try_from(OPEN_FILE_LIMIT_BYTES + 1) {
+            Ok(value) => !text_len_supports_save_snapshot(value),
+            Err(_) => true,
+        });
     }
 }

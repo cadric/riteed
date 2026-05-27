@@ -2,11 +2,13 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
 use gettextrs::{gettext, pgettext};
-use gtk4::gio;
+use gtk4::{gio, prelude::*};
 use libadwaita as adw;
+use sourceview5::prelude::BufferExt;
 
 use crate::dialogs::{self, InvalidCharsSaveResponse, StaleSaveResponse};
 use crate::document::DocumentState;
+use crate::document_limits;
 use crate::editor_format::{EncodingInfo, SavedTextFormat};
 use crate::editor_io::{self, SaveFailure, SavedDocument};
 use crate::editor_tab::{EditorTab, SaveKind, SaveOutcome, SaveResult};
@@ -20,6 +22,21 @@ struct SaveRetryContext {
     allow_stale_prompt: bool,
     save_kind: SaveKind,
     callback: Rc<dyn Fn(SaveResult)>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct SaveStartGuard {
+    dirty_generation: u64,
+    document_uri: Option<String>,
+}
+
+struct SaveCompletionContext {
+    old_uri: Option<String>,
+    previous_file: Option<gio::File>,
+    save_guard: SaveStartGuard,
+    dialog_format: SavedTextFormat,
+    save_path: PathBuf,
+    retry_context: SaveRetryContext,
 }
 
 impl EditorTab {
@@ -151,13 +168,29 @@ impl EditorTab {
     ) {
         let old_uri = self.document_uri();
         let previous_file = self.saved_file();
-        self.clear_monitor();
-        self.set_loading(true);
         let save_format = self.current_format();
         let dialog_format = save_format.clone();
+        let snapshot_buffer = match self.snapshot_save_buffer(&save_format, path) {
+            Ok(buffer) => buffer,
+            Err(error) => {
+                if save_kind == SaveKind::Autosave {
+                    self.pause_autosave(gettext(
+                        "Autosave paused because the document is too large to save safely.",
+                    ));
+                }
+                callback(SaveResult::Failed(error));
+                return;
+            }
+        };
+        self.clear_monitor();
+        self.set_loading(true);
         let live_source_file = self.source_file();
         let parent_window = parent.clone();
         let (generation, cancellable) = self.start_io_request(None);
+        let save_guard = SaveStartGuard {
+            dirty_generation: self.dirty_generation(),
+            document_uri: old_uri.clone(),
+        };
         let weak = Rc::downgrade(self);
         let save_path = path.to_path_buf();
         let retry_context = SaveRetryContext {
@@ -166,81 +199,53 @@ impl EditorTab {
             flags,
             allow_stale_prompt,
             save_kind,
-            callback: callback.clone(),
+            callback,
+        };
+        let snapshot_buffer_keepalive = snapshot_buffer.clone();
+        let completion = SaveCompletionContext {
+            old_uri,
+            previous_file,
+            save_guard,
+            dialog_format,
+            save_path,
+            retry_context,
         };
         editor_io::save_text_file(
             live_source_file.as_ref(),
             path,
-            &self.text_buffer,
+            &snapshot_buffer,
             &save_format,
             flags,
             Some(&cancellable),
             Rc::new(move |result| {
+                let _snapshot_buffer = &snapshot_buffer_keepalive;
                 if let Some(tab) = weak.upgrade() {
                     if !tab.finish_io_request(generation) {
                         return;
                     }
-                    match result {
-                        Ok(saved) => {
-                            tab.finish_successful_save(saved, old_uri.clone(), &callback);
-                        }
-                        Err(SaveFailure::InvalidChars) => {
-                            if retry_context.save_kind == SaveKind::Autosave {
-                                tab.pause_autosave(gettext(
-                                    "Autosave paused because the document contains characters that cannot be saved with the selected encoding.",
-                                ));
-                                tab.restore_after_failed_save(previous_file.as_ref());
-                                callback(SaveResult::Failed(AppError::WriteFailed(
-                                    save_path.clone(),
-                                    gettext(
-                                        "The document contains characters that cannot be saved with the selected encoding.",
-                                    ),
-                                )));
-                            } else {
-                                tab.handle_invalid_chars_save_failure(
-                                    previous_file.as_ref(),
-                                    &dialog_format,
-                                    &retry_context,
-                                );
-                            }
-                        }
-                        Err(SaveFailure::ExternallyModified)
-                            if retry_context.save_kind == SaveKind::Autosave =>
-                        {
-                            tab.pause_autosave(gettext(
-                                "Autosave paused because the file changed on disk.",
-                            ));
-                            tab.restore_after_failed_save(previous_file.as_ref());
-                            callback(SaveResult::Failed(AppError::WriteFailed(
-                                save_path.clone(),
-                                gettext("The file changed on disk."),
-                            )));
-                        }
-                        Err(SaveFailure::ExternallyModified) if allow_stale_prompt => {
-                            tab.handle_stale_save_failure(previous_file.as_ref(), &retry_context);
-                        }
-                        Err(SaveFailure::ExternallyModified) => {
-                            tab.restore_after_failed_save(previous_file.as_ref());
-                            callback(SaveResult::Failed(AppError::WriteFailed(
-                                save_path.clone(),
-                                gettext(
-                                    "The file changed again on disk and could not be overwritten.",
-                                ),
-                            )));
-                        }
-                        Err(SaveFailure::Failed(error)) => {
-                            if retry_context.save_kind == SaveKind::Autosave {
-                                tab.pause_autosave(gettext(
-                                    "Autosave paused because the file could not be written.",
-                                ));
-                            }
-                            tab.restore_after_failed_save(previous_file.as_ref());
-                            callback(SaveResult::Failed(error));
-                        }
-                    }
+                    tab.finish_save_result(result, &completion);
                 }
             }),
         );
+    }
+
+    fn snapshot_save_buffer(
+        &self,
+        format: &SavedTextFormat,
+        path: &Path,
+    ) -> Result<sourceview5::Buffer, AppError> {
+        if !document_limits::buffer_char_count_supports_save_snapshot(self.text_buffer.char_count())
+        {
+            return Err(AppError::SaveTooBig(path.to_path_buf()));
+        }
+        let text = self.buffer_text();
+        if !document_limits::text_len_supports_save_snapshot(text.len()) {
+            return Err(AppError::SaveTooBig(path.to_path_buf()));
+        }
+        let buffer = sourceview5::Buffer::new(None);
+        buffer.set_implicit_trailing_newline(format.implicit_trailing_newline());
+        buffer.set_text(&text);
+        Ok(buffer)
     }
 
     fn restore_after_failed_save(self: &Rc<Self>, previous_file: Option<&gio::File>) {
@@ -255,11 +260,18 @@ impl EditorTab {
         self: &Rc<Self>,
         saved: SavedDocument,
         old_uri: Option<String>,
+        guard: &SaveStartGuard,
         callback: &Rc<dyn Fn(SaveResult)>,
     ) {
         let monitored_file = gio::File::for_path(&saved.path);
         let new_uri = saved.uri.clone();
-        self.apply_saved_document(saved);
+        let clear_dirty = save_completion_is_clean(
+            self.dirty_generation(),
+            guard.dirty_generation,
+            self.document_uri().as_deref(),
+            guard.document_uri.as_deref(),
+        );
+        self.apply_saved_document(saved, clear_dirty);
         self.resolve_pending_external();
         self.swap_monitor(&monitored_file);
         self.refresh_language_for_file(&monitored_file);
@@ -267,6 +279,89 @@ impl EditorTab {
         self.sync_presentation();
         self.grab_focus();
         callback(SaveResult::Saved(SaveOutcome { old_uri, new_uri }));
+    }
+
+    fn finish_save_result(
+        self: &Rc<Self>,
+        result: Result<SavedDocument, SaveFailure>,
+        completion: &SaveCompletionContext,
+    ) {
+        match result {
+            Ok(saved) => self.finish_successful_save(
+                saved,
+                completion.old_uri.clone(),
+                &completion.save_guard,
+                &completion.retry_context.callback,
+            ),
+            Err(SaveFailure::InvalidChars) => self.handle_invalid_chars_failure(completion),
+            Err(SaveFailure::ExternallyModified)
+                if completion.retry_context.save_kind == SaveKind::Autosave =>
+            {
+                self.handle_autosave_stale_failure(completion);
+            }
+            Err(SaveFailure::ExternallyModified) if completion.retry_context.allow_stale_prompt => {
+                self.handle_stale_save_failure(
+                    completion.previous_file.as_ref(),
+                    &completion.retry_context,
+                );
+            }
+            Err(SaveFailure::ExternallyModified) => {
+                self.handle_unprompted_stale_failure(completion);
+            }
+            Err(SaveFailure::Failed(error)) => self.handle_write_save_failure(error, completion),
+        }
+    }
+
+    fn handle_invalid_chars_failure(self: &Rc<Self>, completion: &SaveCompletionContext) {
+        if completion.retry_context.save_kind == SaveKind::Autosave {
+            self.pause_autosave(gettext(
+                "Autosave paused because the document contains characters that cannot be saved with the selected encoding.",
+            ));
+            self.restore_after_failed_save(completion.previous_file.as_ref());
+            (completion.retry_context.callback)(SaveResult::Failed(AppError::WriteFailed(
+                completion.save_path.clone(),
+                gettext(
+                    "The document contains characters that cannot be saved with the selected encoding.",
+                ),
+            )));
+        } else {
+            self.handle_invalid_chars_save_failure(
+                completion.previous_file.as_ref(),
+                &completion.dialog_format,
+                &completion.retry_context,
+            );
+        }
+    }
+
+    fn handle_autosave_stale_failure(self: &Rc<Self>, completion: &SaveCompletionContext) {
+        self.pause_autosave(gettext("Autosave paused because the file changed on disk."));
+        self.restore_after_failed_save(completion.previous_file.as_ref());
+        (completion.retry_context.callback)(SaveResult::Failed(AppError::WriteFailed(
+            completion.save_path.clone(),
+            gettext("The file changed on disk."),
+        )));
+    }
+
+    fn handle_unprompted_stale_failure(self: &Rc<Self>, completion: &SaveCompletionContext) {
+        self.restore_after_failed_save(completion.previous_file.as_ref());
+        (completion.retry_context.callback)(SaveResult::Failed(AppError::WriteFailed(
+            completion.save_path.clone(),
+            gettext("The file changed again on disk and could not be overwritten."),
+        )));
+    }
+
+    fn handle_write_save_failure(
+        self: &Rc<Self>,
+        error: AppError,
+        completion: &SaveCompletionContext,
+    ) {
+        if completion.retry_context.save_kind == SaveKind::Autosave {
+            self.pause_autosave(gettext(
+                "Autosave paused because the file could not be written.",
+            ));
+        }
+        self.restore_after_failed_save(completion.previous_file.as_ref());
+        (completion.retry_context.callback)(SaveResult::Failed(error));
     }
 
     fn handle_invalid_chars_save_failure(
@@ -368,4 +463,40 @@ fn callback_for_compare(callback: Rc<dyn Fn(SaveResult)>) -> Rc<dyn Fn(Result<()
         Ok(()) => callback(SaveResult::CancelledByUser),
         Err(error) => callback(SaveResult::Failed(error)),
     })
+}
+
+fn save_completion_is_clean(
+    current_dirty_generation: u64,
+    start_dirty_generation: u64,
+    current_uri: Option<&str>,
+    start_uri: Option<&str>,
+) -> bool {
+    current_dirty_generation == start_dirty_generation && current_uri == start_uri
+}
+
+#[cfg(test)]
+mod tests {
+    use super::save_completion_is_clean;
+
+    #[test]
+    fn save_completion_requires_unchanged_dirty_generation_and_uri() {
+        assert!(save_completion_is_clean(
+            4,
+            4,
+            Some("file:///tmp/a.txt"),
+            Some("file:///tmp/a.txt")
+        ));
+        assert!(!save_completion_is_clean(
+            5,
+            4,
+            Some("file:///tmp/a.txt"),
+            Some("file:///tmp/a.txt")
+        ));
+        assert!(!save_completion_is_clean(
+            4,
+            4,
+            Some("file:///tmp/b.txt"),
+            Some("file:///tmp/a.txt")
+        ));
+    }
 }

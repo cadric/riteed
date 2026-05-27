@@ -8,9 +8,11 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import tomllib
+from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Iterable, NoReturn, Sequence
+from typing import Any, Iterable, Iterator, NoReturn, Sequence
 
 EXCLUDED_PARTS = {
     ".git",
@@ -29,6 +31,7 @@ BUILD_OUTPUT_PREFIXES = (
     ("app", "fuzz", "target"),
     ("fuzz", "target"),
 )
+AMBIENT_SECRET_ENV = ("GITHUB_TOKEN", "GH_TOKEN")
 
 
 def fail(message: str) -> NoReturn:
@@ -239,6 +242,8 @@ def require_tool(name: str) -> None:
 def run_capture(cmd: Sequence[str], cwd: Path, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
     try:
         merged_env = os.environ.copy()
+        for name in AMBIENT_SECRET_ENV:
+            merged_env.pop(name, None)
         if env:
             merged_env.update(env)
         return subprocess.run(
@@ -260,6 +265,33 @@ def run_checked(cmd: Sequence[str], cwd: Path, label: str | None = None, env: di
         detail = failure_detail(result.stdout, result.stderr)
         fail(f"[validation] {label or 'command failed'}: {' '.join(cmd)} :: {detail}")
     return result.stdout
+
+
+@contextmanager
+def validation_command_lock(root: Path, label: str) -> Iterator[None]:
+    lock_root = Path(tempfile.gettempdir()) / "riteed-validation-locks"
+    lock_root.mkdir(parents=True, exist_ok=True)
+    key = hashlib.sha256(str(contract_root(root).resolve()).encode("utf-8")).hexdigest()[:16]
+    lock_path = lock_root / f"{key}.lock"
+    with lock_path.open("a+", encoding="utf-8") as handle:
+        try:
+            import fcntl
+        except ImportError:
+            fcntl = None
+        if fcntl is not None:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        handle.seek(0)
+        handle.truncate()
+        handle.write(f"{label}\npid={os.getpid()}\n")
+        handle.flush()
+        try:
+            yield
+        finally:
+            handle.seek(0)
+            handle.truncate()
+            handle.flush()
+            if fcntl is not None:
+                fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
 
 
 def failure_detail(stdout: str, stderr: str) -> str:

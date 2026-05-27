@@ -204,6 +204,10 @@ impl Workspace {
             .is_some_and(|tab| tab.banner_visible_for_tests())
     }
 
+    pub(crate) fn selected_loading_for_tests(&self) -> bool {
+        self.selected_tab().is_some_and(|tab| tab.is_loading())
+    }
+
     pub(crate) fn selected_writability(&self) -> Option<crate::editor_tab::Writability> {
         self.selected_tab().map(|tab| tab.writability())
     }

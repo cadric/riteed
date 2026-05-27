@@ -5,6 +5,7 @@ import os
 import tempfile
 import unittest
 from argparse import Namespace
+from contextlib import nullcontext
 from pathlib import Path
 from unittest.mock import patch
 
@@ -56,8 +57,9 @@ class CoverageCheckTests(unittest.TestCase):
                         },
                     ):
                         with patch.object(coverage_check, "require_tool"):
-                            with patch.object(coverage_check, "run_checked", side_effect=fake_run_checked):
-                                self.assertEqual(coverage_check.main(), 0)
+                            with patch.object(coverage_check, "validation_command_lock", return_value=nullcontext()):
+                                with patch.object(coverage_check, "run_checked", side_effect=fake_run_checked):
+                                    self.assertEqual(coverage_check.main(), 0)
 
             self.assertEqual(captured["cwd"], root)
             self.assertEqual(captured["label"], "cargo llvm-cov failed")
@@ -66,6 +68,8 @@ class CoverageCheckTests(unittest.TestCase):
                 {
                     "GSK_RENDERER": os.environ.get("GSK_RENDERER", "cairo"),
                     "GTK_A11Y": os.environ.get("GTK_A11Y", "none"),
+                    "RUST_TEST_THREADS": os.environ.get("RUST_TEST_THREADS", "1"),
+                    "CARGO_LLVM_COV_TARGET_DIR": str(Path(captured["cmd"][-1]).parent / "target"),
                 },
             )
 

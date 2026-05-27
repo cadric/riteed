@@ -1,5 +1,36 @@
 {
   "flow": "markdown-stress",
   "description": "Open generated Markdown with frontmatter, list content, fenced code, image placeholder, and literal HTML.",
-  "expect_failure": false
+  "expect_failure": false,
+  "fixtures": [
+    {
+      "role": "markdown generated corpus",
+      "path": "stress/corpus/generated/markdown-stress.md"
+    },
+    {
+      "role": "markdown fallback generated corpus",
+      "path": "stress/corpus/generated/markdown-preview-over-cap.md"
+    }
+  ],
+  "actions": [
+    {
+      "type": "open",
+      "path": "stress/corpus/generated/markdown-stress.md"
+    },
+    {
+      "type": "toggle-preview-render",
+      "boundary": "markdown-preview"
+    }
+  ],
+  "assertions": [
+    {
+      "type": "preview-or-fallback-state",
+      "state": "preview-visible"
+    },
+    {
+      "type": "artifact-exists",
+      "path": "stress/artifacts/markdown-stress/stress-run.log"
+    }
+  ],
+  "artifact_dir": "stress/artifacts/markdown-stress"
 }

@@ -110,6 +110,7 @@ pub(crate) fn on_page_detached(workspace: &Rc<Workspace>, page: &libadwaita::Tab
         let is_transfer = workspace.is_transferring_page(page);
         for tab in &state.tabs {
             if !is_transfer && tab.page().as_ref().is_some_and(|item| item == page) {
+                tab.cancel_io();
                 tab.clear_zoom_style();
                 tab.clear_monitor();
             }

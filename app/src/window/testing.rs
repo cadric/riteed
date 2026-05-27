@@ -302,6 +302,10 @@ impl Window {
         self.workspace.selected_banner_visible()
     }
 
+    pub(crate) fn selected_loading_for_tests(&self) -> bool {
+        self.workspace.selected_loading_for_tests()
+    }
+
     pub(crate) fn selected_writability_for_tests(&self) -> Option<crate::editor_tab::Writability> {
         self.workspace.selected_writability()
     }

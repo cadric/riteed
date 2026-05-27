@@ -13,6 +13,7 @@ pub(crate) struct FrontmatterSplit<'a> {
 }
 
 #[must_use]
+// PARSER-BOUNDARY: id=frontmatter_split
 pub(crate) fn split(input: &str) -> FrontmatterSplit<'_> {
     let bom_len = if input.starts_with(UTF8_BOM) {
         UTF8_BOM.len()

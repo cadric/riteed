@@ -4,10 +4,11 @@ use gettextrs::{gettext, pgettext};
 use gtk4::gio;
 use gtk4::prelude::*;
 
+use crate::git_process::GitProcessError;
 use crate::git_status::{GitAttrState, GitPath, GitStatusSnapshot};
 use crate::source_control::{
     SourceControlState, SourceStateRef, actions, git_attrs_unavailable_text,
-    git_error_is_cancelled, history, live, set_commit_controls_enabled,
+    git_error_is_cancelled, git_error_text, history, live, set_commit_controls_enabled,
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -46,7 +47,7 @@ pub(super) fn refresh_status_with_origin(state: &SourceStateRef, origin: Refresh
     process.check_repo_capabilities(
         &cancellable,
         Rc::new(move |capabilities| {
-            if cancellable_for_callback.is_cancelled() {
+            if should_ignore_cancelled(&cancellable_for_callback, &capabilities) {
                 return;
             }
             let Some(state) = weak.upgrade() else {
@@ -55,11 +56,15 @@ pub(super) fn refresh_status_with_origin(state: &SourceStateRef, origin: Refresh
             let capabilities = match capabilities {
                 Ok(capabilities) => capabilities,
                 Err(error) if git_error_is_cancelled(&error) => return,
-                Err(_error) => {
-                    finish_error(
-                        &state,
-                        &gettext("Unable to read Git repository capabilities."),
-                    );
+                Err(error) => {
+                    if matches!(error, GitProcessError::TimedOut) {
+                        finish_error(&state, &git_error_text(&error));
+                    } else {
+                        finish_error(
+                            &state,
+                            &gettext("Unable to read Git repository capabilities."),
+                        );
+                    }
                     return;
                 }
             };
@@ -127,7 +132,7 @@ fn refresh_status_entries(state: &SourceStateRef) {
     process.status(
         &cancellable,
         Rc::new(move |result| {
-            if cancellable_for_callback.is_cancelled() {
+            if should_ignore_cancelled(&cancellable_for_callback, &result) {
                 return;
             }
             let Some(state) = weak.upgrade() else {
@@ -136,13 +141,17 @@ fn refresh_status_entries(state: &SourceStateRef) {
             let snapshot = match result {
                 Ok(snapshot) => snapshot,
                 Err(error) if git_error_is_cancelled(&error) => return,
-                Err(_error) => {
-                    finish_error(&state, &gettext("Unable to refresh Git status."));
+                Err(error) => {
+                    if matches!(error, GitProcessError::TimedOut) {
+                        finish_error(&state, &git_error_text(&error));
+                    } else {
+                        finish_error(&state, &gettext("Unable to refresh Git status."));
+                    }
                     return;
                 }
             };
             let paths = snapshot.changed_paths();
-            if paths.is_empty() {
+            if snapshot.too_large || paths.is_empty() {
                 apply_status(&state, snapshot, GitAttrState::default());
                 return;
             }
@@ -164,7 +173,7 @@ fn refresh_attrs(state: &SourceStateRef, snapshot: GitStatusSnapshot, paths: &[G
         paths,
         &cancellable,
         Rc::new(move |result| {
-            if cancellable_for_callback.is_cancelled() {
+            if should_ignore_cancelled(&cancellable_for_callback, &result) {
                 return;
             }
             let Some(state) = weak.upgrade() else {
@@ -178,6 +187,20 @@ fn refresh_attrs(state: &SourceStateRef, snapshot: GitStatusSnapshot, paths: &[G
             apply_status(&state, snapshot.clone(), attrs);
         }),
     );
+}
+
+fn should_ignore_cancelled<T>(
+    cancellable: &gio::Cancellable,
+    result: &Result<T, GitProcessError>,
+) -> bool {
+    cancellable.is_cancelled() && !result_is_timeout(result)
+}
+
+fn result_is_timeout<T>(result: &Result<T, GitProcessError>) -> bool {
+    match result {
+        Err(error) => error == &GitProcessError::TimedOut,
+        Ok(_) => false,
+    }
 }
 
 fn apply_status(state: &SourceStateRef, snapshot: GitStatusSnapshot, attrs: GitAttrState) {
@@ -230,11 +253,50 @@ fn update_title(state: &SourceControlState) {
 }
 
 fn update_status_label(state: &SourceControlState) {
-    if state.attrs.is_unavailable() {
-        state.status_label.set_label(&git_attrs_unavailable_text());
-    } else if state.snapshot.entries.is_empty() {
-        state.status_label.set_label(&gettext("No changes."));
+    state
+        .status_label
+        .set_label(&status_label_text(&state.snapshot, &state.attrs));
+}
+
+fn status_label_text(snapshot: &GitStatusSnapshot, attrs: &GitAttrState) -> String {
+    if snapshot.too_large {
+        gettext("Too many Git changes to display.")
+    } else if attrs.is_unavailable() {
+        git_attrs_unavailable_text()
+    } else if snapshot.entries.is_empty() {
+        gettext("No changes.")
     } else {
-        state.status_label.set_label(&gettext("Changed files"));
+        gettext("Changed files")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::status_label_text;
+    use crate::git_status::{GitAttrState, GitStatusSnapshot};
+
+    #[test]
+    fn status_label_prefers_too_large_degraded_state() {
+        let snapshot = GitStatusSnapshot {
+            too_large: true,
+            ..GitStatusSnapshot::default()
+        };
+
+        assert_eq!(
+            status_label_text(&snapshot, &GitAttrState::Unavailable),
+            "Too many Git changes to display."
+        );
+    }
+
+    #[test]
+    fn status_label_covers_clean_and_attr_unavailable_states() {
+        assert_eq!(
+            status_label_text(&GitStatusSnapshot::default(), &GitAttrState::default()),
+            "No changes."
+        );
+        assert_eq!(
+            status_label_text(&GitStatusSnapshot::default(), &GitAttrState::Unavailable),
+            "Unable to read Git attributes. Git actions are disabled."
+        );
     }
 }

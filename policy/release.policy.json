@@ -81,6 +81,7 @@
     ]
   },
   "release_identity": {
+    "repository_full_name": "cadric/riteed",
     "application_id": "io.github.cadric.Riteed",
     "flatpak_branch": "beta",
     "pages_remote_base_url": "https://cadric.github.io/riteed/flatpak/",
@@ -100,6 +101,14 @@
     ],
     "hard_requirements": {
       "exact_commit_validation_gate": "Before importing signing secrets, publish must require a successful validation result for the exact tag commit or rerun the release-critical validation suite inside the publish workflow.",
+      "required_validate_check_contexts": [
+        "dependency-preflight",
+        "policy-pack",
+        "native-tests",
+        "ruleset-governance",
+        "flatpak-tests",
+        "flatpak"
+      ],
       "release_critical_validation_suite": [
         "scripts/dependency-preflight --root app",
         "python3 -m tools.policy_check --root app --strict",
@@ -157,7 +166,31 @@
       "main_branch_protection_or_ruleset_required": true,
       "version_tag_ruleset_required": true,
       "disabled_rulesets_are_not_mitigation": true,
-      "bypass_permissions_must_be_reviewed": true
+      "bypass_permissions_must_be_reviewed": true,
+      "reviewed_bypass_actors": [
+        {
+          "ruleset": "Protect main",
+          "actor": "cadric",
+          "actor_id": 964797,
+          "actor_type": "User",
+          "bypass_mode": "pull_request",
+          "review_artifact": "docs/github-ruleset-governance.md",
+          "reason": "Solo-maintainer break-glass merges must use a pull request with audit trail; direct always-bypass is forbidden."
+        }
+      ]
+    },
+    "rollback_environment": {
+      "name": "flatpak-beta-rollback",
+      "normal_signing_environment": "flatpak-beta-signing",
+      "reviewed_required_reviewers": [
+        {
+          "actor": "cadric",
+          "actor_id": 964797,
+          "actor_type": "User",
+          "review_artifact": "docs/github-ruleset-governance.md",
+          "reason": "Emergency beta rollback publishing requires a separate reviewed environment approval path."
+        }
+      ]
     }
   },
   "signing_key_governance": {
@@ -213,8 +246,8 @@
           "last_reviewed"
         ],
         "unsafe_ffi_baseline": {
-          "command": "rg -c '\\bunsafe\\b|\\bextern\\s+\"C\"|\\btransmute\\b' app/build-aux/cargo-patches/sourceview5/src -g '*.rs'",
-          "audited_total_matches": 1329,
+          "command": "rg -o '\\bunsafe\\b|\\bextern\\s+\"C\"|\\btransmute\\b' app/build-aux/cargo-patches/sourceview5/src -g '*.rs' | wc -l",
+          "audited_total_matches": 1853,
           "future_drift_requires_manifest_update": true
         }
       }
@@ -254,58 +287,7 @@
       }
     }
   },
-  "planned_remediation": [
-    {
-      "finding_id": "RIT-AUD-002",
-      "target_milestone": "V14.7",
-      "review_artifact": ".github/workflows/publish-flatpak.yml",
-      "created": "2026-05-25",
-      "max_age_days": 60,
-      "reason": "Older valid tags and manual reruns can currently overwrite the beta Pages remote without an explicit rollback path.",
-      "removal_condition": "Publish performs a monotonic remote version/ref check and has an explicit emergency rollback mode with separate approval and audit trail.",
-      "approval_required": "release maintainer"
-    },
-    {
-      "finding_id": "RIT-AUD-017",
-      "target_milestone": "V14.7",
-      "review_artifact": "docs/audit_report.md",
-      "created": "2026-05-25",
-      "max_age_days": 45,
-      "reason": "Repository rulesets for main and version tags were found but disabled, so they do not mitigate release signing or rollback risk.",
-      "removal_condition": "Protect main and Protect version tags are enabled with reviewed required checks and bypasses, or their disabled state is represented by a narrower approved remediation artifact.",
-      "approval_required": "repository owner"
-    },
-    {
-      "finding_id": "RIT-AUD-010",
-      "target_milestone": "V14.7",
-      "review_artifact": "app/build-aux/flatpak/README.md",
-      "created": "2026-05-25",
-      "max_age_days": 60,
-      "reason": "Signing key rotation, revocation, compromise recovery, and committed-public-key pinning are not yet fully documented and enforced.",
-      "removal_condition": "Workflow compares the imported signing key to app/build-aux/flatpak/riteed-beta-public.asc, and the Flatpak README documents rotation, revocation, and compromise recovery without TBD markers.",
-      "approval_required": "release maintainer"
-    },
-    {
-      "finding_id": "RIT-AUD-011",
-      "target_milestone": "V14.7",
-      "review_artifact": ".github/workflows/publish-flatpak.yml",
-      "created": "2026-05-25",
-      "max_age_days": 90,
-      "reason": "Release-critical GitHub Actions and tool installers use mutable major tags or unversioned installer output.",
-      "removal_condition": "Release-critical actions are pinned by commit SHA or have reviewed exceptions, and cargo/rustup/tool installers are versioned with integrity or explicit review evidence.",
-      "approval_required": "release maintainer"
-    },
-    {
-      "finding_id": "RIT-AUD-009",
-      "target_milestone": "V14.7",
-      "review_artifact": "app/build-aux/cargo-patches/sourceview5/patch-manifest.json",
-      "created": "2026-05-25",
-      "max_age_days": 90,
-      "reason": "The local sourceview5 patch is release-critical but lacks a machine-enforced upstream checksum, allowed-file list, diff checksum, unsafe/FFI baseline, and review evidence.",
-      "removal_condition": "sourceview5 patch manifest exists, passes dependency preflight, and records the audited unsafe/FFI baseline plus review evidence for all local changes.",
-      "approval_required": "release maintainer"
-    }
-  ],
+  "planned_remediation": [],
   "verifiers": {
     "workflow_static_checks": [
       "publish workflow tag/version/AppStream consistency",

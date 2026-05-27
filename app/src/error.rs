@@ -11,6 +11,7 @@ pub enum AppError {
     NonLocalFile,
     DecodeFailed(PathBuf),
     FileTooBig(PathBuf),
+    SaveTooBig(PathBuf),
     ReadFailed(PathBuf, String),
     WriteFailed(PathBuf, String),
     HelpLaunchFailed(String),
@@ -27,7 +28,7 @@ impl AppError {
             Self::DecodeFailed(_) | Self::ReadFailed(_, _) | Self::FileTooBig(_) => {
                 gettext("Unable to Open the File")
             }
-            Self::WriteFailed(_, _) => gettext("Unable to Save the File"),
+            Self::SaveTooBig(_) | Self::WriteFailed(_, _) => gettext("Unable to Save the File"),
             Self::HelpLaunchFailed(_) => pgettext("error title", "Unable to Open Help"),
         }
     }
@@ -49,6 +50,11 @@ impl AppError {
             }
             Self::FileTooBig(path) => {
                 gettext("The file is too large to open safely.")
+                    + "\n\n"
+                    + &path.display().to_string()
+            }
+            Self::SaveTooBig(path) => {
+                gettext("The document is too large to save safely.")
                     + "\n\n"
                     + &path.display().to_string()
             }
@@ -78,6 +84,7 @@ mod tests {
             AppError::NonLocalFile,
             AppError::DecodeFailed("notes.txt".into()),
             AppError::FileTooBig("notes.txt".into()),
+            AppError::SaveTooBig("notes.txt".into()),
             AppError::ReadFailed("notes.txt".into(), String::from("read")),
             AppError::WriteFailed("notes.txt".into(), String::from("write")),
             AppError::HelpLaunchFailed(String::from("help")),

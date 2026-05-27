@@ -50,6 +50,25 @@ def generate(root: Path) -> None:
         generated / "markdown-preview-over-cap.md",
         "# Large Markdown\n\n" + ("body\n" * ((MARKDOWN_PREVIEW_MAX_BYTES // 5) + 1)),
     )
+    write_text(
+        generated / "open-save-search.txt",
+        "needle\nRiteed stress document\n" + ("searchable line\n" * 128),
+    )
+    write_text(
+        generated / "compare-reference.txt",
+        "alpha\nbeta\ncommon\n",
+    )
+    write_text(
+        generated / "compare-current.txt",
+        "alpha\ngamma\ncommon\n",
+    )
+    write_text(
+        generated / "markdown-stress.md",
+        "---\ntitle: Stress\n---\n# Stress\n\n"
+        "- item\n- item\n\n"
+        "```rust\nlet value = 1;\n```\n\n"
+        "![local](image.png)\n<div>literal</div>\n",
+    )
 
 
 def main() -> int:

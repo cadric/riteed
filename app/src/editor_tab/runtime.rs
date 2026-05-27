@@ -28,6 +28,7 @@ impl EditorTab {
         {
             cancellable.cancel();
         }
+        self.cancel_review_load();
     }
 
     #[must_use]
@@ -75,6 +76,7 @@ impl EditorTab {
                     .document
                     .document
                     .set_line_ending_mode(line_ending_mode);
+                state.mark_dirty_generation();
                 true
             }
         };
@@ -93,6 +95,7 @@ impl EditorTab {
                 false
             } else {
                 state.document.document.set_encoding(encoding);
+                state.mark_dirty_generation();
                 true
             }
         };
@@ -261,7 +264,11 @@ impl EditorTab {
         self.resolve_display_path_for_access_path(&loaded_access_path);
     }
 
-    pub(super) fn apply_saved_document(self: &Rc<Self>, saved: SavedDocument) {
+    pub(super) fn dirty_generation(&self) -> u64 {
+        self.state.borrow().dirty_generation()
+    }
+
+    pub(super) fn apply_saved_document(self: &Rc<Self>, saved: SavedDocument, clear_dirty: bool) {
         let saved_uri = saved.uri.clone();
         let saved_access_path = saved.path.clone();
         let saved_file = gio::File::for_path(&saved.path);
@@ -271,15 +278,21 @@ impl EditorTab {
                 .document
                 .document
                 .set_saved_with_display_path(saved.path, saved.display_path.clone());
-            state.document.document.set_format(saved.format.clone());
+            if clear_dirty {
+                state.document.document.set_format(saved.format.clone());
+            }
             state.document.saved_format = saved.format.clone();
             state.document.source_file = Some(saved.source_file);
             state.external.writability = Writability::Writable;
             state.autosave.paused_message = None;
         }
-        self.text_buffer
-            .set_implicit_trailing_newline(saved.format.implicit_trailing_newline());
-        self.text_buffer.set_modified(false);
+        if clear_dirty {
+            self.text_buffer
+                .set_implicit_trailing_newline(saved.format.implicit_trailing_newline());
+            self.text_buffer.set_modified(false);
+        } else {
+            self.text_buffer.set_modified(true);
+        }
         self.sync_markdown_preview_availability();
         self.sync_compare_reference_after_save(&saved_uri);
         self.refresh_writability_for_file(&saved_file);

@@ -178,7 +178,9 @@
         "artifact_dir"
       ],
       "flow_must_match_runner_branch": true,
-      "description_is_not_evidence": true
+      "description_is_not_evidence": true,
+      "actions_and_assertions_are_exact_types": true,
+      "artifact_dir_must_reject_parent_traversal": true
     },
     "boundary_fidelity": {
       "open_save_search": {
@@ -254,48 +256,7 @@
       }
     }
   },
-  "planned_remediation": [
-    {
-      "finding_id": "RIT-AUD-015",
-      "target_milestone": "V14.7",
-      "review_artifact": "app/build-aux/validation/parser-boundaries.v1.json",
-      "created": "2026-05-25",
-      "max_age_days": 60,
-      "reason": "Parser and untrusted-input fuzz requirements are not yet backed by a machine-readable boundary registry, and the Git status fuzz seed is newline-delimited rather than valid porcelain v2 -z shape.",
-      "removal_condition": "Parser-boundary registry exists with all minimum boundary ids, valid coverage or reviewed exceptions, and git_status_parse corpus includes valid NUL-delimited porcelain v2 records with control/non-UTF-8/unmerged cases.",
-      "approval_required": "validation maintainer"
-    },
-    {
-      "finding_id": "RIT-AUD-008",
-      "target_milestone": "V14.7",
-      "review_artifact": "stress/scripts/git-status-stress.json",
-      "created": "2026-05-25",
-      "max_age_days": 60,
-      "reason": "Scheduled/manual stress currently generates corpora and Git repos but the named stress flows open temporary fixtures and do not assert the real preview, compare, Git status, save, or search boundaries.",
-      "removal_condition": "Stress scripts declare fixtures/actions/assertions/artifact_dir, riteed-stress consumes generated corpus/repos, and CI scheduled/manual stress jobs exercise and assert named UI/subprocess boundaries.",
-      "approval_required": "validation maintainer"
-    },
-    {
-      "finding_id": "RIT-AUD-007",
-      "target_milestone": "V14.7",
-      "review_artifact": "stress/scripts/git-status-stress.json",
-      "created": "2026-05-25",
-      "max_age_days": 90,
-      "reason": "Git status stress should preserve coverage for many-short-path and huge-status cases so the eventual entry-count/UI-work cap remains tested.",
-      "removal_condition": "Git status stress opens generated many-untracked, many-modified, and huge-status repos and asserts either normal source-control state or an explicit degraded too-large state.",
-      "approval_required": "validation maintainer"
-    },
-    {
-      "finding_id": "RIT-AUD-016",
-      "target_milestone": "V14.7",
-      "review_artifact": "app/build-aux/validation/parser-boundaries.v1.json",
-      "created": "2026-05-25",
-      "max_age_days": 90,
-      "reason": "Git path display with valid UTF-8 control characters is a UI integrity boundary and should be represented in boundary coverage even though the fix is not owned by this policy.",
-      "removal_condition": "Registry includes git_path_display with fuzz/proptest/stress evidence or reviewed exception for control-character path rendering.",
-      "approval_required": "validation maintainer"
-    }
-  ],
+  "planned_remediation": [],
   "verifiers": {
     "registry_checks": [
       "parser-boundary JSON files exist and have unique ids",

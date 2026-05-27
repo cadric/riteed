@@ -15,6 +15,10 @@ fn git_errors_map_to_user_copy() {
         "Binary files cannot be compared."
     );
     assert_eq!(
+        git_error_text(&GitProcessError::TimedOut),
+        "The Git operation timed out."
+    );
+    assert_eq!(
         git_error_text(&GitProcessError::ParseFailed),
         "The Git operation failed."
     );
@@ -75,6 +79,22 @@ fn source_control_row_context_actions_keep_keyboard_and_pointer_access() {
     assert!(popover.contains("let Some(bounds) = row_widget.compute_bounds(list_view) else"));
     assert!(popover.contains("return;"));
     assert!(!popover.contains("unwrap_or_default"));
+}
+
+#[test]
+fn review_and_minimap_cancellation_keep_scoped_cleanup() {
+    let controller = include_str!("../source_control.rs");
+    assert!(controller.contains("tab: Weak<EditorTab>"));
+    assert!(!controller.contains("struct MinimapRequest {\n    tab: Rc<EditorTab>"));
+    assert!(controller.contains("cancel_minimap_requests_for_tab"));
+
+    let minimap = include_str!("minimap.rs");
+    assert!(minimap.contains("cancel_minimap_requests_for_tab(state, tab, None)"));
+    assert!(minimap.contains("track_minimap_cancellable(state, tab, &source, &cancellable)"));
+
+    let review_loader = include_str!("review_loader.rs");
+    assert!(review_loader.contains("Err(error) if error.matches(gio::IOErrorEnum::Cancelled)"));
+    assert!(review_loader.contains("=> abort(&load)"));
 }
 
 #[test]

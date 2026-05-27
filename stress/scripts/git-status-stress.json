@@ -1,5 +1,76 @@
 {
   "flow": "git-status-stress",
   "description": "Open a generated folder used by native and Flatpak Git stress checks.",
-  "expect_failure": false
+  "expect_failure": false,
+  "fixtures": [
+    {
+      "role": "many-untracked generated git repo",
+      "path": "stress/git-repos/generated/many-untracked"
+    },
+    {
+      "role": "many-modified generated git repo",
+      "path": "stress/git-repos/generated/many-modified"
+    },
+    {
+      "role": "conflicted generated git repo",
+      "path": "stress/git-repos/generated/conflicted"
+    },
+    {
+      "role": "non-utf8 generated git repo",
+      "path": "stress/git-repos/generated/non-utf8-paths"
+    },
+    {
+      "role": "submodule generated git repo",
+      "path": "stress/git-repos/generated/submodule-and-symlink"
+    },
+    {
+      "role": "index-lock generated git repo",
+      "path": "stress/git-repos/generated/index-lock-present"
+    },
+    {
+      "role": "huge-status generated git repo",
+      "path": "stress/git-repos/generated/huge-status"
+    }
+  ],
+  "actions": [
+    {
+      "type": "open-source-control",
+      "path": "stress/git-repos/generated/many-untracked"
+    },
+    {
+      "type": "refresh-source-control",
+      "path": "stress/git-repos/generated/many-modified"
+    },
+    {
+      "type": "open-source-control",
+      "path": "stress/git-repos/generated/conflicted"
+    },
+    {
+      "type": "open-source-control",
+      "path": "stress/git-repos/generated/non-utf8-paths"
+    },
+    {
+      "type": "open-source-control",
+      "path": "stress/git-repos/generated/submodule-and-symlink"
+    },
+    {
+      "type": "open-source-control",
+      "path": "stress/git-repos/generated/index-lock-present"
+    },
+    {
+      "type": "open-source-control",
+      "path": "stress/git-repos/generated/huge-status"
+    }
+  ],
+  "assertions": [
+    {
+      "type": "source-control-or-degraded-state",
+      "state": "source-control rows or too-large degraded"
+    },
+    {
+      "type": "artifact-exists",
+      "path": "stress/artifacts/git-status-stress/stress-run.log"
+    }
+  ],
+  "artifact_dir": "stress/artifacts/git-status-stress"
 }

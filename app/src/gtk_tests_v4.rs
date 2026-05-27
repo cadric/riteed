@@ -34,6 +34,10 @@ fn exercise_external_banner(test_app: &adw::Application) {
         banner_window.selected_banner_visible_for_tests()
             || banner_window.selected_text_for_tests().contains("changed")
     });
+    spin_until("selected external reload idle", || {
+        banner_window.selected_text_for_tests().contains("changed")
+            || !banner_window.selected_loading_for_tests()
+    });
     if banner_window.selected_text_for_tests() == "fn main() {}" {
         banner_window.trigger_selected_external_action_for_tests();
         spin_until("selected banner reload applies", || {

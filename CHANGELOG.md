@@ -1,6 +1,6 @@
 ---
 created: 2026-04-19
-updated: 2026-05-25
+updated: 2026-05-27
 status: current
 priority: high
 type: changelog
@@ -36,20 +36,86 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 - Added `docs/dependency-updates.md` with the manual GTK-stack update flow.
 
 ### Changed
-- Set the roadmap `next_version` to V14.7 after completing the V14.6 policy
-  hardening gate.
+- Hardened the post-review release and stress policy gates: GitHub ruleset
+  verification now runs only in an isolated token-scoped job, publish preflight
+  requires exact GitHub Actions check-run contexts for the tag commit plus
+  version/ref/source-commit metadata before signing, emergency rollbacks route
+  through a separate reviewed environment and release-visible metadata, stress
+  scripts use executable action/assertion contracts, and parser-boundary source
+  files must carry matching `PARSER-BOUNDARY` markers.
+- Hardened release validator parsing with scoped workflow structure checks,
+  fail-closed Pages metadata, future-date rejection for remediation/review
+  dates, pull-request-only reviewed branch bypasses, strict status-check
+  rulesets, and streamed `.crate` extraction caps.
+- Set the roadmap `completed_through` to V14.7 and `next_version` to V15 after
+  completing the audit remediation pass.
 - Clarified the V14.6/V14.7 contract with typed planned remediation,
   parser-boundary registry review dates, and V14.6 ownership of the
   RIT-AUD-014 validator path-skip fix.
+- Closed `RIT-AUD-017` by enabling the reviewed `Protect main` and
+  `Protect version tags` GitHub repository rulesets after repository-owner
+  approval, with before/after evidence and rollback commands documented.
+- Added live release-governance verification so `RIT-AUD-017` closure requires
+  active `Protect main` and `Protect version tags` rulesets plus the reviewed
+  rollback environment reviewer shape, while offline policy-check verifies
+  static workflow wiring without GitHub credentials.
 - Documented that editor Source Control minimap bands reflect the last saved
   text versus the current Git baseline; unsaved edits dim existing bands until
   save or until the buffer text matches the decorated state again.
 
 ### Fixed
+- Removed the legacy window-level Compare dialog action; compare entry points
+  now stay on the tab compare actions, including saved-version, file, and
+  pasted-text flows.
+- Prevented reused-tab async file opens from overwriting edits made while the
+  load was still in flight, and surfaced Git subprocess timeouts as visible
+  Source Control errors instead of silent cancellations.
+- Fixed follow-up Git failure handling so repository detection and capability
+  probes propagate timeout/cancellation, Git attribute caps count unique paths,
+  review cancellation clears ownership, and per-tab minimap refreshes do not
+  cancel unrelated background-tab minimap loads.
+- Fixed large manual/autosaves so Riteed always saves from a bounded snapshot;
+  documents over the 25 MiB editor limit now fail explicitly instead of writing
+  from a live mutating buffer.
+- Fixed session restore completion so a transient state borrow no longer leaves
+  session persistence disabled for the rest of the process.
+- Fixed over-cap Source Control snapshots so visible capped entries are
+  preserved for navigation and diff, while commit, mutating row actions,
+  review loading, and minimap blob fetches are disabled.
+- Tightened release-critical path validation and ruleset bypass governance by
+  rejecting parent-traversing patch/stress artifact paths, matching exact
+  reviewed `pull_request` bypass actors, requiring strict rule/status-check
+  shape, and updating the remote `Protect main` ruleset to require the new
+  `ruleset-governance` check.
+- Added a shared validation command lock and isolated cargo-llvm-cov target
+  directory so concurrent policy and coverage gates cannot race on GTK/Cargo
+  build state.
+- Closed `RIT-AUD-010` by verifying release signing secrets against the
+  committed beta Flatpak public key before signing and documenting key
+  rotation, revocation, compromise recovery, and emergency cutover.
+- Closed `RIT-AUD-011` by pinning release-critical GitHub Actions to commit
+  SHAs and adding exact versions for cargo-installed CI tools.
+- Closed `RIT-AUD-002` by checking the current published beta version and
+  OSTree commit before publishing, blocking older normal releases, and adding
+  an explicit emergency rollback input path.
+- Closed `RIT-AUD-009` by adding a `sourceview5` patch manifest, committed
+  upstream crate anchor, allowed-file diff checksum, and unsafe/FFI baseline
+  validation.
+- Closed `RIT-AUD-013` by deferring durable session pruning after startup
+  restore failures until the next explicit session-changing action.
+- Closed the app-side V14.7 Git and lifecycle findings by canceling stale open,
+  review, minimap, and Git subprocess work; adding guarded save completion;
+  degrading over-cap Git status sets; and escaping unsafe Git path display
+  characters.
+- Closed `RIT-AUD-008` and `RIT-AUD-015` by adding the parser-boundary
+  registry, valid Git status `-z` fuzz seeds, schema-backed stress scripts, and
+  generated corpus/repo consumption in the native stress runner.
 - Fixed `RIT-AUD-014` by scanning legitimate source paths containing a
   `target` component while still ignoring known build-output roots.
 - Made the policy-check headless GTK environment run Rust tests with
   `RUST_TEST_THREADS=1`, matching CI and avoiding parallel GTK flow flakiness.
+- Made `tools.coverage_check` set the same single-threaded Rust test default
+  for local `cargo llvm-cov` runs.
 - Tightened the new V14.6 release and stress/fuzz validators after review:
   malformed remediation no longer suppresses gates, release validation now
   checks exact-commit GitHub check runs before signing, registry paths cannot

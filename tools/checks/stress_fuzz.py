@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import datetime as dt
+import re
+from fnmatch import fnmatch
 from pathlib import Path
 from typing import Any
 
@@ -13,6 +15,16 @@ POLICY_FILE = "policy/stress-fuzz.policy.json"
 POLICY_ID = "policy/stress_fuzz.v1.json"
 REGISTRY_FINDING = "RIT-AUD-015"
 STRESS_FINDING = "RIT-AUD-008"
+PARSER_MARKER_RE = re.compile(r"PARSER-BOUNDARY:\s*id=([A-Za-z0-9_-]+)")
+GIT_STATUS_REPOS = {
+    "stress/git-repos/generated/many-untracked",
+    "stress/git-repos/generated/many-modified",
+    "stress/git-repos/generated/conflicted",
+    "stress/git-repos/generated/non-utf8-paths",
+    "stress/git-repos/generated/submodule-and-symlink",
+    "stress/git-repos/generated/index-lock-present",
+    "stress/git-repos/generated/huge-status",
+}
 
 
 def check_stress_fuzz(root: Path, errors: list[str]) -> None:
@@ -26,9 +38,9 @@ def check_stress_fuzz(root: Path, errors: list[str]) -> None:
         foundation.add(errors, f"{POLICY_FILE} must have $id {POLICY_ID}")
     _check_policy_stack(root, errors)
     active = remediation.validate_planned_remediation(policy, POLICY_FILE, errors)
-    _check_parser_registry(repo, policy, active, errors)
-    _check_fuzz_targets(repo, policy, active, errors)
-    _check_stress_scripts(repo, policy, active, errors)
+    registry_entries = _check_parser_registry(repo, policy, active, errors)
+    _check_fuzz_targets(repo, policy, active, registry_entries, errors)
+    _check_stress_scripts(repo, policy, active, registry_entries, errors)
     _check_runner_fidelity(repo, active, errors)
     _check_ci_generated_inputs(repo, policy, active, errors)
     _check_artifact_uploads(repo, policy, errors)
@@ -49,16 +61,25 @@ def _check_policy_stack(root: Path, errors: list[str]) -> None:
         foundation.add(errors, "validation-tooling overlaps_with must include policy/stress_fuzz.v1.json")
 
 
-def _check_parser_registry(repo: Path, policy: dict[str, Any], active: set[str], errors: list[str]) -> None:
+def _check_parser_registry(
+    repo: Path,
+    policy: dict[str, Any],
+    active: set[str],
+    errors: list[str],
+) -> list[dict[str, Any]]:
     cfg = policy.get("parser_boundary_registry", {})
     registry_paths = _glob_paths(repo, [str(item) for item in cfg.get("globs", [])])
     if not registry_paths:
         if REGISTRY_FINDING not in active:
             foundation.add(errors, "Parser-boundary registry is required under app/build-aux/validation/")
-        return
+        return []
     entries = _registry_entries(repo, registry_paths, errors)
+    valid_entries: list[dict[str, Any]] = []
     seen: set[str] = set()
+    entries_by_id: dict[str, dict[str, Any]] = {}
     required_fields = [str(item) for item in cfg.get("entry_shape", {}).get("required_fields", [])]
+    coverage_fields = [str(item) for item in cfg.get("coverage_entry_required_fields", [])]
+    exception_fields = [str(item) for item in cfg.get("reviewed_exception_required_fields", [])]
     for entry, label in entries:
         if not isinstance(entry, dict):
             foundation.add(errors, f"{label}: registry entry must be an object")
@@ -66,16 +87,54 @@ def _check_parser_registry(repo: Path, policy: dict[str, Any], active: set[str],
         missing = [field for field in required_fields if field not in entry]
         if missing:
             foundation.add(errors, f"{label}: missing required fields: {', '.join(missing)}")
+        _check_registry_entry_shape(entry, label, coverage_fields, exception_fields, errors)
         entry_id = str(entry.get("id", "")).strip()
         if not entry_id:
             continue
         if entry_id in seen:
             foundation.add(errors, f"{label}: duplicate parser-boundary id {entry_id}")
         seen.add(entry_id)
+        entries_by_id[entry_id] = entry
         _check_registry_paths(repo, entry, label, active, errors)
+        valid_entries.append(entry)
     for boundary_id in [str(item) for item in cfg.get("minimum_boundary_ids", [])]:
         if boundary_id not in seen:
             foundation.add(errors, f"Parser-boundary registry missing minimum id {boundary_id}")
+    if REGISTRY_FINDING not in active:
+        _check_parser_boundary_markers(repo, entries_by_id, errors)
+    return valid_entries
+
+
+def _check_registry_entry_shape(
+    entry: dict[str, Any],
+    label: str,
+    coverage_fields: list[str],
+    exception_fields: list[str],
+    errors: list[str],
+) -> None:
+    if not str(entry.get("kind", "")).strip():
+        foundation.add(errors, f"{label}: kind must be non-empty")
+    for field in ("entrypoints", "gaps", "reviewed_exceptions"):
+        if not isinstance(entry.get(field), list):
+            foundation.add(errors, f"{label}: {field} must be an array")
+    if not str(entry.get("real_input_shape", "")).strip():
+        foundation.add(errors, f"{label}: real_input_shape must be non-empty")
+    for index, coverage in enumerate(entry.get("coverage", []) if isinstance(entry.get("coverage"), list) else []):
+        if not isinstance(coverage, dict):
+            continue
+        missing = [field for field in coverage_fields if not str(coverage.get(field, "")).strip()]
+        if missing:
+            foundation.add(errors, f"{label}: coverage[{index}] missing required fields: {', '.join(missing)}")
+    for index, exception in enumerate(
+        entry.get("reviewed_exceptions", []) if isinstance(entry.get("reviewed_exceptions"), list) else []
+    ):
+        if not isinstance(exception, dict):
+            foundation.add(errors, f"{label}: reviewed_exceptions[{index}] must be an object")
+            continue
+        missing = [field for field in exception_fields if not str(exception.get(field, "")).strip()]
+        if missing:
+            foundation.add(errors, f"{label}: reviewed_exceptions[{index}] missing required fields: {', '.join(missing)}")
+        _require_date(exception.get("last_reviewed"), label, f"reviewed_exceptions[{index}].last_reviewed", errors)
 
 
 def _registry_entries(repo: Path, paths: list[Path], errors: list[str]) -> list[tuple[Any, str]]:
@@ -119,7 +178,13 @@ def _check_registry_paths(repo: Path, entry: dict[str, Any], label: str, active:
         foundation.add(errors, f"{label}: non-empty gaps require reviewed_exceptions or planned remediation")
 
 
-def _check_fuzz_targets(repo: Path, policy: dict[str, Any], active: set[str], errors: list[str]) -> None:
+def _check_fuzz_targets(
+    repo: Path,
+    policy: dict[str, Any],
+    active: set[str],
+    registry_entries: list[dict[str, Any]],
+    errors: list[str],
+) -> None:
     cfg = policy.get("fuzz_targets", {})
     workspace = repo / str(cfg.get("workspace", "app/fuzz"))
     for target in [str(item) for item in cfg.get("targets_required", [])]:
@@ -129,13 +194,30 @@ def _check_fuzz_targets(repo: Path, policy: dict[str, Any], active: set[str], er
         corpus = workspace / "corpus" / target
         if not corpus.exists() or not any(path.is_file() for path in corpus.rglob("*")):
             foundation.add(errors, f"{corpus.relative_to(repo)}: required fuzz seed corpus is missing")
+        if REGISTRY_FINDING not in active and not _registry_covers(
+            registry_entries,
+            "fuzz",
+            target,
+            target_file.relative_to(repo).as_posix(),
+        ):
+            foundation.add(errors, f"Parser-boundary registry coverage missing required fuzz target {target}")
     git_corpus = workspace / "corpus" / "git_status_parse"
-    has_nul_seed = _corpus_has_nul_seed(repo, git_corpus, errors) if git_corpus.exists() else False
-    if not has_nul_seed and REGISTRY_FINDING not in active:
-        foundation.add(errors, "git_status_parse corpus must include NUL-delimited porcelain v2 -z seeds")
+    has_git_seed_shape = _corpus_has_git_status_shape(repo, git_corpus, errors) if git_corpus.exists() else False
+    if not has_git_seed_shape and REGISTRY_FINDING not in active:
+        foundation.add(
+            errors,
+            "git_status_parse corpus must include valid NUL-delimited porcelain v2 -z seeds "
+            "covering ordinary, unmerged, control-character, and non-UTF-8 paths",
+        )
 
 
-def _check_stress_scripts(repo: Path, policy: dict[str, Any], active: set[str], errors: list[str]) -> None:
+def _check_stress_scripts(
+    repo: Path,
+    policy: dict[str, Any],
+    active: set[str],
+    registry_entries: list[dict[str, Any]],
+    errors: list[str],
+) -> None:
     cfg = policy.get("stress_scripts", {})
     required_fields = [str(item) for item in cfg.get("script_schema", {}).get("required_fields", [])]
     for rel in [str(item) for item in cfg.get("required_scripts", [])]:
@@ -152,7 +234,22 @@ def _check_stress_scripts(repo: Path, policy: dict[str, Any], active: set[str], 
         if missing and STRESS_FINDING not in active:
             foundation.add(errors, f"{rel}: stress script missing required fields: {', '.join(missing)}")
         if STRESS_FINDING not in active:
+            if not _registry_covers(registry_entries, "stress", str(data.get("flow", "")), rel):
+                foundation.add(errors, f"Parser-boundary registry coverage missing required stress script {rel}")
+            _check_script_schema_values(rel, data, errors)
             _check_script_boundary_fidelity(rel, data, cfg, errors)
+
+
+def _check_script_schema_values(rel: str, data: dict[str, Any], errors: list[str]) -> None:
+    for field in ("fixtures", "actions", "assertions"):
+        if not isinstance(data.get(field), list) or not data.get(field):
+            foundation.add(errors, f"{rel}: {field} must be a non-empty array")
+    artifact_dir = str(data.get("artifact_dir", "")).strip()
+    if _safe_stress_artifact_dir(artifact_dir) is None:
+        foundation.add(errors, f"{rel}: artifact_dir must be under stress/artifacts/")
+    _check_script_object_array(rel, data, "fixtures", ("role", "path"), errors)
+    _check_script_object_array(rel, data, "actions", ("type",), errors)
+    _check_script_object_array(rel, data, "assertions", ("type",), errors)
 
 
 def _check_runner_fidelity(repo: Path, active: set[str], errors: list[str]) -> None:
@@ -171,35 +268,39 @@ def _check_script_boundary_fidelity(rel: str, data: dict[str, Any], cfg: dict[st
     requirements = cfg.get("boundary_fidelity", {}).get(flow, {})
     if not isinstance(requirements, dict):
         return
-    tokens = _json_value_tokens({key: data.get(key) for key in ("fixtures", "actions", "assertions", "artifact_dir")})
-    token_map = {
-        "must_open_generated_corpus_file": ("stress/corpus/generated", "generated"),
-        "must_perform_search_action": ("search",),
-        "must_perform_save_or_save_as_boundary": ("save", "save_as", "save-as"),
-        "must_assert_document_or_search_state": ("assert", "document", "search"),
-        "must_start_compare_workflow": ("compare",),
-        "must_assert_compare_pane_or_diff_state": ("assert", "compare", "diff"),
-        "must_use_input_files_from_declared_fixtures": ("fixtures",),
-        "must_open_generated_markdown_corpus": ("stress/corpus/generated", "markdown"),
-        "must_toggle_or_render_preview_boundary": ("preview", "render"),
-        "must_assert_preview_or_fallback_state": ("assert", "preview", "fallback"),
-        "must_open_generated_git_repos": ("stress/git-repos/generated",),
-        "must_include_many_untracked_many_modified_conflicted_non_utf8_submodule_and_lock_cases": (
-            "many-untracked",
-            "many-modified",
-            "conflicted",
-            "non-utf8",
-            "submodule",
-            "index-lock",
+    fixtures = _path_values(data.get("fixtures"))
+    actions = _typed_objects(data.get("actions"))
+    assertions = _typed_objects(data.get("assertions"))
+    checks = {
+        "must_open_generated_corpus_file": lambda: _has_action(actions, "open", "stress/corpus/generated/open-save-search.txt"),
+        "must_perform_search_action": lambda: _has_action_type(actions, "search"),
+        "must_perform_save_or_save_as_boundary": lambda: _has_action_type(actions, "save") or _has_action_type(actions, "save-as"),
+        "must_assert_document_or_search_state": lambda: _has_assertion_type(assertions, "document-state")
+        and _has_assertion_type(assertions, "search-state"),
+        "must_start_compare_workflow": lambda: _has_compare_workflow(actions, fixtures),
+        "must_assert_compare_pane_or_diff_state": lambda: _has_assertion_type(assertions, "compare-pane-diff-state"),
+        "must_use_input_files_from_declared_fixtures": lambda: {
+            "stress/corpus/generated/compare-reference.txt",
+            "stress/corpus/generated/compare-current.txt",
+        }.issubset(fixtures),
+        "must_open_generated_markdown_corpus": lambda: _has_action(actions, "open", "stress/corpus/generated/markdown-stress.md"),
+        "must_toggle_or_render_preview_boundary": lambda: _has_action_type(actions, "toggle-preview-render"),
+        "must_assert_preview_or_fallback_state": lambda: _has_assertion_type(assertions, "preview-or-fallback-state"),
+        "must_open_generated_git_repos": lambda: all(_has_any_action_for_path(actions, path) for path in GIT_STATUS_REPOS),
+        "must_include_many_untracked_many_modified_conflicted_non_utf8_submodule_and_lock_cases": lambda: GIT_STATUS_REPOS.issubset(fixtures),
+        "must_assert_source_control_or_degraded_state": lambda: _has_assertion_type(
+            assertions,
+            "source-control-or-degraded-state",
         ),
-        "must_assert_source_control_or_degraded_state": ("assert", "source-control", "too-large", "degraded"),
     }
     for key, enabled in requirements.items():
         if not enabled:
             continue
-        expected = token_map.get(str(key))
-        if expected and not any(token in tokens for token in expected):
-            foundation.add(errors, f"{rel}: boundary fidelity requirement {key} is not represented in script")
+        checker = checks.get(str(key))
+        if checker is None:
+            continue
+        if not checker():
+            foundation.add(errors, f"{rel}: boundary fidelity requirement {key} is not executable in script")
 
 
 def _check_ci_generated_inputs(repo: Path, policy: dict[str, Any], active: set[str], errors: list[str]) -> None:
@@ -232,14 +333,138 @@ def _check_lockfile_delegation(policy: dict[str, Any], errors: list[str]) -> Non
         foundation.add(errors, f"{POLICY_FILE}: lockfile sync must delegate version comparison to dependency preflight")
 
 
-def _json_value_tokens(value: Any) -> str:
-    if isinstance(value, dict):
-        return " ".join(_json_value_tokens(item) for item in value.values())
-    if isinstance(value, list):
-        return " ".join(_json_value_tokens(item) for item in value)
-    if value is None:
-        return ""
-    return str(value).lower()
+def _check_parser_boundary_markers(repo: Path, entries: dict[str, dict[str, Any]], errors: list[str]) -> None:
+    markers = _parser_boundary_markers(repo, errors)
+    for boundary_id, entry in sorted(entries.items()):
+        marked_paths = markers.get(boundary_id, [])
+        if not marked_paths:
+            foundation.add(errors, f"Parser-boundary id {boundary_id} must have PARSER-BOUNDARY marker in source_paths")
+            continue
+        sources = [normalize_path(str(item)) for item in entry.get("source_paths", [])]
+        for path in marked_paths:
+            if not any(_path_matches_pattern(path, source) for source in sources):
+                foundation.add(errors, f"Parser-boundary marker {boundary_id} is outside registered source_paths")
+    for boundary_id in sorted(markers):
+        if boundary_id not in entries:
+            foundation.add(errors, f"Parser-boundary marker {boundary_id} is not registered")
+
+
+def _parser_boundary_markers(repo: Path, errors: list[str]) -> dict[str, list[str]]:
+    markers: dict[str, list[str]] = {}
+    for path in sorted(repo.glob("app/src/**/*.rs")):
+        if not path.is_file():
+            continue
+        rel = path.relative_to(repo).as_posix()
+        try:
+            text = read_text(path)
+        except SystemExit:
+            foundation.add(errors, f"{rel}: unable to read parser-boundary marker source")
+            continue
+        for match in PARSER_MARKER_RE.finditer(text):
+            markers.setdefault(match.group(1), []).append(rel)
+    return markers
+
+
+def _path_matches_pattern(path: str, pattern: str) -> bool:
+    return path == pattern or fnmatch(path, pattern)
+
+
+def _check_script_object_array(
+    rel: str,
+    data: dict[str, Any],
+    field: str,
+    required_fields: tuple[str, ...],
+    errors: list[str],
+) -> None:
+    items = data.get(field)
+    if not isinstance(items, list):
+        return
+    for index, item in enumerate(items):
+        if not isinstance(item, dict):
+            foundation.add(errors, f"{rel}: {field}[{index}] must be an object")
+            continue
+        missing = [name for name in required_fields if not str(item.get(name, "")).strip()]
+        if missing:
+            foundation.add(errors, f"{rel}: {field}[{index}] missing required fields: {', '.join(missing)}")
+
+
+def _typed_objects(value: Any) -> list[dict[str, Any]]:
+    return [item for item in value if isinstance(item, dict) and str(item.get("type", "")).strip()] if isinstance(value, list) else []
+
+
+def _path_values(value: Any) -> set[str]:
+    paths: set[str] = set()
+    if not isinstance(value, list):
+        return paths
+    for item in value:
+        if isinstance(item, dict):
+            path = normalize_path(str(item.get("path", "")).strip())
+            if path:
+                paths.add(path)
+    return paths
+
+
+def _has_action(actions: list[dict[str, Any]], action_type: str, path: str) -> bool:
+    return any(
+        str(action.get("type")) == action_type and normalize_path(str(action.get("path", ""))) == path
+        for action in actions
+    )
+
+
+def _has_action_type(actions: list[dict[str, Any]], action_type: str) -> bool:
+    return any(str(action.get("type")) == action_type for action in actions)
+
+
+def _has_assertion_type(assertions: list[dict[str, Any]], assertion_type: str) -> bool:
+    return any(str(assertion.get("type")) == assertion_type for assertion in assertions)
+
+
+def _has_any_action_for_path(actions: list[dict[str, Any]], path: str) -> bool:
+    return any(
+        str(action.get("type")) in {"open-source-control", "refresh-source-control"}
+        and normalize_path(str(action.get("path", ""))) == path
+        for action in actions
+    )
+
+
+def _has_compare_workflow(actions: list[dict[str, Any]], fixtures: set[str]) -> bool:
+    for action in actions:
+        if str(action.get("type")) != "start-compare-workflow":
+            continue
+        reference = normalize_path(str(action.get("reference", "")))
+        current = normalize_path(str(action.get("current", "")))
+        if reference in fixtures and current in fixtures and reference != current:
+            return True
+    return False
+
+
+def _safe_stress_artifact_dir(value: str) -> Path | None:
+    normalized = normalize_path(value)
+    if not normalized.startswith("stress/artifacts/"):
+        return None
+    path = Path(normalized)
+    if path.is_absolute() or any(part in {"", ".."} for part in path.parts):
+        return None
+    return path
+
+
+def _registry_covers(entries: list[dict[str, Any]], coverage_type: str, target: str, path: str) -> bool:
+    expected_type = coverage_type.strip().lower()
+    expected_target = target.strip()
+    expected_path = normalize_path(path)
+    if not expected_type or not expected_target or not expected_path:
+        return False
+    for entry in entries:
+        for coverage in entry.get("coverage", []) if isinstance(entry.get("coverage"), list) else []:
+            if not isinstance(coverage, dict):
+                continue
+            if str(coverage.get("type", "")).strip().lower() != expected_type:
+                continue
+            if str(coverage.get("target", "")).strip() != expected_target:
+                continue
+            if normalize_path(str(coverage.get("path", ""))) == expected_path:
+                return True
+    return False
 
 
 def _glob_paths(root: Path, patterns: list[str]) -> list[Path]:
@@ -281,9 +506,15 @@ def _gaps_have_planned_remediation(gaps: Any, active: set[str]) -> bool:
     return False
 
 
-def _corpus_has_nul_seed(repo: Path, corpus: Path, errors: list[str]) -> bool:
+def _corpus_has_git_status_shape(repo: Path, corpus: Path, errors: list[str]) -> bool:
     max_seed_bytes = 8 * 1024 * 1024
-    found = False
+    shape = {
+        "nul": False,
+        "ordinary": False,
+        "unmerged": False,
+        "control": False,
+        "non_utf8": False,
+    }
     for path in corpus.rglob("*"):
         if not path.is_file():
             continue
@@ -297,16 +528,46 @@ def _corpus_has_nul_seed(repo: Path, corpus: Path, errors: list[str]) -> bool:
             foundation.add(errors, f"{rel}: fuzz seed is too large for policy shape scan ({size} bytes)")
             continue
         try:
-            with path.open("rb") as handle:
-                for chunk in iter(lambda: handle.read(65536), b""):
-                    if b"\0" in chunk:
-                        found = True
-                        break
+            data = path.read_bytes()
         except OSError as exc:
             foundation.add(errors, f"{rel}: unable to read fuzz seed ({exc})")
-        if found:
+            continue
+        _merge_git_status_seed_shape(shape, data)
+        if all(shape.values()):
             return True
-    return False
+    return all(shape.values())
+
+
+def _merge_git_status_seed_shape(shape: dict[str, bool], data: bytes) -> None:
+    if b"\0" in data:
+        shape["nul"] = True
+    for record in data.split(b"\0"):
+        if not record:
+            continue
+        if record.startswith(b"1 "):
+            shape["ordinary"] = True
+            _scan_path_shape(shape, _field_at(record, 8))
+        elif record.startswith(b"u "):
+            shape["unmerged"] = True
+            _scan_path_shape(shape, _field_at(record, 10))
+        elif record.startswith(b"? "):
+            _scan_path_shape(shape, record[2:])
+
+
+def _field_at(record: bytes, index: int) -> bytes:
+    fields = record.split(b" ", index)
+    if len(fields) <= index:
+        return b""
+    return fields[index]
+
+
+def _scan_path_shape(shape: dict[str, bool], path: bytes) -> None:
+    if any(byte < 0x20 or byte == 0x7f for byte in path):
+        shape["control"] = True
+    try:
+        path.decode("utf-8")
+    except UnicodeDecodeError:
+        shape["non_utf8"] = True
 
 
 def _require_date(value: Any, label: str, field: str, errors: list[str]) -> None:
@@ -314,6 +575,10 @@ def _require_date(value: Any, label: str, field: str, errors: list[str]) -> None
         foundation.add(errors, f"{label}: {field} must be YYYY-MM-DD")
         return
     try:
-        dt.date.fromisoformat(value)
+        reviewed = dt.date.fromisoformat(value)
     except ValueError:
         foundation.add(errors, f"{label}: {field} must be YYYY-MM-DD")
+        return
+    today = dt.datetime.now(dt.UTC).date()
+    if reviewed > today:
+        foundation.add(errors, f"{label}: {field} must not be after {today}")

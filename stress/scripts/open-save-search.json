@@ -1,5 +1,48 @@
 {
   "flow": "open-save-search",
   "description": "Open a generated text file, let Riteed create a document tab, and keep the main loop alive long enough for document open/search surfaces to settle.",
-  "expect_failure": false
+  "expect_failure": false,
+  "fixtures": [
+    {
+      "role": "document generated corpus",
+      "path": "stress/corpus/generated/open-save-search.txt"
+    },
+    {
+      "role": "search generated corpus",
+      "path": "stress/corpus/generated/search-at-cap.txt"
+    }
+  ],
+  "actions": [
+    {
+      "type": "open",
+      "path": "stress/corpus/generated/open-save-search.txt"
+    },
+    {
+      "type": "search",
+      "query": "needle"
+    },
+    {
+      "type": "save",
+      "path": "stress/corpus/generated/open-save-search.txt"
+    }
+  ],
+  "assertions": [
+    {
+      "type": "document-state",
+      "state": "opened"
+    },
+    {
+      "type": "search-state",
+      "query": "needle"
+    },
+    {
+      "type": "dirty-clean-state",
+      "state": "clean-or-saved"
+    },
+    {
+      "type": "artifact-exists",
+      "path": "stress/artifacts/open-save-search/stress-run.log"
+    }
+  ],
+  "artifact_dir": "stress/artifacts/open-save-search"
 }

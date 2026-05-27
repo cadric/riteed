@@ -278,12 +278,12 @@ fn bind_node(widgets: &RowWidgets, node: SourceControlNode, bound_rows: &BoundRo
     match node {
         SourceControlNode::Folder {
             display_name,
-            full_path,
+            display_path,
             ..
         } => {
             widgets.icon.set_icon_name(Some("folder-symbolic"));
             widgets.label.set_label(&display_name);
-            widgets.row_box.set_tooltip_text(Some(&full_path));
+            widgets.row_box.set_tooltip_text(Some(&display_path));
             widgets.staged.set_visible(false);
             widgets.status.set_visible(false);
         }

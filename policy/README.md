@@ -6,7 +6,7 @@ This directory is the canonical contract for policy scope, validator behavior, a
 
 - `gnome-rust-app.bundle.json` is the entrypoint bundle.
 - `validation-tooling.policy.json` owns shared thresholds, required tools, line limits, and review-artifact discovery.
-- `release.policy.json` owns signed Flatpak publishing, GitHub Actions release gates, GPG/OSTree beta remote signing, GitHub Pages artifact safety, rollback behavior, signing-key governance, and local release-critical patch manifests.
+- `release.policy.json` owns signed Flatpak publishing, GitHub Actions release gates, GitHub repository ruleset governance, GPG/OSTree beta remote signing, GitHub Pages artifact safety, rollback behavior, signing-key governance, and local release-critical patch manifests.
 - `stress-fuzz.policy.json` owns parser-boundary registry requirements, fuzz seed fidelity, stress-script boundary fidelity, generated corpus/repo consumption, and stress/fuzz artifact preservation.
 - Domain policies own domain-specific hard-fail and `review_required` rules.
 - `hard_fail_patterns[].exceptions` are narrow repo-relative globs applied before scanner regex matching; keep them path-scoped.
@@ -62,7 +62,13 @@ Review artifacts use fixed semantic tags where a field would otherwise be ambigu
 - `runtime.sites[].kind` must match the scanner kinds emitted from policy, currently `runtime-strong-capture`, `runtime-shared-state`, `runtime-git-subprocess`, and `runtime-sync-fs`.
 - `runtime-sync-fs` covers synchronous runtime filesystem probes in `src/**/*.rs`; test-only files and `#[cfg(test)]` ranges are ignored, and reviewed entries must explain the native-only guard.
 - `parser_boundaries` entries use `{id, kind, source_paths, entrypoints, real_input_shape, coverage, gaps, reviewed_exceptions, last_reviewed}`. `reviewed_exceptions` means input shapes or trust-boundary cases intentionally not fuzzed or stressed with review evidence; it is not reviewer approval metadata.
-- `planned_remediation` entries in release and stress/fuzz policies use `{finding_id, target_milestone, review_artifact, created, max_age_days, reason, removal_condition, approval_required?}`. `created + max_age_days` is evaluated against the current UTC date at validator runtime, so stale policy debt expires even when no new commits are made.
+- Parser-boundary implementation files must include `PARSER-BOUNDARY: id=<registry id>` markers in registered `source_paths`; the validator treats missing markers and unregistered markers as bidirectional registry drift.
+- `planned_remediation` entries in release and stress/fuzz policies use `{finding_id, target_milestone, review_artifact, created, max_age_days, reason, removal_condition, approval_required?}`. `created` and reviewed exception dates must not be in the future; `created + max_age_days` is evaluated against the current UTC date at validator runtime, so stale policy debt expires even when no new commits are made.
+- `release_identity.repository_full_name` is the `owner/name` repository used for read-only GitHub ruleset API verification after repository-governance remediation entries clear.
+- `github_actions_release_safety.repository_governance.reviewed_bypass_actors` is the exact allowlist for GitHub ruleset bypass identities; live branch bypass actors must match `(ruleset, actor_type, actor_id, bypass_mode)`, `bypass_mode` must be `pull_request`, and tag rulesets must have no bypass actors.
+- `signed_flatpak_publish.hard_requirements.required_validate_check_contexts` is the exact ordered check-run context list the publish workflow must require for the release tag commit before signing secrets are imported.
+- `github_actions_release_safety.rollback_environment.reviewed_required_reviewers` is the exact allowlist for the emergency rollback environment's required reviewer identities; the live governance job must match `(actor_type, actor_id)` and missing or extra reviewers fail validation.
+- Release-critical local patch manifests pin an upstream `.crate` archive with its official checksum, list only reviewed changed files, store a canonical diff checksum, and record the unsafe/FFI baseline. The validator extracts the archive with tar-safety checks, and tracked `.crate` anchors must be marked as binary artifacts in `.gitattributes`.
 
 Template-source note:
 

@@ -360,13 +360,13 @@
     },
     {
       "file": "release.policy.json",
-      "sha256": "3149cfe723718da679613b1af6b922cc407596d9869c1c47e85346857ea2a3a0",
-      "bytes": 14208
+      "sha256": "da5d394fbd45d6f082dcd4e3a9c0805903d683c42fb39407a581e4787e481507",
+      "bytes": 12371
     },
     {
       "file": "stress-fuzz.policy.json",
-      "sha256": "1a72a41b48e80c541c6ce2958a1a7669bba323832b37af7f049da756964c5034",
-      "bytes": 14351
+      "sha256": "501478ab65b585e49b176f3b7bb5f4ae647b01b28e9ace411b5dce5ef5dde1e3",
+      "bytes": 11771
     },
     {
       "file": "validation-tooling.policy.json",

@@ -1,6 +1,62 @@
 # Continuity
 
 ## OUTCOMES
+- 2026-05-27 follow-up V14.7 hardening is in progress locally. Release
+  validation now uses scoped workflow structure parsing for publish/validate
+  jobs, fail-closes malformed Pages metadata, streams local `.crate` extraction
+  with 1 MiB chunks and size caps, rejects future remediation/review dates,
+  and requires live rulesets to use strict exact status checks, signed-commit
+  enforcement, `pull_request` branch bypass only, and no tag bypass actors.
+  App-side follow-up fixes remove the live-buffer save path: saves now use a
+  bounded 25 MiB snapshot or return an explicit too-large error, autosave
+  pauses on that condition, session-restore completion retries after transient
+  borrow contention, and over-cap Source Control snapshots keep visible capped
+  entries while disabling commit/mutating/review/minimap work. Focused
+  validation passed for release/ruleset unit tests, release/stress hardening
+  unit tests, Python compile checks, focused Rust `document_limits`,
+  `source_control`, and save-completion tests, `scripts/policy-check --root app
+  --strict`, and `python3 -m tools.coverage_check --root app` at 80.7% line
+  coverage. Remote ruleset updates for the new `pull_request`/signed/strict
+  shape have not been written in this local step; `RIT-AUD-017` remains closed
+  only after `tools.ruleset_governance_check` is green against the live API.
+- Post-review hardening for the current V14.7 closeout is implemented:
+  `GITHUB_TOKEN` was removed from the privileged native validation container
+  and moved to an isolated `ruleset-governance` job; `publish-flatpak.yml`
+  now gates on exact tag-commit GitHub Actions check-runs,
+  version/ref/source-commit Pages metadata, and a separate
+  `flatpak-beta-rollback` environment for emergency rollback; the live
+  `Protect main` ruleset was updated on 2026-05-26 to require
+  `ruleset-governance`; ruleset bypass actors and rollback reviewers are
+  exact-policy matched; offline policy-check no longer requires GitHub auth;
+  stress scripts now require executable action/assertion contracts and safe
+  artifact paths; parser registry entries are bidirectionally tied to
+  `PARSER-BOUNDARY` markers; the legacy `win.compare` dialog action was
+  removed; async reused-tab opens check dirty-generation before applying; and
+  Git timeouts surface as Source Control errors instead of cancellations.
+  Follow-up validation passed with release/stress/validation unit tests,
+  `scripts/dependency-preflight --root app`, JSON parsing, `git diff --check`,
+  `cargo fmt --all --check`, `cargo check --workspace --all-targets
+  --all-features`, `cargo clippy` with `-D warnings`, single-threaded `cargo
+  test --workspace --all-targets --all-features`, no-token `python3 -m
+  tools.policy_check --root app --strict`, and `python3 -m tools.coverage_check
+  --root app` (80.7% line coverage). The coverage wrapper now defaults Rust tests to
+  `RUST_TEST_THREADS=1`, and the GTK search/replace flow waits for the
+  remaining-match count before Replace All.
+- V14.7 remediation is implemented for every audit item except V14.6-owned
+  `RIT-AUD-014`. After repository-owner approval on 2026-05-26, the
+  `Protect main` and `Protect version tags` GitHub repository rulesets were
+  enabled through the ruleset API and `RIT-AUD-017` was removed from release
+  planned remediation. `ROADMAP.md` now marks `completed_through: v14.7` and
+  `next_version: v15`. Strict policy validation and coverage passed locally
+  after adding validation command locking, release/stress hardening,
+  sourceview5 patch-manifest validation, GTK async lifecycle cancellation,
+  save dirty-generation guards, Git subprocess timeout cleanup, Git status
+  caps, escaped Git path display, parser/stress registry enforcement, and
+  live ruleset API verification. Final validation for this closeout passed
+  with release/stress/policy/coverage unit tests, dependency preflight, JSON
+  parsing, `git diff --check`, `python3 -m tools.policy_check --root app
+  --strict`, and `python3 -m tools.coverage_check --root app` at 81.4% line
+  coverage.
 - Implemented V14.6 policy hardening: added and wired
   `policy/release.policy.json` and `policy/stress-fuzz.policy.json`, updated
   bundle/load-order/docs/AGENTS overlap ownership, added release and

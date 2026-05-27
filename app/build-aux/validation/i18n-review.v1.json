@@ -192,7 +192,7 @@
     },
     {
       "path": "src/source_control.rs",
-      "line": 108,
+      "line": 116,
       "match": "let title = adw::WindowTitle::new(&gettext(\"Source Control\"), \"\");",
       "resolution": "This short title labels the Source Control sidebar header above the changed-file tree and commit controls.",
       "kind": "i18n-short-string"
@@ -206,22 +206,22 @@
     },
     {
       "path": "src/source_control/refresh.rs",
-      "line": 236,
-      "match": "state.status_label.set_label(&gettext(\"No changes.\"));",
+      "line": 267,
+      "match": "gettext(\"No changes.\")",
       "resolution": "This compact status appears in the Source Control panel when the repository has no changed files.",
       "kind": "i18n-short-string"
     },
     {
       "path": "src/source_control/refresh.rs",
-      "line": 238,
-      "match": "state.status_label.set_label(&gettext(\"Changed files\"));",
+      "line": 269,
+      "match": "gettext(\"Changed files\")",
       "resolution": "This short Source Control string appears inside the Git sidebar where the changed-file, history, or action context is visible.",
       "kind": "i18n-short-string"
     },
     {
       "resolution": "This short loading status is shown inside a Git review tab while the surrounding Source Control review context remains visible.",
       "path": "src/source_control/review_loader.rs",
-      "line": 35,
+      "line": 36,
       "match": "tab.set_git_review_text(&ellipsis_label(gettext(\"Loading Git review\")));",
       "kind": "i18n-short-string"
     },
@@ -272,13 +272,6 @@
       "line": 241,
       "match": "let label = gtk4::Label::new(Some(&gettext(\"Preview unavailable\")));",
       "resolution": "This compact fallback appears inside an editor palette tile when no safe preview style scheme can be resolved.",
-      "kind": "i18n-short-string"
-    },
-    {
-      "path": "src/window_compare/dialog.rs",
-      "line": 487,
-      "match": "row.set_subtitle(&gettext(\"Unavailable\"));",
-      "resolution": "This short subtitle appears in the Compare dialog when the Saved Version source is not available for the current left-side selection.",
       "kind": "i18n-short-string"
     },
     {

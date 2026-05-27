@@ -4,13 +4,17 @@ use std::rc::Rc;
 use gtk4::gio;
 use gtk4::prelude::*;
 
-use super::{SourceControlState, SourceStateRef, path_target};
+use super::{
+    SourceControlState, SourceStateRef, cancel_minimap_requests, cancel_minimap_requests_for_tab,
+    path_target, remove_minimap_cancellable, track_minimap_cancellable,
+};
 use crate::editor_tab::EditorTab;
 use crate::editor_tab::minimap_diff::{MinimapDiffInput, decode_minimap_text};
 use crate::git_process::{GitProcess, GitProcessError};
 use crate::git_status::{GitAttrState, GitFileStatus, GitStatusEntry};
 
 pub(super) fn refresh_open_tabs(state: &SourceStateRef) {
+    cancel_minimap_requests(state);
     let tabs = state
         .borrow()
         .workspace
@@ -18,11 +22,18 @@ pub(super) fn refresh_open_tabs(state: &SourceStateRef) {
         .map(|workspace| workspace.ordered_tabs())
         .unwrap_or_default();
     for tab in tabs {
-        refresh_tab(state, Some(tab));
+        refresh_tab_without_cancel(state, Some(tab));
     }
 }
 
 pub(super) fn refresh_tab(state: &SourceStateRef, tab: Option<Rc<EditorTab>>) {
+    if let Some(tab) = tab.as_ref() {
+        cancel_minimap_requests_for_tab(state, tab, None);
+    }
+    refresh_tab_without_cancel(state, tab);
+}
+
+fn refresh_tab_without_cancel(state: &SourceStateRef, tab: Option<Rc<EditorTab>>) {
     let Some(tab) = tab else {
         return;
     };
@@ -61,7 +72,15 @@ pub(super) fn refresh_tab(state: &SourceStateRef, tab: Option<Rc<EditorTab>>) {
             all_deleted: true,
         }),
         ReferenceInput::Blob(oid) => {
-            load_reference_blob(state, &tab, &target.process, entry, oid.as_str(), source);
+            load_reference_blob(
+                state,
+                &tab,
+                &target.process,
+                target.repo,
+                entry,
+                oid.as_str(),
+                source,
+            );
         }
     }
 }
@@ -82,6 +101,9 @@ enum ReferenceInput {
 fn target_for_tab(state: &SourceStateRef, tab: &EditorTab) -> Option<MinimapTarget> {
     let uri = tab.document_uri()?;
     let state = state.borrow();
+    if state.snapshot.too_large {
+        return None;
+    }
     let repo = state.repo.clone()?;
     let process = state.process.clone()?;
     let raw = path_target::raw_path_for_uri(&repo, uri.as_str())?;
@@ -123,11 +145,13 @@ fn load_reference_blob(
     state: &SourceStateRef,
     tab: &Rc<EditorTab>,
     process: &GitProcess,
+    repo: PathBuf,
     entry: GitStatusEntry,
     oid: &str,
     source: String,
 ) {
     let cancellable = gio::Cancellable::new();
+    track_minimap_cancellable(state, tab, &source, &cancellable);
     let cancellable_for_callback = cancellable.clone();
     let weak_state = Rc::downgrade(state);
     let weak_tab = Rc::downgrade(tab);
@@ -135,7 +159,16 @@ fn load_reference_blob(
         oid,
         &cancellable,
         Rc::new(move |result| {
-            if cancellable_for_callback.is_cancelled() {
+            if let Some(state) = weak_state.upgrade() {
+                remove_minimap_cancellable(&state, &cancellable_for_callback);
+                if state.borrow().repo.as_ref() != Some(&repo) {
+                    return;
+                }
+            } else {
+                return;
+            }
+            let timed_out = matches!(&result, Err(error) if error == &GitProcessError::TimedOut);
+            if cancellable_for_callback.is_cancelled() && !timed_out {
                 return;
             }
             let (Some(state), Some(tab)) = (weak_state.upgrade(), weak_tab.upgrade()) else {
