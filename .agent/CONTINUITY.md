@@ -8,7 +8,10 @@
   python3 -m tools.ruleset_governance_check`. The validation workflow now routes
   the CI governance job through the `RULESET_GOVERNANCE_TOKEN` repository secret;
   create that secret with a least-privilege token before expecting the CI
-  `ruleset-governance` job to pass.
+  `ruleset-governance` job to pass. CodeQL follow-up is also in progress:
+  release/stress tooling now contains policy-relative paths, the stress runner
+  parses fixture/artifact declarations structurally, and the local CodeQL triage
+  test records the remaining maintainer-tool false-positive classifications.
 - 2026-05-27 follow-up V14.7 hardening is in progress locally. Release
   validation now uses scoped workflow structure parsing for publish/validate
   jobs, fail-closes malformed Pages metadata, streams local `.crate` extraction

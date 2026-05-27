@@ -478,13 +478,26 @@ def _path_or_glob_exists(root: Path, pattern: str) -> bool:
     normalized = normalize_path(pattern)
     if not normalized or normalized.startswith("/") or normalized.startswith("../") or "/../" in normalized:
         return False
-    path = root / normalized
+    root_resolved = root.resolve()
+    path = (root / normalized).resolve()
+    try:
+        path.relative_to(root_resolved)
+    except ValueError:
+        return False
     if path.exists():
         return True
     try:
-        return any(candidate.exists() for candidate in root.glob(normalized))
+        return any(candidate.exists() for candidate in root.glob(normalized) if _under_root(candidate, root_resolved))
     except (NotImplementedError, ValueError):
         return False
+
+
+def _under_root(path: Path, root_resolved: Path) -> bool:
+    try:
+        path.resolve().relative_to(root_resolved)
+    except ValueError:
+        return False
+    return True
 
 
 def _gaps_have_planned_remediation(gaps: Any, active: set[str]) -> bool:

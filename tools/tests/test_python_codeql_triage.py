@@ -12,6 +12,39 @@ from tools.scanners.textdomain import textdomain_init_present
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
+CODEQL_PATH_ALERT_TRIAGE = (
+    {
+        "rule": "py/path-injection",
+        "path": "tools/checks/dependency_preflight.py",
+        "outcome": "false-positive",
+        "rationale": "Paths are fixed repo-contract files under a validated app root.",
+    },
+    {
+        "rule": "py/path-injection",
+        "path": "tools/checks/release.py",
+        "outcome": "contained",
+        "rationale": "Policy-relative paths are normalized and contained under the repo root.",
+    },
+    {
+        "rule": "py/path-injection",
+        "path": "tools/checks/stress_fuzz.py",
+        "outcome": "contained",
+        "rationale": "Policy glob candidates reject absolute and parent-traversing paths.",
+    },
+    {
+        "rule": "py/path-injection",
+        "path": "tools/validation_tooling.py",
+        "outcome": "false-positive",
+        "rationale": "Build-output probes iterate paths discovered by repo-local rglob.",
+    },
+    {
+        "rule": "rust/path-injection",
+        "path": "app/src/bin/riteed_stress.rs",
+        "outcome": "fixed",
+        "rationale": "Stress scripts now use parsed fixture paths and repo-relative containment.",
+    },
+)
+
 
 def _write(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -19,6 +52,13 @@ def _write(path: Path, text: str) -> None:
 
 
 class PythonCodeQlTriageTests(unittest.TestCase):
+    def test_current_codeql_path_alert_triage_is_documented(self) -> None:
+        for entry in CODEQL_PATH_ALERT_TRIAGE:
+            with self.subTest(path=entry["path"]):
+                self.assertIn(entry["outcome"], {"contained", "fixed", "false-positive"})
+                self.assertTrue((REPO_ROOT / entry["path"]).exists())
+                self.assertGreaterEqual(len(entry["rationale"]), 20)
+
     def test_textdomain_scanner_detects_current_app_bootstrap(self) -> None:
         source = (REPO_ROOT / "app" / "src" / "lib.rs").read_text(encoding="utf-8")
         self.assertTrue(textdomain_init_present(source))

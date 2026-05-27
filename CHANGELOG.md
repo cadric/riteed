@@ -62,6 +62,9 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 - Scoped the live ruleset-governance CI job to `RULESET_GOVERNANCE_TOKEN` and
   provisioned the reviewed rollback environment shape required by the release
   policy.
+- Hardened CodeQL path-alert surfaces in release/stress tooling and the native
+  stress runner, including parsed stress-script fixture paths instead of
+  substring-based path checks.
 - Documented that editor Source Control minimap bands reflect the last saved
   text versus the current Git baseline; unsaved edits dim existing bands until
   save or until the buffer text matches the decorated state again.
@@ -85,6 +88,8 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 - Fixed over-cap Source Control snapshots so visible capped entries are
   preserved for navigation and diff, while commit, mutating row actions,
   review loading, and minimap blob fetches are disabled.
+- Fixed the native stress runner to parse declared fixtures and artifact paths
+  structurally before reading or writing repo-local files.
 - Tightened release-critical path validation and ruleset bypass governance by
   rejecting parent-traversing patch/stress artifact paths, matching exact
   reviewed `pull_request` bypass actors, requiring strict rule/status-check

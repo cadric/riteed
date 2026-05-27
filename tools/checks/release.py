@@ -127,14 +127,15 @@ def _check_rollback_environment_policy(policy: dict[str, Any], errors: list[str]
 
 def _check_key_governance(repo: Path, policy: dict[str, Any], workflow: str, active: set[str], errors: list[str]) -> None:
     rel_key = str(policy.get("release_identity", {}).get("committed_beta_public_key", ""))
-    if not rel_key or not (repo / rel_key).exists():
+    key_path = _safe_repo_relative_path(repo, rel_key)
+    if key_path is None or not key_path.exists():
         foundation.add(errors, f"{POLICY_FILE}: committed beta public key must exist")
     uncommented = release_workflow.without_comment_lines(workflow)
     key_ref = bool(rel_key) and (rel_key in uncommented or Path(rel_key).name in uncommented)
     has_pin = key_ref and any(token in uncommented for token in ("--export", "--fingerprint", "cmp", "diff", "sha256sum"))
-    readme = repo / "app" / "build-aux" / "flatpak" / "README.md"
+    readme = _safe_repo_relative_path(repo, "app/build-aux/flatpak/README.md")
     docs_ok = False
-    if readme.exists():
+    if readme is not None and readme.exists():
         text = read_text(readme).lower()
         docs_ok = all(token in text for token in ("rotation", "revocation", "compromise", "emergency")) and "tbd" not in text
     if has_pin and docs_ok:
@@ -142,6 +143,18 @@ def _check_key_governance(repo: Path, policy: dict[str, Any], workflow: str, act
     if "RIT-AUD-010" in active:
         return
     foundation.add(errors, f"{WORKFLOW}: signing key must be pinned to committed public key and governance docs cannot contain TBD")
+
+
+def _safe_repo_relative_path(repo: Path, value: str) -> Path | None:
+    normalized = normalize_path(value)
+    if not normalized or normalized.startswith("/") or normalized.startswith("../") or "/../" in normalized:
+        return None
+    candidate = (repo / normalized).resolve()
+    try:
+        candidate.relative_to(repo.resolve())
+    except ValueError:
+        return None
+    return candidate
 
 
 def _check_mutable_inputs(workflows: dict[str, str], active: set[str], errors: list[str]) -> None:

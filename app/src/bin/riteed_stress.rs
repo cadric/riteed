@@ -23,7 +23,7 @@ fn run() -> Result<(), StressError> {
         script.write_artifact(&[String::from("intentional-failure")])?;
         return Err(StressError::IntentionalFailure);
     }
-    let flow = Flow::from_script(script.text())?;
+    let flow = script.flow();
     run_app_flow(&script, flow)
 }
 
@@ -74,8 +74,7 @@ fn run_open_save_search(
     let marker = "riteed-stress-saved-marker\n";
     set_first_source_text(app, &format!("needle\n{marker}"))?;
     activate_window_action(app, "win.save")?;
-    let saved_path = script.declared_path(RELATIVE)?;
-    wait_until(|| file_contains(&saved_path, marker))?;
+    wait_until(|| script.declared_file_contains(RELATIVE, marker))?;
     artifact_lines.push(String::from("action=open"));
     artifact_lines.push(String::from("action=search"));
     artifact_lines.push(String::from("action=save"));
@@ -150,26 +149,39 @@ fn run_git_status_stress(
 }
 
 struct StressScript {
-    text: String,
+    flow: Flow,
+    expect_failure: bool,
+    fixture_paths: Vec<String>,
+    artifact_dir: PathBuf,
     repo: PathBuf,
 }
 
 impl StressScript {
     fn load_from_env() -> Result<Self, StressError> {
         let script_path = std::env::var_os(SCRIPT_ENV).ok_or(StressError::MissingScript)?;
-        let script_path = absolute_path(PathBuf::from(script_path))?;
-        let text =
-            std::fs::read_to_string(&script_path).map_err(|_error| StressError::ScriptRead)?;
+        let script_path = stress_script_path(PathBuf::from(script_path))?;
         let repo = repo_root_for(&script_path)?;
-        Ok(Self { text, repo })
-    }
-
-    fn text(&self) -> &str {
-        &self.text
+        let text = read_repo_file(&script_path, &repo).map_err(|_error| StressError::ScriptRead)?;
+        let document = script_document(&text)?;
+        let flow = Flow::from_name(required_string(&document, "flow")?)?;
+        let expect_failure = required_bool(&document, "expect_failure")?;
+        let fixture_paths = fixture_paths(&document)?;
+        let artifact_dir = safe_artifact_path(&repo, required_string(&document, "artifact_dir")?)?;
+        Ok(Self {
+            flow,
+            expect_failure,
+            fixture_paths,
+            artifact_dir,
+            repo,
+        })
     }
 
     fn expect_failure(&self) -> bool {
-        self.text.contains("\"expect_failure\": true")
+        self.expect_failure
+    }
+
+    const fn flow(&self) -> Flow {
+        self.flow
     }
 
     fn declared_file(&self, relative: &str) -> Result<gio::File, StressError> {
@@ -182,38 +194,32 @@ impl StressScript {
 
     fn declared_path(&self, relative: &str) -> Result<PathBuf, StressError> {
         self.ensure_declared(relative)?;
-        Ok(self.repo.join(relative))
+        safe_repo_path(&self.repo, relative)
     }
 
     fn read_declared_text(&self, relative: &str) -> Result<String, StressError> {
-        std::fs::read_to_string(self.declared_path(relative)?)
-            .map_err(|_error| StressError::FileRead)
+        read_repo_file(&self.declared_path(relative)?, &self.repo)
+    }
+
+    fn declared_file_contains(&self, relative: &str, needle: &str) -> bool {
+        self.declared_path(relative)
+            .and_then(|path| read_repo_file(&path, &self.repo))
+            .is_ok_and(|text| text.contains(needle))
     }
 
     fn write_artifact(&self, lines: &[String]) -> Result<(), StressError> {
-        let artifact_dir = self.artifact_dir()?;
-        std::fs::create_dir_all(&artifact_dir).map_err(|_error| StressError::ArtifactWrite)?;
+        std::fs::create_dir_all(&self.artifact_dir).map_err(|_error| StressError::ArtifactWrite)?;
         let mut body = String::new();
         for line in lines {
             body.push_str(line);
             body.push('\n');
         }
-        std::fs::write(artifact_dir.join("stress-run.log"), body)
+        std::fs::write(self.artifact_dir.join("stress-run.log"), body)
             .map_err(|_error| StressError::ArtifactWrite)
     }
 
-    fn artifact_dir(&self) -> Result<PathBuf, StressError> {
-        let relative = quoted_value(&self.text, "artifact_dir").ok_or(StressError::ScriptShape)?;
-        let safe_relative = safe_stress_artifact_dir(&relative).ok_or(StressError::ScriptShape)?;
-        if !relative.starts_with("stress/artifacts/") {
-            return Err(StressError::ScriptShape);
-        }
-        Ok(self.repo.join(safe_relative))
-    }
-
     fn ensure_declared(&self, relative: &str) -> Result<(), StressError> {
-        let needle = format!("\"path\": \"{relative}\"");
-        if self.text.contains(&needle) {
+        if self.fixture_paths.iter().any(|path| path == relative) {
             Ok(())
         } else {
             Err(StressError::UndeclaredFixture)
@@ -370,10 +376,6 @@ fn text_buffer_text(buffer: &gtk4::TextBuffer) -> String {
     buffer.text(&start, &end, true).to_string()
 }
 
-fn file_contains(path: &Path, needle: &str) -> bool {
-    std::fs::read_to_string(path).is_ok_and(|text| text.contains(needle))
-}
-
 fn absolute_path(path: PathBuf) -> Result<PathBuf, StressError> {
     if path.is_absolute() {
         Ok(path)
@@ -391,28 +393,86 @@ fn repo_root_for(script_path: &Path) -> Result<PathBuf, StressError> {
     Ok(repo.to_path_buf())
 }
 
-fn quoted_value(text: &str, key: &str) -> Option<String> {
-    let needle = format!("\"{key}\": \"");
-    let start = text.find(&needle)? + needle.len();
-    let tail = text.get(start..)?;
-    let end = tail.find('"')?;
-    Some(tail[..end].to_owned())
+fn stress_script_path(path: PathBuf) -> Result<PathBuf, StressError> {
+    let absolute = absolute_path(path)?;
+    if absolute.components().any(|part| {
+        matches!(
+            part,
+            std::path::Component::ParentDir | std::path::Component::Prefix(_)
+        )
+    }) {
+        return Err(StressError::ScriptPath);
+    }
+    let repo = repo_root_for(&absolute)?;
+    let scripts_dir = repo.join("stress").join("scripts");
+    if absolute.parent() != Some(scripts_dir.as_path()) {
+        return Err(StressError::ScriptPath);
+    }
+    Ok(absolute)
 }
 
-fn safe_stress_artifact_dir(relative: &str) -> Option<PathBuf> {
+fn read_repo_file(path: &Path, repo: &Path) -> Result<String, StressError> {
+    if !path.starts_with(repo) {
+        return Err(StressError::ScriptPath);
+    }
+    std::fs::read_to_string(path).map_err(|_error| StressError::FileRead)
+}
+
+fn safe_repo_path(repo: &Path, relative: &str) -> Result<PathBuf, StressError> {
     let path = Path::new(relative);
-    if path.is_absolute() || !relative.starts_with("stress/artifacts/") {
-        return None;
+    if relative.is_empty() || path.is_absolute() {
+        return Err(StressError::ScriptShape);
     }
     if path.components().any(|part| {
         matches!(
             part,
-            std::path::Component::ParentDir | std::path::Component::RootDir
+            std::path::Component::ParentDir
+                | std::path::Component::RootDir
+                | std::path::Component::Prefix(_)
         )
     }) {
-        return None;
+        return Err(StressError::ScriptShape);
     }
-    Some(path.to_path_buf())
+    Ok(repo.join(path))
+}
+
+fn safe_artifact_path(repo: &Path, relative: &str) -> Result<PathBuf, StressError> {
+    let path = Path::new(relative);
+    let mut components = path.components();
+    if components.next() != Some(std::path::Component::Normal("stress".as_ref()))
+        || components.next() != Some(std::path::Component::Normal("artifacts".as_ref()))
+    {
+        return Err(StressError::ScriptShape);
+    }
+    safe_repo_path(repo, relative)
+}
+
+fn script_document(text: &str) -> Result<yaml_rust2::Yaml, StressError> {
+    yaml_rust2::YamlLoader::load_from_str(text)
+        .ok()
+        .and_then(|documents| documents.into_iter().next())
+        .ok_or(StressError::ScriptShape)
+}
+
+fn required_string<'a>(document: &'a yaml_rust2::Yaml, key: &str) -> Result<&'a str, StressError> {
+    document[key].as_str().ok_or(StressError::ScriptShape)
+}
+
+fn required_bool(document: &yaml_rust2::Yaml, key: &str) -> Result<bool, StressError> {
+    document[key].as_bool().ok_or(StressError::ScriptShape)
+}
+
+fn fixture_paths(document: &yaml_rust2::Yaml) -> Result<Vec<String>, StressError> {
+    let Some(fixtures) = document["fixtures"].as_vec() else {
+        return Err(StressError::ScriptShape);
+    };
+    let mut paths = Vec::with_capacity(fixtures.len());
+    for fixture in fixtures {
+        let path = required_string(fixture, "path")?;
+        safe_repo_path(Path::new("."), path)?;
+        paths.push(path.to_owned());
+    }
+    Ok(paths)
 }
 
 fn activate_window_action(
@@ -445,17 +505,13 @@ enum Flow {
 }
 
 impl Flow {
-    fn from_script(script: &str) -> Result<Self, StressError> {
-        if script.contains("\"flow\": \"open-save-search\"") {
-            Ok(Self::OpenSaveSearch)
-        } else if script.contains("\"flow\": \"compare-roundtrip\"") {
-            Ok(Self::CompareRoundtrip)
-        } else if script.contains("\"flow\": \"markdown-stress\"") {
-            Ok(Self::MarkdownStress)
-        } else if script.contains("\"flow\": \"git-status-stress\"") {
-            Ok(Self::GitStatusStress)
-        } else {
-            Err(StressError::UnknownFlow)
+    fn from_name(name: &str) -> Result<Self, StressError> {
+        match name {
+            "open-save-search" => Ok(Self::OpenSaveSearch),
+            "compare-roundtrip" => Ok(Self::CompareRoundtrip),
+            "markdown-stress" => Ok(Self::MarkdownStress),
+            "git-status-stress" => Ok(Self::GitStatusStress),
+            _ => Err(StressError::UnknownFlow),
         }
     }
 
