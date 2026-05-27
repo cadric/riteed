@@ -1,6 +1,14 @@
 # Continuity
 
 ## OUTCOMES
+- 2026-05-27 PR #8 governance follow-up: the live
+  `flatpak-beta-rollback` environment now exists with required reviewer
+  `User:964797`, `wait_timer=0`, and `prevent_self_review=false`. Local live
+  governance verification passed with `GITHUB_TOKEN="$(gh auth token)"
+  python3 -m tools.ruleset_governance_check`. The validation workflow now routes
+  the CI governance job through the `RULESET_GOVERNANCE_TOKEN` repository secret;
+  create that secret with a least-privilege token before expecting the CI
+  `ruleset-governance` job to pass.
 - 2026-05-27 follow-up V14.7 hardening is in progress locally. Release
   validation now uses scoped workflow structure parsing for publish/validate
   jobs, fail-closes malformed Pages metadata, streams local `.crate` extraction

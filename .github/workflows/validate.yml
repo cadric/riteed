@@ -125,7 +125,6 @@ jobs:
     needs: dependency-preflight
     runs-on: ubuntu-latest
     permissions:
-      actions: read
       contents: read
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
@@ -134,7 +133,7 @@ jobs:
           python-version: "3.12"
       - name: Verify GitHub ruleset governance
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.RULESET_GOVERNANCE_TOKEN }}
         run: python3 -m tools.ruleset_governance_check
 
   flatpak-tests:

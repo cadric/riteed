@@ -36,6 +36,20 @@ class ReleaseHardeningTests(unittest.TestCase):
             release.check_release(root, errors)
             self.assertEqual(errors, [])
 
+    def test_ruleset_governance_rejects_ambient_github_token(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            _copy_release_context(root)
+            workflow_path = root / ".github" / "workflows" / "validate.yml"
+            workflow = workflow_path.read_text(encoding="utf-8").replace(
+                "secrets.RULESET_GOVERNANCE_TOKEN",
+                "github.token",
+            )
+            workflow_path.write_text(workflow, encoding="utf-8")
+            errors: list[str] = []
+            release.check_release(root, errors)
+            self.assertTrue(any("RULESET_GOVERNANCE_TOKEN" in item for item in errors), errors)
+
     def test_publish_required_checks_must_exactly_match_policy(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

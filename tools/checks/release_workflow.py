@@ -122,8 +122,8 @@ def check_ruleset_governance_wiring(workflow: Workflow | None, errors: list[str]
     if not any("python3 -m tools.ruleset_governance_check" in step.run for step in job.steps):
         foundation.add(errors, f"{VALIDATE_WORKFLOW}: ruleset-governance must run tools.ruleset_governance_check")
     token_env = job.env | {key: value for step in job.steps for key, value in step.env.items()}
-    if not any(key in token_env and "github.token" in token_env[key] for key in ("GITHUB_TOKEN", "GH_TOKEN")):
-        foundation.add(errors, f"{VALIDATE_WORKFLOW}: ruleset-governance must receive github.token explicitly")
+    if not any(key in token_env and "secrets.RULESET_GOVERNANCE_TOKEN" in token_env[key] for key in ("GITHUB_TOKEN", "GH_TOKEN")):
+        foundation.add(errors, f"{VALIDATE_WORKFLOW}: ruleset-governance must use RULESET_GOVERNANCE_TOKEN")
     native = workflow.jobs.get("native-tests")
     if native and _job_mentions_token(native):
         foundation.add(errors, f"{VALIDATE_WORKFLOW}: native-tests must not pass GitHub tokens into the container")

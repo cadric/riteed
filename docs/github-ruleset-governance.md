@@ -148,7 +148,10 @@ The emergency rollback signing path uses the separate
 exact-match only: `User:964797` (`@cadric`). The live governance job verifies
 that environment through the GitHub environments API and rejects missing or
 additional required reviewer identities not listed in
-`policy/release.policy.json`.
+`policy/release.policy.json`. `prevent_self_review` is intentionally `false`
+for the rollback environment because Riteed is currently maintained by a single
+repository owner; this downgrades the control to a deployment audit trail rather
+than pretending independent review exists.
 
 ## After Activation, 2026-05-26
 
@@ -177,6 +180,17 @@ with `strict_required_status_checks_policy: true` and an exact required-check
 set matching
 `signed_flatpak_publish.hard_requirements.required_validate_check_contexts`.
 The `Protect version tags` ruleset must be active and have no bypass actors.
+The `flatpak-beta-rollback` environment was provisioned on 2026-05-27 with
+`User:964797` as the required reviewer, `wait_timer=0`, and
+`prevent_self_review=false`.
+
+The CI `ruleset-governance` job must use the `RULESET_GOVERNANCE_TOKEN`
+repository secret rather than the ambient `github.token`. The expected
+fine-grained PAT permissions are `Administration: Read-only`,
+`Environments: Read-only`, and the default `Metadata: Read-only`. If GitHub
+rejects the token, inspect the `x-accepted-github-permissions` response header
+with `gh api -i` and add only the exact missing permission documented by the
+API response.
 
 `RIT-AUD-017` remains closed only when:
 
@@ -185,8 +199,9 @@ The `Protect version tags` ruleset must be active and have no bypass actors.
    status checks, and match the policy check-run list exactly.
 2. `Protect version tags` is updated through the ruleset API to have an empty
    `bypass_actors` list.
-3. `python3 -m tools.ruleset_governance_check --root app` passes with a GitHub
-   token that can read repository rulesets and environments.
+3. `GITHUB_TOKEN="$(gh auth token)" python3 -m tools.ruleset_governance_check`
+   passes with a GitHub token that can read repository rulesets and
+   environments.
 
 ## Rollback Command
 

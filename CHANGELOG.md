@@ -59,6 +59,9 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
   active `Protect main` and `Protect version tags` rulesets plus the reviewed
   rollback environment reviewer shape, while offline policy-check verifies
   static workflow wiring without GitHub credentials.
+- Scoped the live ruleset-governance CI job to `RULESET_GOVERNANCE_TOKEN` and
+  provisioned the reviewed rollback environment shape required by the release
+  policy.
 - Documented that editor Source Control minimap bands reflect the last saved
   text versus the current Git baseline; unsaved edits dim existing bands until
   save or until the buffer text matches the decorated state again.
