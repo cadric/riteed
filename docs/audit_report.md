@@ -94,13 +94,22 @@ type: audit-report
   `cargo-llvm-cov` an isolated target directory through
   `CARGO_LLVM_COV_TARGET_DIR`, so concurrent invocations serialize the
   GTK/Cargo command phase instead of racing on build state.
-- `RIT-AUD-017`: closed by V14.7 repository-governance remediation when live
-  governance is green. After repository-owner approval on 2026-05-26,
-  `Protect main` and `Protect version tags` were enabled through the GitHub
-  ruleset API. The before/after evidence, strict required-check shape,
-  pull-request-only bypass review, and rollback command are documented in
-  `docs/github-ruleset-governance.md`; the live governance job reads the
-  GitHub ruleset API and requires the active ruleset shape directly.
+- `RIT-AUD-017`: closed by V14.7 repository-governance remediation on
+  2026-05-27. After repository-owner approval, `Protect main` and
+  `Protect version tags` were enabled and tightened through the GitHub ruleset
+  API, PR #8 merged through the reviewed pull-request bypass path, and the
+  live `ruleset-governance` job passed against the final ruleset and rollback
+  environment state. Evidence: PR #8
+  `https://github.com/cadric/riteed/pull/8`, merge event
+  `https://api.github.com/repos/cadric/riteed/issues/events/26035812509`,
+  governance run `https://github.com/cadric/riteed/actions/runs/26538566076`,
+  `Protect main` payload hash
+  `0fe8ecbd07e197ebb9c285c61dfa1db62e549732a78ae7071628402d452f3645`,
+  `Protect version tags` payload hash
+  `b73aaf895e3ce07c107e41ef7a60d821a3c022ca0e7530e3e2afade59bdf584c`,
+  rollback environment hash
+  `19b0f3a3cb987f0924cc7bd54c41df34141e4977f259c5ac093ea033ad9db70b`,
+  and CodeQL snapshot `docs/evidence/v147-codeql-alerts-20260527.json`.
 
 ## 2. Threat Model
 
@@ -148,7 +157,7 @@ The audit did not attempt a complete review of D-Bus surface, keyboard shortcut 
 | RIT-AUD-014 | High | Policy enforcement | Closed by V14.6, out of V14.7 scope. | Validator iteration skips only known build-output roots while scanning legitimate source paths named `target`. | Keep path-skip exceptions root-scoped. |
 | RIT-AUD-015 | Low/Medium | Policy enforcement | Closed by V14.7. | Parser-boundary registry enforcement is bidirectional and Git status fuzz seeds use valid NUL-delimited porcelain v2 records. | New parser boundaries need registry evidence. |
 | RIT-AUD-016 | Low | UI integrity | Closed by V14.7. | Git path labels/tooltips escape C0, DEL, Unicode bidi controls, and backslashes while preserving raw bytes for Git identity. | Keep display text separate from raw Git identity. |
-| RIT-AUD-017 | High | GitHub governance | Closed by V14.7 when live governance is green. | After repository-owner approval, `Protect main` and `Protect version tags` are verified through the live ruleset API; `Protect main` must require pull requests, signed commits, strict exact status checks, and only the reviewed `pull_request` bypass, while tag rulesets must have no bypass actors. | Re-run `tools.ruleset_governance_check` after every ruleset change. |
+| RIT-AUD-017 | High | GitHub governance | Closed by V14.7 on 2026-05-27. | PR #8 merged after all required checks and CodeQL passed; live `ruleset-governance` passed with active `Protect main`, active `Protect version tags`, exact status checks, signed commits, reviewed `pull_request` bypass only on `Protect main`, no tag bypass actors, and reviewed rollback environment. | Re-run `tools.ruleset_governance_check` after every ruleset change. |
 
 ## 5. Deep Dives
 
@@ -200,7 +209,7 @@ The release workflow uses a protected signing environment, imports the private k
 
 V14.7 added the missing controls: pre-sign validation gating, monotonic remote update checks, explicit emergency rollback inputs, key pinning to the committed public key, and documented rotation, revocation, compromise recovery, and emergency cutover procedures.
 
-Read-only GitHub checks originally found two repository rulesets, `Protect main` and `Protect version tags`, with `enforcement: disabled`; classic `main` branch protection also returned `Branch not protected`. V14.7 enabled both repository rulesets through the GitHub ruleset API after repository-owner approval, recorded before/after evidence in `docs/github-ruleset-governance.md`, and added live release-policy verification that requires active rulesets, strict exact required checks, reviewed pull-request bypass only on `Protect main`, no tag bypass actors, and the reviewed rollback environment.
+Read-only GitHub checks originally found two repository rulesets, `Protect main` and `Protect version tags`, with `enforcement: disabled`; classic `main` branch protection also returned `Branch not protected`. V14.7 enabled both repository rulesets through the GitHub ruleset API after repository-owner approval, recorded before/after evidence in `docs/github-ruleset-governance.md`, and added live release-policy verification that requires active rulesets, strict exact required checks, reviewed pull-request bypass only on `Protect main`, no tag bypass actors, and the reviewed rollback environment. PR #8 closed the live enforcement loop on 2026-05-27 with all required validation contexts green; the scheduled stress job remains outside the release-critical required context list and is tracked separately from `RIT-AUD-017`.
 
 ### Policy intent vs enforcement
 
