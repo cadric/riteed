@@ -377,13 +377,16 @@ fn text_buffer_text(buffer: &gtk4::TextBuffer) -> String {
 }
 
 fn absolute_path(path: PathBuf) -> Result<PathBuf, StressError> {
-    if path.is_absolute() {
-        Ok(path)
+    let candidate = if path.is_absolute() {
+        path
     } else {
         std::env::current_dir()
-            .map(|current| current.join(path))
-            .map_err(|_error| StressError::CurrentDir)
-    }
+            .map_err(|_error| StressError::CurrentDir)?
+            .join(path)
+    };
+    candidate
+        .canonicalize()
+        .map_err(|_error| StressError::ScriptPath)
 }
 
 fn repo_root_for(script_path: &Path) -> Result<PathBuf, StressError> {
