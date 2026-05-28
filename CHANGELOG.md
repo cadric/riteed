@@ -62,6 +62,13 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 - Scoped the live ruleset-governance CI job to `RULESET_GOVERNANCE_TOKEN` and
   provisioned the reviewed rollback environment shape required by the release
   policy.
+- Closed `RIT-AUD-017` with PR #8 live evidence: required validation and
+  CodeQL passed, live ruleset governance passed in CI, and the merge used the
+  reviewed pull-request bypass path instead of direct push.
+- Calibrated the live `Protect main` ruleset for the solo-maintainer workflow:
+  routine PR merges now require PR, strict CI, signed commits, and thread
+  resolution, but no self-impossible approving review; the release governance
+  checker now machine-verifies that reviewed posture.
 - Hardened CodeQL path-alert surfaces in release/stress tooling and the native
   stress runner, including parsed stress-script fixture paths instead of
   substring-based path checks.

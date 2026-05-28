@@ -1,6 +1,33 @@
 # Continuity
 
 ## OUTCOMES
+- 2026-05-28 solo-maintainer ruleset calibration: live `Protect main`
+  pull-request review count was changed from `1` to `0` and
+  `require_last_push_approval` from `true` to `false`, while keeping PR
+  requirement, strict required checks, signed commits, thread resolution, and
+  `User:964797:pull_request` bypass. Evidence hashes:
+  before `a5e1e53a71bb679d45b0b8099965ac0f87df53e1cb435ee2cd1c0fed02cd18a1`,
+  after `4bcf09556adfbb808233526b403f909cac8edda8ed52daae27318081467317d3`.
+  Local live governance passed with `GITHUB_TOKEN="$(gh auth token)" python3 -m
+  tools.ruleset_governance_check`. PR #12 merged without `--admin` after its
+  head was recreated as GitHub-verified commit
+  `b739f2184629e8bab725d4e354e6bdc87ad78ee2` and all required checks passed;
+  squash merge commit is `1672f080610bf327f7daae1c59972d2976f3aac0`.
+- 2026-05-27 RIT-AUD-017 live closure evidence: PR #8
+  (`https://github.com/cadric/riteed/pull/8`) merged via squash commit
+  `080f5099c542617d478f724277d22f86522a5e32` after required Validate contexts
+  and CodeQL passed on head `d88fa1536094e1ac470adaddbef6272b47039485`.
+  `RULESET_GOVERNANCE_TOKEN` was created as a repository secret and rerunning
+  the failed governance jobs made `ruleset-governance` pass in CI. Local live
+  governance also passed with `GITHUB_TOKEN="$(gh auth token)" python3 -m
+  tools.ruleset_governance_check`. Evidence hashes: Protect main
+  `0fe8ecbd07e197ebb9c285c61dfa1db62e549732a78ae7071628402d452f3645`,
+  Protect version tags
+  `b73aaf895e3ce07c107e41ef7a60d821a3c022ca0e7530e3e2afade59bdf584c`,
+  rollback environment
+  `19b0f3a3cb987f0924cc7bd54c41df34141e4977f259c5ac093ea033ad9db70b`.
+  CodeQL `pr=8` open alert count is 0; branch snapshot is recorded in
+  `docs/evidence/v147-codeql-alerts-20260527.json`.
 - 2026-05-27 PR #8 governance follow-up: the live
   `flatpak-beta-rollback` environment now exists with required reviewer
   `User:964797`, `wait_timer=0`, and `prevent_self_review=false`. Local live

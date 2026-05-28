@@ -28,23 +28,34 @@ fn run() -> Result<(), StressError> {
 }
 
 fn run_app_flow(script: &StressScript, flow: Flow) -> Result<(), StressError> {
+    let mut artifact_lines = vec![format!("flow={}", flow.name())];
+    let result = run_flow_steps(script, flow, &mut artifact_lines);
+    if let Err(error) = &result {
+        artifact_lines.push(format!("error={}", error.name()));
+    }
+    // Always persist the trail so a failed run is diagnosable from CI artifacts.
+    let write = script.write_artifact(&artifact_lines);
+    result.and(write)
+}
+
+fn run_flow_steps(
+    script: &StressScript,
+    flow: Flow,
+    artifact_lines: &mut Vec<String>,
+) -> Result<(), StressError> {
     riteed::bootstrap_runtime().map_err(|_error| StressError::RuntimeInit)?;
     gtk4::init().map_err(|_error| StressError::GtkInit)?;
     let riteed = riteed::app::RiteedApp::new();
     let app = riteed.application().clone();
     app.register(None::<&gio::Cancellable>)
         .map_err(|_error| StressError::AppRegister)?;
-
-    let mut artifact_lines = vec![format!("flow={}", flow.name())];
     match flow {
-        Flow::OpenSaveSearch => run_open_save_search(&app, script, &mut artifact_lines)?,
-        Flow::CompareRoundtrip => run_compare_roundtrip(&app, script, &mut artifact_lines)?,
-        Flow::MarkdownStress => run_markdown_stress(&app, script, &mut artifact_lines)?,
-        Flow::GitStatusStress => run_git_status_stress(&app, script, &mut artifact_lines)?,
+        Flow::OpenSaveSearch => run_open_save_search(&app, script, artifact_lines)?,
+        Flow::CompareRoundtrip => run_compare_roundtrip(&app, script, artifact_lines)?,
+        Flow::MarkdownStress => run_markdown_stress(&app, script, artifact_lines)?,
+        Flow::GitStatusStress => run_git_status_stress(&app, script, artifact_lines)?,
     }
-
     spin_for(Duration::from_millis(RUN_MILLIS));
-    script.write_artifact(&artifact_lines)?;
     app.quit();
     spin_for(Duration::from_millis(50));
     Ok(())
@@ -135,8 +146,18 @@ fn run_git_status_stress(
     artifact_lines: &mut Vec<String>,
 ) -> Result<(), StressError> {
     for repo in GIT_STATUS_REPOS {
+        artifact_lines.push(format!("attempt={repo}"));
         app.open(&[script.declared_dir(repo)?], "");
-        wait_until(|| active_root(app).is_ok_and(|root| source_control_state_visible(&root)))?;
+        if wait_until(|| active_root(app).is_ok_and(|root| source_control_state_visible(&root)))
+            .is_err()
+        {
+            let label = active_root(app)
+                .ok()
+                .and_then(|root| source_control_state_label(&root));
+            artifact_lines.push(format!("stuck-repo={repo}"));
+            artifact_lines.push(format!("visible-state={}", label.unwrap_or("none")));
+            return Err(StressError::AssertionFailed);
+        }
         let refresh_state = optional_window_action(app, "win.git-refresh");
         artifact_lines.push(format!("repo={repo}:refresh={refresh_state}"));
     }
@@ -357,17 +378,24 @@ fn visible_text_contains(root: &gtk4::Widget, needle: &str) -> bool {
     found
 }
 
+const SOURCE_CONTROL_STATES: &[&str] = &[
+    "Changed files",
+    "Too many Git changes to display.",
+    "No changes.",
+    "Unable to read Git attributes. Git actions are disabled.",
+    "This Git repository uses unsupported object or EOL settings.",
+    "Refreshing Git status",
+];
+
+fn source_control_state_label(root: &gtk4::Widget) -> Option<&'static str> {
+    SOURCE_CONTROL_STATES
+        .iter()
+        .copied()
+        .find(|needle| visible_text_contains(root, needle))
+}
+
 fn source_control_state_visible(root: &gtk4::Widget) -> bool {
-    [
-        "Changed files",
-        "Too many Git changes to display.",
-        "No changes.",
-        "Unable to read Git attributes. Git actions are disabled.",
-        "This Git repository uses unsupported object or EOL settings.",
-        "Refreshing Git status",
-    ]
-    .iter()
-    .any(|needle| visible_text_contains(root, needle))
+    source_control_state_label(root).is_some()
 }
 
 fn text_buffer_text(buffer: &gtk4::TextBuffer) -> String {
@@ -545,4 +573,27 @@ enum StressError {
     AssertionFailed,
     FileRead,
     ArtifactWrite,
+}
+
+impl StressError {
+    const fn name(&self) -> &'static str {
+        match self {
+            Self::MissingScript => "missing-script",
+            Self::ScriptRead => "script-read",
+            Self::ScriptPath => "script-path",
+            Self::ScriptShape => "script-shape",
+            Self::CurrentDir => "current-dir",
+            Self::UnknownFlow => "unknown-flow",
+            Self::IntentionalFailure => "intentional-failure",
+            Self::RuntimeInit => "runtime-init",
+            Self::GtkInit => "gtk-init",
+            Self::AppRegister => "app-register",
+            Self::UndeclaredFixture => "undeclared-fixture",
+            Self::MissingWindow => "missing-window",
+            Self::ActionUnavailable => "action-unavailable",
+            Self::AssertionFailed => "assertion-failed",
+            Self::FileRead => "file-read",
+            Self::ArtifactWrite => "artifact-write",
+        }
+    }
 }

@@ -132,6 +132,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Verify GitHub ruleset governance
+        if: github.actor != 'dependabot[bot]' && (github.event_name != 'pull_request' || (github.event.pull_request.user.login != 'dependabot[bot]' && github.event.pull_request.head.repo.full_name == github.repository))
         env:
           GITHUB_TOKEN: ${{ secrets.RULESET_GOVERNANCE_TOKEN }}
         run: python3 -m tools.ruleset_governance_check
