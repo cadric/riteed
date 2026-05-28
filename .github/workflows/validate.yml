@@ -170,7 +170,7 @@ jobs:
           test -n "$version"
           echo "version=$version" >> "$GITHUB_OUTPUT"
       - name: Build Flatpak
-        uses: flatpak/flatpak-github-actions/flatpak-builder@d6f00ee69d6c8a7f875ec233e9a8ffea74c6ccef # v6
+        uses: flatpak/flatpak-github-actions/flatpak-builder@401fe28a8384095fc1531b9d320b292f0ee45adb # v6
         with:
           bundle: riteed-${{ steps.app-version.outputs.version }}.flatpak
           manifest-path: app/build-aux/io.github.cadric.Riteed.yml
