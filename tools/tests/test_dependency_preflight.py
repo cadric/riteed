@@ -18,6 +18,7 @@ CHECKSUM_E = "e" * 64
 CHECKSUM_F = "f" * 64
 LEGACY_SOURCE = "registry+https://github.com/rust-lang/crates.io-index"
 SPARSE_SOURCE = "sparse+https://index.crates.io/"
+GTK4_TARGET = "0.11.3"
 
 
 def _write(path: Path, text: str) -> None:
@@ -38,8 +39,8 @@ checksum = "{checksum}"
 def _lock(
     version: str,
     *,
-    gtk4_version: str = "0.11.2",
-    gtk4_sys_version: str = "0.11.2",
+    gtk4_version: str = GTK4_TARGET,
+    gtk4_sys_version: str = GTK4_TARGET,
     include_libadwaita: bool = True,
     extra_packages: str = "",
 ) -> str:
@@ -101,15 +102,15 @@ version = "{app_version}"
 edition = "2024"
 
 [dependencies]
-gtk4 = {{ version = "=0.11.2" }}
+gtk4 = {{ version = "={GTK4_TARGET}" }}
 libadwaita = {{ version = "=0.9.1" }}
 """,
     )
     _write(app / "Cargo.lock", _lock(app_version))
     _write(app / "fuzz" / "Cargo.lock", _lock(app_version))
     sources = [
-        *_source("gtk4", "0.11.2", CHECKSUM_A),
-        *_source("gtk4-sys", "0.11.2", CHECKSUM_B),
+        *_source("gtk4", GTK4_TARGET, CHECKSUM_A),
+        *_source("gtk4-sys", GTK4_TARGET, CHECKSUM_B),
         *_source("libadwaita", "0.9.1", CHECKSUM_C),
         *_source("libadwaita-sys", "0.9.1", CHECKSUM_D),
     ]
@@ -162,18 +163,18 @@ edition = "2024"
     def test_direct_binding_lock_must_match_policy_target(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             app = _fixture(tmpdir)
-            _write(app / "Cargo.lock", _lock("1.2.3", gtk4_version="0.11.3"))
+            _write(app / "Cargo.lock", _lock("1.2.3", gtk4_version="0.11.4"))
             errors: list[str] = []
             check_dependency_preflight(app, errors)
-        self.assertTrue(any("Cargo.lock gtk4 version '0.11.3'" in item for item in errors))
+        self.assertTrue(any("Cargo.lock gtk4 version '0.11.4'" in item for item in errors))
 
     def test_safe_sys_pairs_must_match_exact_patch_version(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             app = _fixture(tmpdir)
-            _write(app / "Cargo.lock", _lock("1.2.3", gtk4_version="0.11.3"))
+            _write(app / "Cargo.lock", _lock("1.2.3", gtk4_version="0.11.4"))
             errors: list[str] = []
             check_dependency_preflight(app, errors)
-        self.assertTrue(any("gtk4 '0.11.3' must exactly match gtk4-sys '0.11.2'" in item for item in errors))
+        self.assertTrue(any("gtk4 '0.11.4' must exactly match gtk4-sys '0.11.3'" in item for item in errors))
 
     def test_duplicate_safe_sys_packages_fail_closed(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -195,7 +196,7 @@ version = "1.2.3"
 edition = "2024"
 
 [dependencies]
-gtk4 = { version = "0.11.2" }
+gtk4 = { version = "0.11.3" }
 libadwaita = { version = "=0.9.1" }
 sourceview5 = { version = "0.11.0" }
 
@@ -250,8 +251,8 @@ sourceview5 = { version = "=0.11.0" }
             _write(app / "Cargo.lock", _lock("1.2.3", extra_packages=app_extra))
             _write(app / "fuzz" / "Cargo.lock", _lock("1.2.3", extra_packages=fuzz_extra))
             sources = [
-                *_source("gtk4", "0.11.2", CHECKSUM_A),
-                *_source("gtk4-sys", "0.11.2", CHECKSUM_B),
+                *_source("gtk4", GTK4_TARGET, CHECKSUM_A),
+                *_source("gtk4-sys", GTK4_TARGET, CHECKSUM_B),
                 *_source("libadwaita", "0.9.1", CHECKSUM_C),
                 *_source("libadwaita-sys", "0.9.1", CHECKSUM_D),
                 *_source("glib", "0.22.5", CHECKSUM_E),
@@ -264,7 +265,7 @@ sourceview5 = { version = "=0.11.0" }
     def test_flatpak_cargo_sources_must_match_lockfile(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             app = _fixture(tmpdir)
-            sources = _source("gtk4", "0.11.2", CHECKSUM_A)
+            sources = _source("gtk4", GTK4_TARGET, CHECKSUM_A)
             _write(app / "build-aux" / "cargo" / "cargo-sources.json", json.dumps(sources) + "\n")
             errors: list[str] = []
             check_dependency_preflight(app, errors)

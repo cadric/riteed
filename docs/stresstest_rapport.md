@@ -111,10 +111,10 @@ evidence becomes available.
   the default `cargo +nightly fuzz run ...` compiler lookup works without
   `CXX=clang++`.
 - The first `CXX=clang++` fuzz build exposed a second issue: the independent
-  fuzz workspace had resolved `gtk4-sys 0.11.3` while the app lockfile uses
-  `gtk4-sys 0.11.2`. That produced a GTK binding function-pointer mismatch.
-  The fuzz lockfile is now pinned back to `gtk4-sys 0.11.2`, matching the app
-  workspace, and all five fuzz target smoke runs pass with `-runs=1`.
+  fuzz workspace had resolved a newer `gtk4-sys` patch release than the app
+  lockfile. That produced a GTK binding function-pointer mismatch. The fuzz
+  lockfile was aligned back to the app workspace version, and all five fuzz
+  target smoke runs passed with `-runs=1`.
 - Added feature-gated `riteed-stress` as a separate binary target with JSON
   scripts under `stress/scripts/`. The happy-path scripts drive the app through
   public GApplication open flows, and the intentional-failure script verifies
@@ -178,7 +178,7 @@ evidence becomes available.
 - **Cargo-fuzz separation is not zero-maintenance**: fuzzing required a
   non-default app `fuzzing` feature, a duplicated `sourceview5` patch in
   `app/fuzz/Cargo.toml`, and manual lockfile alignment after GTK crates resolved
-  to `0.11.3` instead of the app's `0.11.2`. Dependabot allows only
+  to a different patch release than the app workspace. Dependabot allows only
   `libfuzzer-sys` in `/app/fuzz` because it otherwise follows the local
   `riteed` path dependency and edits `app/Cargo.toml`; future app dependency
   updates must update `app/Cargo.lock` first and then check

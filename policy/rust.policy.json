@@ -387,8 +387,8 @@
       "kind": "release_notes"
     },
     {
-      "name": "gtk4 crate 0.11.2",
-      "url": "https://crates.io/crates/gtk4/0.11.2",
+      "name": "gtk4 crate 0.11.3",
+      "url": "https://crates.io/crates/gtk4/0.11.3",
       "kind": "crate_release"
     },
     {
