@@ -93,7 +93,7 @@
     },
     "gtk4_rs": {
       "crate": "gtk4",
-      "target_version": "0.11.2"
+      "target_version": "0.11.3"
     },
     "libadwaita_rs": {
       "crate": "libadwaita",
@@ -237,8 +237,8 @@
       "kind": "release_notes"
     },
     {
-      "name": "gtk4 crate 0.11.2",
-      "url": "https://crates.io/crates/gtk4/0.11.2",
+      "name": "gtk4 crate 0.11.3",
+      "url": "https://crates.io/crates/gtk4/0.11.3",
       "kind": "crate_release"
     },
     {
@@ -325,12 +325,12 @@
   "artifact_index": [
     {
       "file": "rust.policy.json",
-      "sha256": "a8839462951d15bc200801c04a65fb5ffd601c0c579e9fba110a21ef1e7a5c3f",
+      "sha256": "5ccc635d970f76bcc6c5cc4931ba21090f844b24ee438ff0ac97b0935441b0c0",
       "bytes": 12327
     },
     {
       "file": "gtk4-rs.policy.json",
-      "sha256": "46a616f7b12f39936430b471b7e18d365a505aa3bd373da5189186eeaa49d19d",
+      "sha256": "bf21931039a45cb759a2497b3bafa8e95d3b23ab33f5dda545872be30a10db5f",
       "bytes": 4980
     },
     {
