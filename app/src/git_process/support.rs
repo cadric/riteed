@@ -1,6 +1,9 @@
-#[cfg(not(test))]
+#[cfg(all(not(test), not(feature = "stress")))]
 const GIT_BIN: &str = "/app/bin/git";
-#[cfg(test)]
+// The feature-gated `riteed-stress` driver and unit tests run outside the
+// Flatpak sandbox and use host Git plumbing instead of `/app/bin/git`. This
+// path is never compiled into the released Flatpak app binary.
+#[cfg(any(test, feature = "stress"))]
 const GIT_BIN: &str = "/usr/bin/git";
 const FALSE_BIN: &str = "/usr/bin/false";
 
