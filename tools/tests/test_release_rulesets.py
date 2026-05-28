@@ -28,6 +28,12 @@ def _policy() -> dict[str, Any]:
         },
         "github_actions_release_safety": {
             "repository_governance": {
+                "main_pull_request_policy": {
+                    "require_pull_request": True,
+                    "required_approving_review_count": 0,
+                    "required_review_thread_resolution": True,
+                    "require_last_push_approval": False,
+                },
                 "reviewed_bypass_actors": [
                     {
                         "ruleset": "Protect main",
@@ -58,7 +64,18 @@ def _active_rulesets() -> list[dict[str, Any]]:
             "rules": [
                 {"type": "deletion"},
                 {"type": "non_fast_forward"},
-                {"type": "pull_request"},
+                {
+                    "type": "pull_request",
+                    "parameters": {
+                        "required_approving_review_count": 0,
+                        "dismiss_stale_reviews_on_push": True,
+                        "required_reviewers": [],
+                        "require_code_owner_review": False,
+                        "require_last_push_approval": False,
+                        "required_review_thread_resolution": True,
+                        "allowed_merge_methods": ["merge", "squash", "rebase"],
+                    },
+                },
                 {"type": "required_signatures"},
                 {
                     "type": "required_status_checks",
@@ -170,6 +187,38 @@ class ReleaseRulesetTests(unittest.TestCase):
         self.assertTrue(any("missing pull_request rule" in item for item in errors), errors)
         self.assertTrue(any("missing required_signatures rule" in item for item in errors), errors)
         self.assertTrue(any("strict_required_status_checks_policy" in item for item in errors), errors)
+
+    def test_main_ruleset_pull_request_policy_must_match_reviewed_solo_model(self) -> None:
+        cases = (
+            ("required_approving_review_count", 1, "required_approving_review_count must be 0"),
+            ("required_review_thread_resolution", False, "required_review_thread_resolution must be true"),
+            ("require_last_push_approval", True, "require_last_push_approval must be false"),
+        )
+        for field, value, expected in cases:
+            with self.subTest(field=field):
+                payload = _active_rulesets()
+                for rule in payload[0]["rules"]:
+                    if rule.get("type") == "pull_request":
+                        rule["parameters"][field] = value
+                errors: list[str] = []
+                rulesets.check_ruleset_payloads(payload, _policy(), errors)
+                self.assertTrue(any(expected in item for item in errors), errors)
+
+    def test_main_ruleset_pull_request_policy_requires_parameters(self) -> None:
+        payload = _active_rulesets()
+        for rule in payload[0]["rules"]:
+            if rule.get("type") == "pull_request":
+                rule.pop("parameters")
+        errors: list[str] = []
+        rulesets.check_ruleset_payloads(payload, _policy(), errors)
+        self.assertTrue(any("pull_request parameters are required" in item for item in errors), errors)
+
+    def test_main_ruleset_pull_request_policy_requires_policy_contract(self) -> None:
+        policy = _policy()
+        policy["github_actions_release_safety"]["repository_governance"].pop("main_pull_request_policy")
+        errors: list[str] = []
+        rulesets.check_ruleset_payloads(_active_rulesets(), policy, errors)
+        self.assertTrue(any("main_pull_request_policy is required" in item for item in errors), errors)
 
     def test_unreviewed_rollback_environment_reviewer_fails_governance_payload(self) -> None:
         payload = _rollback_environment()

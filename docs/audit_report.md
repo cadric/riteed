@@ -110,6 +110,12 @@ type: audit-report
   rollback environment hash
   `19b0f3a3cb987f0924cc7bd54c41df34141e4977f259c5ac093ea033ad9db70b`,
   and CodeQL snapshot `docs/evidence/v147-codeql-alerts-20260527.json`.
+  Follow-up solo-maintainer calibration on 2026-05-28 changed only
+  `Protect main` pull-request review count from `1` to `0` and
+  `require_last_push_approval` from `true` to `false`; live governance stayed
+  green, before/after evidence is recorded in
+  `docs/evidence/protect-main-solo-20260528.sha256`, and PR #12 merged without
+  admin override after all required checks passed.
 
 ## 2. Threat Model
 
@@ -157,7 +163,7 @@ The audit did not attempt a complete review of D-Bus surface, keyboard shortcut 
 | RIT-AUD-014 | High | Policy enforcement | Closed by V14.6, out of V14.7 scope. | Validator iteration skips only known build-output roots while scanning legitimate source paths named `target`. | Keep path-skip exceptions root-scoped. |
 | RIT-AUD-015 | Low/Medium | Policy enforcement | Closed by V14.7. | Parser-boundary registry enforcement is bidirectional and Git status fuzz seeds use valid NUL-delimited porcelain v2 records. | New parser boundaries need registry evidence. |
 | RIT-AUD-016 | Low | UI integrity | Closed by V14.7. | Git path labels/tooltips escape C0, DEL, Unicode bidi controls, and backslashes while preserving raw bytes for Git identity. | Keep display text separate from raw Git identity. |
-| RIT-AUD-017 | High | GitHub governance | Closed by V14.7 on 2026-05-27. | PR #8 merged after all required checks and CodeQL passed; live `ruleset-governance` passed with active `Protect main`, active `Protect version tags`, exact status checks, signed commits, reviewed `pull_request` bypass only on `Protect main`, no tag bypass actors, and reviewed rollback environment. | Re-run `tools.ruleset_governance_check` after every ruleset change. |
+| RIT-AUD-017 | High | GitHub governance | Closed by V14.7 on 2026-05-27; solo posture calibrated on 2026-05-28. | PR #8 merged after all required checks and CodeQL passed; live `ruleset-governance` passed with active `Protect main`, active `Protect version tags`, exact status checks, signed commits, reviewed `pull_request` bypass only on `Protect main`, no tag bypass actors, and reviewed rollback environment. The 2026-05-28 update keeps those automated protections while setting routine review count to `0`, with evidence in `docs/evidence/protect-main-solo-20260528.sha256`. | Re-run `tools.ruleset_governance_check` after every ruleset change. |
 
 ## 5. Deep Dives
 

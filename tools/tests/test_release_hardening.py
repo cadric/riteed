@@ -50,6 +50,23 @@ class ReleaseHardeningTests(unittest.TestCase):
             release.check_release(root, errors)
             self.assertTrue(any("RULESET_GOVERNANCE_TOKEN" in item for item in errors), errors)
 
+    def test_ruleset_governance_step_skips_contexts_without_repo_secrets(self) -> None:
+        workflow_path = REPO_ROOT / ".github" / "workflows" / "validate.yml"
+        errors: list[str] = []
+        workflow = release_workflow.parse(
+            workflow_path.relative_to(REPO_ROOT).as_posix(),
+            workflow_path.read_text(encoding="utf-8"),
+            errors,
+        )
+        self.assertEqual(errors, [])
+        self.assertIsNotNone(workflow)
+        job = workflow.jobs["ruleset-governance"]
+        step = next(step for step in job.steps if "tools.ruleset_governance_check" in step.run)
+        condition = str(step.raw.get("if", ""))
+        self.assertIn("github.actor != 'dependabot[bot]'", condition)
+        self.assertIn("github.event.pull_request.user.login != 'dependabot[bot]'", condition)
+        self.assertIn("github.event.pull_request.head.repo.full_name == github.repository", condition)
+
     def test_publish_required_checks_must_exactly_match_policy(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

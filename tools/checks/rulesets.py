@@ -223,6 +223,7 @@ def _check_main_ruleset(ruleset: dict[str, Any], policy: dict[str, Any], errors:
     for required in ("deletion", "non_fast_forward", "pull_request", "required_signatures", "required_status_checks"):
         if required not in types:
             foundation.add(errors, f"Protect main ruleset missing {required} rule")
+    _check_main_pull_request_policy(ruleset, policy, errors)
     checks = _required_status_check_contexts(ruleset)
     required_checks = _required_policy_status_checks(policy)
     for context in required_checks:
@@ -271,6 +272,49 @@ def _strict_required_status_checks_policy(ruleset: dict[str, Any]) -> bool:
             continue
         return rule.get("parameters", {}).get("strict_required_status_checks_policy") is True
     return False
+
+
+def _check_main_pull_request_policy(ruleset: dict[str, Any], policy: dict[str, Any], errors: list[str]) -> None:
+    pr_policy = (
+        policy.get("github_actions_release_safety", {})
+        .get("repository_governance", {})
+        .get("main_pull_request_policy")
+    )
+    if not isinstance(pr_policy, dict):
+        foundation.add(errors, f"{POLICY_FILE}: repository_governance.main_pull_request_policy is required")
+        return
+    if pr_policy.get("require_pull_request") is not True:
+        foundation.add(errors, f"{POLICY_FILE}: main_pull_request_policy.require_pull_request must be true")
+
+    params = _rule_parameters(ruleset, "pull_request")
+    if params is None:
+        foundation.add(errors, "Protect main ruleset pull_request parameters are required")
+        return
+
+    expected_count = pr_policy.get("required_approving_review_count")
+    if isinstance(expected_count, bool) or not isinstance(expected_count, int) or expected_count < 0:
+        foundation.add(errors, f"{POLICY_FILE}: main_pull_request_policy.required_approving_review_count must be a non-negative integer")
+    elif params.get("required_approving_review_count") != expected_count:
+        foundation.add(
+            errors,
+            f"Protect main ruleset required_approving_review_count must be {expected_count}",
+        )
+
+    for field in ("required_review_thread_resolution", "require_last_push_approval"):
+        expected = pr_policy.get(field)
+        if not isinstance(expected, bool):
+            foundation.add(errors, f"{POLICY_FILE}: main_pull_request_policy.{field} must be boolean")
+        elif params.get(field) is not expected:
+            foundation.add(errors, f"Protect main ruleset {field} must be {str(expected).lower()}")
+
+
+def _rule_parameters(ruleset: dict[str, Any], rule_type: str) -> dict[str, Any] | None:
+    for rule in ruleset.get("rules", []):
+        if not isinstance(rule, dict) or rule.get("type") != rule_type:
+            continue
+        parameters = rule.get("parameters")
+        return parameters if isinstance(parameters, dict) else None
+    return None
 
 
 def _required_policy_status_checks(policy: dict[str, Any]) -> list[str]:

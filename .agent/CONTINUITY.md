@@ -1,6 +1,18 @@
 # Continuity
 
 ## OUTCOMES
+- 2026-05-28 solo-maintainer ruleset calibration: live `Protect main`
+  pull-request review count was changed from `1` to `0` and
+  `require_last_push_approval` from `true` to `false`, while keeping PR
+  requirement, strict required checks, signed commits, thread resolution, and
+  `User:964797:pull_request` bypass. Evidence hashes:
+  before `a5e1e53a71bb679d45b0b8099965ac0f87df53e1cb435ee2cd1c0fed02cd18a1`,
+  after `4bcf09556adfbb808233526b403f909cac8edda8ed52daae27318081467317d3`.
+  Local live governance passed with `GITHUB_TOKEN="$(gh auth token)" python3 -m
+  tools.ruleset_governance_check`. PR #12 merged without `--admin` after its
+  head was recreated as GitHub-verified commit
+  `b739f2184629e8bab725d4e354e6bdc87ad78ee2` and all required checks passed;
+  squash merge commit is `1672f080610bf327f7daae1c59972d2976f3aac0`.
 - 2026-05-27 RIT-AUD-017 live closure evidence: PR #8
   (`https://github.com/cadric/riteed/pull/8`) merged via squash commit
   `080f5099c542617d478f724277d22f86522a5e32` after required Validate contexts
