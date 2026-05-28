@@ -203,6 +203,41 @@ API response.
    passes with a GitHub token that can read repository rulesets and
    environments.
 
+## Solo-maintainer Pull-request Posture, 2026-05-28
+
+Routine PR merges no longer require a self-impossible independent approval.
+`Protect main` still requires a pull request, exact strict status checks,
+signed commits, non-fast-forward protection, deletion protection, reviewed
+thread resolution, and the reviewed `User:964797:pull_request` bypass actor for
+emergencies. The only review change is:
+
+```text
+required_approving_review_count: 1 -> 0
+require_last_push_approval: true -> false
+```
+
+This is the reviewed solo-maintainer model: PR + CI + signed commits + thread
+resolution, without pretending that an independent reviewer exists. The
+break-glass bypass remains `pull_request`-only, so emergency merges still leave
+a PR audit trail rather than enabling direct `always` bypass.
+
+Evidence recorded for the live ruleset update:
+
+```text
+a5e1e53a71bb679d45b0b8099965ac0f87df53e1cb435ee2cd1c0fed02cd18a1  docs/evidence/protect-main-solo-before-20260528.json
+4bcf09556adfbb808233526b403f909cac8edda8ed52daae27318081467317d3  docs/evidence/protect-main-solo-after-20260528.json
+```
+
+The after-state was rechecked with:
+
+```bash
+GITHUB_TOKEN="$(gh auth token)" python3 -m tools.ruleset_governance_check
+```
+
+PR #12 then merged normally without `--admin`, after its head commit was
+rewritten through GitHub's `createCommitOnBranch` API so the required-signatures
+rule could verify the commit.
+
 ## Rollback Command
 
 If activation breaks required maintenance flow, restore the captured disabled
