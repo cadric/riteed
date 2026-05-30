@@ -14,6 +14,11 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 
 ## Unreleased
 
+### Fixed
+- Fixed the Flatpak publish workflow so manual dispatch can target a validated
+  release tag, checkout that tag before signing, and migrate legacy beta Pages
+  metadata only when publishing a newer version.
+
 ## 0.3.6 - 2026-05-30
 
 ### Added

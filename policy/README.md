@@ -72,6 +72,10 @@ Review artifacts use fixed semantic tags where a field would otherwise be ambigu
 - `github_actions_release_safety.repository_governance.main_pull_request_policy` is the expected `Protect main` pull-request rule shape. The live governance job verifies that the branch ruleset requires pull requests, matches the reviewed approving-review count, requires review-thread resolution, and matches the reviewed last-push approval setting.
 - `github_actions_release_safety.repository_governance.reviewed_bypass_actors` is the exact allowlist for GitHub ruleset bypass identities; live branch bypass actors must match `(ruleset, actor_type, actor_id, bypass_mode)`, `bypass_mode` must be `pull_request`, and tag rulesets must have no bypass actors.
 - `signed_flatpak_publish.hard_requirements.required_validate_check_contexts` is the exact ordered check-run context list the publish workflow must require for the release tag commit before signing secrets are imported.
+- `workflow_dispatch` release publishes may target an explicit `release_ref`, but
+  that ref must be a validated `v*` tag, the build job must checkout that tag,
+  and legacy Pages metadata without source-ref/source-commit is accepted only
+  when publishing a newer version than the current beta page.
 - `github_actions_release_safety.rollback_environment.reviewed_required_reviewers` is the exact allowlist for the emergency rollback environment's required reviewer identities; the live governance job must match `(actor_type, actor_id)` and missing or extra reviewers fail validation.
 - Release-critical local patch manifests pin an upstream `.crate` archive with its official checksum, list only reviewed changed files, store a canonical diff checksum, and record the unsafe/FFI baseline. The validator extracts the archive with tar-safety checks, and tracked `.crate` anchors must be marked as binary artifacts in `.gitattributes`.
 - Each release-critical local patch listed in `release.policy.json` carries its own dependency document and unsafe/FFI baseline command; do not reuse another patched crate's baseline or review artifact.

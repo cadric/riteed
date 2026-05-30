@@ -116,6 +116,9 @@ The application ID is authoritative and must stay consistent across:
 - `gtk4`, `libadwaita`, and `gettext-rs` are required runtime crates for the primary app package.
 - GTK/GNOME binding updates must follow `docs/dependency-updates.md` so safe bindings, `*-sys` crates, fuzz lockfiles, and Flatpak cargo sources stay coordinated.
 - Release workflow, signing, rollback, Pages remote, GitHub ruleset governance, signing-key, and local release-critical patch changes must follow `policy/release.policy.json`.
+- Manual release workflow dispatch may target an explicit `v*` release tag only
+  when preflight validates that tag, verifies exact release-critical checks on
+  its commit, and the build job checks out the target tag before signing.
 - Release governance must keep offline policy checks deterministic; live GitHub ruleset/environment checks belong only in the token-scoped governance job and must enforce the exact reviewed actors from release policy.
 - Local release-critical crate patches must keep their patch manifest, upstream `.crate` anchor, allowed-file diff checksum, unsafe/FFI baseline, and binary artifact marker in sync.
 - Parser, untrusted-input, fuzz, and stress-boundary changes must follow `policy/stress-fuzz.policy.json` and keep parser-boundary evidence current.

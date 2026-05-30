@@ -1,17 +1,15 @@
 # Continuity
 
 ## OUTCOMES
-- 2026-05-30 0.3.6 beta release metadata is prepared on top of the green
-  `main` Validate run `26681507052` at
-  `9a4d7a41d1c6d87dfb1bc0f8d272676ec75edf13`. Release metadata targets app
-  version `0.3.6`, AppStream release entries are version/date-only, and
-  release-note prose stays in `CHANGELOG.md`/GitHub Releases instead of
-  gettext catalogs. Local validation passed with `scripts/dependency-preflight
-  --root app`, `python3 -m unittest tools.tests.test_policy_check -v`,
-  `scripts/policy-check --root app --strict`, and
-  `python3 -m tools.coverage_check --root app` at 80.6% line coverage. The
-  release commit should merge via PR before tagging `v0.3.6` and publishing
-  the signed beta Flatpak remote.
+- 2026-05-30 0.3.6 beta release metadata landed on `main` via PR #16 as
+  verified squash commit `b9ba63042ee96595489b627f4f79d22d3c35dde1`, and
+  annotated tag `v0.3.6` now points there. The first Publish Flatpak run
+  failed before signing because the already-published 0.3.5 Pages page had
+  legacy version-only metadata; the follow-up release-workflow hotfix lets
+  manual dispatch target a validated `v*` tag, checks out that tag before
+  signing, and permits legacy Pages metadata only when the candidate version is
+  newer. Release-note prose stays in `CHANGELOG.md`/GitHub Releases, not
+  gettext catalogs.
 - 2026-05-30 nightly stress `markdown_parse` crash is fixed locally with a
   release-critical `pulldown-cmark 0.13.4` patch under
   `app/build-aux/cargo-patches/pulldown-cmark`. The patch backports the
