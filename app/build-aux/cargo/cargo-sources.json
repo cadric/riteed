@@ -136,8 +136,6 @@
 {"type":"inline","contents":"{\"package\": \"8fd00f0bb2e90d81d1044c2b32617f68fcb9fa3bb7640c23e9c748e53fb30934\", \"files\": {}}","dest":"cargo/vendor/proc-macro2-1.0.106","dest-filename":".cargo-checksum.json"},
 {"type":"archive","archive-type":"tar-gzip","url":"https://static.crates.io/crates/proptest/proptest-1.11.0.crate","sha256":"4b45fcc2344c680f5025fe57779faef368840d0bd1f42f216291f0dc4ace4744","dest":"cargo/vendor/proptest-1.11.0"},
 {"type":"inline","contents":"{\"package\": \"4b45fcc2344c680f5025fe57779faef368840d0bd1f42f216291f0dc4ace4744\", \"files\": {}}","dest":"cargo/vendor/proptest-1.11.0","dest-filename":".cargo-checksum.json"},
-{"type":"archive","archive-type":"tar-gzip","url":"https://static.crates.io/crates/pulldown-cmark/pulldown-cmark-0.13.4.crate","sha256":"e9f068eba8e7071c5f9511831b44f32c740d5adf574e990f946ddb53db2f314e","dest":"cargo/vendor/pulldown-cmark-0.13.4"},
-{"type":"inline","contents":"{\"package\": \"e9f068eba8e7071c5f9511831b44f32c740d5adf574e990f946ddb53db2f314e\", \"files\": {}}","dest":"cargo/vendor/pulldown-cmark-0.13.4","dest-filename":".cargo-checksum.json"},
 {"type":"archive","archive-type":"tar-gzip","url":"https://static.crates.io/crates/quote/quote-1.0.45.crate","sha256":"41f2619966050689382d2b44f664f4bc593e129785a36d6ee376ddf37259b924","dest":"cargo/vendor/quote-1.0.45"},
 {"type":"inline","contents":"{\"package\": \"41f2619966050689382d2b44f664f4bc593e129785a36d6ee376ddf37259b924\", \"files\": {}}","dest":"cargo/vendor/quote-1.0.45","dest-filename":".cargo-checksum.json"},
 {"type":"archive","archive-type":"tar-gzip","url":"https://static.crates.io/crates/r-efi/r-efi-5.3.0.crate","sha256":"69cdb34c158ceb288df11e18b4bd39de994f6657d83847bdffdbd7f346754b0f","dest":"cargo/vendor/r-efi-5.3.0"},

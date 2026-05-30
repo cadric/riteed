@@ -1,6 +1,20 @@
 # Continuity
 
 ## OUTCOMES
+- 2026-05-30 nightly stress `markdown_parse` crash is fixed locally with a
+  release-critical `pulldown-cmark 0.13.4` patch under
+  `app/build-aux/cargo-patches/pulldown-cmark`. The patch backports the
+  upstream refdef blank-line fix and adds an OffsetIter guard for the exact
+  scheduled-run panic path while keeping the crate pinned at `=0.13.4` until a
+  fixed upstream release exists. The patch is wired through both `app` and the
+  separate `app/fuzz` workspace, the exact CI crash input is committed to the
+  `markdown_parse` corpus, and parser regression tests cover the lossy-byte
+  path plus the tight refdef list event stream. Validation passed with
+  `scripts/dependency-preflight --root app`, focused parser tests,
+  fixed-seed `cargo +nightly fuzz run markdown_parse ... -- -runs=1`,
+  `python3 -m unittest discover tools/tests -v` (130 tests, 1 skipped),
+  `scripts/policy-check --root app --strict`, and
+  `python3 -m tools.coverage_check --root app` at 80.5% line coverage.
 - 2026-05-28 solo-maintainer ruleset calibration: live `Protect main`
   pull-request review count was changed from `1` to `0` and
   `require_last_push_approval` from `true` to `false`, while keeping PR

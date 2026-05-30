@@ -70,6 +70,7 @@ Review artifacts use fixed semantic tags where a field would otherwise be ambigu
 - `signed_flatpak_publish.hard_requirements.required_validate_check_contexts` is the exact ordered check-run context list the publish workflow must require for the release tag commit before signing secrets are imported.
 - `github_actions_release_safety.rollback_environment.reviewed_required_reviewers` is the exact allowlist for the emergency rollback environment's required reviewer identities; the live governance job must match `(actor_type, actor_id)` and missing or extra reviewers fail validation.
 - Release-critical local patch manifests pin an upstream `.crate` archive with its official checksum, list only reviewed changed files, store a canonical diff checksum, and record the unsafe/FFI baseline. The validator extracts the archive with tar-safety checks, and tracked `.crate` anchors must be marked as binary artifacts in `.gitattributes`.
+- Each release-critical local patch listed in `release.policy.json` carries its own dependency document and unsafe/FFI baseline command; do not reuse another patched crate's baseline or review artifact.
 
 Template-source note:
 

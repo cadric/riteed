@@ -194,7 +194,8 @@ def _check_local_patch_manifest(repo: Path, policy: dict[str, Any], active: set[
         manifest = repo / manifest_rel
         if not manifest.exists():
             if "RIT-AUD-009" not in active:
-                foundation.add(errors, f"{manifest_rel}: sourceview5 patch manifest is required")
+                crate = str(item.get("crate") or "release-critical")
+                foundation.add(errors, f"{manifest_rel}: {crate} patch manifest is required")
             continue
         _validate_patch_manifest(manifest, item, errors)
 
@@ -318,7 +319,7 @@ def _unsafe_ffi_count(patch_dir: Path, errors: list[str]) -> int:
         try:
             total += len(pattern.findall(read_text(path)))
         except SystemExit:
-            foundation.add(errors, f"{path}: unable to read sourceview5 patch source")
+            foundation.add(errors, f"{path}: unable to read local patch source")
     return total
 
 
@@ -370,7 +371,7 @@ def _load_upstream_crate(
     if expected != actual:
         foundation.add(errors, f"{manifest}: upstream_crate_checksum mismatch, expected {actual}")
         return None
-    tmp = tempfile.TemporaryDirectory(prefix="sourceview5-upstream-")
+    tmp = tempfile.TemporaryDirectory(prefix="crate-upstream-")
     tmp_path = Path(tmp.name)
     if not _extract_crate_safely(archive, tmp_path, errors):
         tmp.cleanup()

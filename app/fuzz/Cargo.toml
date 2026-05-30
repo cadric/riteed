@@ -14,6 +14,7 @@ libfuzzer-sys = "=0.4.12"
 riteed = { path = "..", features = ["fuzzing"] }
 
 [patch.crates-io]
+pulldown-cmark = { path = "../build-aux/cargo-patches/pulldown-cmark" }
 sourceview5 = { path = "../build-aux/cargo-patches/sourceview5" }
 
 [[bin]]
