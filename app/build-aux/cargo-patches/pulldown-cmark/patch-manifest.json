@@ -1,0 +1,25 @@
+{
+  "crate": "pulldown-cmark",
+  "version": "0.13.4",
+  "upstream_source": {
+    "crate_archive": "upstream/pulldown-cmark-0.13.4.crate",
+    "url": "https://static.crates.io/crates/pulldown-cmark/pulldown-cmark-0.13.4.crate"
+  },
+  "upstream_crate_checksum": "e9f068eba8e7071c5f9511831b44f32c740d5adf574e990f946ddb53db2f314e",
+  "allowed_changed_files": [
+    ".cargo-checksum.json",
+    "src/firstpass.rs",
+    "src/parse.rs"
+  ],
+  "diff_checksum_sha256": "5832792f71a077c35850ada6f7f69f3ed71dffad558f9243fc27c8353315f76d",
+  "unsafe_ffi_baseline": {
+    "audited_total_matches": 5,
+    "command": "rg -o '\\bunsafe\\b|\\bextern\\s+\"C\"|\\btransmute\\b' app/build-aux/cargo-patches/pulldown-cmark/src -g '*.rs' | wc -l"
+  },
+  "review_evidence": {
+    "finding_id": "RIT-AUD-018",
+    "reason": "The local patch backports the upstream refdef blank-line fix and guards OffsetIter tight-paragraph traversal so scheduled markdown_parse fuzzing cannot crash through pulldown-cmark before an upstream release is available.",
+    "review_artifact": "app/build-aux/dependencies/pulldown-cmark.md"
+  },
+  "last_reviewed": "2026-05-30"
+}

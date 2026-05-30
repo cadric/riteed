@@ -46,7 +46,7 @@ modules:
       - install -Dm644 LICENSE /app/share/licenses/io.github.cadric.Riteed/Riteed-MIT.txt
       - install -Dm644 THIRD_PARTY_LICENSES.md /app/share/licenses/io.github.cadric.Riteed/THIRD_PARTY_LICENSES.md
       - install -Dm644 cargo/vendor/similar-3.1.1/LICENSE /app/share/licenses/io.github.cadric.Riteed/cargo/similar-Apache-2.0.txt
-      - install -Dm644 cargo/vendor/pulldown-cmark-0.13.4/LICENSE /app/share/licenses/io.github.cadric.Riteed/cargo/pulldown-cmark-MIT.txt
+      - install -Dm644 build-aux/cargo-patches/pulldown-cmark/LICENSE /app/share/licenses/io.github.cadric.Riteed/cargo/pulldown-cmark-MIT.txt
       - install -Dm644 cargo/vendor/unicase-2.9.0/LICENSE-MIT /app/share/licenses/io.github.cadric.Riteed/cargo/unicase-MIT.txt
       - install -Dm644 cargo/vendor/unicase-2.9.0/LICENSE-APACHE /app/share/licenses/io.github.cadric.Riteed/cargo/unicase-Apache-2.0.txt
       - install -Dm644 cargo/vendor/yaml-rust2-0.11.0/MIT-LICENSE /app/share/licenses/io.github.cadric.Riteed/cargo/yaml-rust2-MIT.txt

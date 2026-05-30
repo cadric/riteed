@@ -156,6 +156,31 @@ fn parses_fuzz_regression_with_lossy_utf8_reference_label() {
 }
 
 #[test]
+fn parses_fuzz_regression_with_refdef_space_blank_line() {
+    let input = String::from_utf8_lossy(&[
+        45, 45, 10, 231, 45, 32, 91, 33, 105, 108, 255, 98, 116, 105, 137, 137, 137, 76, 115, 0,
+        76, 76, 76, 76, 76, 76, 110, 107, 93, 58, 186, 154, 0, 0, 79, 44, 96, 0, 0, 0, 10, 0, 0,
+        255, 0, 0, 0, 0, 0, 0, 32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    ]);
+    let document = parse_document(&input);
+
+    assert!(document.body.source_offset <= input.len());
+}
+
+#[test]
+fn parses_tight_refdef_list_without_losing_events() {
+    let document = parse_document("- [n]:Z\r\n\t\t");
+
+    assert!(
+        document
+            .body
+            .blocks
+            .iter()
+            .any(|block| { matches!(block, MdBlock::List { items, .. } if !items.is_empty()) })
+    );
+}
+
+#[test]
 fn frontmatter_is_not_body() {
     let document = parse_document("---\ntitle: Test\n---\n# Body\n");
     assert!(document.frontmatter.is_some());

@@ -1,2 +1,3 @@
 app/vendor/** linguist-vendored
 app/build-aux/cargo-patches/sourceview5/upstream/*.crate binary
+app/build-aux/cargo-patches/pulldown-cmark/upstream/*.crate binary

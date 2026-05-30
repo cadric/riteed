@@ -258,6 +258,28 @@
           "audited_total_matches": 1853,
           "future_drift_requires_manifest_update": true
         }
+      },
+      {
+        "crate": "pulldown-cmark",
+        "path": "app/build-aux/cargo-patches/pulldown-cmark",
+        "manifest": "app/build-aux/cargo-patches/pulldown-cmark/patch-manifest.json",
+        "dependency_doc": "app/build-aux/dependencies/pulldown-cmark.md",
+        "required_manifest_fields": [
+          "crate",
+          "version",
+          "upstream_source",
+          "upstream_crate_checksum",
+          "allowed_changed_files",
+          "diff_checksum_sha256",
+          "unsafe_ffi_baseline",
+          "review_evidence",
+          "last_reviewed"
+        ],
+        "unsafe_ffi_baseline": {
+          "command": "rg -o '\\bunsafe\\b|\\bextern\\s+\"C\"|\\btransmute\\b' app/build-aux/cargo-patches/pulldown-cmark/src -g '*.rs' | wc -l",
+          "audited_total_matches": 5,
+          "future_drift_requires_manifest_update": true
+        }
       }
     ],
     "manifest_drift": {
@@ -318,7 +340,7 @@
     "silent_beta_remote_rollback",
     "unreviewed_release_critical_mutable_actions_or_tool_installers",
     "remote_metadata_signed_by_key_not_matching_committed_public_key",
-    "sourceview5_patch_drift_without_manifest_update",
+    "release_critical_local_patch_drift_without_manifest_update",
     "prose_only_release_TODOs_for_known_audit_gaps"
   ]
 }

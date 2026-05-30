@@ -1,6 +1,6 @@
 ---
 created: 2026-04-19
-updated: 2026-05-27
+updated: 2026-05-30
 status: current
 priority: high
 type: changelog
@@ -77,6 +77,9 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
   save or until the buffer text matches the decorated state again.
 
 ### Fixed
+- Fixed the scheduled `markdown_parse` stress crash by carrying a narrow
+  `pulldown-cmark 0.13.4` patch for the offset-iterator tight-paragraph path,
+  with the crash seed added to the parser regression suite and fuzz corpus.
 - Removed the legacy window-level Compare dialog action; compare entry points
   now stay on the tab compare actions, including saved-version, file, and
   pasted-text flows.

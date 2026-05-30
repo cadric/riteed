@@ -35,6 +35,7 @@ path = "src/bin/riteed_stress.rs"
 required-features = ["stress"]
 
 [patch.crates-io]
+pulldown-cmark = { path = "build-aux/cargo-patches/pulldown-cmark" }
 sourceview5 = { path = "build-aux/cargo-patches/sourceview5" }
 
 [lints.rust]
