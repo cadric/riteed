@@ -14,6 +14,8 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 
 ## Unreleased
 
+## 0.3.6 - 2026-05-30
+
 ### Added
 - Added V14.6 release and stress/fuzz policy domains with validator wiring,
   typed planned-remediation max-age checks, and focused regression coverage.
@@ -80,6 +82,8 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 - Fixed the scheduled `markdown_parse` stress crash by carrying a narrow
   `pulldown-cmark 0.13.4` patch for the offset-iterator tight-paragraph path,
   with the crash seed added to the parser regression suite and fuzz corpus.
+- Fixed gettext validation so AppStream release-note prose is treated as
+  changelog/release metadata instead of mandatory POT/PO catalog content.
 - Removed the legacy window-level Compare dialog action; compare entry points
   now stay on the tab compare actions, including saved-version, file, and
   pasted-text flows.

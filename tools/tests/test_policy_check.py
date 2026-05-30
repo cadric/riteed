@@ -516,6 +516,13 @@ class PolicyCheckTests(unittest.TestCase):
     <p xml:lang="da">Skjult oversættelse</p>
     <p translate="no">Hidden paragraph</p>
   </description>
+  <releases>
+    <release version="1.0.0" date="2026-05-30">
+      <description>
+        <p>Release note belongs in changelog, not gettext.</p>
+      </description>
+    </release>
+  </releases>
   <developer>
     <name translate="no">Hidden developer</name>
   </developer>
@@ -531,6 +538,7 @@ class PolicyCheckTests(unittest.TestCase):
         self.assertNotIn((None, "Skjult oversættelse", None), messages)
         self.assertNotIn((None, "Hidden paragraph", None), messages)
         self.assertNotIn((None, "Hidden developer", None), messages)
+        self.assertNotIn((None, "Release note belongs in changelog, not gettext.", None), messages)
 
     def test_required_commands_use_headless_gtk_environment(self) -> None:
         from tools.checks import commands

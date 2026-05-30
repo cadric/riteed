@@ -77,15 +77,6 @@ msgctxt "git status"
 msgid "Added"
 msgstr ""
 
-msgid "Adds Find in Files, document statistics, and print support while preserving the existing Find and Replace workflow."
-msgstr ""
-
-msgid "Adds a complete Danish locale, an app language preference for System, English, or Danish, and the first stress-test infrastructure for boundary, parser, fuzz, Flatpak Git, ASan, and Valgrind coverage."
-msgstr ""
-
-msgid "Adds native Markdown preview polish, staged and unstaged multi-file review tabs, and a V15 roadmap for split Markdown edit/preview."
-msgstr ""
-
 msgctxt "window palette"
 msgid "Adwaita"
 msgstr ""
@@ -321,9 +312,6 @@ msgstr ""
 
 msgctxt "git commit"
 msgid "Commit Message"
-msgstr ""
-
-msgid "Compacts Source Control rows, moves active-file Git actions into the header bar, and unifies document and project search in the Find bar."
 msgstr ""
 
 msgctxt "alert response"
@@ -628,15 +616,6 @@ msgid "Find in Files Limits"
 msgstr ""
 
 msgid "First Tab"
-msgstr ""
-
-msgid "First public beta with tabs, syntax highlighting, folder navigation, split diffs, lightweight local Git source control, autosave, and guarded file monitoring."
-msgstr ""
-
-msgid "Fixes a fuzz-discovered Compare crash with lone carriage-return line endings by aligning Riteed's row model with the diff engine's line tokenization."
-msgstr ""
-
-msgid "Fixes Source Control so ordinary untracked folders expand to changed file paths while nested Git repositories remain visible as guarded directory entries."
 msgstr ""
 
 msgctxt "file filter"
@@ -1880,16 +1859,4 @@ msgstr ""
 
 msgctxt "markdown extension label"
 msgid "wiki links"
-msgstr ""
-
-msgid "Fixes Markdown preview zoom, copy, and find behavior so the native preview follows editor zoom, keeps its scroll position while copying or navigating matches, and searches rendered Markdown text without exposing replace controls."
-msgstr ""
-
-msgid "Updates app dependencies, beta screenshots, and Dependabot rules while preserving the reviewed GTK binding versions."
-msgstr ""
-
-msgid "Adds the pre-Flathub GitHub Pages beta Flatpak remote, GitHub security hygiene, Dependabot configuration, contribution templates, and CodeQL triage follow-up notes."
-msgstr ""
-
-msgid "Fixes a scheduled Markdown fuzz crash by normalizing ASCII control characters before Markdown preview parsing."
 msgstr ""

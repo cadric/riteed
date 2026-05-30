@@ -31,6 +31,9 @@ This repository contains the authoritative policy and validation tooling for nat
 - UI stack: `gtk4-rs` + `libadwaita` only.
 - Styling: Adwaita first, custom CSS only for app-specific additions.
 - Localization: GNU gettext via `gettext-rs`.
+- AppStream identity, app description, and screenshot copy are localizable.
+  AppStream release entries stay version/date metadata, while release-note
+  prose belongs in `CHANGELOG.md` and GitHub release notes.
 - Preferences and lightweight durable state: `GSettings`.
 - Packaging and sandbox: Flatpak-first on `org.gnome.Platform//50`.
 - Assets: packaged UI, CSS, shortcuts, and related app assets must be resource-backed.
