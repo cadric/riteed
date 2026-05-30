@@ -56,6 +56,10 @@ Use `python3 -m tools.policy_check --update-artifact-index` only in the root pol
 Review artifacts use fixed semantic tags where a field would otherwise be ambiguous:
 
 - `ui.menus[].standard_items` is a list of lowercase semantic tags, not raw labels. Supported tags are `about`, `preferences`, `shortcuts`, `help`, `quit`, and `close`.
+- AppStream gettext extraction covers app identity, description, and
+  screenshot copy, but skips the `<releases>` section; release entries should
+  stay version/date metadata, while release-note prose belongs in
+  `CHANGELOG.md` and GitHub release notes.
 - `ui.surfaces[].smallest_width` is the reviewed narrowest supported window width in logical pixels.
 - `gsettings.sites[].kind` must match the scanner kinds `gsettings-write` or `gsettings-bind`.
 - GSettings schema keys satisfy the schema-type check with exactly one of `type`, `enum`, or `flags`, matching `glib-compile-schemas`.

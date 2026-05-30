@@ -43,56 +43,14 @@
     </screenshot>
   </screenshots>
   <releases>
-    <release version="0.3.5" type="development" date="2026-05-25">
-      <description>
-        <p>Fixes Markdown preview zoom, copy, and find behavior so the native preview follows editor zoom, keeps its scroll position while copying or navigating matches, and searches rendered Markdown text without exposing replace controls.</p>
-        <p xml:lang="da">Retter zoom, kopiering og søgning i Markdown-forhåndsvisning, så den native forhåndsvisning følger editorzoom, bevarer sin rulleposition under kopiering og navigation mellem træffere og søger i renderet Markdown-tekst uden at vise erstatningskontroller.</p>
-        <p>Updates app dependencies, beta screenshots, and Dependabot rules while preserving the reviewed GTK binding versions.</p>
-        <p xml:lang="da">Opdaterer appafhængigheder, beta-skærmbilleder og Dependabot-regler, mens de gennemgåede GTK-bindingversioner bevares.</p>
-      </description>
-    </release>
-    <release version="0.3.4" type="development" date="2026-05-22">
-      <description>
-        <p>Adds the pre-Flathub GitHub Pages beta Flatpak remote, GitHub security hygiene, Dependabot configuration, contribution templates, and CodeQL triage follow-up notes.</p>
-        <p xml:lang="da">Tilføjer den GitHub Pages-baserede beta-Flatpak-fjernkilde før Flathub, GitHub-sikkerhedshygiejne, Dependabot-konfiguration, bidragsskabeloner og opfølgningsnoter til CodeQL-triage.</p>
-        <p>Fixes a scheduled Markdown fuzz crash by normalizing ASCII control characters before Markdown preview parsing.</p>
-        <p xml:lang="da">Retter et planlagt Markdown-fuzz-nedbrud ved at normalisere ASCII-kontroltegn før parsing til Markdown-forhåndsvisning.</p>
-      </description>
-    </release>
-    <release version="0.3.3" type="development" date="2026-05-21">
-      <description>
-        <p>Adds a complete Danish locale, an app language preference for System, English, or Danish, and the first stress-test infrastructure for boundary, parser, fuzz, Flatpak Git, ASan, and Valgrind coverage.</p>
-        <p xml:lang="da">Tilføjer en komplet dansk oversættelse, en appsprogindstilling for System, Engelsk eller Dansk og den første stresstest-infrastruktur til grænse-, parser-, fuzz-, Flatpak Git-, ASan- og Valgrind-dækning.</p>
-        <p>Fixes a fuzz-discovered Compare crash with lone carriage-return line endings by aligning Riteed's row model with the diff engine's line tokenization.</p>
-        <p xml:lang="da">Retter et fuzz-fundet Compare-nedbrud med enkeltstående carriage-return-linjeafslutninger ved at afstemme Riteeds rækkemodel med diff-motorens linjeopdeling.</p>
-      </description>
-    </release>
-    <release version="0.3.2" type="development" date="2026-05-20">
-      <description>
-        <p>Adds native Markdown preview polish, staged and unstaged multi-file review tabs, and a V15 roadmap for split Markdown edit/preview.</p>
-        <p xml:lang="da">Tilføjer polering af native Markdown-forhåndsvisning, staged og unstaged flerfils-gennemgangsfaner og et V15-roadmap for delt Markdown-redigering og forhåndsvisning.</p>
-        <p>Fixes Source Control so ordinary untracked folders expand to changed file paths while nested Git repositories remain visible as guarded directory entries.</p>
-        <p xml:lang="da">Retter Source Control, så almindelige usporrede mapper udvides til ændrede filstier, mens indlejrede Git-arkiver forbliver synlige som beskyttede mappeposter.</p>
-      </description>
-    </release>
-    <release version="0.3.1" type="development" date="2026-05-08">
-      <description>
-        <p>Compacts Source Control rows, moves active-file Git actions into the header bar, and unifies document and project search in the Find bar.</p>
-        <p xml:lang="da">Kompakterer Source Control-rækker, flytter Git-handlinger for den aktive fil til headerbaren og samler dokument- og projektsøgning i søgelinjen.</p>
-      </description>
-    </release>
-    <release version="0.3.0" type="development" date="2026-05-06">
-      <description>
-        <p>Adds Find in Files, document statistics, and print support while preserving the existing Find and Replace workflow.</p>
-        <p xml:lang="da">Tilføjer Søg i filer, dokumentstatistik og udskriftsunderstøttelse, mens den eksisterende Søg og erstat-arbejdsgang bevares.</p>
-      </description>
-    </release>
-    <release version="0.2.0" type="development" date="2026-05-05">
-      <description>
-        <p>First public beta with tabs, syntax highlighting, folder navigation, split diffs, lightweight local Git source control, autosave, and guarded file monitoring.</p>
-        <p xml:lang="da">Første offentlige beta med faner, syntaksfremhævning, mappenavigation, split-diffs, let lokal Git-kildekontrol, automatisk gemning og beskyttet filovervågning.</p>
-      </description>
-    </release>
+    <release version="0.3.6" type="development" date="2026-05-30"/>
+    <release version="0.3.5" type="development" date="2026-05-25"/>
+    <release version="0.3.4" type="development" date="2026-05-22"/>
+    <release version="0.3.3" type="development" date="2026-05-21"/>
+    <release version="0.3.2" type="development" date="2026-05-20"/>
+    <release version="0.3.1" type="development" date="2026-05-08"/>
+    <release version="0.3.0" type="development" date="2026-05-06"/>
+    <release version="0.2.0" type="development" date="2026-05-05"/>
   </releases>
   <content_rating type="oars-1.1"/>
 </component>

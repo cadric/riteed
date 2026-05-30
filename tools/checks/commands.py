@@ -120,17 +120,19 @@ def _metainfo_messages(root: Path) -> set[tuple[str | None, str, str | None]]:
             tree = ET.fromstring(read_text(path))
         except ET.ParseError:
             continue
-        for node in tree.iter():
+        def visit(node: ET.Element, in_release_notes: bool) -> None:
             tag = node.tag.rsplit("}", 1)[-1]
-            if tag not in {"name", "summary", "p", "li", "caption"}:
-                continue
-            if any(key.rsplit("}", 1)[-1] == "lang" for key in node.attrib):
-                continue
-            if node.attrib.get("translate") == "no":
-                continue
-            text = (node.text or "").strip()
-            if text:
-                messages.add((None, text, None))
+            next_in_release_notes = in_release_notes or tag == "releases"
+            if not next_in_release_notes and tag in {"name", "summary", "p", "li", "caption"}:
+                if not any(key.rsplit("}", 1)[-1] == "lang" for key in node.attrib):
+                    if node.attrib.get("translate") != "no":
+                        text = (node.text or "").strip()
+                        if text:
+                            messages.add((None, text, None))
+            for child in node:
+                visit(child, next_in_release_notes)
+
+        visit(tree, False)
     return messages
 
 
