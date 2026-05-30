@@ -29,8 +29,10 @@ jobs:
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with:
           python-version: "3.12"
+      - name: Validate policy-pack contract
+        run: python3 -m tools.policy_check --policy-pack-check --strict
       - name: Run root validator tests
-        run: python3 -m unittest tools.tests.test_policy_check tools.tests.test_release_rulesets tools.tests.test_release_hardening tools.tests.test_release_stress_policy tools.tests.test_stress_fuzz_hardening tools.tests.test_validation_tooling_security tools.tests.test_coverage_check tools.tests.test_dependency_preflight -v
+        run: python3 -m unittest discover -s tools/tests -v
 
   native-tests:
     needs: dependency-preflight

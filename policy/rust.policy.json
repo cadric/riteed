@@ -198,7 +198,8 @@
     "stringly_typed_state_machines": "forbidden_by_default",
     "public_api_must_document_panics_errors_and_safety": true,
     "warn_file_loc_test": 550,
-    "max_file_loc_test": 600
+    "max_file_loc_test": 800,
+    "max_file_loc_waiver_cap_non_test": 720
   },
   "enforcement": {
     "spawn_call_patterns": [

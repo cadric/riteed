@@ -58,8 +58,12 @@ Load and enforce these whenever their scopes apply:
 Primary gate for the in-tree app:
 1. `python3 -m tools.policy_check --root app --strict`
 
+Policy/tooling/contract-root gate when `AGENTS.md`, `policy/`, `tools/`, or
+`scripts/` changes:
+2. `python3 -m tools.policy_check --policy-pack-check --strict`
+
 Coverage gate for the in-tree app:
-2. `python3 -m tools.coverage_check --root app`
+3. `python3 -m tools.coverage_check --root app`
 
 Direct fallback commands:
 System gettext is encoded through the `gettext-rs/gettext-system` Cargo feature in `app/Cargo.toml`; keep these direct Cargo commands usable without manual environment overrides.
@@ -75,7 +79,7 @@ System gettext is encoded through the `gettext-rs/gettext-system` Cargo feature 
 - `flatpak-builder --show-manifest app/build-aux/<application-id>.yml`
 
 ## Hard Limits
-- No source or enforced metadata file may exceed `600` total lines, except gettext `po/*.po` and `po/*.pot` catalogs/templates, which remain covered by gettext extraction, i18n review, and `msgfmt`.
+- Production source and enforced metadata default to `600` total lines. Test files matched by `test_file_globs` may reach `800` total lines. Production files over `600` require a registered line-limit waiver with `scope`, scope-relative path, reason, finding ID, review date, and frozen per-file cap no higher than `720`; inline `#[cfg(test)]` in a production file still counts as production. Gettext `po/*.po` and `po/*.pot` catalogs/templates remain exempt from generic line-count enforcement and covered by gettext extraction, i18n review, and `msgfmt`.
 - No runtime Rust path may use `unsafe`, `unwrap`, `expect`, `panic!`, `todo!`, `unimplemented!`, `dbg!`, or external command spawning, except the reviewed typed `/app/bin/git` Gio subprocess boundary in `src/git_process.rs`.
 - Synchronous runtime filesystem probes require `runtime-sync-fs` review evidence and must stay native-only; portal, FUSE, and user-selected project/document paths should use async Gio APIs.
 - No broad Flatpak permissions.

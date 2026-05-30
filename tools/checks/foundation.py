@@ -12,7 +12,6 @@ from tools.scanners.ui_xml import translatable_property_errors
 from tools.validation_tooling import (
     cargo_packages,
     contract_root,
-    count_lines,
     dump_json,
     file_hash,
     first_file,
@@ -295,11 +294,9 @@ def check_required_patterns(root: Path, errors: list[str]) -> None:
 
 
 def check_line_limits(root: Path, errors: list[str]) -> None:
-    limit = int(validation_policy(root)["thresholds"]["max_file_lines"])
-    for path in scoped_files(root, validation_policy(root)["line_limit_globs"]):
-        lines = count_lines(path)
-        if lines > limit:
-            add(errors, f"{relpath(path, root)} exceeds hard LOC limit {limit}: {lines}")
+    from tools.checks import line_limits
+
+    line_limits.check_line_limits(root, errors, scope="app")
 
 
 def _walk_json(value: Any) -> list[dict[str, Any]]:

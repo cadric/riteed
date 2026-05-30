@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+import datetime as dt
 import json
 import os
 import re
@@ -32,6 +33,19 @@ BUILD_OUTPUT_PREFIXES = (
     ("fuzz", "target"),
 )
 AMBIENT_SECRET_ENV = ("GITHUB_TOKEN", "GH_TOKEN")
+
+
+def iso_date_not_future_status(value: Any) -> tuple[str, dt.date]:
+    today = dt.datetime.now(dt.UTC).date()
+    if not isinstance(value, str):
+        return "invalid", today
+    try:
+        parsed = dt.date.fromisoformat(value)
+    except ValueError:
+        return "invalid", today
+    if parsed > today:
+        return "future", today
+    return "ok", today
 
 
 def fail(message: str) -> NoReturn:

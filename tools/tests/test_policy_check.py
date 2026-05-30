@@ -49,6 +49,55 @@ class PolicyCheckTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0)
         self.assertIn("--update-artifact-index", result.stdout)
 
+    def test_policy_pack_check_help_entrypoint(self) -> None:
+        result = subprocess.run(
+            ["python3", "-m", "tools.policy_check", "--policy-pack-check", "--help"],
+            cwd=REPO_ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("--policy-pack-check", result.stdout)
+
+    def test_policy_pack_check_conflicts_with_artifact_update(self) -> None:
+        result = subprocess.run(
+            ["python3", "-m", "tools.policy_check", "--policy-pack-check", "--update-artifact-index"],
+            cwd=REPO_ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("not allowed", result.stderr)
+
+    def test_policy_pack_check_self_mode_does_not_require_app_layout(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            shutil.copytree(REPO_ROOT / "policy", root / "policy")
+            shutil.copytree(REPO_ROOT / "tools", root / "tools")
+            _write(root / "AGENTS.md", "# root\n")
+            result = subprocess.run(
+                ["python3", "-m", "tools.policy_check", "--policy-pack-check", "--root", str(root)],
+                cwd=REPO_ROOT,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("[policy-check] OK", result.stdout)
+
+    def test_policy_pack_check_with_app_root_scans_contract_root(self) -> None:
+        result = subprocess.run(
+            ["python3", "-m", "tools.policy_check", "--policy-pack-check", "--root", "app"],
+            cwd=REPO_ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("[policy-check] OK", result.stdout)
+
     def test_orphaned_script_fails_clearly(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             script = Path(tmpdir) / "policy_check.py"

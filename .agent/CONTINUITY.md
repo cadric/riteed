@@ -1,6 +1,10 @@
 # Continuity
 
 ## OUTCOMES
+- 2026-05-30 differentiated line-limit policy is implemented: production
+  files keep the 600-line default, configured test files get an 800-line hard
+  cap, production waivers are scope-relative and capped at 720 lines, and the
+  policy-pack self-gate validates contract-root tooling without app checks.
 - 2026-05-30 0.3.6 beta release metadata landed on `main` via PR #16 as
   verified squash commit `b9ba63042ee96595489b627f4f79d22d3c35dde1`, and
   annotated tag `v0.3.6` now points there. The first Publish Flatpak run

@@ -19,7 +19,7 @@ Primære trust boundaries:
 Læs først i denne rækkefølge:
 
 1. AGENTS.md
-   Behandl den som autoritativ kontrakt. Notér især 600-linjers fil-limit, async Gio FS-regel, no-co-author commit policy, no unsafe runtime Rust-policy og alle andre regler der påvirker auditens vurdering.
+   Behandl den som autoritativ kontrakt. Notér især den differentierede fil-limit (600 produktion / 800 test / 720 waiver-cap), async Gio FS-regel, no-co-author commit policy, no unsafe runtime Rust-policy og alle andre regler der påvirker auditens vurdering.
 
 2. policy/*.json, tools/policy_check.py, tools/coverage_check.py
    Find intention vs enforcement gaps. Særligt: parser/untrusted-input krav om property/fuzz tests må ikke kun eksistere som policy-intention uden maskinel håndhævelse.

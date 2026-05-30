@@ -14,6 +14,11 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 
 ## Unreleased
 
+### Changed
+- Differentiated policy line limits so production files keep the 600-line
+  default, configured test files may reach 800 lines, and production overages
+  require registered waivers capped at 720 lines.
+
 ### Fixed
 - Fixed the Flatpak publish workflow so manual dispatch can target a validated
   release tag, checkout that tag before signing, and migrate legacy beta Pages
