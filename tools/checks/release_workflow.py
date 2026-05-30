@@ -31,6 +31,11 @@ def check_publish_triggers(workflow: Workflow | None, errors: list[str]) -> None
         foundation.add(errors, f"{WORKFLOW}: release tag trigger must include v*")
     if not _any_run_contains(workflow, "GITHUB_REF", "refs/tags/v*", "exit 1"):
         foundation.add(errors, f"{WORKFLOW}: workflow_dispatch must validate that GITHUB_REF is a version tag")
+    if "workflow_dispatch" in workflow.triggers:
+        if not _any_run_contains(workflow, "release_ref", "REQUESTED_RELEASE_REF", "GITHUB_EVENT_NAME", "workflow_dispatch"):
+            foundation.add(errors, f"{WORKFLOW}: workflow_dispatch must validate an explicit release_ref version tag")
+        if not _build_checkout_targets_release_ref(workflow):
+            foundation.add(errors, f"{WORKFLOW}: build checkout must target needs.preflight.outputs.release_ref")
 
 
 def check_secret_scope(workflow: Workflow | None, raw: str, errors: list[str]) -> None:
@@ -196,6 +201,19 @@ def _run_is_exact_check_gate(run: str) -> bool:
 
 def _any_run_contains(workflow: Workflow, *tokens: str) -> bool:
     return any(all(token in step.run for token in tokens) for job in workflow.jobs.values() for step in job.steps)
+
+
+def _build_checkout_targets_release_ref(workflow: Workflow) -> bool:
+    build = workflow.jobs.get("build")
+    if build is None:
+        return False
+    for step in build.steps:
+        if not step.uses.startswith("actions/checkout@"):
+            continue
+        with_value = step.raw.get("with")
+        if isinstance(with_value, dict) and "needs.preflight.outputs.release_ref" in str(with_value.get("ref", "")):
+            return True
+    return False
 
 
 def _job_uses_secret(job: Any) -> bool:

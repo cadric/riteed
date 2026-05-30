@@ -119,7 +119,8 @@
       "secret_access_after_validation_only": true,
       "pull_request_workflows_must_not_receive_signing_secrets": true,
       "tag_or_dispatch_publish_only": true,
-      "workflow_dispatch_requires_tag_ref": true,
+      "workflow_dispatch_requires_validated_target_tag_ref": true,
+      "workflow_dispatch_build_must_checkout_target_tag": true,
       "manual_rerun_must_validate_same_commit": true,
       "ostree_commits_and_summary_must_be_signed": true,
       "generated_repo_must_contain_summary_and_summary_sig": true
@@ -128,6 +129,7 @@
       "older_tag_overwrite": "forbidden_by_default",
       "required_check": "Compare candidate version/ref against the currently published beta Pages remote before deleting or overwriting site/flatpak/repo.",
       "manual_rerun_behavior": "Must be idempotent for the same release and must fail for older releases unless emergency_rollback is explicitly active.",
+      "legacy_pages_metadata_without_source_allowed_only_for_newer_version": true,
       "emergency_rollback": {
         "allowed": true,
         "requires_separate_approval": true,

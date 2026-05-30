@@ -156,6 +156,21 @@ jobs:
             self.assertTrue(any("pages: write must stay scoped" in item for item in errors), errors)
             self.assertTrue(any("id-token: write must stay scoped" in item for item in errors), errors)
 
+    def test_manual_publish_checkout_must_target_release_ref(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            _copy_release_context(root)
+            workflow_path = root / ".github" / "workflows" / "publish-flatpak.yml"
+            workflow = workflow_path.read_text(encoding="utf-8").replace(
+                "        with:\n          ref: ${{ needs.preflight.outputs.release_ref }}\n",
+                "",
+                1,
+            )
+            workflow_path.write_text(workflow, encoding="utf-8")
+            errors: list[str] = []
+            release.check_release(root, errors)
+            self.assertTrue(any("build checkout must target" in item for item in errors), errors)
+
     def test_rollback_gate_requires_environment_route_and_metadata(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
