@@ -10,6 +10,11 @@
   signing, and permits legacy Pages metadata only when the candidate version is
   newer. Release-note prose stays in `CHANGELOG.md`/GitHub Releases, not
   gettext catalogs.
+- 2026-05-30 follow-up: AppStream release descriptions were restored for
+  GNOME Software/Flatpak version history with `translate="no"` so they remain
+  excluded from POT/PO catalogs. Policy/docs now distinguish full release notes
+  in `CHANGELOG.md`/GitHub Releases from short non-translatable AppStream
+  version-history summaries.
 - 2026-05-30 nightly stress `markdown_parse` crash is fixed locally with a
   release-critical `pulldown-cmark 0.13.4` patch under
   `app/build-aux/cargo-patches/pulldown-cmark`. The patch backports the

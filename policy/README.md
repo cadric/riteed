@@ -57,9 +57,10 @@ Review artifacts use fixed semantic tags where a field would otherwise be ambigu
 
 - `ui.menus[].standard_items` is a list of lowercase semantic tags, not raw labels. Supported tags are `about`, `preferences`, `shortcuts`, `help`, `quit`, and `close`.
 - AppStream gettext extraction covers app identity, description, and
-  screenshot copy, but skips the `<releases>` section; release entries should
-  stay version/date metadata, while release-note prose belongs in
-  `CHANGELOG.md` and GitHub release notes.
+  screenshot copy, but release descriptions must use `translate="no"` and stay
+  out of POT/PO catalogs. `CHANGELOG.md` and GitHub Releases remain the full
+  release-note sources; AppStream release text exists only for software-center
+  version history.
 - `ui.surfaces[].smallest_width` is the reviewed narrowest supported window width in logical pixels.
 - `gsettings.sites[].kind` must match the scanner kinds `gsettings-write` or `gsettings-bind`.
 - GSettings schema keys satisfy the schema-type check with exactly one of `type`, `enum`, or `flags`, matching `glib-compile-schemas`.

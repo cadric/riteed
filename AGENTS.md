@@ -32,8 +32,9 @@ This repository contains the authoritative policy and validation tooling for nat
 - Styling: Adwaita first, custom CSS only for app-specific additions.
 - Localization: GNU gettext via `gettext-rs`.
 - AppStream identity, app description, and screenshot copy are localizable.
-  AppStream release entries stay version/date metadata, while release-note
-  prose belongs in `CHANGELOG.md` and GitHub release notes.
+  AppStream release descriptions may exist for GNOME Software/Flatpak version
+  history, but they must use `translate="no"` and stay out of POT/PO catalogs.
+  `CHANGELOG.md` and GitHub Releases remain the full release-note sources.
 - Preferences and lightweight durable state: `GSettings`.
 - Packaging and sandbox: Flatpak-first on `org.gnome.Platform//50`.
 - Assets: packaged UI, CSS, shortcuts, and related app assets must be resource-backed.

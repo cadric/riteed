@@ -6,6 +6,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any
 
+from tools.checks import metainfo as metainfo_checks
 from tools.scanners.textdomain import textdomain_init_present
 from tools.scanners.ui_xml import translatable_property_errors
 from tools.validation_tooling import (
@@ -526,6 +527,7 @@ def check_flatpak_and_identity(root: Path, errors: list[str]) -> str | None:
             meta_name = (meta.findtext(".//name") or "").strip()
             if desktop is not None and desktop_name and meta_name and desktop_name != meta_name:
                 add(errors, f"{relpath(desktop, root)} and {relpath(metainfo, root)} must use the same app name")
+            metainfo_checks.check_release_descriptions(meta, metainfo, root, errors)
 
     icon_files = [
         path

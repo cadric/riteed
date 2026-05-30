@@ -18,6 +18,8 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 - Fixed the Flatpak publish workflow so manual dispatch can target a validated
   release tag, checkout that tag before signing, and migrate legacy beta Pages
   metadata only when publishing a newer version.
+- Restored AppStream release descriptions for software-center version history
+  while keeping release-note prose out of gettext POT/PO catalogs.
 
 ## 0.3.6 - 2026-05-30
 

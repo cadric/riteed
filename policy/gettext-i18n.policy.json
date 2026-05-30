@@ -68,7 +68,8 @@
     "translator_comments_required_for_ambiguous_or_context_dependent_strings": true,
     "translator_comment_prefix": "Translators",
     "desktop_metainfo_and_gsettings_strings_must_be_extractable": true,
-    "metainfo_releases_section_is_changelog_metadata": true
+    "metainfo_release_descriptions_must_use_translate_no": true,
+    "metainfo_release_descriptions_excluded_from_gettext_catalogs": true
   },
   "extraction_and_build": {
     "extraction_sources_required": [

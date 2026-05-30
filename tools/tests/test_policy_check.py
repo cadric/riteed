@@ -540,6 +540,34 @@ class PolicyCheckTests(unittest.TestCase):
         self.assertNotIn((None, "Hidden developer", None), messages)
         self.assertNotIn((None, "Release note belongs in changelog, not gettext.", None), messages)
 
+    def test_metainfo_release_descriptions_must_be_nontranslatable(self) -> None:
+        from tools.checks import metainfo
+
+        root = REPO_ROOT
+        meta = foundation.ET.fromstring(
+            """<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <releases>
+    <release version="1.0.0">
+      <description>
+        <p>Release note</p>
+      </description>
+    </release>
+    <release version="1.0.1">
+      <description translate="no">
+        <p xml:lang="da">Versionsnote</p>
+      </description>
+    </release>
+  </releases>
+</component>
+"""
+        )
+        errors: list[str] = []
+        metainfo.check_release_descriptions(meta, root / "demo.metainfo.xml", root, errors)
+
+        self.assertTrue(any('release 1.0.0 descriptions must use translate="no"' in item for item in errors), errors)
+        self.assertTrue(any("release 1.0.1 descriptions must not carry localized xml:lang" in item for item in errors), errors)
+
     def test_required_commands_use_headless_gtk_environment(self) -> None:
         from tools.checks import commands
 

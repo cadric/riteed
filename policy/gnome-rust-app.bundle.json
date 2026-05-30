@@ -345,8 +345,8 @@
     },
     {
       "file": "gettext-i18n.policy.json",
-      "sha256": "0ebf586718ef8fe42f1c3dbf468e0d265125c895a3042b58cce39f6db09d3d09",
-      "bytes": 4690
+      "sha256": "0744b5752a723cbb79e29e771bd34a4180bd2fb651eacbfb241d814467777a06",
+      "bytes": 4768
     },
     {
       "file": "gsettings.policy.json",
