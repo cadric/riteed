@@ -35,7 +35,7 @@
     },
     {
       "path": "src/editor_tab/markdown_preview.rs",
-      "line": 304,
+      "line": 308,
       "match": "adjustment.set_value(snapshot.scroll_value.clamp(adjustment.lower(), upper));",
       "kind": "gsettings-write",
       "key": "gtk-adjustment",
@@ -43,7 +43,7 @@
     },
     {
       "path": "src/editor_tab/markdown_preview.rs",
-      "line": 352,
+      "line": 356,
       "match": "self.preview_scrolled.vadjustment().set_value(value);",
       "kind": "gsettings-write",
       "key": "gtk-adjustment-test-helper",
@@ -51,7 +51,7 @@
     },
     {
       "path": "src/editor_tab/markdown_preview.rs",
-      "line": 396,
+      "line": 400,
       "match": "adjustment.set_value(value.clamp(adjustment.lower(), upper));",
       "kind": "gsettings-write",
       "key": "gtk-adjustment",
@@ -59,7 +59,7 @@
     },
     {
       "path": "src/editor_tab/markdown_preview.rs",
-      "line": 404,
+      "line": 408,
       "match": "adjustment.set_value(value.clamp(adjustment.lower(), upper));",
       "kind": "gsettings-write",
       "key": "gtk-adjustment",
@@ -144,6 +144,46 @@
       "kind": "gsettings-write",
       "key": "editor-font",
       "trigger": "Explicit accepted font selection from the editor-font chooser."
+    },
+    {
+      "path": "src/settings/large_file.rs",
+      "line": 70,
+      "match": "let _changed = settings.set_int(KEY_FULL_FEATURE_LIMIT_MIB, limits.full_feature);",
+      "kind": "gsettings-write",
+      "key": "large-file-full-feature-limit-mib",
+      "trigger": "Explicit large-file threshold change from the Large Files preferences group; values are sanitized and ordered before writing."
+    },
+    {
+      "path": "src/settings/large_file.rs",
+      "line": 71,
+      "match": "let _changed = settings.set_int(KEY_EDITOR_LIMIT_MIB, limits.editor);",
+      "kind": "gsettings-write",
+      "key": "large-file-editor-limit-mib",
+      "trigger": "Explicit large-file threshold change from the Large Files preferences group; values are sanitized and ordered before writing."
+    },
+    {
+      "path": "src/settings/large_file.rs",
+      "line": 73,
+      "match": "settings.set_int(KEY_STRONG_WARNING_LIMIT_MIB, limits.strong_warning);",
+      "kind": "gsettings-write",
+      "key": "large-file-strong-warning-limit-mib",
+      "trigger": "Explicit large-file threshold change from the Large Files preferences group; values are sanitized and ordered before writing."
+    },
+    {
+      "path": "src/settings/large_file.rs",
+      "line": 74,
+      "match": "let _changed = settings.set_int(KEY_VIEWER_ONLY_LIMIT_MIB, limits.viewer_only);",
+      "kind": "gsettings-write",
+      "key": "large-file-viewer-only-limit-mib",
+      "trigger": "Explicit large-file threshold change from the Large Files preferences group; values are sanitized and ordered before writing."
+    },
+    {
+      "path": "src/settings/large_file.rs",
+      "line": 106,
+      "match": "let _changed = settings.set_boolean(KEY_ALWAYS_ALLOW_LARGE_FILE_EDIT, enabled);",
+      "kind": "gsettings-write",
+      "key": "always-allow-large-file-edit",
+      "trigger": "Explicit Large Files preference toggle; it only skips prompts below the measured hard editing limit and cannot override the code-owned cap."
     },
     {
       "path": "src/settings/git.rs",
@@ -307,7 +347,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 113,
+      "line": 114,
       "match": "row.set_value(f64::from(value));",
       "kind": "gsettings-write",
       "key": "tab-width-or-indent-width",
@@ -315,11 +355,51 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 307,
+      "line": 308,
       "match": "row.set_value(f64::from(applied));",
       "kind": "gsettings-write",
       "key": "tab-width-or-indent-width",
       "trigger": "Post-commit SpinRow normalization writes the applied sanitized value back into the widget only. The syncing guard prevents this local update from becoming a per-keystroke GSettings write."
+    },
+    {
+      "path": "src/window_preferences_large_file.rs",
+      "line": 106,
+      "match": "rows.full_feature.set_value(f64::from(limits.full_feature));",
+      "kind": "gsettings-write",
+      "key": "large-file-full-feature-limit-mib",
+      "trigger": "Startup-safe and post-commit SpinRow normalization only; the syncing guard prevents this local widget update from writing GSettings."
+    },
+    {
+      "path": "src/window_preferences_large_file.rs",
+      "line": 107,
+      "match": "rows.editor.set_value(f64::from(limits.editor));",
+      "kind": "gsettings-write",
+      "key": "large-file-editor-limit-mib",
+      "trigger": "Startup-safe and post-commit SpinRow normalization only; the syncing guard prevents this local widget update from writing GSettings."
+    },
+    {
+      "path": "src/window_preferences_large_file.rs",
+      "line": 109,
+      "match": ".set_value(f64::from(limits.strong_warning));",
+      "kind": "gsettings-write",
+      "key": "large-file-strong-warning-limit-mib",
+      "trigger": "Startup-safe and post-commit SpinRow normalization only; the syncing guard prevents this local widget update from writing GSettings."
+    },
+    {
+      "path": "src/window_preferences_large_file.rs",
+      "line": 110,
+      "match": "rows.viewer_only.set_value(f64::from(limits.viewer_only));",
+      "kind": "gsettings-write",
+      "key": "large-file-viewer-only-limit-mib",
+      "trigger": "Startup-safe and post-commit SpinRow normalization only; the syncing guard prevents this local widget update from writing GSettings."
+    },
+    {
+      "path": "src/window/testing_large_file.rs",
+      "line": 16,
+      "match": ".set_value(value);",
+      "kind": "gsettings-write",
+      "key": "large-file-full-feature-limit-mib",
+      "trigger": "Test-only helper mutates the preferences SpinRow so GTK regression tests exercise the same sanitized preference handler used by users."
     }
   ]
 }

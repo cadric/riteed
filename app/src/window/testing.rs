@@ -306,6 +306,32 @@ impl Window {
         self.workspace.selected_loading_for_tests()
     }
 
+    pub(crate) fn selected_large_file_surface_for_tests(&self) -> Option<&'static str> {
+        self.workspace.selected_large_file_surface_for_tests()
+    }
+
+    pub(crate) fn selected_large_file_viewer_text_for_tests(&self) -> String {
+        self.workspace.selected_large_file_viewer_text_for_tests()
+    }
+
+    pub(crate) fn selected_large_file_viewer_status_for_tests(&self) -> String {
+        self.workspace.selected_large_file_viewer_status_for_tests()
+    }
+
+    pub(crate) fn activate_selected_large_file_edit_for_tests(&self) -> bool {
+        self.workspace.activate_selected_large_file_edit_for_tests()
+    }
+
+    pub(crate) fn activate_selected_large_file_refresh_for_tests(&self) -> bool {
+        self.workspace
+            .activate_selected_large_file_refresh_for_tests()
+    }
+
+    pub(crate) fn activate_selected_large_file_placeholder_remove_for_tests(&self) -> bool {
+        self.workspace
+            .activate_selected_large_file_placeholder_remove_for_tests()
+    }
+
     pub(crate) fn selected_writability_for_tests(&self) -> Option<crate::editor_tab::Writability> {
         self.workspace.selected_writability()
     }

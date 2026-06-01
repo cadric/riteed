@@ -66,9 +66,9 @@ impl DocumentToolsController {
     }
 
     fn sync_actions(&self, selected: Option<&Rc<EditorTab>>) {
-        let statistics_enabled = selected.is_some_and(|tab| !tab.is_loading());
-        let print_enabled =
-            selected.is_some_and(|tab| !tab.is_loading() && !tab.is_compare_active());
+        let statistics_enabled = selected.is_some_and(|tab| tab.is_document() && !tab.is_loading());
+        let print_enabled = selected
+            .is_some_and(|tab| tab.is_document() && !tab.is_loading() && !tab.is_compare_active());
         self.statistics_action.set_enabled(statistics_enabled);
         self.print_action.set_enabled(print_enabled);
     }
@@ -77,7 +77,7 @@ impl DocumentToolsController {
         let Some(tab) = self.workspace.selected_tab() else {
             return;
         };
-        if tab.is_loading() {
+        if !tab.is_document() || tab.is_loading() {
             return;
         }
         crate::document_statistics::present(&self.parent, &tab);
@@ -87,7 +87,7 @@ impl DocumentToolsController {
         let Some(tab) = self.workspace.selected_tab() else {
             return;
         };
-        if tab.is_loading() || tab.is_compare_active() {
+        if !tab.is_document() || tab.is_loading() || tab.is_compare_active() {
             return;
         }
         let runner = self.print_runner.borrow().clone();

@@ -1,0 +1,101 @@
+{
+  "version": 1,
+  "sites": [
+    {
+      "path": "src/large_file/viewer.rs",
+      "line": 17,
+      "match": "file_size: Cell<u64>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The large-file viewer owns the latest known file size for one viewer tab.",
+      "justification": "Explicit viewer refresh can update the size after the file grows, and page controls need that value without sharing mutable state outside the viewer object."
+    },
+    {
+      "path": "src/large_file/viewer.rs",
+      "line": 18,
+      "match": "generation: Cell<u64>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The large-file viewer owns stale-callback generation for one viewer tab.",
+      "justification": "Navigation, search, and line-jump callbacks can overlap; a small generation token drops stale async page results after mode or request changes."
+    },
+    {
+      "path": "src/large_file/viewer.rs",
+      "line": 19,
+      "match": "page_offset: Cell<u64>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The large-file viewer owns the current byte-window offset.",
+      "justification": "Previous/next page controls need the current offset between callbacks without sharing mutable state outside the viewer object."
+    },
+    {
+      "path": "src/large_file/viewer.rs",
+      "line": 20,
+      "match": "next_page_offset: Cell<u64>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The large-file viewer owns the next complete UTF-8 page boundary.",
+      "justification": "Next-page navigation must avoid splitting valid UTF-8 codepoints across pages while still keeping the current page read bounded."
+    },
+    {
+      "path": "src/large_file/viewer.rs",
+      "line": 21,
+      "match": "current_cancellable: RefCell<Option<gio::Cancellable>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The large-file viewer owns the active page or line-jump cancellable.",
+      "justification": "Replacing a viewer request cancels the previous Gio operation and prevents stale results from mutating the page buffer."
+    },
+    {
+      "path": "src/large_file/viewer.rs",
+      "line": 22,
+      "match": "search_cancellable: RefCell<Option<gio::Cancellable>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The large-file viewer owns the active streaming-search cancellable.",
+      "justification": "Search is a cancellable async Gio byte scan; the viewer stores only the current cancellable so a new search can stop the old one."
+    },
+    {
+      "path": "src/window_preferences_large_file.rs",
+      "line": 86,
+      "match": "syncing: &Rc<Cell<bool>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The large-file preferences controller owns a local syncing guard for its rows.",
+      "justification": "SpinRow normalization writes sanitized values back to widgets; the guard prevents those local widget updates from becoming recursive settings writes."
+    },
+    {
+      "path": "src/window_preferences_large_file.rs",
+      "line": 103,
+      "match": "fn sync_rows(rows: &LargeFileRows, settings: &AppSettings, syncing: &Rc<Cell<bool>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "The large-file preferences controller owns a local syncing guard for row synchronization.",
+      "justification": "Grouped threshold sanitization updates multiple rows together while keeping the updates GTK-main-thread local and non-recursive."
+    },
+    {
+      "path": "src/large_file/viewer.rs",
+      "line": 586,
+      "match": "pub(super) fn cancel_cancellable(cell: &RefCell<Option<gio::Cancellable>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "The large-file viewer owns short-lived cancellable slots for mutually exclusive viewer operations.",
+      "justification": "The helper takes and cancels the current Gio cancellable before a page, search, or line-jump operation installs its replacement."
+    },
+    {
+      "path": "src/large_file/reader.rs",
+      "line": 427,
+      "match": "result: &Rc<RefCell<Option<Result<ReadWindow, AppError>>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The reader unit test owns one local callback result cell for one temporary Gio read.",
+      "justification": "The cell is scoped to a test-only thread-default MainContext and is completed by a single async read callback before the helper returns."
+    },
+    {
+      "path": "src/large_file/search.rs",
+      "line": 284,
+      "match": "result: &Rc<RefCell<Option<Result<SearchOutcome, AppError>>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The search unit test owns one local callback result cell for one temporary streaming search.",
+      "justification": "The cell is scoped to a test-only thread-default MainContext and is completed by the cancellable search callback before the helper returns."
+    },
+    {
+      "path": "src/gtk_tests_tabs.rs",
+      "line": 120,
+      "match": "state: &std::rc::Rc<std::cell::RefCell<AppState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The tab-transfer GTK regression test borrows the test app window registry.",
+      "justification": "The helper needs the existing test-owned AppState only to observe that a large-file viewer tab transfer creates a destination window and preserves the viewer surface."
+    }
+  ]
+}

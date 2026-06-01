@@ -5,6 +5,7 @@ use glib::SList;
 use gtk4::{gio, glib, prelude::*};
 use sourceview5::prelude::*;
 
+use crate::document_limits::{OpenFileSupport, loaded_text_supports_editor_hard_cap};
 use crate::editor_format::{EncodingInfo, LineEndingMode, LoadedTextFormat, SavedTextFormat};
 use crate::error::AppError;
 
@@ -16,6 +17,7 @@ pub struct LoadedDocument {
     pub uri: String,
     pub format: SavedTextFormat,
     pub source_file: sourceview5::File,
+    pub disk_size: Option<u64>,
 }
 
 #[derive(Clone)]
@@ -33,6 +35,19 @@ pub struct LocalPathInfo {
 }
 
 struct TextLoadRequest {
+    loader: sourceview5::FileLoader,
+    scratch_buffer: sourceview5::Buffer,
+    source_file: sourceview5::File,
+    file: gio::File,
+    path: PathBuf,
+    display_path: Option<PathBuf>,
+    disk_size: Option<u64>,
+    cancellable: Option<gio::Cancellable>,
+    callback: Rc<dyn Fn(Result<LoadedDocument, LoadFailure>)>,
+}
+
+#[derive(Clone)]
+struct TextLoadStart {
     loader: sourceview5::FileLoader,
     scratch_buffer: sourceview5::Buffer,
     source_file: sourceview5::File,
@@ -64,6 +79,32 @@ pub fn load_text_file(
     cancellable: Option<&gio::Cancellable>,
     callback: Rc<dyn Fn(Result<LoadedDocument, LoadFailure>)>,
 ) {
+    load_text_file_internal(file, candidate_encodings, cancellable, None, callback);
+}
+
+pub(crate) fn load_text_file_with_open_support(
+    file: &gio::File,
+    candidate_encodings: Option<&SList<sourceview5::Encoding>>,
+    cancellable: Option<&gio::Cancellable>,
+    open_support: OpenFileSupport,
+    callback: Rc<dyn Fn(Result<LoadedDocument, LoadFailure>)>,
+) {
+    load_text_file_internal(
+        file,
+        candidate_encodings,
+        cancellable,
+        Some(open_support),
+        callback,
+    );
+}
+
+fn load_text_file_internal(
+    file: &gio::File,
+    candidate_encodings: Option<&SList<sourceview5::Encoding>>,
+    cancellable: Option<&gio::Cancellable>,
+    open_support: Option<OpenFileSupport>,
+    callback: Rc<dyn Fn(Result<LoadedDocument, LoadFailure>)>,
+) {
     let path_info = match local_path_info(file) {
         Ok(path_info) => path_info,
         Err(error) => {
@@ -72,6 +113,7 @@ pub fn load_text_file(
         }
     };
     let path = path_info.path;
+    let display_path = path_info.display_path;
     let source_file = sourceview5::File::builder().location(file).build();
     let scratch_buffer = sourceview5::Buffer::builder()
         .enable_undo(false)
@@ -82,38 +124,57 @@ pub fn load_text_file(
         loader.set_candidate_encodings(Some(candidate_encodings));
     }
 
-    let path_for_query = path.clone();
-    let callback_for_query = callback;
     let cancellable_for_load = cancellable.cloned();
-    let file_for_load = file.clone();
+    let start = TextLoadStart {
+        loader,
+        scratch_buffer,
+        source_file,
+        file: file.clone(),
+        path,
+        display_path,
+        cancellable: cancellable_for_load,
+        callback,
+    };
+    if let Some(support) = open_support {
+        start.start_with_support(support);
+        return;
+    }
     crate::document_limits::query_file_supports_open(
         file,
         cancellable,
         Rc::new(move |result| {
-            let supports_open = match result {
-                Ok(supports_open) => supports_open,
+            let support = match result {
+                Ok(support) => support,
                 Err(error) => {
-                    callback_for_query(Err(map_load_failure(&path_for_query, &error)));
+                    let callback = Rc::clone(&start.callback);
+                    callback(Err(map_load_failure(&start.path, &error)));
                     return;
                 }
             };
-            if !supports_open {
-                callback_for_query(Err(LoadFailure::TooBig(path_for_query.clone())));
-                return;
-            }
-            TextLoadRequest {
-                loader: loader.clone(),
-                scratch_buffer: scratch_buffer.clone(),
-                source_file: source_file.clone(),
-                file: file_for_load.clone(),
-                path: path.clone(),
-                display_path: path_info.display_path.clone(),
-                cancellable: cancellable_for_load.clone(),
-                callback: callback_for_query.clone(),
-            }
-            .start();
+            start.clone().start_with_support(support);
         }),
     );
+}
+
+impl TextLoadStart {
+    fn start_with_support(self, support: OpenFileSupport) {
+        if !support.supports_open {
+            (self.callback)(Err(LoadFailure::TooBig(self.path.clone())));
+            return;
+        }
+        TextLoadRequest {
+            loader: self.loader,
+            scratch_buffer: self.scratch_buffer,
+            source_file: self.source_file,
+            file: self.file,
+            path: self.path,
+            display_path: self.display_path,
+            disk_size: support.size,
+            cancellable: self.cancellable,
+            callback: self.callback,
+        }
+        .start();
+    }
 }
 
 impl TextLoadRequest {
@@ -125,6 +186,7 @@ impl TextLoadRequest {
             file,
             path,
             display_path,
+            disk_size,
             cancellable,
             callback,
         } = self;
@@ -141,6 +203,10 @@ impl TextLoadRequest {
                         LineEndingMode::from_source(callback_loader.newline_type()),
                         EncodingInfo::from_encoding(&callback_loader.encoding()),
                     );
+                    if !loaded_text_supports_editor_hard_cap(loaded_format.text.len()) {
+                        callback(Err(LoadFailure::TooBig(path.clone())));
+                        return;
+                    }
                     callback(Ok(LoadedDocument {
                         path: path.clone(),
                         display_path: display_path.clone(),
@@ -148,6 +214,7 @@ impl TextLoadRequest {
                         uri: file.uri().to_string(),
                         format: loaded_format.format,
                         source_file: source_file.clone(),
+                        disk_size,
                     }));
                 }
                 Err(error) => callback(Err(map_load_failure(&path, &error))),
@@ -335,6 +402,14 @@ mod tests {
             map_save_failure(path, &conversion),
             SaveFailure::InvalidChars
         ));
+    }
+
+    #[test]
+    fn text_load_request_guards_post_decode_editor_cap() {
+        let source = include_str!("editor_io.rs");
+
+        assert!(source.contains("loaded_text_supports_editor_hard_cap(loaded_format.text.len())"));
+        assert!(source.contains("LoadFailure::TooBig(path.clone())"));
     }
 
     #[test]

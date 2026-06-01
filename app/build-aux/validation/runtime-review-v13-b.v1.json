@@ -251,7 +251,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 58,
+      "line": 59,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The Preferences dialog owns one shared state handle for row callbacks and selected-document format controls.",
@@ -259,7 +259,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 120,
+      "line": 121,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The Preferences dialog owns one shared state handle for row callbacks and selected-document format controls.",
@@ -267,7 +267,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 176,
+      "line": 177,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The Preferences dialog owns one shared state handle for row callbacks and selected-document format controls.",
@@ -275,7 +275,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 198,
+      "line": 199,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The Preferences dialog owns one shared state handle for row callbacks and selected-document format controls.",
@@ -283,7 +283,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 238,
+      "line": 239,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The Preferences dialog owns one shared state handle for row callbacks and selected-document format controls.",
@@ -291,7 +291,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 293,
+      "line": 294,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The Preferences dialog owns one shared state handle for row callbacks and selected-document format controls.",
@@ -299,7 +299,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 315,
+      "line": 316,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The Preferences dialog owns one shared state handle for row callbacks and selected-document format controls.",
@@ -307,7 +307,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 359,
+      "line": 360,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The Preferences dialog owns one shared state handle for row callbacks and selected-document format controls.",
@@ -315,7 +315,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 465,
+      "line": 466,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The Preferences dialog owns the shared state handle used by the language preference ComboRow.",
@@ -323,7 +323,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 516,
+      "line": 517,
       "match": "fn with_syncing(state: &Rc<RefCell<PreferencesState>>, operation: impl FnOnce()) {",
       "kind": "runtime-shared-state",
       "ownership": "The dialog-scoped syncing helper mutates the shared preferences state.",
@@ -331,7 +331,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 522,
+      "line": 523,
       "match": "fn spin_dirty(state: &Rc<RefCell<PreferencesState>>, dirty_spin: DirtySpin) -> bool {",
       "kind": "runtime-shared-state",
       "ownership": "The staged SpinRow read helper borrows the shared preferences state.",
@@ -339,7 +339,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 530,
+      "line": 531,
       "match": "fn set_spin_dirty(state: &Rc<RefCell<PreferencesState>>, dirty_spin: DirtySpin, value: bool) {",
       "kind": "runtime-shared-state",
       "ownership": "The staged SpinRow write helper mutates the shared preferences state.",
@@ -359,7 +359,7 @@
       "match": "state: Rc<RefCell<ProjectState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The window project controller owns shared project sidebar state.",
-      "justification": "Sidebar actions, async folder open/restore, refresh, and tab\u2192tree reveal must coordinate through one mutable state cell."
+      "justification": "Sidebar actions, async folder open/restore, refresh, and tab→tree reveal must coordinate through one mutable state cell."
     },
     {
       "path": "src/window_project.rs",

@@ -35,6 +35,8 @@ mod testing;
 #[cfg(test)]
 mod testing_compare;
 #[cfg(test)]
+mod testing_large_file;
+#[cfg(test)]
 mod testing_markdown;
 
 #[derive(Clone, Copy, Debug)]

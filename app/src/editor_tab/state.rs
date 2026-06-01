@@ -11,6 +11,7 @@ use super::{
 use crate::document::DocumentState;
 use crate::editor_format::SavedTextFormat;
 use crate::editor_monitor::{MonitorBinding, PendingExternalState};
+use crate::large_file::viewer::LargeFileViewer;
 
 #[derive(Default)]
 pub(super) struct EditorTabState {
@@ -18,10 +19,19 @@ pub(super) struct EditorTabState {
     pub(super) io: EditorIoState,
     pub(super) external: ExternalFileState,
     pub(super) autosave: AutosaveState,
+    pub(super) large_file: LargeFileAttachment,
     pub(super) compare: CompareAttachment,
     pub(super) review: ReviewAttachment,
     pub(super) ui: UiState,
     dirty_generation: u64,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub(super) enum DocumentSurface {
+    #[default]
+    Editor,
+    LargeFileViewer,
+    RestorePlaceholder,
 }
 
 impl EditorTabState {
@@ -37,6 +47,32 @@ impl EditorTabState {
 
     pub(super) fn mark_dirty_generation(&mut self) {
         self.dirty_generation = self.dirty_generation.saturating_add(1);
+    }
+}
+
+#[derive(Default)]
+pub(super) struct LargeFileAttachment {
+    pub(super) surface: DocumentSurface,
+    pub(super) widget: Option<gtk4::Widget>,
+    pub(super) viewer: Option<Rc<LargeFileViewer>>,
+    pub(super) file_size: Option<u64>,
+}
+
+impl LargeFileAttachment {
+    pub(super) fn cancel_operations(&self) {
+        if let Some(viewer) = self.viewer.as_ref() {
+            viewer.cancel();
+        }
+    }
+
+    pub(super) fn clear_surface(&mut self) -> Option<gtk4::Widget> {
+        if let Some(viewer) = self.viewer.take() {
+            viewer.cancel();
+        }
+        let widget = self.widget.take();
+        self.surface = DocumentSurface::Editor;
+        self.file_size = None;
+        widget
     }
 }
 

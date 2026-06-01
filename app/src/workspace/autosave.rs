@@ -3,6 +3,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::time::Duration;
 
+use gettextrs::gettext;
 use gtk4::{glib, prelude::*};
 
 use crate::editor_tab::{EditorTab, SaveKind, SaveResult};
@@ -74,10 +75,16 @@ fn request_autosave_if_eligible(
     generation: u64,
     callback: Rc<dyn Fn(SaveResult)>,
 ) -> bool {
-    if tab.autosave_generation() != generation
-        || !workspace_contains_tab(workspace, tab)
-        || !tab.is_autosave_eligible()
-    {
+    if tab.autosave_generation() != generation || !workspace_contains_tab(workspace, tab) {
+        return false;
+    }
+    if tab.autosave_blocked_by_current_size() {
+        tab.pause_autosave(gettext(
+            "Autosave paused because the document is too large to save safely.",
+        ));
+        return false;
+    }
+    if !tab.is_autosave_eligible() {
         return false;
     }
     workspace.request_save_tab_kind(tab, false, SaveKind::Autosave, callback);

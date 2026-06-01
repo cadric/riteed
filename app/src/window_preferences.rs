@@ -48,6 +48,7 @@ impl WindowPreferencesController {
         install_font_preference(shell, settings, zoom);
         install_language_preference(shell, settings, &state);
         install_git_identity_preference(shell, settings);
+        crate::window_preferences_large_file::install(shell, settings, workspace);
         Self { _state: state }
     }
 }

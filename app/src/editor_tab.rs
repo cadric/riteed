@@ -13,6 +13,7 @@ use crate::settings::AppSettings;
 
 mod banner;
 mod compare;
+mod large_file;
 mod markdown_preview;
 pub(crate) mod minimap_diff;
 mod open;
@@ -26,7 +27,7 @@ pub(crate) use compare::{ReviewFileInput, ReviewScrollTarget};
 pub use review::{
     ReviewFileId, ReviewFileSpec, ReviewKind, ReviewSnapshotFingerprint, ReviewTabSpec, TabKind,
 };
-use state::EditorTabState;
+use state::{DocumentSurface, EditorTabState};
 
 #[cfg(test)]
 pub(crate) fn compare_row_count_for_texts_for_tests(
@@ -241,13 +242,21 @@ impl EditorTab {
     }
 
     #[must_use]
+    pub fn session_uri(&self) -> Option<String> {
+        if self.kind != TabKind::Document {
+            return None;
+        }
+        self.state.borrow().document.document.uri()
+    }
+
+    #[must_use]
     pub fn kind(&self) -> TabKind {
         self.kind
     }
 
     #[must_use]
     pub fn is_document(&self) -> bool {
-        self.kind == TabKind::Document
+        self.kind == TabKind::Document && self.is_editor_surface()
     }
 
     #[must_use]
@@ -282,6 +291,18 @@ impl EditorTab {
             && state.external.writability == Writability::Writable
             && !state.io.loading
             && state.compare.active.is_none()
+            && crate::document_limits::autosave_supports_current_size(self.text_buffer.char_count())
+    }
+
+    #[must_use]
+    pub fn autosave_blocked_by_current_size(&self) -> bool {
+        self.is_document()
+            && self.settings.autosave_enabled()
+            && self.is_dirty()
+            && self.state.borrow().document.document.path().is_some()
+            && !crate::document_limits::autosave_supports_current_size(
+                self.text_buffer.char_count(),
+            )
     }
 
     #[must_use]
@@ -332,7 +353,7 @@ impl EditorTab {
 
     #[must_use]
     pub fn path_display(&self) -> Option<String> {
-        if !self.is_document() {
+        if self.kind == TabKind::GitReview {
             return None;
         }
         self.state.borrow().document.document.path_display()
@@ -369,11 +390,14 @@ impl EditorTab {
 
     #[must_use]
     pub fn supports_search(&self) -> bool {
-        crate::document_limits::buffer_supports_search(&self.text_buffer)
+        self.is_document() && crate::document_limits::buffer_supports_search(&self.text_buffer)
     }
 
     #[must_use]
     pub fn cursor_position(&self) -> (u32, u32) {
+        if !self.is_document() {
+            return (1, 1);
+        }
         let iter = self
             .text_buffer
             .iter_at_mark(&self.text_buffer.get_insert());

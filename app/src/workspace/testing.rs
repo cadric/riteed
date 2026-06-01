@@ -208,6 +208,36 @@ impl Workspace {
         self.selected_tab().is_some_and(|tab| tab.is_loading())
     }
 
+    pub(crate) fn selected_large_file_surface_for_tests(&self) -> Option<&'static str> {
+        self.selected_tab()
+            .map(|tab| tab.large_file_surface_for_tests())
+    }
+
+    pub(crate) fn selected_large_file_viewer_text_for_tests(&self) -> String {
+        self.selected_tab()
+            .map_or_else(String::new, |tab| tab.large_file_viewer_text_for_tests())
+    }
+
+    pub(crate) fn selected_large_file_viewer_status_for_tests(&self) -> String {
+        self.selected_tab()
+            .map_or_else(String::new, |tab| tab.large_file_viewer_status_for_tests())
+    }
+
+    pub(crate) fn activate_selected_large_file_edit_for_tests(&self) -> bool {
+        self.selected_tab()
+            .is_some_and(|tab| tab.activate_large_file_edit_for_tests())
+    }
+
+    pub(crate) fn activate_selected_large_file_refresh_for_tests(&self) -> bool {
+        self.selected_tab()
+            .is_some_and(|tab| tab.activate_large_file_refresh_for_tests())
+    }
+
+    pub(crate) fn activate_selected_large_file_placeholder_remove_for_tests(&self) -> bool {
+        self.selected_tab()
+            .is_some_and(|tab| tab.activate_large_file_placeholder_remove_for_tests())
+    }
+
     pub(crate) fn selected_writability(&self) -> Option<crate::editor_tab::Writability> {
         self.selected_tab().map(|tab| tab.writability())
     }

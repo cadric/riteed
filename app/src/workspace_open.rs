@@ -6,8 +6,12 @@ use gtk4::{gio, glib, prelude::*};
 use libadwaita as adw;
 
 use crate::dialogs;
+use crate::document_limits::{
+    self, OpenDecision, OpenFilePlan, OpenFileSupport, OpenPlanQueryResult,
+};
 use crate::editor_tab::EditorTab;
 use crate::error::AppError;
+use crate::large_file::file_path_for_error;
 use crate::workspace::{OpenSource, Workspace};
 
 struct OpenRequest {
@@ -88,7 +92,7 @@ pub(crate) fn request_open_file_then(
         if source != OpenSource::SessionRestore {
             workspace.remember_recent_uri(
                 &existing
-                    .document_uri()
+                    .session_uri()
                     .unwrap_or_else(|| file.uri().to_string()),
             );
         }
@@ -107,9 +111,11 @@ pub(crate) fn request_open_file_then(
     let opened_file = file.clone();
     let tab_for_result = tab.clone();
     let expected_page = tab.page();
-    tab.clone().load_file(
-        &workspace.shell,
+    open_file_in_tab(
+        workspace,
+        &tab,
         file,
+        source,
         Rc::new(move |result| {
             if let Some(workspace) = weak.upgrade() {
                 if !open_target_is_current(&workspace, &tab_for_result, expected_page.as_ref()) {
@@ -167,7 +173,7 @@ fn process_open_request(workspace: &Rc<Workspace>, request: Rc<RefCell<OpenReque
     if let Some(existing) = find_tab_by_file(workspace, &file) {
         request.borrow_mut().successes += 1;
         let existing_uri = existing
-            .document_uri()
+            .session_uri()
             .unwrap_or_else(|| desired_uri.clone());
         if source != OpenSource::SessionRestore {
             workspace.remember_recent_uri(&existing_uri);
@@ -196,9 +202,11 @@ fn process_open_request(workspace: &Rc<Workspace>, request: Rc<RefCell<OpenReque
     let opened_file = file.clone();
     let tab_for_result = tab.clone();
     let expected_page = tab.page();
-    tab.clone().load_file(
-        &workspace.shell,
+    open_file_in_tab(
+        workspace,
+        &tab,
         &file,
+        source,
         Rc::new(move |result| {
             if let Some(workspace) = weak.upgrade() {
                 if !open_target_is_current(&workspace, &tab_for_result, expected_page.as_ref()) {
@@ -234,6 +242,118 @@ fn process_open_request(workspace: &Rc<Workspace>, request: Rc<RefCell<OpenReque
             }
         }),
     );
+}
+
+fn open_file_in_tab(
+    workspace: &Rc<Workspace>,
+    tab: &Rc<EditorTab>,
+    file: &gio::File,
+    source: OpenSource,
+    callback: Rc<dyn Fn(Result<String, AppError>)>,
+) {
+    let weak = Rc::downgrade(workspace);
+    let tab = tab.clone();
+    let file = file.clone();
+    let expected_page = tab.page();
+    let file_for_query = file.clone();
+    document_limits::query_file_open_plan(
+        &file_for_query,
+        None::<&gio::Cancellable>,
+        Rc::new(move |result| {
+            let Some(workspace) = weak.upgrade() else {
+                return;
+            };
+            if !open_target_is_current(&workspace, &tab, expected_page.as_ref()) {
+                callback(Err(AppError::Cancelled));
+                return;
+            }
+            let size = match result {
+                Ok(OpenPlanQueryResult::KnownSize(size)) => size,
+                Ok(OpenPlanQueryResult::NonRegular) => {
+                    callback(Err(non_regular_file_error(&file)));
+                    return;
+                }
+                Ok(OpenPlanQueryResult::SizeUnavailable) => {
+                    callback(Err(file_size_unavailable_error(&file)));
+                    return;
+                }
+                Err(error) => {
+                    callback(Err(AppError::from(error)));
+                    return;
+                }
+            };
+            let plan = OpenFilePlan {
+                size,
+                decision: document_limits::open_decision_for_size_with_thresholds(
+                    size,
+                    &workspace.settings.large_file_thresholds(),
+                ),
+            };
+            route_open_plan(&workspace, &tab, &file, source, plan, callback.clone());
+        }),
+    );
+}
+
+fn route_open_plan(
+    workspace: &Rc<Workspace>,
+    tab: &Rc<EditorTab>,
+    file: &gio::File,
+    source: OpenSource,
+    plan: OpenFilePlan,
+    callback: Rc<dyn Fn(Result<String, AppError>)>,
+) {
+    match plan.decision {
+        OpenDecision::Editor { .. } => tab.clone().load_file_with_open_support(
+            &workspace.shell,
+            file,
+            OpenFileSupport {
+                supports_open: true,
+                size: Some(plan.size),
+            },
+            callback,
+        ),
+        OpenDecision::Viewer { .. } if source == OpenSource::SessionRestore => {
+            let weak = Rc::downgrade(workspace);
+            let weak_tab = Rc::downgrade(tab);
+            tab.show_large_file_restore_placeholder(
+                &workspace.shell,
+                file,
+                plan.size,
+                plan.decision,
+                Rc::new(move || {
+                    let Some(workspace) = weak.upgrade() else {
+                        return;
+                    };
+                    if let Some(tab) = weak_tab.upgrade()
+                        && let Some(page) = tab.page()
+                    {
+                        workspace.tab_view.close_page(&page);
+                    }
+                }),
+                callback,
+            );
+        }
+        OpenDecision::Viewer { .. } => {
+            tab.open_viewer_for_large_file(
+                &workspace.shell,
+                file,
+                plan.size,
+                plan.decision,
+                callback,
+            );
+        }
+    }
+}
+
+fn non_regular_file_error(file: &gio::File) -> AppError {
+    AppError::ReadFailed(
+        file_path_for_error(file),
+        gettext("The selected item is not a regular file."),
+    )
+}
+
+fn file_size_unavailable_error(file: &gio::File) -> AppError {
+    AppError::FileSizeUnavailable(file_path_for_error(file))
 }
 
 fn open_target_is_current(
@@ -369,7 +489,7 @@ fn find_tab_by_file(
         .tabs
         .iter()
         .find(|tab| {
-            tab.document_uri()
+            tab.session_uri()
                 .as_deref()
                 .is_some_and(|uri| file.equal(&gio::File::for_uri(uri)))
         })

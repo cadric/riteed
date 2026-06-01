@@ -38,7 +38,7 @@ impl Workspace {
             &self
                 .ordered_tabs()
                 .into_iter()
-                .map(|tab| tab.document_uri())
+                .map(|tab| tab.session_uri())
                 .collect::<Vec<_>>(),
         )
         .into_iter()
@@ -46,7 +46,7 @@ impl Workspace {
         .collect::<Vec<_>>();
         let selected = self
             .selected_tab()
-            .and_then(|tab| tab.document_uri())
+            .and_then(|tab| tab.session_uri())
             .filter(|uri| crate::document_limits::uri_supports_session_restore(uri));
         let selected = crate::session::selected_session_value(selected);
 

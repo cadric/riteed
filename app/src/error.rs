@@ -10,6 +10,7 @@ pub enum AppError {
     MissingSavePath,
     NonLocalFile,
     DecodeFailed(PathBuf),
+    FileSizeUnavailable(PathBuf),
     FileTooBig(PathBuf),
     SaveTooBig(PathBuf),
     ReadFailed(PathBuf, String),
@@ -25,9 +26,10 @@ impl AppError {
             Self::Internal(_) => gettext("Unable to Build the Window"),
             Self::MissingSavePath => gettext("No Save Location Is Available"),
             Self::NonLocalFile => gettext("Only Local Files Are Supported"),
-            Self::DecodeFailed(_) | Self::ReadFailed(_, _) | Self::FileTooBig(_) => {
-                gettext("Unable to Open the File")
-            }
+            Self::DecodeFailed(_)
+            | Self::ReadFailed(_, _)
+            | Self::FileSizeUnavailable(_)
+            | Self::FileTooBig(_) => gettext("Unable to Open the File"),
             Self::SaveTooBig(_) | Self::WriteFailed(_, _) => gettext("Unable to Save the File"),
             Self::HelpLaunchFailed(_) => pgettext("error title", "Unable to Open Help"),
         }
@@ -46,6 +48,11 @@ impl AppError {
                 gettext(
                     "Automatic text decoding was not reliable for this file. Choose a text encoding manually and try again.",
                 ) + "\n\n"
+                    + &path.display().to_string()
+            }
+            Self::FileSizeUnavailable(path) => {
+                gettext("Riteed could not determine the file size and did not open the file.")
+                    + "\n\n"
                     + &path.display().to_string()
             }
             Self::FileTooBig(path) => {
@@ -83,6 +90,7 @@ mod tests {
             AppError::MissingSavePath,
             AppError::NonLocalFile,
             AppError::DecodeFailed("notes.txt".into()),
+            AppError::FileSizeUnavailable("notes.txt".into()),
             AppError::FileTooBig("notes.txt".into()),
             AppError::SaveTooBig("notes.txt".into()),
             AppError::ReadFailed("notes.txt".into(), String::from("read")),

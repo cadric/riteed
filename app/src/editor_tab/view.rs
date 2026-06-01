@@ -44,8 +44,10 @@ impl EditorTab {
         {
             compare.apply_minimap_visibility(show_minimap);
         }
-        let show_minimap =
-            show_minimap && !self.is_compare_active() && !self.is_markdown_preview_active();
+        let show_minimap = show_minimap
+            && self.editor_heavy_features_enabled()
+            && !self.is_compare_active()
+            && !self.is_markdown_preview_active();
         self.minimap_holder.set_visible(show_minimap);
         let policy = if show_minimap {
             gtk4::PolicyType::External

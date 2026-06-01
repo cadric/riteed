@@ -41,6 +41,10 @@ fn refresh_tab_without_cancel(state: &SourceStateRef, tab: Option<Rc<EditorTab>>
         tab.clear_source_control_minimap_diff();
         return;
     }
+    if !tab.editor_heavy_features_enabled() {
+        tab.clear_source_control_minimap_diff();
+        return;
+    }
     let Some(target) = target_for_tab(state, &tab) else {
         tab.clear_source_control_minimap_diff();
         return;

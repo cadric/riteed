@@ -9,6 +9,7 @@ pub use appearance::ThemePreference;
 pub use compare::{CompareReviewSettingsSnapshot, CompareViewMode};
 pub use language::AppLanguage;
 pub(crate) use language::startup_language_preference;
+pub(crate) use large_file::LargeFileLimitValues;
 pub use presentation::{EditorPalette, WindowPalette};
 pub use source_control::SourceControlViewMode;
 
@@ -38,6 +39,7 @@ struct MemorySettings {
     source_control_view_mode: SourceControlViewMode,
     compare: MemoryCompareSettings,
     project: MemoryProjectSettings,
+    large_file: MemoryLargeFileSettings,
     #[cfg(test)]
     write_log: Vec<String>,
 }
@@ -92,6 +94,15 @@ struct MemoryProjectSettings {
     folder_display_name: String,
     sidebar_visible: bool,
     show_hidden: bool,
+}
+
+#[derive(Clone)]
+struct MemoryLargeFileSettings {
+    full_feature: i32,
+    editor: i32,
+    strong_warning: i32,
+    viewer_only: i32,
+    always_allow_large_file_edit: bool,
 }
 
 impl Default for AppSettings {
@@ -155,6 +166,13 @@ impl AppSettings {
                     folder_display_name: String::new(),
                     sidebar_visible: false,
                     show_hidden: false,
+                },
+                large_file: MemoryLargeFileSettings {
+                    full_feature: crate::document_limits::DEFAULT_FULL_FEATURE_LIMIT_MIB,
+                    editor: crate::document_limits::DEFAULT_EDITOR_LIMIT_MIB,
+                    strong_warning: crate::document_limits::DEFAULT_STRONG_WARNING_LIMIT_MIB,
+                    viewer_only: crate::document_limits::DEFAULT_VIEWER_ONLY_LIMIT_MIB,
+                    always_allow_large_file_edit: false,
                 },
                 #[cfg(test)]
                 write_log: Vec::new(),
@@ -272,6 +290,7 @@ mod editor;
 mod git;
 mod indentation;
 mod language;
+mod large_file;
 mod presentation;
 mod project;
 mod selected_document;

@@ -1,11 +1,15 @@
 use gtk4::{gio, prelude::*};
 use libadwaita as adw;
+use std::io::Write;
 
 // The real GTK boundary smoke is called from gtk_surfaces_and_editor_flow_work.
 // Keeping it in the single GTK integration test avoids cross-thread GTK
 // initialization failures from multiple independent Rust #[test] entry points.
-use crate::document_limits::{OPEN_FILE_LIMIT_BYTES, SEARCH_CHAR_LIMIT};
-use crate::gtk_tests::{build_window, drain_events, spin_until, write_temp_file};
+use crate::document_limits::{MIB, OPEN_FILE_LIMIT_BYTES, SEARCH_CHAR_LIMIT};
+use crate::gtk_tests::{
+    build_window, build_window_with_settings, drain_events, spin_until, write_temp_file,
+};
+use crate::settings::{AppSettings, LargeFileLimitValues};
 use crate::workspace::OpenSource;
 
 const OPEN_SEED: &[u8] = include_bytes!("../../stress/corpus/seeds/open-boundary.txt");
@@ -14,6 +18,96 @@ const SEARCH_SEED: &str = include_str!("../../stress/corpus/seeds/search-boundar
 pub(crate) fn exercise_boundary_smokes(test_app: &adw::Application) {
     exercise_open_file_at_cap(test_app);
     exercise_search_at_cap(test_app);
+    exercise_medium_file_disables_minimap_after_load(test_app);
+    exercise_large_file_threshold_preferences_reapply_open_tab(test_app);
+    exercise_large_file_viewer_rendering(test_app);
+    exercise_large_file_viewer_close_releases_tab(test_app);
+    exercise_large_file_edit_anyway_flow(test_app);
+    exercise_large_file_edit_failure_keeps_viewer(test_app);
+    exercise_large_file_viewer_refresh_updates_size(test_app);
+    exercise_large_file_restore_placeholder(test_app);
+    exercise_large_file_restore_placeholder_remove_button(test_app);
+    exercise_large_file_placeholder_close_releases_tab(test_app);
+}
+
+fn exercise_medium_file_disables_minimap_after_load(test_app: &adw::Application) {
+    let settings = large_file_settings(false);
+    settings.set_show_minimap(true);
+    let Some(window) = build_window_with_settings(test_app, settings) else {
+        return;
+    };
+    let medium_len = usize::try_from(MIB.saturating_add(1024)).unwrap_or(0);
+    let path = write_temp_file(
+        "riteed-medium-minimap.txt",
+        &repeat_seed(b"medium-minimap\n", medium_len),
+    );
+    let file = gio::File::for_path(&path);
+    let uri = file.uri().to_string();
+
+    window.request_open_files(vec![file], OpenSource::AppOpen);
+    spin_until("medium file opens in editor", || {
+        window.selected_large_file_surface_for_tests() == Some("editor")
+            && window.selected_saved_uri_for_tests() == uri
+            && window
+                .selected_text_for_tests()
+                .starts_with("medium-minimap")
+    });
+    assert!(!window.selected_minimap_visible_for_tests());
+    assert_eq!(
+        window.selected_source_control_minimap_tag_counts_for_tests(),
+        (0, 0, 0)
+    );
+
+    let _removed = std::fs::remove_file(path);
+}
+
+fn exercise_large_file_threshold_preferences_reapply_open_tab(test_app: &adw::Application) {
+    let settings = AppSettings::new_for_tests();
+    settings.set_show_minimap(true);
+    settings.set_large_file_limit_values(LargeFileLimitValues {
+        full_feature: 4,
+        editor: 5,
+        strong_warning: 6,
+        viewer_only: 7,
+    });
+    let Some(window) = build_window_with_settings(test_app, settings) else {
+        return;
+    };
+    let medium_len = usize::try_from(2 * MIB).unwrap_or(0);
+    let path = write_temp_file(
+        "riteed-threshold-reapply.rs",
+        &repeat_seed(b"fn main() {}\n", medium_len),
+    );
+    let file = gio::File::for_path(&path);
+    let uri = file.uri().to_string();
+
+    window.request_open_files(vec![file], OpenSource::AppOpen);
+    spin_until("threshold test starts fully featured", || {
+        window.selected_large_file_surface_for_tests() == Some("editor")
+            && window.selected_saved_uri_for_tests() == uri
+            && window.selected_minimap_visible_for_tests()
+            && window.selected_language_id_for_tests().as_deref() == Some("rust")
+    });
+    window.set_large_file_full_feature_limit_for_tests(1.0);
+    spin_until("threshold change reapplies heavy gates", || {
+        !window.selected_minimap_visible_for_tests()
+            && window.selected_language_id_for_tests().is_none()
+    });
+    assert_eq!(
+        window.selected_source_control_minimap_tag_counts_for_tests(),
+        (0, 0, 0)
+    );
+
+    let _removed = std::fs::remove_file(path);
+}
+
+#[test]
+fn routed_open_uses_preflight_size_and_explicit_unknown_size_error() {
+    let source = include_str!("workspace_open.rs");
+
+    assert!(source.contains("OpenPlanQueryResult::SizeUnavailable"));
+    assert!(source.contains("file_size_unavailable_error(&file)"));
+    assert!(source.contains("load_file_with_open_support"));
 }
 
 #[test]
@@ -32,7 +126,10 @@ fn exercise_open_file_at_cap(test_app: &adw::Application) {
 
     window.request_open_files(vec![file], OpenSource::AppOpen);
     spin_until("open file exactly at byte cap", || {
-        window.selected_saved_uri_for_tests() == uri
+        window
+            .session_files_for_tests()
+            .iter()
+            .any(|session_uri| session_uri == &uri)
     });
 
     let _removed = std::fs::remove_file(path);
@@ -57,6 +154,272 @@ fn exercise_search_at_cap(test_app: &adw::Application) {
         window.search_result_for_tests(),
         "Search is disabled for very large files."
     );
+}
+
+fn exercise_large_file_viewer_rendering(test_app: &adw::Application) {
+    let Some(window) = build_window_with_settings(test_app, large_file_settings(false)) else {
+        return;
+    };
+    let path = write_temp_file(
+        "riteed-large-viewer-open.txt",
+        &repeat_seed(b"viewer-start\nviewer-line\n", large_viewer_test_len()),
+    );
+    let file = gio::File::for_path(&path);
+    let uri = file.uri().to_string();
+
+    window.request_open_files(vec![file], OpenSource::AppOpen);
+    spin_until("open large file in viewer", || {
+        window.selected_large_file_surface_for_tests() == Some("viewer")
+            && window
+                .session_files_for_tests()
+                .iter()
+                .any(|session_uri| session_uri == &uri)
+            && window
+                .selected_large_file_viewer_text_for_tests()
+                .contains("viewer-start")
+            && window
+                .selected_large_file_viewer_status_for_tests()
+                .contains("Viewing bytes")
+    });
+    assert!(window.selected_saved_uri_for_tests().is_empty());
+
+    let _removed = std::fs::remove_file(path);
+}
+
+fn exercise_large_file_viewer_close_releases_tab(test_app: &adw::Application) {
+    let Some(window) = build_window_with_settings(test_app, large_file_settings(false)) else {
+        return;
+    };
+    let path = write_temp_file(
+        "riteed-large-viewer-close.txt",
+        &repeat_seed(b"viewer-close\nviewer-line\n", large_viewer_test_len()),
+    );
+    let file = gio::File::for_path(&path);
+
+    window.request_open_files(vec![file], OpenSource::AppOpen);
+    spin_until("open close-test large file in viewer", || {
+        window.selected_large_file_surface_for_tests() == Some("viewer")
+            && window
+                .selected_large_file_viewer_text_for_tests()
+                .contains("viewer-close")
+    });
+    let weak = window.selected_tab_weak_for_tests();
+    assert!(weak.is_some());
+    let Some(weak) = weak else {
+        let _removed = std::fs::remove_file(path);
+        return;
+    };
+    window.request_close_current_tab();
+    spin_until("closed viewer tab is released", || weak.upgrade().is_none());
+    assert!(weak.upgrade().is_none());
+
+    let _removed = std::fs::remove_file(path);
+}
+
+fn exercise_large_file_edit_anyway_flow(test_app: &adw::Application) {
+    let Some(window) = build_window_with_settings(test_app, large_file_settings(true)) else {
+        return;
+    };
+    let path = write_temp_file(
+        "riteed-large-viewer-edit.txt",
+        &repeat_seed(b"edit-start\nedit-line\n", large_viewer_test_len()),
+    );
+    let file = gio::File::for_path(&path);
+    let uri = file.uri().to_string();
+
+    window.request_open_files(vec![file], OpenSource::AppOpen);
+    spin_until("open editable large file in viewer", || {
+        window.selected_large_file_surface_for_tests() == Some("viewer")
+            && window
+                .selected_large_file_viewer_text_for_tests()
+                .contains("edit-start")
+    });
+    assert!(window.activate_selected_large_file_edit_for_tests());
+    spin_until("edit anyway loads editor path", || {
+        window.selected_large_file_surface_for_tests() == Some("editor")
+            && window.selected_saved_uri_for_tests() == uri
+            && window.selected_text_for_tests().starts_with("edit-start")
+    });
+
+    let _removed = std::fs::remove_file(path);
+}
+
+fn exercise_large_file_edit_failure_keeps_viewer(test_app: &adw::Application) {
+    let Some(window) = build_window_with_settings(test_app, large_file_settings(true)) else {
+        return;
+    };
+    let path = write_temp_file(
+        "riteed-large-viewer-edit-fail.txt",
+        &repeat_seed(
+            b"edit-fail-start\nedit-fail-line\n",
+            large_viewer_test_len(),
+        ),
+    );
+    let file = gio::File::for_path(&path);
+
+    window.request_open_files(vec![file], OpenSource::AppOpen);
+    spin_until("open edit-fail large file in viewer", || {
+        window.selected_large_file_surface_for_tests() == Some("viewer")
+            && window
+                .selected_large_file_viewer_text_for_tests()
+                .contains("edit-fail-start")
+    });
+    let over_cap = usize::try_from(OPEN_FILE_LIMIT_BYTES.saturating_add(1)).unwrap_or(0);
+    assert!(std::fs::write(&path, repeat_seed(b"grown-past-cap\n", over_cap)).is_ok());
+    assert!(window.activate_selected_large_file_edit_for_tests());
+    spin_until("failed edit opt-in keeps viewer surface", || {
+        !window.selected_loading_for_tests()
+            && window.selected_large_file_surface_for_tests() == Some("viewer")
+    });
+    assert!(
+        window
+            .selected_large_file_viewer_text_for_tests()
+            .contains("edit-fail-start")
+    );
+
+    let _removed = std::fs::remove_file(path);
+}
+
+fn exercise_large_file_viewer_refresh_updates_size(test_app: &adw::Application) {
+    let Some(window) = build_window_with_settings(test_app, large_file_settings(false)) else {
+        return;
+    };
+    let initial = repeat_seed(b"refresh-start\nrefresh-line\n", large_viewer_test_len());
+    let initial_size = initial.len();
+    let path = write_temp_file("riteed-large-viewer-refresh.txt", &initial);
+    let file = gio::File::for_path(&path);
+
+    window.request_open_files(vec![file], OpenSource::AppOpen);
+    spin_until("open refresh-test large file in viewer", || {
+        window.selected_large_file_surface_for_tests() == Some("viewer")
+            && window
+                .selected_large_file_viewer_status_for_tests()
+                .contains(&initial_size.to_string())
+    });
+    let append = repeat_seed(b"appended-tail\n", 64 * 1024);
+    let new_size = initial_size.saturating_add(append.len());
+    let appended = std::fs::OpenOptions::new()
+        .append(true)
+        .open(&path)
+        .and_then(|mut file| file.write_all(&append));
+    assert!(appended.is_ok());
+    assert!(window.activate_selected_large_file_refresh_for_tests());
+    spin_until("viewer refresh picks up appended bytes", || {
+        window
+            .selected_large_file_viewer_status_for_tests()
+            .contains(&new_size.to_string())
+    });
+
+    let _removed = std::fs::remove_file(path);
+}
+
+fn exercise_large_file_restore_placeholder(test_app: &adw::Application) {
+    let path = write_temp_file(
+        "riteed-large-viewer-restore.txt",
+        &repeat_seed(b"restore-start\nrestore-line\n", large_viewer_test_len()),
+    );
+    let uri = gio::File::for_path(&path).uri().to_string();
+    let settings = large_file_settings(false);
+    settings.set_session_files(std::slice::from_ref(&uri));
+    settings.set_session_selected_file(&uri);
+    let Some(window) = build_window_with_settings(test_app, settings) else {
+        let _removed = std::fs::remove_file(path);
+        return;
+    };
+
+    window.restore_session();
+    spin_until("restore large file placeholder", || {
+        window.tab_count_for_tests() == 1
+            && window.selected_large_file_surface_for_tests() == Some("restore-placeholder")
+            && window
+                .session_files_for_tests()
+                .iter()
+                .any(|session_uri| session_uri == &uri)
+    });
+    assert!(window.selected_text_for_tests().is_empty());
+
+    let _removed = std::fs::remove_file(path);
+}
+
+fn exercise_large_file_restore_placeholder_remove_button(test_app: &adw::Application) {
+    let path = write_temp_file(
+        "riteed-large-placeholder-remove.txt",
+        &repeat_seed(b"placeholder-remove\n", large_viewer_test_len()),
+    );
+    let uri = gio::File::for_path(&path).uri().to_string();
+    let settings = large_file_settings(false);
+    settings.set_session_files(std::slice::from_ref(&uri));
+    settings.set_session_selected_file(&uri);
+    let Some(window) = build_window_with_settings(test_app, settings) else {
+        let _removed = std::fs::remove_file(path);
+        return;
+    };
+
+    window.restore_session();
+    spin_until("restore removable large file placeholder", || {
+        window.selected_large_file_surface_for_tests() == Some("restore-placeholder")
+    });
+    assert!(window.activate_selected_large_file_placeholder_remove_for_tests());
+    spin_until("placeholder remove updates persisted session", || {
+        !window
+            .session_files_for_tests()
+            .iter()
+            .any(|session_uri| session_uri == &uri)
+    });
+
+    let _removed = std::fs::remove_file(path);
+}
+
+fn exercise_large_file_placeholder_close_releases_tab(test_app: &adw::Application) {
+    let path = write_temp_file(
+        "riteed-large-placeholder-close.txt",
+        &repeat_seed(
+            b"placeholder-close\nplaceholder-line\n",
+            large_viewer_test_len(),
+        ),
+    );
+    let uri = gio::File::for_path(&path).uri().to_string();
+    let settings = large_file_settings(false);
+    settings.set_session_files(std::slice::from_ref(&uri));
+    settings.set_session_selected_file(&uri);
+    let Some(window) = build_window_with_settings(test_app, settings) else {
+        let _removed = std::fs::remove_file(path);
+        return;
+    };
+
+    window.restore_session();
+    spin_until("restore close-test large file placeholder", || {
+        window.selected_large_file_surface_for_tests() == Some("restore-placeholder")
+    });
+    let weak = window.selected_tab_weak_for_tests();
+    assert!(weak.is_some());
+    let Some(weak) = weak else {
+        let _removed = std::fs::remove_file(path);
+        return;
+    };
+    window.request_close_current_tab();
+    spin_until("closed placeholder tab is released", || {
+        weak.upgrade().is_none()
+    });
+    assert!(weak.upgrade().is_none());
+
+    let _removed = std::fs::remove_file(path);
+}
+
+fn large_file_settings(always_edit: bool) -> AppSettings {
+    let settings = AppSettings::new_for_tests();
+    settings.set_large_file_limit_values(LargeFileLimitValues {
+        full_feature: 1,
+        editor: 2,
+        strong_warning: 3,
+        viewer_only: 4,
+    });
+    settings.set_always_allow_large_file_edit(always_edit);
+    settings
+}
+
+fn large_viewer_test_len() -> usize {
+    usize::try_from(2 * MIB).unwrap_or(0)
 }
 
 fn repeat_seed(seed: &[u8], target_len: usize) -> Vec<u8> {

@@ -1,6 +1,6 @@
 ---
 created: 2026-04-19
-updated: 2026-05-30
+updated: 2026-06-01
 status: current
 priority: high
 type: changelog
@@ -14,12 +14,33 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 
 ## Unreleased
 
+### Added
+- Started V15 large-file handling with async Gio paged reads, a separate
+  read-only GTK viewer surface, streaming viewer search, lazy line jumps,
+  session-restore placeholders, bounded viewer-page memory, and Preferences
+  entries for bounded large-file thresholds.
+- Hardened the V15 large-file path so viewer/placeholder tabs break callback
+  ownership cycles on close, short non-EOF Gio reads keep filling the current
+  window, feature gates use on-disk file size, medium files re-apply minimap
+  and Source Control diff gating after load, and autosave reports the exact
+  snapshot cap consistently.
+- Tightened V15 open-size routing so normal editor opens reuse the async
+  preflight size query, unknown-size routed opens fail closed with explicit
+  copy, and post-decode editor loads cannot become active over the hard cap.
+
 ### Changed
 - Differentiated policy line limits so production files keep the 600-line
   default, configured test files may reach 800 lines, and production overages
   require registered waivers capped at 720 lines.
+- Reworked the V15 roadmap contract to drop `memmap2`, keep hard edit caps in
+  code-owned policy, preserve the existing SourceView editor path until measured
+  evidence justifies expansion, and document large-file compare as out of scope.
 
 ### Fixed
+- Fixed V15 large-file viewer follow-ups so valid UTF-8 split across page
+  boundaries no longer renders replacement glyphs, restored placeholder
+  Remove closes the tab, viewer Refresh sees appended bytes, and large-file
+  threshold preferences no longer imply editor access beyond the measured cap.
 - Fixed the Flatpak publish workflow so manual dispatch can target a validated
   release tag, checkout that tag before signing, and migrate legacy beta Pages
   metadata only when publishing a newer version.

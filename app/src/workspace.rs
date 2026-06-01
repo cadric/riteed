@@ -269,6 +269,14 @@ impl Workspace {
         }
     }
 
+    pub(crate) fn reapply_large_file_feature_gates_to_tabs(&self) {
+        let tabs = self.state.borrow().tabs.clone();
+        for tab in tabs {
+            tab.reapply_large_file_feature_gates();
+        }
+        self.refresh_selected_state();
+    }
+
     pub fn apply_current_line_highlight_to_tabs(&self) {
         for tab in &self.state.borrow().tabs {
             tab.apply_current_line_highlight();

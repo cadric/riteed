@@ -32,6 +32,11 @@ pub struct WindowShell {
     pub minimap_row: adw::SwitchRow,
     pub editor_font_row: adw::ActionRow,
     pub autosave_row: adw::SwitchRow,
+    pub large_file_full_feature_limit_row: adw::SpinRow,
+    pub large_file_editor_limit_row: adw::SpinRow,
+    pub large_file_strong_warning_limit_row: adw::SpinRow,
+    pub large_file_viewer_only_limit_row: adw::SpinRow,
+    pub large_file_always_edit_row: adw::SwitchRow,
     pub language_row: adw::ComboRow,
     pub insert_spaces_row: adw::SwitchRow,
     pub tab_width_row: adw::SpinRow,
@@ -41,6 +46,34 @@ pub struct WindowShell {
     pub git_name_row: adw::EntryRow,
     pub git_email_row: adw::EntryRow,
     pub git_identity_apply_button: gtk4::Button,
+}
+
+struct PreferenceWidgets {
+    preferences_dialog: adw::PreferencesDialog,
+    general_preferences_page: adw::PreferencesPage,
+    appearance_page: adw::PreferencesPage,
+    style_group: adw::PreferencesGroup,
+    palette_flow_box: gtk4::FlowBox,
+    word_wrap_row: adw::SwitchRow,
+    line_numbers_row: adw::SwitchRow,
+    highlight_current_line_row: adw::SwitchRow,
+    minimap_row: adw::SwitchRow,
+    editor_font_row: adw::ActionRow,
+    autosave_row: adw::SwitchRow,
+    large_file_full_feature_limit_row: adw::SpinRow,
+    large_file_editor_limit_row: adw::SpinRow,
+    large_file_strong_warning_limit_row: adw::SpinRow,
+    large_file_viewer_only_limit_row: adw::SpinRow,
+    large_file_always_edit_row: adw::SwitchRow,
+    language_row: adw::ComboRow,
+    insert_spaces_row: adw::SwitchRow,
+    tab_width_row: adw::SpinRow,
+    indent_width_row: adw::SpinRow,
+    encoding_row: adw::ActionRow,
+    line_ending_row: adw::ComboRow,
+    git_name_row: adw::EntryRow,
+    git_email_row: adw::EntryRow,
+    git_identity_apply_button: gtk4::Button,
 }
 
 impl WindowShell {
@@ -69,40 +102,7 @@ impl WindowShell {
         let primary_menu_button: gtk4::MenuButton =
             builder_object(&builder, "primary_menu_button")?;
 
-        let preferences_builder =
-            gtk4::Builder::from_resource("/io/github/cadric/Riteed/ui/preferences.ui");
-        let preferences_dialog: adw::PreferencesDialog =
-            builder_object(&preferences_builder, "preferences_dialog")?;
-        let general_preferences_page: adw::PreferencesPage =
-            builder_object(&preferences_builder, "general_preferences_page")?;
-        let appearance_page: adw::PreferencesPage =
-            builder_object(&preferences_builder, "appearance_page")?;
-        let style_group: adw::PreferencesGroup =
-            builder_object(&preferences_builder, "style_group")?;
-        let palette_flow_box: gtk4::FlowBox =
-            builder_object(&preferences_builder, "palette_flow_box")?;
-        let word_wrap_row: adw::SwitchRow = builder_object(&preferences_builder, "word_wrap_row")?;
-        let line_numbers_row: adw::SwitchRow =
-            builder_object(&preferences_builder, "line_numbers_row")?;
-        let highlight_current_line_row: adw::SwitchRow =
-            builder_object(&preferences_builder, "highlight_current_line_row")?;
-        let minimap_row: adw::SwitchRow = builder_object(&preferences_builder, "minimap_row")?;
-        let editor_font_row: adw::ActionRow =
-            builder_object(&preferences_builder, "editor_font_row")?;
-        let autosave_row: adw::SwitchRow = builder_object(&preferences_builder, "autosave_row")?;
-        let language_row: adw::ComboRow = builder_object(&preferences_builder, "language_row")?;
-        let insert_spaces_row: adw::SwitchRow =
-            builder_object(&preferences_builder, "insert_spaces_row")?;
-        let tab_width_row: adw::SpinRow = builder_object(&preferences_builder, "tab_width_row")?;
-        let indent_width_row: adw::SpinRow =
-            builder_object(&preferences_builder, "indent_width_row")?;
-        let encoding_row: adw::ActionRow = builder_object(&preferences_builder, "encoding_row")?;
-        let line_ending_row: adw::ComboRow =
-            builder_object(&preferences_builder, "line_ending_row")?;
-        let git_name_row: adw::EntryRow = builder_object(&preferences_builder, "git_name_row")?;
-        let git_email_row: adw::EntryRow = builder_object(&preferences_builder, "git_email_row")?;
-        let git_identity_apply_button: gtk4::Button =
-            builder_object(&preferences_builder, "git_identity_apply_button")?;
+        let preferences = load_preference_widgets()?;
 
         let shortcuts_builder =
             gtk4::Builder::from_resource("/io/github/cadric/Riteed/ui/shortcuts.ui");
@@ -130,28 +130,73 @@ impl WindowShell {
             git_unstage_button,
             git_discard_button,
             primary_menu_button,
-            preferences_dialog,
-            general_preferences_page,
-            appearance_page,
-            style_group,
-            palette_flow_box,
-            word_wrap_row,
-            line_numbers_row,
-            highlight_current_line_row,
-            minimap_row,
-            editor_font_row,
-            autosave_row,
-            language_row,
-            insert_spaces_row,
-            tab_width_row,
-            indent_width_row,
-            encoding_row,
-            line_ending_row,
-            git_name_row,
-            git_email_row,
-            git_identity_apply_button,
+            preferences_dialog: preferences.preferences_dialog,
+            general_preferences_page: preferences.general_preferences_page,
+            appearance_page: preferences.appearance_page,
+            style_group: preferences.style_group,
+            palette_flow_box: preferences.palette_flow_box,
+            word_wrap_row: preferences.word_wrap_row,
+            line_numbers_row: preferences.line_numbers_row,
+            highlight_current_line_row: preferences.highlight_current_line_row,
+            minimap_row: preferences.minimap_row,
+            editor_font_row: preferences.editor_font_row,
+            autosave_row: preferences.autosave_row,
+            large_file_full_feature_limit_row: preferences.large_file_full_feature_limit_row,
+            large_file_editor_limit_row: preferences.large_file_editor_limit_row,
+            large_file_strong_warning_limit_row: preferences.large_file_strong_warning_limit_row,
+            large_file_viewer_only_limit_row: preferences.large_file_viewer_only_limit_row,
+            large_file_always_edit_row: preferences.large_file_always_edit_row,
+            language_row: preferences.language_row,
+            insert_spaces_row: preferences.insert_spaces_row,
+            tab_width_row: preferences.tab_width_row,
+            indent_width_row: preferences.indent_width_row,
+            encoding_row: preferences.encoding_row,
+            line_ending_row: preferences.line_ending_row,
+            git_name_row: preferences.git_name_row,
+            git_email_row: preferences.git_email_row,
+            git_identity_apply_button: preferences.git_identity_apply_button,
         })
     }
+}
+
+fn load_preference_widgets() -> Result<PreferenceWidgets, AppError> {
+    let builder = gtk4::Builder::from_resource("/io/github/cadric/Riteed/ui/preferences.ui");
+    Ok(PreferenceWidgets {
+        preferences_dialog: builder_object(&builder, "preferences_dialog")?,
+        general_preferences_page: builder_object(&builder, "general_preferences_page")?,
+        appearance_page: builder_object(&builder, "appearance_page")?,
+        style_group: builder_object(&builder, "style_group")?,
+        palette_flow_box: builder_object(&builder, "palette_flow_box")?,
+        word_wrap_row: builder_object(&builder, "word_wrap_row")?,
+        line_numbers_row: builder_object(&builder, "line_numbers_row")?,
+        highlight_current_line_row: builder_object(&builder, "highlight_current_line_row")?,
+        minimap_row: builder_object(&builder, "minimap_row")?,
+        editor_font_row: builder_object(&builder, "editor_font_row")?,
+        autosave_row: builder_object(&builder, "autosave_row")?,
+        large_file_full_feature_limit_row: builder_object(
+            &builder,
+            "large_file_full_feature_limit_row",
+        )?,
+        large_file_editor_limit_row: builder_object(&builder, "large_file_editor_limit_row")?,
+        large_file_strong_warning_limit_row: builder_object(
+            &builder,
+            "large_file_strong_warning_limit_row",
+        )?,
+        large_file_viewer_only_limit_row: builder_object(
+            &builder,
+            "large_file_viewer_only_limit_row",
+        )?,
+        large_file_always_edit_row: builder_object(&builder, "large_file_always_edit_row")?,
+        language_row: builder_object(&builder, "language_row")?,
+        insert_spaces_row: builder_object(&builder, "insert_spaces_row")?,
+        tab_width_row: builder_object(&builder, "tab_width_row")?,
+        indent_width_row: builder_object(&builder, "indent_width_row")?,
+        encoding_row: builder_object(&builder, "encoding_row")?,
+        line_ending_row: builder_object(&builder, "line_ending_row")?,
+        git_name_row: builder_object(&builder, "git_name_row")?,
+        git_email_row: builder_object(&builder, "git_email_row")?,
+        git_identity_apply_button: builder_object(&builder, "git_identity_apply_button")?,
+    })
 }
 
 fn builder_object<T: IsA<glib::Object>>(builder: &gtk4::Builder, id: &str) -> Result<T, AppError> {

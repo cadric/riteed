@@ -6,7 +6,8 @@ use gtk4::{gio, glib::SList};
 use libadwaita as adw;
 
 use crate::dialogs::{self, DecodeFailureResponse, ReopenWithEncodingResponse};
-use crate::editor_io::{self, LoadFailure};
+use crate::document_limits::OpenFileSupport;
+use crate::editor_io::{self, LoadFailure, LoadedDocument};
 use crate::editor_tab::{EditorTab, ReloadCause, ReloadResult};
 use crate::editor_view::ReloadSnapshot;
 use crate::error::AppError;
@@ -22,7 +23,21 @@ impl EditorTab {
             callback(Err(AppError::Cancelled));
             return;
         }
-        self.load_file_with_candidates(parent, file, None, callback);
+        self.load_file_with_candidates(parent, file, None, None, callback);
+    }
+
+    pub(crate) fn load_file_with_open_support(
+        self: &Rc<Self>,
+        parent: &adw::ApplicationWindow,
+        file: &gio::File,
+        open_support: OpenFileSupport,
+        callback: Rc<dyn Fn(Result<String, AppError>)>,
+    ) {
+        if !self.is_document() {
+            callback(Err(AppError::Cancelled));
+            return;
+        }
+        self.load_file_with_candidates(parent, file, None, Some(open_support), callback);
     }
 
     pub fn reload_from_disk(
@@ -186,6 +201,7 @@ impl EditorTab {
         parent: &adw::ApplicationWindow,
         file: &gio::File,
         candidate_encodings: Option<SList<sourceview5::Encoding>>,
+        open_support: Option<OpenFileSupport>,
         callback: Rc<dyn Fn(Result<String, AppError>)>,
     ) {
         if let Err(error) = editor_io::validate_text_file_open(file) {
@@ -199,57 +215,63 @@ impl EditorTab {
         let opened_file = file.clone();
         let parent = parent.clone();
         self.with_io_candidate_encodings(|encodings| {
-            editor_io::load_text_file(
-                file,
-                encodings,
-                Some(&cancellable),
-                Rc::new(move |result| {
-                    if let Some(tab) = weak.upgrade() {
-                        if !tab.finish_io_request(generation) {
-                            return;
+            let load_callback = Rc::new(move |result: Result<LoadedDocument, LoadFailure>| {
+                if let Some(tab) = weak.upgrade() {
+                    if !tab.finish_io_request(generation) {
+                        return;
+                    }
+                    match result {
+                        Ok(document) => {
+                            if tab.dirty_generation() != start_dirty_generation {
+                                tab.set_loading(false);
+                                tab.sync_presentation();
+                                callback(Err(AppError::Cancelled));
+                                return;
+                            }
+                            let monitored_file = gio::File::for_path(&document.path);
+                            let uri = document.uri.clone();
+                            tab.apply_loaded_document(document, None);
+                            tab.swap_monitor(&monitored_file);
+                            tab.refresh_language_for_file(&monitored_file);
+                            tab.set_loading(false);
+                            tab.sync_presentation();
+                            tab.grab_focus();
+                            callback(Ok(uri));
                         }
-                        match result {
-                            Ok(document) => {
-                                if tab.dirty_generation() != start_dirty_generation {
-                                    tab.set_loading(false);
-                                    tab.sync_presentation();
-                                    callback(Err(AppError::Cancelled));
-                                    return;
-                                }
-                                let monitored_file = gio::File::for_path(&document.path);
-                                let uri = document.uri.clone();
-                                tab.apply_loaded_document(document, None);
-                                tab.swap_monitor(&monitored_file);
-                                tab.refresh_language_for_file(&monitored_file);
-                                tab.set_loading(false);
-                                tab.sync_presentation();
-                                tab.grab_focus();
-                                callback(Ok(uri));
-                            }
-                            Err(LoadFailure::DecodeFailed(path)) => {
-                                tab.set_loading(false);
-                                tab.sync_presentation();
-                                tab.offer_open_with_manual_encoding(
-                                    &parent,
-                                    &opened_file,
-                                    &path,
-                                    callback.clone(),
-                                );
-                            }
-                            Err(LoadFailure::TooBig(path)) => {
-                                tab.set_loading(false);
-                                tab.sync_presentation();
-                                callback(Err(AppError::FileTooBig(path)));
-                            }
-                            Err(LoadFailure::Failed(error)) => {
-                                tab.set_loading(false);
-                                tab.sync_presentation();
-                                callback(Err(error));
-                            }
+                        Err(LoadFailure::DecodeFailed(path)) => {
+                            tab.set_loading(false);
+                            tab.sync_presentation();
+                            tab.offer_open_with_manual_encoding(
+                                &parent,
+                                &opened_file,
+                                &path,
+                                callback.clone(),
+                            );
+                        }
+                        Err(LoadFailure::TooBig(path)) => {
+                            tab.set_loading(false);
+                            tab.sync_presentation();
+                            callback(Err(AppError::FileTooBig(path)));
+                        }
+                        Err(LoadFailure::Failed(error)) => {
+                            tab.set_loading(false);
+                            tab.sync_presentation();
+                            callback(Err(error));
                         }
                     }
-                }),
-            );
+                }
+            });
+            if let Some(open_support) = open_support {
+                editor_io::load_text_file_with_open_support(
+                    file,
+                    encodings,
+                    Some(&cancellable),
+                    open_support,
+                    load_callback,
+                );
+            } else {
+                editor_io::load_text_file(file, encodings, Some(&cancellable), load_callback);
+            }
         });
     }
 
@@ -375,6 +397,7 @@ impl EditorTab {
                                     &action_parent,
                                     &opened_file,
                                     Some(selected),
+                                    None,
                                     callback.clone(),
                                 );
                             }

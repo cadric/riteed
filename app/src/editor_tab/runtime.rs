@@ -10,6 +10,9 @@ use crate::editor_language::{self, LanguageDetection};
 use crate::editor_monitor::PendingExternalState;
 use crate::editor_tab::{EditorTab, ReloadCause, Writability};
 use crate::editor_view::ReloadSnapshot;
+use crate::large_file::usize_to_u64;
+
+use super::DocumentSurface;
 
 impl EditorTab {
     pub fn cancel_io(&self) {
@@ -28,6 +31,7 @@ impl EditorTab {
         {
             cancellable.cancel();
         }
+        self.state.borrow().large_file.cancel_operations();
         self.cancel_review_load();
     }
 
@@ -185,26 +189,40 @@ impl EditorTab {
         identity: &str,
         detection: &LanguageDetection,
     ) {
-        let should_apply = {
+        let (should_apply, heavy_features_enabled) = {
+            let full_feature_limit = self.settings.large_file_thresholds().full_feature;
             let mut state = self.state.borrow_mut();
             let matches_request = state.document.language_request_generation == generation
                 && state.document.document.uri().as_deref() == Some(identity);
             if matches_request {
+                let heavy_features_enabled = state
+                    .large_file
+                    .file_size
+                    .is_none_or(|size| size < full_feature_limit);
                 state
                     .document
                     .content_type
                     .clone_from(&detection.content_type);
-                state
-                    .document
-                    .language_id
-                    .clone_from(&detection.language_id);
-                true
+                if heavy_features_enabled {
+                    state
+                        .document
+                        .language_id
+                        .clone_from(&detection.language_id);
+                } else {
+                    state.document.language_id = None;
+                }
+                (true, heavy_features_enabled)
             } else {
-                false
+                (false, false)
             }
         };
         if should_apply {
-            editor_language::apply_detection(&self.text_buffer, detection);
+            if heavy_features_enabled {
+                editor_language::apply_detection(&self.text_buffer, detection);
+            } else {
+                self.text_buffer
+                    .set_language(Option::<&sourceview5::Language>::None);
+            }
             self.apply_compare_style();
             self.sync_markdown_preview_availability();
             self.sync_presentation();
@@ -231,9 +249,14 @@ impl EditorTab {
     ) {
         self.exit_markdown_preview();
         self.exit_compare();
+        self.clear_large_file_surface();
+        self.content.set_visible(true);
         let loaded_access_path = document.path.clone();
+        let loaded_size = loaded_document_gate_size(document.disk_size, document.text.len());
         {
             let mut state = self.state.borrow_mut();
+            state.large_file.surface = DocumentSurface::Editor;
+            state.large_file.file_size = Some(loaded_size);
             state.document.document = DocumentState::from_loaded_with_display_path(
                 document.path,
                 document.display_path,
@@ -256,6 +279,11 @@ impl EditorTab {
         }
         self.text_buffer.set_modified(false);
         self.state.borrow_mut().ui.suppress_changes = false;
+        self.apply_minimap_visibility();
+        self.sync_markdown_preview_availability();
+        if !self.editor_heavy_features_enabled() {
+            self.clear_source_control_minimap_diff();
+        }
         self.set_attention(false);
         self.set_banner_revealed(false);
         if let Some(file) = self.saved_file() {
@@ -466,5 +494,29 @@ impl EditorTab {
         if changed {
             self.sync_presentation();
         }
+    }
+}
+
+fn loaded_document_gate_size(disk_size: Option<u64>, decoded_len: usize) -> u64 {
+    disk_size.unwrap_or_else(|| usize_to_u64(decoded_len))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::loaded_document_gate_size;
+
+    #[test]
+    fn loaded_document_gate_size_prefers_disk_size_over_larger_decoded_size() {
+        assert_eq!(loaded_document_gate_size(Some(4), 8), 4);
+    }
+
+    #[test]
+    fn loaded_document_gate_size_prefers_disk_size_over_smaller_decoded_size() {
+        assert_eq!(loaded_document_gate_size(Some(8), 4), 8);
+    }
+
+    #[test]
+    fn loaded_document_gate_size_falls_back_to_decoded_size() {
+        assert_eq!(loaded_document_gate_size(None, 7), 7);
     }
 }

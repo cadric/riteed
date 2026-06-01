@@ -1563,6 +1563,9 @@ msgstr ""
 msgid "The file changed on disk."
 msgstr ""
 
+msgid "Riteed could not determine the file size and did not open the file."
+msgstr ""
+
 msgid "The file is too large to open safely."
 msgstr ""
 
@@ -1859,4 +1862,183 @@ msgstr ""
 
 msgctxt "markdown extension label"
 msgid "wiki links"
+msgstr ""
+
+msgid "%d match found; showing the first match."
+msgid_plural "%d matches found; showing the first match."
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "Always Allow Large File Editing"
+msgstr ""
+
+msgid "Edit the Large File Anyway?"
+msgstr ""
+
+msgid "Editing Is Not Available"
+msgstr ""
+
+msgid "Editing this file may take 30 seconds or more and can significantly slow the app."
+msgstr ""
+
+msgid "Editing this file may take 5-15 seconds."
+msgstr ""
+
+msgid "Editor Below"
+msgstr ""
+
+msgid "Editor File Limit"
+msgstr ""
+
+msgid "Enter a valid line number."
+msgstr ""
+
+msgid "Files above this size remain viewable, but editing is refused by policy."
+msgstr ""
+
+msgid "Files at or above this size use the strongest large-file editing warning."
+msgstr ""
+
+msgid "Files below this measured safe limit can open in the editor with expensive features disabled when needed."
+msgstr ""
+
+msgid "Files below this size open in the normal editor with all editor features available."
+msgstr ""
+
+msgid "Finding line..."
+msgstr ""
+
+msgid "Full Feature File Limit"
+msgstr ""
+
+msgid "Full Features Below"
+msgstr ""
+
+msgid "Large Files"
+msgstr ""
+
+msgid "Large file restored as a placeholder."
+msgstr ""
+
+msgid "Loading file page..."
+msgstr ""
+
+msgid "Many matches found; showing the first match."
+msgstr ""
+
+msgid "MiB policy ceiling for editor opt-in"
+msgstr ""
+
+msgid "MiB measured safe editor threshold; maximum 25"
+msgstr ""
+
+msgid "MiB threshold for normal editor behavior; must stay below the editor limit"
+msgstr ""
+
+msgid "MiB threshold for the stronger editing warning"
+msgstr ""
+
+msgid "No matches found."
+msgstr ""
+
+msgctxt "viewer button"
+msgid "Refresh"
+msgstr ""
+
+msgid "Riteed did not load this file during startup, so the session stays responsive."
+msgstr ""
+
+msgid "Searching file..."
+msgstr ""
+
+msgid "Skip prompts below the measured hard editing limit"
+msgstr ""
+
+msgid "Skips the large-file editing prompt below Riteed's measured hard editing limit. This never overrides the hard limit."
+msgstr ""
+
+msgid "Strong Warning File Limit"
+msgstr ""
+
+msgid "Strong Warning From"
+msgstr ""
+
+msgid "Syntax highlighting, minimap, Markdown preview, Source Control diff, and autosave remain disabled."
+msgstr ""
+
+msgid "Syntax highlighting, minimap, Markdown preview, Source Control diff, and autosave will stay disabled."
+msgstr ""
+
+msgid "The current measured safe editing limit is %1$s bytes."
+msgstr ""
+
+msgid "The file position is too large for this system."
+msgstr ""
+
+msgid "The selected item is not a regular file."
+msgstr ""
+
+msgid "This file is %1$s bytes. Loading it into the editor can freeze the window temporarily and may use several times the file size in memory."
+msgstr ""
+
+msgid "This file is above Riteed's measured safe editing limit."
+msgstr ""
+
+msgid "Viewer Only Above"
+msgstr ""
+
+msgid "Viewer Only File Limit"
+msgstr ""
+
+msgid "Viewer keeps only the current file page in memory."
+msgstr ""
+
+msgid "Viewing bytes %1$s-%2$s of %3$s."
+msgstr ""
+
+msgid "Viewing remains available, but editing is refused above the measured safe editing limit."
+msgstr ""
+
+msgctxt "alert response"
+msgid "Edit Anyway"
+msgstr ""
+
+msgctxt "placeholder button"
+msgid "Open in Editor"
+msgstr ""
+
+msgctxt "placeholder button"
+msgid "Open in Viewer"
+msgstr ""
+
+msgctxt "placeholder button"
+msgid "Remove"
+msgstr ""
+
+msgctxt "viewer button"
+msgid "Edit Anyway"
+msgstr ""
+
+msgctxt "viewer button"
+msgid "Find"
+msgstr ""
+
+msgctxt "viewer button"
+msgid "Go"
+msgstr ""
+
+msgctxt "viewer button"
+msgid "Next"
+msgstr ""
+
+msgctxt "viewer button"
+msgid "Previous"
+msgstr ""
+
+msgctxt "viewer line jump"
+msgid "Line"
+msgstr ""
+
+msgctxt "viewer search"
+msgid "Find"
 msgstr ""

@@ -3,8 +3,10 @@ use libadwaita as adw;
 
 use crate::app::{AppState, ensure_window_for_tests, install_for_tests};
 use crate::dialogs::{self, UnsavedResponse};
-use crate::gtk_tests::{drain_events, spin_until};
-use crate::settings::AppSettings;
+use crate::document_limits::MIB;
+use crate::gtk_tests::{drain_events, spin_until, write_temp_file};
+use crate::settings::{AppSettings, LargeFileLimitValues};
+use crate::workspace::OpenSource;
 
 pub(crate) fn exercise_tab_context_actions() {
     let test_app = adw::Application::builder()
@@ -12,8 +14,15 @@ pub(crate) fn exercise_tab_context_actions() {
         .flags(gio::ApplicationFlags::HANDLES_OPEN)
         .build();
     let _registered = test_app.register(None::<&gio::Cancellable>);
+    let settings = AppSettings::new_for_tests();
+    settings.set_large_file_limit_values(LargeFileLimitValues {
+        full_feature: 1,
+        editor: 2,
+        strong_warning: 3,
+        viewer_only: 4,
+    });
     let state = std::rc::Rc::new(std::cell::RefCell::new(AppState {
-        settings: AppSettings::new_for_tests(),
+        settings,
         chrome: None,
         windows: Vec::new(),
         last_focused_window: None,
@@ -85,6 +94,8 @@ pub(crate) fn exercise_tab_context_actions() {
     assert_eq!(destination_zoom_classes.len(), 1);
     assert_ne!(source_zoom_classes, destination_zoom_classes);
 
+    exercise_large_viewer_tab_transfer(&state, &window);
+
     window.activate_status_zoom_in_for_tests();
     window.activate_status_zoom_in_for_tests();
     drain_events(8);
@@ -103,4 +114,57 @@ pub(crate) fn exercise_tab_context_actions() {
         destination.selected_zoom_css_classes_for_tests(),
         destination_zoom_classes
     );
+}
+
+fn exercise_large_viewer_tab_transfer(
+    state: &std::rc::Rc<std::cell::RefCell<AppState>>,
+    window: &std::rc::Rc<crate::window::Window>,
+) {
+    let path = write_temp_file(
+        "riteed-large-viewer-transfer.txt",
+        &repeat_seed(b"viewer-transfer\nviewer-line\n", large_viewer_test_len()),
+    );
+    let file = gio::File::for_path(&path);
+    let window_count = state.borrow().windows.len();
+    window.request_open_files(vec![file], OpenSource::AppOpen);
+    spin_until("large viewer transfer source opens viewer", || {
+        window.selected_large_file_surface_for_tests() == Some("viewer")
+            && window
+                .selected_large_file_viewer_text_for_tests()
+                .contains("viewer-transfer")
+    });
+    assert!(window.activate_tab_move_to_new_window_for_tests());
+    spin_until("large viewer transfer creates destination window", || {
+        state.borrow().windows.len() == window_count.saturating_add(1)
+    });
+    let large_destination = state.borrow().windows.last().cloned();
+    assert!(large_destination.is_some());
+    let Some(large_destination) = large_destination else {
+        let _removed = std::fs::remove_file(path);
+        return;
+    };
+    spin_until("large viewer survives tab transfer", || {
+        large_destination.selected_large_file_surface_for_tests() == Some("viewer")
+            && large_destination
+                .selected_large_file_viewer_text_for_tests()
+                .contains("viewer-transfer")
+    });
+    let _removed = std::fs::remove_file(path);
+}
+
+fn large_viewer_test_len() -> usize {
+    usize::try_from(2 * MIB).unwrap_or(0)
+}
+
+fn repeat_seed(seed: &[u8], target_len: usize) -> Vec<u8> {
+    if seed.is_empty() {
+        return vec![b'x'; target_len];
+    }
+    let mut contents = Vec::with_capacity(target_len);
+    while contents.len().saturating_add(seed.len()) <= target_len {
+        contents.extend_from_slice(seed);
+    }
+    let remaining = target_len.saturating_sub(contents.len());
+    contents.extend_from_slice(&seed[..remaining]);
+    contents
 }
