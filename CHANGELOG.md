@@ -39,6 +39,18 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
   evidence justifies expansion, and document large-file compare as out of scope.
 
 ### Fixed
+- Made invalid-character save failure detection locale-independent, so Danish
+  locale validation reports the same recovery path as `LC_ALL=C`.
+- Delivered cancelled-load callbacks for chunked applies and superseded
+  requests, so closing a tab while a session-restored document is still
+  loading no longer freezes session persistence for the rest of the run.
+- Stopped overriding GtkSourceMap bottom margins with the unscaled editor
+  scroll-past-end padding in editor and Compare minimaps; GtkSourceMap's own
+  scaled margin binding now applies, fixing minimap drag losing the mouse
+  near the bottom of larger documents.
+- Hid the minimap while a chunked document apply is filling the buffer, so
+  large loads no longer pay a second full map re-layout per chunk and the
+  minimap appears fully synchronized once loading completes.
 - Replaced whole-document editor apply for large loads with chunked,
   cancellable main-loop insertion and blocked save/replace mutations until
   apply completes, so opening large editable documents no longer monopolizes

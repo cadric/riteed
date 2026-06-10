@@ -278,6 +278,10 @@ pub fn save_text_file(
     let encoding = format.encoding().to_source_encoding();
     saver.set_encoding(encoding.as_ref());
     let saved_format = format.clone();
+    if let Err(error) = validate_buffer_supports_encoding(target_path, buffer, format) {
+        callback(Err(error));
+        return;
+    }
 
     saver.save_async(
         glib::Priority::DEFAULT,
@@ -293,6 +297,44 @@ pub fn save_text_file(
             Err(error) => callback(Err(map_save_failure(&path, &error))),
         },
     );
+}
+
+fn validate_buffer_supports_encoding(
+    path: &Path,
+    buffer: &sourceview5::Buffer,
+    format: &SavedTextFormat,
+) -> Result<(), SaveFailure> {
+    if format.encoding().is_utf8() {
+        return Ok(());
+    }
+    let start = buffer.start_iter();
+    let end = buffer.end_iter();
+    let text = buffer.text(&start, &end, true);
+    validate_text_supports_charset(
+        path,
+        text.as_str(),
+        format.encoding().charset(),
+        format.encoding().is_utf8(),
+    )
+}
+
+fn validate_text_supports_charset(
+    path: &Path,
+    text: &str,
+    charset: &str,
+    is_utf8: bool,
+) -> Result<(), SaveFailure> {
+    if is_utf8 {
+        return Ok(());
+    }
+    match glib::convert(text.as_bytes(), charset, "UTF-8") {
+        Ok((_converted, _bytes_read)) => Ok(()),
+        Err(glib::CvtError::IllegalSequence { .. }) => Err(SaveFailure::InvalidChars),
+        Err(glib::CvtError::Convert(error)) => Err(SaveFailure::Failed(AppError::WriteFailed(
+            path.to_path_buf(),
+            error.message().to_string(),
+        ))),
+    }
 }
 
 fn map_load_failure(path: &Path, error: &glib::Error) -> LoadFailure {
@@ -312,21 +354,20 @@ fn map_load_failure(path: &Path, error: &glib::Error) -> LoadFailure {
 }
 
 fn map_save_failure(path: &Path, error: &glib::Error) -> SaveFailure {
-    if error.matches(glib::ConvertError::IllegalSequence) {
+    if is_invalid_chars_save_error(error) {
         return SaveFailure::InvalidChars;
     }
-    let message = error.message().to_string();
     match error.kind::<sourceview5::FileSaverError>() {
-        Some(sourceview5::FileSaverError::InvalidChars) => SaveFailure::InvalidChars,
         Some(sourceview5::FileSaverError::ExternallyModified) => SaveFailure::ExternallyModified,
-        Some(sourceview5::FileSaverError::__Unknown(_) | _) | None => {
-            if message.contains("Invalid byte sequence in conversion input") {
-                SaveFailure::InvalidChars
-            } else {
-                SaveFailure::Failed(AppError::WriteFailed(path.to_path_buf(), message))
-            }
-        }
+        Some(sourceview5::FileSaverError::__Unknown(_) | _) | None => SaveFailure::Failed(
+            AppError::WriteFailed(path.to_path_buf(), error.message().to_string()),
+        ),
     }
+}
+
+fn is_invalid_chars_save_error(error: &glib::Error) -> bool {
+    error.matches(glib::ConvertError::IllegalSequence)
+        || error.matches(sourceview5::FileSaverError::InvalidChars)
 }
 
 /// # Errors
@@ -351,6 +392,7 @@ mod tests {
 
     use super::{
         LoadFailure, SaveFailure, local_path, local_path_info, map_load_failure, map_save_failure,
+        validate_text_supports_charset,
     };
     use crate::error::AppError;
 
@@ -404,7 +446,7 @@ mod tests {
     }
 
     #[test]
-    fn invalid_byte_sequence_fallback_maps_to_invalid_chars() {
+    fn generic_io_failure_message_does_not_drive_invalid_chars_mapping() {
         let path = std::path::Path::new("/tmp/example.txt");
         let generic = glib::Error::new(
             gio::IOErrorEnum::Failed,
@@ -412,7 +454,7 @@ mod tests {
         );
         assert!(matches!(
             map_save_failure(path, &generic),
-            SaveFailure::InvalidChars
+            SaveFailure::Failed(AppError::WriteFailed(mapped, _)) if mapped == path
         ));
     }
 
@@ -423,6 +465,19 @@ mod tests {
         assert!(matches!(
             map_save_failure(path, &conversion),
             SaveFailure::InvalidChars
+        ));
+    }
+
+    #[test]
+    fn charset_preflight_maps_conversion_failure_to_invalid_chars() {
+        assert!(matches!(
+            validate_text_supports_charset(
+                std::path::Path::new("/tmp/example.txt"),
+                "emoji 😀",
+                "ISO-8859-1",
+                false
+            ),
+            Err(SaveFailure::InvalidChars)
         ));
     }
 

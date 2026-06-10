@@ -66,7 +66,6 @@ impl EditorView {
         minimap.set_focusable(false);
         minimap.set_hexpand(false);
         minimap.set_monospace(true);
-        minimap.set_bottom_margin(scroll_past_end_padding);
         minimap.set_vexpand(true);
 
         let minimap_holder = gtk4::Box::builder()

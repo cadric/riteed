@@ -123,14 +123,17 @@ fn exercise_zoom_controller(test_app: &adw::Application) {
     spin_until("default minimap font resolves", || {
         window.selected_minimap_font_for_tests().is_some()
     });
+    // GtkSourceMap mirrors the editor's bottom margin through its own scaled
+    // binding, so the minimap margin must stay well below the editor margin.
     spin_until("default scroll past end padding resolves", || {
         window
             .selected_scroll_past_end_padding_for_tests()
-            .is_some_and(|(editor, minimap)| editor == minimap && editor > 12)
+            .is_some_and(|(editor, minimap)| editor > 12 && minimap > 0 && minimap < editor)
     });
     let scroll_padding_before = window.selected_scroll_past_end_padding_for_tests();
     assert!(
-        scroll_padding_before.is_some_and(|(editor, minimap)| { editor == minimap && editor > 12 })
+        scroll_padding_before
+            .is_some_and(|(editor, minimap)| { editor > 12 && minimap > 0 && minimap < editor })
     );
     let minimap_before = window
         .selected_minimap_font_for_tests()
@@ -168,8 +171,8 @@ fn exercise_zoom_controller(test_app: &adw::Application) {
             && window
                 .selected_scroll_past_end_padding_for_tests()
                 .is_some_and(|(editor, minimap)| {
-                    scroll_padding_before.is_some_and(|(before_editor, before_minimap)| {
-                        editor == minimap && editor > before_editor && minimap > before_minimap
+                    scroll_padding_before.is_some_and(|(before_editor, _before_minimap)| {
+                        editor > before_editor && minimap < editor
                     })
                 })
     });

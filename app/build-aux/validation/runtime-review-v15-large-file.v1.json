@@ -51,7 +51,7 @@
     },
     {
       "path": "src/editor_tab/apply.rs",
-      "line": 112,
+      "line": 137,
       "match": "fn insert_next_chunk(tab: &Rc<EditorTab>, pending: &Rc<RefCell<PendingApply>>) -> bool {",
       "kind": "runtime-shared-state",
       "ownership": "The chunked editor apply source owns the pending document, cursor offset, and restore state for one load.",
@@ -59,7 +59,7 @@
     },
     {
       "path": "src/editor_tab/apply.rs",
-      "line": 131,
+      "line": 156,
       "match": "pending: &Rc<RefCell<PendingApply>>,",
       "kind": "runtime-shared-state",
       "ownership": "The chunked editor apply source owns the pending completion state for one load.",

@@ -47,7 +47,8 @@ impl EditorTab {
         let show_minimap = show_minimap
             && self.editor_heavy_features_enabled()
             && !self.is_compare_active()
-            && !self.is_markdown_preview_active();
+            && !self.is_markdown_preview_active()
+            && self.state.borrow().io.pending_apply.is_none();
         self.minimap_holder.set_visible(show_minimap);
         let policy = if show_minimap {
             gtk4::PolicyType::External
@@ -81,9 +82,11 @@ impl EditorTab {
         }
     }
 
+    // GtkSourceMap mirrors the view's bottom margin through its own scaled
+    // property binding; setting the unscaled value on the map directly breaks
+    // its drag-position math near the end of large documents.
     pub fn apply_scroll_past_end_padding(&self, bottom_margin: i32) {
         self.text_view.set_bottom_margin(bottom_margin);
-        self.minimap.set_bottom_margin(bottom_margin);
         if let Ok(state) = self.state.try_borrow()
             && let Some(compare) = state.compare.active.as_ref()
         {

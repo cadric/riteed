@@ -445,6 +445,9 @@ fn handle_open_failure(
     file: &gio::File,
     error: &AppError,
 ) {
+    if matches!(error, AppError::Cancelled) {
+        return;
+    }
     match source {
         OpenSource::Recent => {
             dialogs::present_error(&workspace.shell, error);

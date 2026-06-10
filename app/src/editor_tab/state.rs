@@ -120,6 +120,7 @@ pub(super) struct PendingApplyRestore {
 pub(super) struct PendingApplySource {
     pub(super) source: gtk4::glib::SourceId,
     pub(super) restore: PendingApplyRestore,
+    pub(super) on_cancelled: Rc<dyn Fn()>,
 }
 
 #[derive(Default)]
@@ -323,6 +324,7 @@ mod tests {
                 editable: true,
                 undo: true,
             },
+            on_cancelled: std::rc::Rc::new(|| {}),
         });
         let pending = state.take_pending_apply();
         assert!(pending.is_some());

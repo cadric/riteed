@@ -11,6 +11,7 @@ use crate::editor_tab::state::{PendingApplyRestore, PendingApplySource};
 use crate::editor_view::ReloadSnapshot;
 
 type ApplyFinishedCallback = Rc<dyn Fn(&Rc<EditorTab>)>;
+type ApplyCancelledCallback = Rc<dyn Fn()>;
 
 /// Documents at or below this size keep the synchronous apply path.
 pub(super) const CHUNKED_APPLY_MIN_BYTES: usize = 1024 * 1024;
@@ -45,11 +46,17 @@ struct PendingApply {
 
 impl EditorTab {
     /// Applies a loaded document without blocking the main loop for large text.
+    ///
+    /// Exactly one of `on_applied` and `on_cancelled` runs: `on_cancelled`
+    /// fires (deferred to an idle) when the pending apply is torn down before
+    /// completion, so workspace flows waiting on the load callback always
+    /// finish.
     pub(super) fn apply_loaded_document_async(
         self: &Rc<Self>,
         document: LoadedDocument,
         snapshot: Option<ReloadSnapshot>,
         on_applied: ApplyFinishedCallback,
+        on_cancelled: ApplyCancelledCallback,
     ) {
         self.begin_loaded_document_state(&document);
         let restore_undo = self.text_buffer.enables_undo();
@@ -79,13 +86,17 @@ impl EditorTab {
             restore,
         }));
         let weak = Rc::downgrade(self);
+        let cancel_notifier = on_cancelled.clone();
         let source = glib::idle_add_local(move || {
             let Some(tab) = weak.upgrade() else {
+                notify_apply_cancelled(&cancel_notifier);
                 return glib::ControlFlow::Break;
             };
             if tab.state.borrow().io.generation != generation {
                 tab.state.borrow_mut().io.pending_apply = None;
                 restore_pending_apply(&tab, pending.borrow().restore);
+                tab.apply_minimap_visibility();
+                notify_apply_cancelled(&cancel_notifier);
                 return glib::ControlFlow::Break;
             }
             let tick_started = Instant::now();
@@ -100,12 +111,26 @@ impl EditorTab {
                 }
             }
         });
-        self.state.borrow_mut().io.pending_apply = Some(PendingApplySource { source, restore });
+        self.state.borrow_mut().io.pending_apply = Some(PendingApplySource {
+            source,
+            restore,
+            on_cancelled,
+        });
+        // Hide the minimap while chunks land; a GtkSourceMap re-layouts the
+        // whole growing buffer on every insertion otherwise.
+        self.apply_minimap_visibility();
     }
 
     pub(super) fn cancel_pending_apply(&self, pending: PendingApplySource) {
-        pending.source.remove();
-        restore_pending_apply(self, pending.restore);
+        let PendingApplySource {
+            source,
+            restore,
+            on_cancelled,
+        } = pending;
+        source.remove();
+        restore_pending_apply(self, restore);
+        self.apply_minimap_visibility();
+        notify_apply_cancelled(&on_cancelled);
     }
 }
 
@@ -140,6 +165,14 @@ fn finish_chunked_apply(
 fn restore_pending_apply(tab: &EditorTab, restore: PendingApplyRestore) {
     tab.text_view.set_editable(restore.editable);
     tab.text_buffer.set_enable_undo(restore.undo);
+}
+
+/// Defers the cancel notification to an idle so callers inside a
+/// `RefCell` borrow (for example page-detach teardown) cannot re-enter
+/// workspace state through the load callback.
+fn notify_apply_cancelled(on_cancelled: &ApplyCancelledCallback) {
+    let on_cancelled = on_cancelled.clone();
+    glib::idle_add_local_once(move || on_cancelled());
 }
 
 #[cfg(test)]

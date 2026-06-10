@@ -89,46 +89,53 @@ impl EditorTab {
                 encodings,
                 Some(&cancellable),
                 Rc::new(move |result| {
-                    if let Some(tab) = weak.upgrade() {
-                        if !tab.finish_io_request(generation) {
-                            return;
+                    let Some(tab) = weak.upgrade() else {
+                        callback(Err(AppError::Cancelled));
+                        return;
+                    };
+                    if !tab.finish_io_request(generation) {
+                        callback(Err(AppError::Cancelled));
+                        return;
+                    }
+                    match result {
+                        Ok(document) => {
+                            if !tab.can_apply_reload(cause, &expected_uri, &should_apply) {
+                                tab.finish_reload(false);
+                                callback(Ok(ReloadResult::Deferred));
+                                return;
+                            }
+                            let monitored_file = gio::File::for_path(&document.path);
+                            let callback = callback.clone();
+                            let cancelled_callback = callback.clone();
+                            tab.apply_loaded_document_async(
+                                document,
+                                Some(snapshot.clone()),
+                                Rc::new(move |tab| {
+                                    tab.swap_monitor(&monitored_file);
+                                    tab.refresh_language_for_file(&monitored_file);
+                                    tab.finish_reload(true);
+                                    callback(Ok(ReloadResult::Applied));
+                                }),
+                                Rc::new(move || {
+                                    cancelled_callback(Err(AppError::Cancelled));
+                                }),
+                            );
                         }
-                        match result {
-                            Ok(document) => {
-                                if !tab.can_apply_reload(cause, &expected_uri, &should_apply) {
-                                    tab.finish_reload(false);
-                                    callback(Ok(ReloadResult::Deferred));
-                                    return;
-                                }
-                                let monitored_file = gio::File::for_path(&document.path);
-                                let callback = callback.clone();
-                                tab.apply_loaded_document_async(
-                                    document,
-                                    Some(snapshot.clone()),
-                                    Rc::new(move |tab| {
-                                        tab.swap_monitor(&monitored_file);
-                                        tab.refresh_language_for_file(&monitored_file);
-                                        tab.finish_reload(true);
-                                        callback(Ok(ReloadResult::Applied));
-                                    }),
-                                );
-                            }
-                            Err(LoadFailure::DecodeFailed(path)) => {
-                                tab.finish_reload(false);
-                                callback(Err(AppError::DecodeFailed(path)));
-                            }
-                            Err(LoadFailure::TooBig(path)) => {
-                                tab.finish_reload(false);
-                                callback(Err(AppError::FileTooBig(path)));
-                            }
-                            Err(LoadFailure::LineTooLong { path, .. }) => {
-                                tab.finish_reload(false);
-                                callback(Err(AppError::LineTooLong(path)));
-                            }
-                            Err(LoadFailure::Failed(error)) => {
-                                tab.finish_reload(false);
-                                callback(Err(error));
-                            }
+                        Err(LoadFailure::DecodeFailed(path)) => {
+                            tab.finish_reload(false);
+                            callback(Err(AppError::DecodeFailed(path)));
+                        }
+                        Err(LoadFailure::TooBig(path)) => {
+                            tab.finish_reload(false);
+                            callback(Err(AppError::FileTooBig(path)));
+                        }
+                        Err(LoadFailure::LineTooLong { path, .. }) => {
+                            tab.finish_reload(false);
+                            callback(Err(AppError::LineTooLong(path)));
+                        }
+                        Err(LoadFailure::Failed(error)) => {
+                            tab.finish_reload(false);
+                            callback(Err(error));
                         }
                     }
                 }),
@@ -226,73 +233,78 @@ impl EditorTab {
         let parent = parent.clone();
         self.with_io_candidate_encodings(|encodings| {
             let load_callback = Rc::new(move |result: Result<LoadedDocument, LoadFailure>| {
-                if let Some(tab) = weak.upgrade() {
-                    if !tab.finish_io_request(generation) {
-                        return;
-                    }
-                    match result {
-                        Ok(document) => {
-                            if tab.dirty_generation() != start_dirty_generation {
+                let Some(tab) = weak.upgrade() else {
+                    callback(Err(AppError::Cancelled));
+                    return;
+                };
+                if !tab.finish_io_request(generation) {
+                    callback(Err(AppError::Cancelled));
+                    return;
+                }
+                match result {
+                    Ok(document) => {
+                        if tab.dirty_generation() != start_dirty_generation {
+                            tab.set_loading(false);
+                            tab.sync_presentation();
+                            callback(Err(AppError::Cancelled));
+                            return;
+                        }
+                        let monitored_file = gio::File::for_path(&document.path);
+                        let uri = document.uri.clone();
+                        let callback = callback.clone();
+                        let cancelled_callback = callback.clone();
+                        tab.apply_loaded_document_async(
+                            document,
+                            None,
+                            Rc::new(move |tab| {
+                                tab.swap_monitor(&monitored_file);
+                                tab.refresh_language_for_file(&monitored_file);
                                 tab.set_loading(false);
                                 tab.sync_presentation();
-                                callback(Err(AppError::Cancelled));
-                                return;
-                            }
-                            let monitored_file = gio::File::for_path(&document.path);
-                            let uri = document.uri.clone();
-                            let callback = callback.clone();
-                            tab.apply_loaded_document_async(
-                                document,
-                                None,
-                                Rc::new(move |tab| {
-                                    tab.swap_monitor(&monitored_file);
-                                    tab.refresh_language_for_file(&monitored_file);
-                                    tab.set_loading(false);
-                                    tab.sync_presentation();
-                                    tab.grab_focus();
-                                    callback(Ok(uri.clone()));
-                                }),
-                            );
-                        }
-                        Err(LoadFailure::DecodeFailed(path)) => {
-                            tab.set_loading(false);
-                            tab.sync_presentation();
-                            tab.offer_open_with_manual_encoding(
-                                &parent,
-                                &opened_file,
-                                &path,
-                                callback.clone(),
-                            );
-                        }
-                        Err(LoadFailure::TooBig(path)) => {
-                            tab.set_loading(false);
-                            tab.sync_presentation();
-                            callback(Err(AppError::FileTooBig(path)));
-                        }
-                        Err(LoadFailure::LineTooLong { path: _, size }) => {
-                            tab.set_loading(false);
-                            tab.sync_presentation();
-                            let thresholds = tab.settings.large_file_thresholds();
-                            let tier = crate::document_limits::tier_for_size_with_thresholds(
-                                size,
-                                &thresholds,
-                            );
-                            tab.open_viewer_for_large_file(
-                                &parent,
-                                &opened_file,
-                                size,
-                                OpenDecision::Viewer {
-                                    tier,
-                                    edit_allowed: false,
-                                },
-                                callback.clone(),
-                            );
-                        }
-                        Err(LoadFailure::Failed(error)) => {
-                            tab.set_loading(false);
-                            tab.sync_presentation();
-                            callback(Err(error));
-                        }
+                                tab.grab_focus();
+                                callback(Ok(uri.clone()));
+                            }),
+                            Rc::new(move || cancelled_callback(Err(AppError::Cancelled))),
+                        );
+                    }
+                    Err(LoadFailure::DecodeFailed(path)) => {
+                        tab.set_loading(false);
+                        tab.sync_presentation();
+                        tab.offer_open_with_manual_encoding(
+                            &parent,
+                            &opened_file,
+                            &path,
+                            callback.clone(),
+                        );
+                    }
+                    Err(LoadFailure::TooBig(path)) => {
+                        tab.set_loading(false);
+                        tab.sync_presentation();
+                        callback(Err(AppError::FileTooBig(path)));
+                    }
+                    Err(LoadFailure::LineTooLong { path: _, size }) => {
+                        tab.set_loading(false);
+                        tab.sync_presentation();
+                        let thresholds = tab.settings.large_file_thresholds();
+                        let tier = crate::document_limits::tier_for_size_with_thresholds(
+                            size,
+                            &thresholds,
+                        );
+                        tab.open_viewer_for_large_file(
+                            &parent,
+                            &opened_file,
+                            size,
+                            OpenDecision::Viewer {
+                                tier,
+                                edit_allowed: false,
+                            },
+                            callback.clone(),
+                        );
+                    }
+                    Err(LoadFailure::Failed(error)) => {
+                        tab.set_loading(false);
+                        tab.sync_presentation();
+                        callback(Err(error));
                     }
                 }
             });
@@ -341,58 +353,61 @@ impl EditorTab {
                 encodings,
                 Some(&cancellable),
                 Rc::new(move |result| {
-                    if let Some(tab) = weak.upgrade() {
-                        if !tab.finish_io_request(generation) {
-                            return;
-                        }
-                        match result {
-                            Ok(document) => {
-                                if tab.document_uri().as_deref() != Some(expected_uri.as_str())
-                                    || !tab.monitor_target_matches_current()
-                                {
+                    let Some(tab) = weak.upgrade() else {
+                        callback(Err(AppError::Cancelled));
+                        return;
+                    };
+                    if !tab.finish_io_request(generation) {
+                        callback(Err(AppError::Cancelled));
+                        return;
+                    }
+                    match result {
+                        Ok(document) => {
+                            if tab.document_uri().as_deref() != Some(expected_uri.as_str())
+                                || !tab.monitor_target_matches_current()
+                            {
+                                tab.set_loading(false);
+                                tab.sync_presentation();
+                                callback(Err(AppError::Cancelled));
+                                return;
+                            }
+                            let monitored_file = gio::File::for_path(&document.path);
+                            let callback = callback.clone();
+                            let cancelled_callback = callback.clone();
+                            tab.apply_loaded_document_async(
+                                document,
+                                Some(snapshot.clone()),
+                                Rc::new(move |tab| {
+                                    tab.swap_monitor(&monitored_file);
+                                    tab.refresh_language_for_file(&monitored_file);
                                     tab.set_loading(false);
                                     tab.sync_presentation();
-                                    callback(Err(AppError::Cancelled));
-                                    return;
-                                }
-                                let monitored_file = gio::File::for_path(&document.path);
-                                let callback = callback.clone();
-                                tab.apply_loaded_document_async(
-                                    document,
-                                    Some(snapshot.clone()),
-                                    Rc::new(move |tab| {
-                                        tab.swap_monitor(&monitored_file);
-                                        tab.refresh_language_for_file(&monitored_file);
-                                        tab.set_loading(false);
-                                        tab.sync_presentation();
-                                        callback(Ok(()));
-                                    }),
-                                );
-                            }
-                            Err(LoadFailure::DecodeFailed(path)) => {
-                                tab.set_loading(false);
-                                tab.sync_presentation();
-                                tab.offer_reopen_with_manual_encoding(
-                                    &parent,
-                                    &path,
-                                    callback.clone(),
-                                );
-                            }
-                            Err(LoadFailure::TooBig(path)) => {
-                                tab.set_loading(false);
-                                tab.sync_presentation();
-                                callback(Err(AppError::FileTooBig(path)));
-                            }
-                            Err(LoadFailure::LineTooLong { path, .. }) => {
-                                tab.set_loading(false);
-                                tab.sync_presentation();
-                                callback(Err(AppError::LineTooLong(path)));
-                            }
-                            Err(LoadFailure::Failed(error)) => {
-                                tab.set_loading(false);
-                                tab.sync_presentation();
-                                callback(Err(error));
-                            }
+                                    callback(Ok(()));
+                                }),
+                                Rc::new(move || {
+                                    cancelled_callback(Err(AppError::Cancelled));
+                                }),
+                            );
+                        }
+                        Err(LoadFailure::DecodeFailed(path)) => {
+                            tab.set_loading(false);
+                            tab.sync_presentation();
+                            tab.offer_reopen_with_manual_encoding(&parent, &path, callback.clone());
+                        }
+                        Err(LoadFailure::TooBig(path)) => {
+                            tab.set_loading(false);
+                            tab.sync_presentation();
+                            callback(Err(AppError::FileTooBig(path)));
+                        }
+                        Err(LoadFailure::LineTooLong { path, .. }) => {
+                            tab.set_loading(false);
+                            tab.sync_presentation();
+                            callback(Err(AppError::LineTooLong(path)));
+                        }
+                        Err(LoadFailure::Failed(error)) => {
+                            tab.set_loading(false);
+                            tab.sync_presentation();
+                            callback(Err(error));
                         }
                     }
                 }),

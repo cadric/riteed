@@ -342,13 +342,12 @@ impl CompareController {
         self.unified_minimap.set_font_desc(font_desc);
     }
 
+    // The compare minimaps mirror their views' bottom margins through
+    // GtkSourceMap's own scaled property binding.
     pub(crate) fn apply_scroll_past_end_padding(&self, bottom_margin: i32) {
         self.left_view.set_bottom_margin(bottom_margin);
         self.right_view.set_bottom_margin(bottom_margin);
         self.unified_view.set_bottom_margin(bottom_margin);
-        self.left_minimap.set_bottom_margin(bottom_margin);
-        self.right_minimap.set_bottom_margin(bottom_margin);
-        self.unified_minimap.set_bottom_margin(bottom_margin);
     }
 
     pub(super) fn detach_visual_layers(&mut self) {

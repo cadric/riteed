@@ -2,7 +2,7 @@ use gtk4::{pango, prelude::*};
 use sourceview5::prelude::*;
 
 use crate::editor_tab::EditorTab;
-use crate::editor_zoom::{resolve_minimap_font_description, resolve_scroll_past_end_padding};
+use crate::editor_zoom::resolve_minimap_font_description;
 
 const COMPARE_MINIMAP_WIDTH: i32 = 72;
 
@@ -15,7 +15,6 @@ pub(super) struct CompareMinimap {
 impl CompareMinimap {
     pub(super) fn new(tab: &EditorTab, view: &sourceview5::View) -> Self {
         let minimap_font = resolve_minimap_font_description(&tab.settings.editor_font());
-        let bottom_margin = resolve_scroll_past_end_padding(&tab.settings.editor_font());
         let map = sourceview5::Map::builder()
             .view(view)
             .font_desc(&minimap_font)
@@ -26,7 +25,6 @@ impl CompareMinimap {
         map.set_focusable(false);
         map.set_hexpand(false);
         map.set_monospace(true);
-        map.set_bottom_margin(bottom_margin);
         map.set_vexpand(true);
 
         let holder = gtk4::Box::builder()
@@ -62,10 +60,6 @@ impl CompareMinimap {
 
     pub(super) fn set_font_desc(&self, font_desc: Option<&pango::FontDescription>) {
         self.map.set_font_desc(font_desc);
-    }
-
-    pub(super) fn set_bottom_margin(&self, bottom_margin: i32) {
-        self.map.set_bottom_margin(bottom_margin);
     }
 
     #[cfg(test)]

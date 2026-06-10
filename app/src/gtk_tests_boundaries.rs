@@ -20,6 +20,7 @@ pub(crate) fn exercise_boundary_smokes(test_app: &adw::Application) {
     exercise_search_at_cap(test_app);
     exercise_chunked_apply_completes_with_full_content(test_app);
     exercise_chunked_apply_close_during_apply(test_app);
+    exercise_session_restore_survives_close_during_apply(test_app);
     exercise_long_line_file_routes_to_viewer(test_app);
     exercise_medium_file_disables_minimap_after_load(test_app);
     exercise_large_file_threshold_preferences_reapply_open_tab(test_app);
@@ -165,6 +166,7 @@ fn exercise_chunked_apply_completes_with_full_content(test_app: &adw::Applicatio
     };
     window.ensure_default_tab();
     window.set_selected_text_for_tests("keep this tab");
+    window.set_minimap_for_tests(true);
     let mut contents = repeat_seed(b"chunked-apply line\n", 3 * 1024 * 1024);
     if contents.last().is_some_and(|byte| *byte == b'\n') {
         contents.push(b'x');
@@ -174,12 +176,19 @@ fn exercise_chunked_apply_completes_with_full_content(test_app: &adw::Applicatio
     let path = write_temp_file("riteed-chunked-full.txt", &contents);
 
     window.request_open_files(vec![gio::File::for_path(&path)], OpenSource::AppOpen);
+    spin_until_next_event("chunked apply hides the minimap", || {
+        window.tab_count_for_tests() == 2
+            && window.selected_loading_for_tests()
+            && window.selected_char_count_for_tests() > 0
+            && !window.selected_minimap_visible_for_tests()
+    });
     spin_until("chunked apply fills the buffer", || {
         window.tab_count_for_tests() == 2
             && !window.selected_loading_for_tests()
             && window.selected_char_count_for_tests() == expected_chars
     });
     assert!(!window.selected_dirty_for_tests());
+    assert!(window.selected_minimap_visible_for_tests());
     let text = window.selected_text_for_tests();
     assert_eq!(text, expected_text);
 
@@ -209,6 +218,48 @@ fn exercise_chunked_apply_close_during_apply(test_app: &adw::Application) {
     assert_eq!(window.selected_text_for_tests(), "keep this tab");
 
     let _removed = std::fs::remove_file(path);
+}
+
+fn exercise_session_restore_survives_close_during_apply(test_app: &adw::Application) {
+    let small = write_temp_file("riteed-restore-small.txt", b"small restore\n");
+    let big = write_temp_file(
+        "riteed-restore-big.txt",
+        &repeat_seed(b"restore-close line\n", 8 * 1024 * 1024),
+    );
+    let extra = write_temp_file("riteed-restore-extra.txt", b"extra restore\n");
+    let small_uri = gio::File::for_path(&small).uri().to_string();
+    let big_uri = gio::File::for_path(&big).uri().to_string();
+    let extra_uri = gio::File::for_path(&extra).uri().to_string();
+
+    let settings = AppSettings::new_for_tests();
+    settings.set_session_files(&[small_uri.clone(), big_uri.clone()]);
+    settings.set_session_selected_file(&big_uri);
+    let Some(window) = build_window_with_settings(test_app, settings) else {
+        return;
+    };
+    window.restore_session();
+    spin_until_next_event("session restore reaches chunked apply", || {
+        window.tab_count_for_tests() == 2
+            && window.selected_loading_for_tests()
+            && window.selected_char_count_for_tests() > 0
+    });
+    assert!(window.close_selected_page_for_tests());
+    spin_until("restore continues after cancelled apply", || {
+        window.tab_count_for_tests() == 1
+    });
+    drain_events(8);
+
+    // Session persistence must be unfrozen: a later open rewrites the session
+    // without the file that was closed while its apply was still running.
+    window.request_open_files(vec![gio::File::for_path(&extra)], OpenSource::AppOpen);
+    spin_until("session persists without the closed file", || {
+        let session = window.session_files_for_tests();
+        session.contains(&extra_uri) && !session.contains(&big_uri) && session.contains(&small_uri)
+    });
+
+    let _removed = std::fs::remove_file(small);
+    let _removed = std::fs::remove_file(big);
+    let _removed = std::fs::remove_file(extra);
 }
 
 fn exercise_long_line_file_routes_to_viewer(test_app: &adw::Application) {
