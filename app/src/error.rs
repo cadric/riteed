@@ -12,6 +12,7 @@ pub enum AppError {
     DecodeFailed(PathBuf),
     FileSizeUnavailable(PathBuf),
     FileTooBig(PathBuf),
+    LineTooLong(PathBuf),
     SaveTooBig(PathBuf),
     ReadFailed(PathBuf, String),
     WriteFailed(PathBuf, String),
@@ -29,7 +30,8 @@ impl AppError {
             Self::DecodeFailed(_)
             | Self::ReadFailed(_, _)
             | Self::FileSizeUnavailable(_)
-            | Self::FileTooBig(_) => gettext("Unable to Open the File"),
+            | Self::FileTooBig(_)
+            | Self::LineTooLong(_) => gettext("Unable to Open the File"),
             Self::SaveTooBig(_) | Self::WriteFailed(_, _) => gettext("Unable to Save the File"),
             Self::HelpLaunchFailed(_) => pgettext("error title", "Unable to Open Help"),
         }
@@ -57,6 +59,11 @@ impl AppError {
             }
             Self::FileTooBig(path) => {
                 gettext("The file is too large to open safely.")
+                    + "\n\n"
+                    + &path.display().to_string()
+            }
+            Self::LineTooLong(path) => {
+                gettext("The file contains lines that are too long to edit safely.")
                     + "\n\n"
                     + &path.display().to_string()
             }
@@ -92,6 +99,7 @@ mod tests {
             AppError::DecodeFailed("notes.txt".into()),
             AppError::FileSizeUnavailable("notes.txt".into()),
             AppError::FileTooBig("notes.txt".into()),
+            AppError::LineTooLong("notes.txt".into()),
             AppError::SaveTooBig("notes.txt".into()),
             AppError::ReadFailed("notes.txt".into(), String::from("read")),
             AppError::WriteFailed("notes.txt".into(), String::from("write")),

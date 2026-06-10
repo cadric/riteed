@@ -5,7 +5,9 @@ use glib::SList;
 use gtk4::{gio, glib, prelude::*};
 use sourceview5::prelude::*;
 
-use crate::document_limits::{OpenFileSupport, loaded_text_supports_editor_hard_cap};
+use crate::document_limits::{
+    OpenFileSupport, loaded_text_supports_editor_hard_cap, text_supports_editor_line_lengths,
+};
 use crate::editor_format::{EncodingInfo, LineEndingMode, LoadedTextFormat, SavedTextFormat};
 use crate::error::AppError;
 
@@ -62,6 +64,7 @@ struct TextLoadStart {
 pub enum LoadFailure {
     DecodeFailed(PathBuf),
     TooBig(PathBuf),
+    LineTooLong { path: PathBuf, size: u64 },
     Failed(AppError),
 }
 
@@ -205,6 +208,16 @@ impl TextLoadRequest {
                     );
                     if !loaded_text_supports_editor_hard_cap(loaded_format.text.len()) {
                         callback(Err(LoadFailure::TooBig(path.clone())));
+                        return;
+                    }
+                    if !text_supports_editor_line_lengths(&loaded_format.text) {
+                        let size = disk_size.unwrap_or_else(|| {
+                            crate::large_file::usize_to_u64(loaded_format.text.len())
+                        });
+                        callback(Err(LoadFailure::LineTooLong {
+                            path: path.clone(),
+                            size,
+                        }));
                         return;
                     }
                     callback(Ok(LoadedDocument {
@@ -359,6 +372,15 @@ mod tests {
             map_load_failure(path, &too_big),
             LoadFailure::TooBig(mapped) if mapped == path
         ));
+    }
+
+    #[test]
+    fn long_line_failures_carry_path_and_size() {
+        let failure = LoadFailure::LineTooLong {
+            path: std::path::PathBuf::from("/tmp/example.txt"),
+            size: 7,
+        };
+        assert!(matches!(failure, LoadFailure::LineTooLong { size: 7, .. }));
     }
 
     #[test]

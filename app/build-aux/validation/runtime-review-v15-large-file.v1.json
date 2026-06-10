@@ -50,6 +50,22 @@
       "justification": "Search is a cancellable async Gio byte scan; the viewer stores only the current cancellable so a new search can stop the old one."
     },
     {
+      "path": "src/editor_tab/apply.rs",
+      "line": 112,
+      "match": "fn insert_next_chunk(tab: &Rc<EditorTab>, pending: &Rc<RefCell<PendingApply>>) -> bool {",
+      "kind": "runtime-shared-state",
+      "ownership": "The chunked editor apply source owns the pending document, cursor offset, and restore state for one load.",
+      "justification": "Idle ticks resume bounded buffer insertion across main-loop turns, while generation checks and source removal cancel the state before it can mutate a stale or closing tab."
+    },
+    {
+      "path": "src/editor_tab/apply.rs",
+      "line": 131,
+      "match": "pending: &Rc<RefCell<PendingApply>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The chunked editor apply source owns the pending completion state for one load.",
+      "justification": "Finish restores editability and undo state from the same main-thread confined pending apply record before applying the final document presentation and one-shot callback."
+    },
+    {
       "path": "src/window_preferences_large_file.rs",
       "line": 86,
       "match": "syncing: &Rc<Cell<bool>>,",

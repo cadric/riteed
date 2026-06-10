@@ -1569,6 +1569,9 @@ msgstr ""
 msgid "The file is too large to open safely."
 msgstr ""
 
+msgid "The file contains lines that are too long to edit safely."
+msgstr ""
+
 msgid "The document is too large to save safely."
 msgstr ""
 

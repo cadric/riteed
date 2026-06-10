@@ -6,7 +6,7 @@ use gtk4::{gio, glib::SList};
 use libadwaita as adw;
 
 use crate::dialogs::{self, DecodeFailureResponse, ReopenWithEncodingResponse};
-use crate::document_limits::OpenFileSupport;
+use crate::document_limits::{OpenDecision, OpenFileSupport};
 use crate::editor_io::{self, LoadFailure, LoadedDocument};
 use crate::editor_tab::{EditorTab, ReloadCause, ReloadResult};
 use crate::editor_view::ReloadSnapshot;
@@ -101,11 +101,17 @@ impl EditorTab {
                                     return;
                                 }
                                 let monitored_file = gio::File::for_path(&document.path);
-                                tab.apply_loaded_document(document, Some(&snapshot));
-                                tab.swap_monitor(&monitored_file);
-                                tab.refresh_language_for_file(&monitored_file);
-                                tab.finish_reload(true);
-                                callback(Ok(ReloadResult::Applied));
+                                let callback = callback.clone();
+                                tab.apply_loaded_document_async(
+                                    document,
+                                    Some(snapshot.clone()),
+                                    Rc::new(move |tab| {
+                                        tab.swap_monitor(&monitored_file);
+                                        tab.refresh_language_for_file(&monitored_file);
+                                        tab.finish_reload(true);
+                                        callback(Ok(ReloadResult::Applied));
+                                    }),
+                                );
                             }
                             Err(LoadFailure::DecodeFailed(path)) => {
                                 tab.finish_reload(false);
@@ -114,6 +120,10 @@ impl EditorTab {
                             Err(LoadFailure::TooBig(path)) => {
                                 tab.finish_reload(false);
                                 callback(Err(AppError::FileTooBig(path)));
+                            }
+                            Err(LoadFailure::LineTooLong { path, .. }) => {
+                                tab.finish_reload(false);
+                                callback(Err(AppError::LineTooLong(path)));
                             }
                             Err(LoadFailure::Failed(error)) => {
                                 tab.finish_reload(false);
@@ -230,13 +240,19 @@ impl EditorTab {
                             }
                             let monitored_file = gio::File::for_path(&document.path);
                             let uri = document.uri.clone();
-                            tab.apply_loaded_document(document, None);
-                            tab.swap_monitor(&monitored_file);
-                            tab.refresh_language_for_file(&monitored_file);
-                            tab.set_loading(false);
-                            tab.sync_presentation();
-                            tab.grab_focus();
-                            callback(Ok(uri));
+                            let callback = callback.clone();
+                            tab.apply_loaded_document_async(
+                                document,
+                                None,
+                                Rc::new(move |tab| {
+                                    tab.swap_monitor(&monitored_file);
+                                    tab.refresh_language_for_file(&monitored_file);
+                                    tab.set_loading(false);
+                                    tab.sync_presentation();
+                                    tab.grab_focus();
+                                    callback(Ok(uri.clone()));
+                                }),
+                            );
                         }
                         Err(LoadFailure::DecodeFailed(path)) => {
                             tab.set_loading(false);
@@ -252,6 +268,25 @@ impl EditorTab {
                             tab.set_loading(false);
                             tab.sync_presentation();
                             callback(Err(AppError::FileTooBig(path)));
+                        }
+                        Err(LoadFailure::LineTooLong { path: _, size }) => {
+                            tab.set_loading(false);
+                            tab.sync_presentation();
+                            let thresholds = tab.settings.large_file_thresholds();
+                            let tier = crate::document_limits::tier_for_size_with_thresholds(
+                                size,
+                                &thresholds,
+                            );
+                            tab.open_viewer_for_large_file(
+                                &parent,
+                                &opened_file,
+                                size,
+                                OpenDecision::Viewer {
+                                    tier,
+                                    edit_allowed: false,
+                                },
+                                callback.clone(),
+                            );
                         }
                         Err(LoadFailure::Failed(error)) => {
                             tab.set_loading(false);
@@ -321,12 +356,18 @@ impl EditorTab {
                                     return;
                                 }
                                 let monitored_file = gio::File::for_path(&document.path);
-                                tab.apply_loaded_document(document, Some(&snapshot));
-                                tab.swap_monitor(&monitored_file);
-                                tab.refresh_language_for_file(&monitored_file);
-                                tab.set_loading(false);
-                                tab.sync_presentation();
-                                callback(Ok(()));
+                                let callback = callback.clone();
+                                tab.apply_loaded_document_async(
+                                    document,
+                                    Some(snapshot.clone()),
+                                    Rc::new(move |tab| {
+                                        tab.swap_monitor(&monitored_file);
+                                        tab.refresh_language_for_file(&monitored_file);
+                                        tab.set_loading(false);
+                                        tab.sync_presentation();
+                                        callback(Ok(()));
+                                    }),
+                                );
                             }
                             Err(LoadFailure::DecodeFailed(path)) => {
                                 tab.set_loading(false);
@@ -341,6 +382,11 @@ impl EditorTab {
                                 tab.set_loading(false);
                                 tab.sync_presentation();
                                 callback(Err(AppError::FileTooBig(path)));
+                            }
+                            Err(LoadFailure::LineTooLong { path, .. }) => {
+                                tab.set_loading(false);
+                                tab.sync_presentation();
+                                callback(Err(AppError::LineTooLong(path)));
                             }
                             Err(LoadFailure::Failed(error)) => {
                                 tab.set_loading(false);
@@ -463,6 +509,7 @@ fn map_load_failure_to_app_error(error: LoadFailure) -> AppError {
     match error {
         LoadFailure::DecodeFailed(path) => AppError::DecodeFailed(path),
         LoadFailure::TooBig(path) => AppError::FileTooBig(path),
+        LoadFailure::LineTooLong { path, .. } => AppError::LineTooLong(path),
         LoadFailure::Failed(error) => error,
     }
 }

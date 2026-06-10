@@ -9,6 +9,9 @@ pub(crate) const LARGE_FILE_LIMIT_BYTES: u64 = 75 * MIB;
 #[cfg(test)]
 pub(crate) const EDITOR_POLICY_CEILING_BYTES: u64 = 500 * MIB;
 pub(crate) const EDITOR_HARD_LIMIT_BYTES: u64 = MEDIUM_FILE_LIMIT_BYTES;
+/// Longest line the editor surface accepts. Pango lays out a line as one
+/// unit, so oversized single-line text belongs in the read-only viewer.
+pub(crate) const EDITOR_MAX_LINE_BYTES: usize = 64 * 1024;
 pub(crate) const OPEN_FILE_LIMIT_BYTES: u64 = EDITOR_HARD_LIMIT_BYTES;
 pub(crate) const SAVE_SNAPSHOT_LIMIT_BYTES: u64 = MEDIUM_FILE_LIMIT_BYTES;
 pub(crate) const SEARCH_CHAR_LIMIT: i32 = 5_000_000;
@@ -196,6 +199,13 @@ pub(crate) fn loaded_text_supports_editor_hard_cap(len: usize) -> bool {
     u64::try_from(len).is_ok_and(file_size_supports_open)
 }
 
+#[must_use]
+pub(crate) fn text_supports_editor_line_lengths(text: &str) -> bool {
+    text.as_bytes()
+        .split(|byte| *byte == b'\n')
+        .all(|line| line.len() <= EDITOR_MAX_LINE_BYTES)
+}
+
 pub(crate) fn query_file_supports_open(
     file: &gio::File,
     cancellable: Option<&gio::Cancellable>,
@@ -301,14 +311,15 @@ fn mib_to_bytes(value: i32) -> u64 {
 #[cfg(test)]
 mod tests {
     use super::{
-        EDITOR_HARD_LIMIT_BYTES, EDITOR_POLICY_CEILING_BYTES, FileThresholds, FileTier,
-        MEDIUM_FILE_LIMIT_BYTES, MIB, OPEN_FILE_LIMIT_BYTES, OpenDecision, OpenPlanQueryResult,
-        SAVE_SNAPSHOT_LIMIT_BYTES, SEARCH_CHAR_LIMIT, SMALL_FILE_LIMIT_BYTES,
-        autosave_supports_current_size, buffer_char_count_supports_save_snapshot,
-        char_count_supports_search, file_info_open_plan, file_size_supports_open,
-        loaded_text_supports_editor_hard_cap, markdown_preview_enabled, mib_to_bytes,
-        open_decision_for_size, open_decision_for_size_with_thresholds,
-        text_len_supports_save_snapshot, tier_for_size, tier_for_size_with_thresholds,
+        EDITOR_HARD_LIMIT_BYTES, EDITOR_MAX_LINE_BYTES, EDITOR_POLICY_CEILING_BYTES,
+        FileThresholds, FileTier, MEDIUM_FILE_LIMIT_BYTES, MIB, OPEN_FILE_LIMIT_BYTES,
+        OpenDecision, OpenPlanQueryResult, SAVE_SNAPSHOT_LIMIT_BYTES, SEARCH_CHAR_LIMIT,
+        SMALL_FILE_LIMIT_BYTES, autosave_supports_current_size,
+        buffer_char_count_supports_save_snapshot, char_count_supports_search, file_info_open_plan,
+        file_size_supports_open, loaded_text_supports_editor_hard_cap, markdown_preview_enabled,
+        mib_to_bytes, open_decision_for_size, open_decision_for_size_with_thresholds,
+        text_len_supports_save_snapshot, text_supports_editor_line_lengths, tier_for_size,
+        tier_for_size_with_thresholds,
     };
     use gtk4::gio;
 
@@ -357,6 +368,26 @@ mod tests {
                 edit_allowed: false,
             }
         );
+    }
+
+    #[test]
+    fn long_line_gate_accepts_normal_lines() {
+        assert!(text_supports_editor_line_lengths("short\nlines\nonly\n"));
+        assert!(text_supports_editor_line_lengths(""));
+    }
+
+    #[test]
+    fn long_line_gate_rejects_oversized_line() {
+        let long_line = "x".repeat(EDITOR_MAX_LINE_BYTES + 1);
+        assert!(!text_supports_editor_line_lengths(&long_line));
+        let mixed = format!("ok\n{long_line}\nok\n");
+        assert!(!text_supports_editor_line_lengths(&mixed));
+    }
+
+    #[test]
+    fn long_line_gate_boundary_is_inclusive() {
+        let at_cap = "x".repeat(EDITOR_MAX_LINE_BYTES);
+        assert!(text_supports_editor_line_lengths(&at_cap));
     }
 
     #[test]

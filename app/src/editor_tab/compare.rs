@@ -546,6 +546,7 @@ fn map_reference_load_error(error: LoadFailure) -> AppError {
     match error {
         LoadFailure::DecodeFailed(path) => AppError::DecodeFailed(path),
         LoadFailure::TooBig(path) => AppError::FileTooBig(path),
+        LoadFailure::LineTooLong { path, .. } => AppError::LineTooLong(path),
         LoadFailure::Failed(error) => error,
     }
 }

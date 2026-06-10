@@ -38,7 +38,7 @@
     },
     {
       "path": "src/editor_search/mod.rs",
-      "line": 495,
+      "line": 481,
       "match": "gettext(\"No matches\")",
       "resolution": "This short result label appears inside the find bar next to the previous/next controls and only after a concrete query produced zero matches.",
       "kind": "i18n-short-string"

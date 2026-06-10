@@ -1,6 +1,6 @@
 ---
 created: 2026-04-19
-updated: 2026-06-01
+updated: 2026-06-10
 status: current
 priority: high
 type: changelog
@@ -32,11 +32,17 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 - Differentiated policy line limits so production files keep the 600-line
   default, configured test files may reach 800 lines, and production overages
   require registered waivers capped at 720 lines.
+- Routed decoded files with lines longer than 64 KiB to the existing read-only
+  large-file viewer instead of allowing them into the editable SourceView path.
 - Reworked the V15 roadmap contract to drop `memmap2`, keep hard edit caps in
   code-owned policy, preserve the existing SourceView editor path until measured
   evidence justifies expansion, and document large-file compare as out of scope.
 
 ### Fixed
+- Replaced whole-document editor apply for large loads with chunked,
+  cancellable main-loop insertion and blocked save/replace mutations until
+  apply completes, so opening large editable documents no longer monopolizes
+  the UI while SourceView builds the buffer.
 - Fixed V15 large-file viewer follow-ups so valid UTF-8 split across page
   boundaries no longer renders replacement glyphs, restored placeholder
   Remove closes the tab, viewer Refresh sees appended bytes, and large-file

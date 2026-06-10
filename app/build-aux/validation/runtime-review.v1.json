@@ -219,7 +219,7 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 118,
+      "line": 119,
       "match": "state: RefCell<EditorTabState>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns one shared mutable state cell split into document runtime, IO, external-file, autosave, compare, and UI owner structs.",
@@ -227,7 +227,7 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 120,
+      "line": 121,
       "match": "on_file_drop: RefCell<Option<FileDropHandler>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns its current workspace file-drop callback.",
@@ -235,7 +235,7 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 121,
+      "line": 122,
       "match": "on_visual_change: RefCell<Option<TabCallback>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns its current workspace visual-state callback.",
@@ -243,7 +243,7 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 122,
+      "line": 123,
       "match": "on_markdown_preview_change: RefCell<Option<TabCallback>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns its current Markdown preview-state callback.",
@@ -251,7 +251,7 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 123,
+      "line": 124,
       "match": "on_external_state_change: RefCell<Option<TabCallback>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns its current external-state callback.",
@@ -259,7 +259,7 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 124,
+      "line": 125,
       "match": "on_external_action: RefCell<Option<TabCallback>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns its current external-action callback.",

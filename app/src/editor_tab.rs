@@ -11,6 +11,7 @@ use crate::editor_view::EditorView;
 use crate::error::AppError;
 use crate::settings::AppSettings;
 
+mod apply;
 mod banner;
 mod compare;
 mod large_file;
@@ -269,7 +270,11 @@ impl EditorTab {
         if !self.is_document() {
             return false;
         }
-        self.state.borrow().is_dirty(self.text_buffer.is_modified())
+        let state = self.state.borrow();
+        if state.io.pending_apply.is_some() {
+            return false;
+        }
+        state.is_dirty(self.text_buffer.is_modified())
     }
 
     #[must_use]

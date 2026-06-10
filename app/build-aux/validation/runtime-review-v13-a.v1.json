@@ -69,7 +69,7 @@
       "ownership": "Each review tab owns the optional compare-side ReviewSession for its rendered Git review.",
       "justification": "The session must be shared by cursor actions, stale banners, change-list navigation, and renderer refreshes while staying private to the tab.",
       "path": "src/editor_tab/state.rs",
-      "line": 230,
+      "line": 246,
       "match": "pub(super) session: Option<Rc<RefCell<ReviewSession>>>,",
       "kind": "runtime-shared-state"
     },

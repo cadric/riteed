@@ -10,6 +10,23 @@ impl Window {
         self.workspace.tab_count()
     }
 
+    pub(crate) fn close_selected_page_for_tests(&self) -> bool {
+        let Some(tab) = self.workspace.selected_tab() else {
+            return false;
+        };
+        let Some(page) = tab.page() else {
+            return false;
+        };
+        self.workspace.tab_view.close_page(&page);
+        true
+    }
+
+    pub(crate) fn selected_char_count_for_tests(&self) -> i32 {
+        self.workspace
+            .selected_tab()
+            .map_or(0, |tab| tab.text_buffer().char_count())
+    }
+
     pub(crate) fn selected_title_for_tests(&self) -> String {
         self.workspace.selected_title()
     }

@@ -51,6 +51,10 @@ impl EditorTab {
             callback(SaveResult::CancelledByUser);
             return;
         }
+        if self.state.borrow().io.pending_apply.is_some() {
+            callback(SaveResult::CancelledByUser);
+            return;
+        }
         let current_path = self.state.borrow().document.document.path();
         if !force_save_as && let Some(path) = current_path {
             if self.should_show_stale_save_conflict() {

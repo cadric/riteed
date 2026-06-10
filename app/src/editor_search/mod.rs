@@ -275,18 +275,11 @@ impl EditorSearch {
     }
 
     pub fn replace_current(self: &Rc<Self>) {
-        if self.scope_bar.current_scope() == SearchScope::Project {
-            return;
-        }
-        if self.active_target_is_preview() {
-            self.update_result_state();
-            return;
-        }
-        self.clear_manual_message();
-        let Some(tab) = self.state.borrow().active_tab.clone() else {
+        let Some(tab) = self.active_replace_tab() else {
             self.update_result_state();
             return;
         };
+        self.clear_manual_message();
         let Some(context) = self.active_context() else {
             self.update_result_state();
             return;
@@ -306,14 +299,7 @@ impl EditorSearch {
     }
 
     pub fn replace_all(self: &Rc<Self>) {
-        if self.scope_bar.current_scope() == SearchScope::Project {
-            return;
-        }
-        if self.active_target_is_preview() {
-            self.update_result_state();
-            return;
-        }
-        let Some(tab) = self.state.borrow().active_tab.clone() else {
+        let Some(tab) = self.active_replace_tab() else {
             self.update_result_state();
             return;
         };
@@ -502,7 +488,14 @@ impl EditorSearch {
 
     fn set_action_sensitivity(&self, has_matches: bool) {
         let replace_visible = self.replace_row.is_visible();
-        let replace_allowed = self.state.borrow().active_target == SearchTarget::Source;
+        let replace_allowed = {
+            let state = self.state.borrow();
+            state.active_target == SearchTarget::Source
+                && state
+                    .active_tab
+                    .as_ref()
+                    .is_some_and(|tab| !tab.is_loading())
+        };
         self.previous_button.set_sensitive(has_matches);
         self.next_button.set_sensitive(has_matches);
         self.replace_button
@@ -577,6 +570,20 @@ impl EditorSearch {
     #[cfg(test)]
     pub(crate) fn set_replace_text_for_tests(&self, text: &str) {
         self.replace_entry.set_text(text);
+    }
+}
+
+impl EditorSearch {
+    fn active_replace_tab(&self) -> Option<Rc<EditorTab>> {
+        if self.scope_bar.current_scope() == SearchScope::Project || self.active_target_is_preview()
+        {
+            return None;
+        }
+        self.state
+            .borrow()
+            .active_tab
+            .clone()
+            .filter(|tab| !tab.is_loading())
     }
 }
 

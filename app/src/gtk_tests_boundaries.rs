@@ -1,6 +1,6 @@
-use gtk4::{gio, prelude::*};
+use gtk4::{gio, glib, prelude::*};
 use libadwaita as adw;
-use std::io::Write;
+use std::{io::Write, time::Duration};
 
 // The real GTK boundary smoke is called from gtk_surfaces_and_editor_flow_work.
 // Keeping it in the single GTK integration test avoids cross-thread GTK
@@ -18,6 +18,9 @@ const SEARCH_SEED: &str = include_str!("../../stress/corpus/seeds/search-boundar
 pub(crate) fn exercise_boundary_smokes(test_app: &adw::Application) {
     exercise_open_file_at_cap(test_app);
     exercise_search_at_cap(test_app);
+    exercise_chunked_apply_completes_with_full_content(test_app);
+    exercise_chunked_apply_close_during_apply(test_app);
+    exercise_long_line_file_routes_to_viewer(test_app);
     exercise_medium_file_disables_minimap_after_load(test_app);
     exercise_large_file_threshold_preferences_reapply_open_tab(test_app);
     exercise_large_file_viewer_rendering(test_app);
@@ -154,6 +157,75 @@ fn exercise_search_at_cap(test_app: &adw::Application) {
         window.search_result_for_tests(),
         "Search is disabled for very large files."
     );
+}
+
+fn exercise_chunked_apply_completes_with_full_content(test_app: &adw::Application) {
+    let Some(window) = build_window(test_app) else {
+        return;
+    };
+    window.ensure_default_tab();
+    window.set_selected_text_for_tests("keep this tab");
+    let mut contents = repeat_seed(b"chunked-apply line\n", 3 * 1024 * 1024);
+    if contents.last().is_some_and(|byte| *byte == b'\n') {
+        contents.push(b'x');
+    }
+    let expected_text = String::from_utf8_lossy(&contents).into_owned();
+    let expected_chars = i32::try_from(contents.len()).unwrap_or(i32::MAX);
+    let path = write_temp_file("riteed-chunked-full.txt", &contents);
+
+    window.request_open_files(vec![gio::File::for_path(&path)], OpenSource::AppOpen);
+    spin_until("chunked apply fills the buffer", || {
+        window.tab_count_for_tests() == 2
+            && !window.selected_loading_for_tests()
+            && window.selected_char_count_for_tests() == expected_chars
+    });
+    assert!(!window.selected_dirty_for_tests());
+    let text = window.selected_text_for_tests();
+    assert_eq!(text, expected_text);
+
+    let _removed = std::fs::remove_file(path);
+}
+
+fn exercise_chunked_apply_close_during_apply(test_app: &adw::Application) {
+    let Some(window) = build_window(test_app) else {
+        return;
+    };
+    window.ensure_default_tab();
+    window.set_selected_text_for_tests("keep this tab");
+    let contents = repeat_seed(b"chunked-close line\n", 16 * 1024 * 1024);
+    let path = write_temp_file("riteed-chunked-close.txt", &contents);
+
+    window.request_open_files(vec![gio::File::for_path(&path)], OpenSource::AppOpen);
+    spin_until_next_event("chunked apply is in progress", || {
+        window.tab_count_for_tests() == 2
+            && window.selected_loading_for_tests()
+            && window.selected_char_count_for_tests() > 0
+    });
+    assert!(window.close_selected_page_for_tests());
+    spin_until("loading tab closes promptly", || {
+        window.tab_count_for_tests() == 1
+    });
+    drain_events(8);
+    assert_eq!(window.selected_text_for_tests(), "keep this tab");
+
+    let _removed = std::fs::remove_file(path);
+}
+
+fn exercise_long_line_file_routes_to_viewer(test_app: &adw::Application) {
+    let Some(window) = build_window(test_app) else {
+        return;
+    };
+    window.ensure_default_tab();
+    let mut contents = vec![b'y'; 128 * 1024];
+    contents.push(b'\n');
+    let path = write_temp_file("riteed-long-line.txt", &contents);
+
+    window.request_open_files(vec![gio::File::for_path(&path)], OpenSource::AppOpen);
+    spin_until("long-line file opens in the viewer", || {
+        window.selected_large_file_surface_for_tests() == Some("viewer")
+    });
+
+    let _removed = std::fs::remove_file(path);
 }
 
 fn exercise_large_file_viewer_rendering(test_app: &adw::Application) {
@@ -433,4 +505,16 @@ fn repeat_seed(seed: &[u8], target_len: usize) -> Vec<u8> {
     let remaining = target_len.saturating_sub(contents.len());
     contents.extend_from_slice(&seed[..remaining]);
     contents
+}
+
+fn spin_until_next_event(label: &str, done: impl Fn() -> bool) {
+    let deadline = std::time::Instant::now() + Duration::from_secs(30);
+    while std::time::Instant::now() < deadline {
+        if done() {
+            return;
+        }
+        let _source = glib::timeout_add_local_once(Duration::from_millis(10), || {});
+        let _dispatched = glib::MainContext::default().iteration(true);
+    }
+    assert!(done(), "{label}");
 }

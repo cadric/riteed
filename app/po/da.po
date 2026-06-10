@@ -1680,6 +1680,9 @@ msgstr "Riteed kunne ikke fastslå filstørrelsen og åbnede derfor ikke filen."
 msgid "The file is too large to open safely."
 msgstr "Filen er for stor til at åbne sikkert."
 
+msgid "The file contains lines that are too long to edit safely."
+msgstr "Filen indeholder linjer, der er for lange til at kunne redigeres sikkert."
+
 msgid "The document is too large to save safely."
 msgstr "Dokumentet er for stort til at blive gemt sikkert."
 

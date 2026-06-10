@@ -111,6 +111,17 @@ impl Default for DocumentRuntimeState {
     }
 }
 
+#[derive(Clone, Copy)]
+pub(super) struct PendingApplyRestore {
+    pub(super) editable: bool,
+    pub(super) undo: bool,
+}
+
+pub(super) struct PendingApplySource {
+    pub(super) source: gtk4::glib::SourceId,
+    pub(super) restore: PendingApplyRestore,
+}
+
 #[derive(Default)]
 pub(super) struct EditorIoState {
     pub(super) generation: u64,
@@ -118,9 +129,14 @@ pub(super) struct EditorIoState {
     pub(super) candidate_encodings: Option<SList<sourceview5::Encoding>>,
     pub(super) loading: bool,
     pub(super) external_reload_in_progress: bool,
+    pub(super) pending_apply: Option<PendingApplySource>,
 }
 
 impl EditorIoState {
+    pub(super) fn take_pending_apply(&mut self) -> Option<PendingApplySource> {
+        self.pending_apply.take()
+    }
+
     pub(super) fn cancel_request(&mut self) -> Option<gio::Cancellable> {
         self.candidate_encodings = None;
         self.generation = self.generation.saturating_add(1);
@@ -253,7 +269,7 @@ pub(super) struct UiState {
 mod tests {
     use super::{
         AutosaveState, CompareAttachment, DocumentRuntimeState, EditorIoState, EditorTabState,
-        ExternalFileState,
+        ExternalFileState, PendingApplyRestore, PendingApplySource,
     };
     use crate::editor_format::LineEndingMode;
     use gtk4::prelude::*;
@@ -293,6 +309,27 @@ mod tests {
         let (third_generation, third_cancellable) = state.start_request(None);
         assert_eq!(state.cancel_request(), Some(third_cancellable));
         assert!(!state.finish_request(third_generation));
+    }
+
+    #[test]
+    fn editor_io_take_pending_apply_clears_stored_source() {
+        let mut state = EditorIoState::default();
+        assert!(state.take_pending_apply().is_none());
+
+        let source = gtk4::glib::timeout_add_local_once(std::time::Duration::from_hours(1), || {});
+        state.pending_apply = Some(PendingApplySource {
+            source,
+            restore: PendingApplyRestore {
+                editable: true,
+                undo: true,
+            },
+        });
+        let pending = state.take_pending_apply();
+        assert!(pending.is_some());
+        if let Some(pending) = pending {
+            pending.source.remove();
+        }
+        assert!(state.take_pending_apply().is_none());
     }
 
     #[test]
