@@ -1039,6 +1039,10 @@ msgstr ""
 msgid "Overwrite the Changed File?"
 msgstr ""
 
+msgctxt "print header"
+msgid "Page %N of %Q"
+msgstr ""
+
 msgid "Palette"
 msgstr ""
 

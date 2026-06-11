@@ -17,8 +17,8 @@
     },
     {
       "path": "src/document_print.rs",
-      "line": 34,
-      "match": "crate::dialogs::present_error(parent, &AppError::Internal(gettext(\"Printing failed.\")));",
+      "line": 84,
+      "match": "&AppError::Internal(gettext(\"Printing failed.\")),",
       "resolution": "This short print failure message appears in the print error dialog after the native print operation reports failure.",
       "kind": "i18n-short-string"
     },

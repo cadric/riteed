@@ -1109,6 +1109,10 @@ msgstr "Oversigt"
 msgid "Overwrite the Changed File?"
 msgstr "Overskriv den ændrede fil?"
 
+msgctxt "print header"
+msgid "Page %N of %Q"
+msgstr "Side %N af %Q"
+
 msgid "Palette"
 msgstr "Palette"
 

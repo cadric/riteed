@@ -14,6 +14,7 @@ pub(crate) struct DocumentToolsController {
     parent: adw::ApplicationWindow,
     workspace: Rc<Workspace>,
     settings: AppSettings,
+    print_session: crate::document_print::PrintSession,
     statistics_action: gio::SimpleAction,
     print_action: gio::SimpleAction,
     print_runner: RefCell<PrintRunner>,
@@ -35,6 +36,7 @@ impl DocumentToolsController {
             parent: parent.clone(),
             workspace: Rc::clone(workspace),
             settings: settings.clone(),
+            print_session: crate::document_print::PrintSession::default(),
             statistics_action,
             print_action,
             print_runner: RefCell::new(default_print_runner()),
@@ -106,6 +108,7 @@ impl DocumentToolsController {
             view: &view,
             title: &title,
             body_font: &body_font,
+            session: &self.print_session,
         });
     }
 

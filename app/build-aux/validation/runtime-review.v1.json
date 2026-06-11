@@ -154,8 +154,24 @@
       "justification": "Display-path rendering must not block the UI on portal D-Bus calls, so async GetHostPaths results are coalesced and cached while portal access paths remain authoritative for I/O."
     },
     {
+      "path": "src/document_print.rs",
+      "line": 15,
+      "match": "print_settings: RefCell<Option<gtk4::PrintSettings>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The window's document tools controller owns remembered print dialog choices.",
+      "justification": "Print settings must survive between print runs in the same window so the user's paper and printer choices are not reset on every print."
+    },
+    {
+      "path": "src/document_print.rs",
+      "line": 16,
+      "match": "page_setup: RefCell<Option<gtk4::PageSetup>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The window's document tools controller owns remembered print dialog choices.",
+      "justification": "Page setup must survive between print runs in the same window so the user's paper and orientation choices are not reset on every print."
+    },
+    {
       "path": "src/document_tools.rs",
-      "line": 17,
+      "line": 20,
       "match": "print_runner: RefCell<PrintRunner>,",
       "kind": "runtime-shared-state",
       "ownership": "The document tools controller owns the mutable print runner injection point.",
