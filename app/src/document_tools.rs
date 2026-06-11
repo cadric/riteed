@@ -5,13 +5,15 @@ use gtk4::{gio, prelude::*};
 use libadwaita as adw;
 
 use crate::editor_tab::EditorTab;
+use crate::settings::AppSettings;
 use crate::workspace::Workspace;
 
-pub(crate) type PrintRunner = Rc<dyn Fn(&adw::ApplicationWindow, &sourceview5::View, &str)>;
+pub(crate) type PrintRunner = Rc<dyn Fn(&crate::document_print::PrintJob<'_>)>;
 
 pub(crate) struct DocumentToolsController {
     parent: adw::ApplicationWindow,
     workspace: Rc<Workspace>,
+    settings: AppSettings,
     statistics_action: gio::SimpleAction,
     print_action: gio::SimpleAction,
     print_runner: RefCell<PrintRunner>,
@@ -19,7 +21,11 @@ pub(crate) struct DocumentToolsController {
 
 impl DocumentToolsController {
     #[must_use]
-    pub(crate) fn new(parent: &adw::ApplicationWindow, workspace: &Rc<Workspace>) -> Rc<Self> {
+    pub(crate) fn new(
+        parent: &adw::ApplicationWindow,
+        workspace: &Rc<Workspace>,
+        settings: &AppSettings,
+    ) -> Rc<Self> {
         let statistics_action = gio::SimpleAction::new("document-statistics", None);
         let print_action = gio::SimpleAction::new("print", None);
         parent.add_action(&statistics_action);
@@ -28,6 +34,7 @@ impl DocumentToolsController {
         let controller = Rc::new(Self {
             parent: parent.clone(),
             workspace: Rc::clone(workspace),
+            settings: settings.clone(),
             statistics_action,
             print_action,
             print_runner: RefCell::new(default_print_runner()),
@@ -93,7 +100,13 @@ impl DocumentToolsController {
         let runner = self.print_runner.borrow().clone();
         let view = tab.text_view();
         let title = tab.title();
-        runner(&self.parent, &view, &title);
+        let body_font = crate::document_print::print_body_font_name(&self.settings.editor_font());
+        runner(&crate::document_print::PrintJob {
+            parent: &self.parent,
+            view: &view,
+            title: &title,
+            body_font: &body_font,
+        });
     }
 
     #[cfg(test)]

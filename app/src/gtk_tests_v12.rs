@@ -30,15 +30,19 @@ fn exercise_print_runner_injection(test_app: &adw::Application) {
 
     let captured = Rc::new(RefCell::new(None));
     let captured_for_runner = Rc::clone(&captured);
-    window.set_print_runner_for_tests(Rc::new(move |_parent, view, title| {
-        let buffer = view.buffer();
-        captured_for_runner.replace(Some((title.to_owned(), buffer.char_count())));
+    window.set_print_runner_for_tests(Rc::new(move |job: &crate::document_print::PrintJob<'_>| {
+        let buffer = job.view.buffer();
+        captured_for_runner.replace(Some((
+            job.title.to_owned(),
+            buffer.char_count(),
+            job.body_font.to_owned(),
+        )));
     }));
     assert!(window.activate_print_for_tests());
     drain_events(4);
 
     assert_eq!(
         captured.borrow().clone(),
-        Some((String::from("Untitled"), 8))
+        Some((String::from("Untitled"), 8, String::from("Monospace 11")))
     );
 }
