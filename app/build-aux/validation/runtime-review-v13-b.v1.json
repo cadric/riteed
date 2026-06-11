@@ -307,7 +307,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 422,
+      "line": 427,
       "match": "fn with_syncing(state: &Rc<RefCell<PreferencesState>>, operation: impl FnOnce()) {",
       "kind": "runtime-shared-state",
       "ownership": "The dialog-scoped syncing helper mutates the shared preferences state.",
@@ -315,7 +315,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 428,
+      "line": 433,
       "match": "fn spin_dirty(state: &Rc<RefCell<PreferencesState>>, dirty_spin: DirtySpin) -> bool {",
       "kind": "runtime-shared-state",
       "ownership": "The staged SpinRow read helper borrows the shared preferences state.",
@@ -323,7 +323,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 436,
+      "line": 441,
       "match": "fn set_spin_dirty(state: &Rc<RefCell<PreferencesState>>, dirty_spin: DirtySpin, value: bool) {",
       "kind": "runtime-shared-state",
       "ownership": "The staged SpinRow write helper mutates the shared preferences state.",

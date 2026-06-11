@@ -122,15 +122,9 @@ msgstr "Program"
 msgid "Applied after restart"
 msgstr "Anvendes efter genstart"
 
-msgid "Apply"
-msgstr "Anvend"
-
 msgctxt "dialog button"
 msgid "Apply"
 msgstr "Anvend"
-
-msgid "Apply Git Identity"
-msgstr "Anvend Git-identitet"
 
 msgctxt "editor palette"
 msgid "Auto"

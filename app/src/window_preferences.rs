@@ -381,11 +381,16 @@ fn install_language_preference(
 }
 
 fn install_git_identity_preference(shell: &WindowShell, settings: &AppSettings) {
-    let settings = settings.clone();
-    let name_row = shell.git_name_row.clone();
     let email_row = shell.git_email_row.clone();
-    shell.git_identity_apply_button.connect_clicked(move |_| {
-        settings.set_git_identity(&name_row.text(), &email_row.text());
+    let apply_settings = settings.clone();
+    shell.git_name_row.connect_apply(move |row| {
+        apply_settings.set_git_identity(&row.text(), &email_row.text());
+    });
+
+    let name_row = shell.git_name_row.clone();
+    let apply_settings = settings.clone();
+    shell.git_email_row.connect_apply(move |row| {
+        apply_settings.set_git_identity(&name_row.text(), &row.text());
     });
 }
 

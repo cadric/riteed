@@ -43,7 +43,6 @@ pub struct WindowShell {
     pub indent_width_row: adw::SpinRow,
     pub git_name_row: adw::EntryRow,
     pub git_email_row: adw::EntryRow,
-    pub git_identity_apply_button: gtk4::Button,
 }
 
 struct PreferenceWidgets {
@@ -69,7 +68,6 @@ struct PreferenceWidgets {
     indent_width_row: adw::SpinRow,
     git_name_row: adw::EntryRow,
     git_email_row: adw::EntryRow,
-    git_identity_apply_button: gtk4::Button,
 }
 
 impl WindowShell {
@@ -148,7 +146,6 @@ impl WindowShell {
             indent_width_row: preferences.indent_width_row,
             git_name_row: preferences.git_name_row,
             git_email_row: preferences.git_email_row,
-            git_identity_apply_button: preferences.git_identity_apply_button,
         })
     }
 }
@@ -187,7 +184,6 @@ fn load_preference_widgets() -> Result<PreferenceWidgets, AppError> {
         indent_width_row: builder_object(&builder, "indent_width_row")?,
         git_name_row: builder_object(&builder, "git_name_row")?,
         git_email_row: builder_object(&builder, "git_email_row")?,
-        git_identity_apply_button: builder_object(&builder, "git_identity_apply_button")?,
     })
 }
 

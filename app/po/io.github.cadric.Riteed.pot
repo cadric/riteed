@@ -108,14 +108,8 @@ msgstr ""
 msgid "Applied after restart"
 msgstr ""
 
-msgid "Apply"
-msgstr ""
-
 msgctxt "dialog button"
 msgid "Apply"
-msgstr ""
-
-msgid "Apply Git Identity"
 msgstr ""
 
 msgctxt "editor palette"
