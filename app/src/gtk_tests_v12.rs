@@ -4,11 +4,12 @@ use std::rc::Rc;
 use gtk4::prelude::*;
 use libadwaita as adw;
 
-use crate::gtk_tests::{build_window, drain_events};
+use crate::gtk_tests::{build_window, drain_events, spin_until};
 
 pub(crate) fn exercise_v12_power_tools(test_app: &adw::Application) {
     empty_source_buffer_line_count_follows_gtk();
     exercise_print_runner_injection(test_app);
+    exercise_print_preview_engine(test_app);
 }
 
 fn empty_source_buffer_line_count_follows_gtk() {
@@ -45,4 +46,28 @@ fn exercise_print_runner_injection(test_app: &adw::Application) {
         captured.borrow().clone(),
         Some((String::from("Untitled"), 8, String::from("Monospace 11")))
     );
+}
+
+fn exercise_print_preview_engine(test_app: &adw::Application) {
+    let Some(window) = build_window(test_app) else {
+        return;
+    };
+    window.ensure_default_tab();
+    let text = "preview me\n".repeat(40);
+    window.set_selected_text_for_tests(&text);
+    drain_events(4);
+
+    let Some(engine) = window.start_print_preview_engine_for_tests() else {
+        return;
+    };
+    spin_until("print preview paginates", || engine.is_ready());
+
+    assert!(engine.n_pages() >= 1);
+    let texture = engine.render_page(0);
+    assert!(texture.is_some(), "preview page 0 did not render");
+    if let Some(texture) = texture {
+        assert!(texture.width() > 300);
+        assert!(texture.height() > texture.width() / 2);
+    }
+    engine.finish();
 }

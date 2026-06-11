@@ -424,6 +424,19 @@ impl Window {
         gtk4::prelude::WidgetExt::activate_action(self.widget(), "win.print", None).is_ok()
     }
 
+    pub(crate) fn start_print_preview_engine_for_tests(
+        &self,
+    ) -> Option<Rc<crate::document_print_preview::PreviewEngine>> {
+        let tab = self.workspace.selected_tab()?;
+        let view = tab.text_view();
+        crate::document_print_preview::PreviewEngine::start(
+            &self.shell.window,
+            &view,
+            &tab.title(),
+            "Monospace 11",
+        )
+    }
+
     pub(crate) fn source_control_row_count_for_tests(&self) -> usize {
         self.source_control.row_count_for_tests()
     }

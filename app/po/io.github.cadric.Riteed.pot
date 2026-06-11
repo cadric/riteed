@@ -1105,6 +1105,9 @@ msgstr ""
 msgid "Print Current Document"
 msgstr ""
 
+msgid "Print preview failed."
+msgstr ""
+
 msgid "Printing failed."
 msgstr ""
 

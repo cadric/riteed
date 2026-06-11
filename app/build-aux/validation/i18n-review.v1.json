@@ -17,7 +17,7 @@
     },
     {
       "path": "src/document_print.rs",
-      "line": 84,
+      "line": 65,
       "match": "&AppError::Internal(gettext(\"Printing failed.\")),",
       "resolution": "This short print failure message appears in the print error dialog after the native print operation reports failure.",
       "kind": "i18n-short-string"

@@ -36,34 +36,15 @@ pub(crate) fn print_body_font_name(stored_font: &str) -> String {
 }
 
 pub(crate) fn run_print(job: &PrintJob<'_>) {
-    let operation = gtk4::PrintOperation::new();
-    operation.set_job_name(job.title);
-    operation.set_embed_page_setup(true);
+    let (operation, _compositor) = build_print_operation(job.view, job.title, job.body_font);
     operation.set_show_progress(true);
-    operation.set_unit(gtk4::Unit::Mm);
+
     if let Some(settings) = job.session.print_settings.borrow().as_ref() {
         operation.set_print_settings(Some(settings));
     }
     if let Some(page_setup) = job.session.page_setup.borrow().as_ref() {
         operation.set_default_page_setup(Some(page_setup));
     }
-
-    let compositor = sourceview5::PrintCompositor::from_view(job.view);
-    configure_compositor(&compositor, job.view, job.title, job.body_font);
-
-    let compositor_for_paginate = compositor.clone();
-    operation.connect_paginate(move |operation, context| {
-        let finished = compositor_for_paginate.paginate(context);
-        if finished {
-            operation.set_n_pages(compositor_for_paginate.n_pages());
-        }
-        finished
-    });
-
-    let compositor_for_draw = compositor.clone();
-    operation.connect_draw_page(move |_, context, page| {
-        compositor_for_draw.draw_page(context, page);
-    });
 
     match operation.run(gtk4::PrintOperationAction::PrintDialog, Some(job.parent)) {
         // Apply means "settings should be stored"; Cancel explicitly means
@@ -86,6 +67,36 @@ pub(crate) fn run_print(job: &PrintJob<'_>) {
         }
         Ok(_) => {}
     }
+}
+
+pub(crate) fn build_print_operation(
+    view: &sourceview5::View,
+    title: &str,
+    body_font: &str,
+) -> (gtk4::PrintOperation, sourceview5::PrintCompositor) {
+    let operation = gtk4::PrintOperation::new();
+    operation.set_job_name(title);
+    operation.set_embed_page_setup(true);
+    operation.set_unit(gtk4::Unit::Mm);
+
+    let compositor = sourceview5::PrintCompositor::from_view(view);
+    configure_compositor(&compositor, view, title, body_font);
+
+    let compositor_for_paginate = compositor.clone();
+    operation.connect_paginate(move |operation, context| {
+        let finished = compositor_for_paginate.paginate(context);
+        if finished {
+            operation.set_n_pages(compositor_for_paginate.n_pages());
+        }
+        finished
+    });
+
+    let compositor_for_draw = compositor.clone();
+    operation.connect_draw_page(move |_, context, page| {
+        compositor_for_draw.draw_page(context, page);
+    });
+
+    (operation, compositor)
 }
 
 fn configure_compositor(

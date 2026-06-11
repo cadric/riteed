@@ -170,6 +170,54 @@
       "justification": "Page setup must survive between print runs in the same window so the user's paper and orientation choices are not reset on every print."
     },
     {
+      "path": "src/document_print_preview.rs",
+      "line": 16,
+      "match": "operation: RefCell<Option<gtk4::PrintOperation>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The print preview engine owns the in-flight preview operation state.",
+      "justification": "GTK delivers preview pagination and page-size callbacks asynchronously on the main loop, so the engine must share mutable state between signal closures and the dialog."
+    },
+    {
+      "path": "src/document_print_preview.rs",
+      "line": 17,
+      "match": "preview: RefCell<Option<gtk4::PrintOperationPreview>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The print preview engine owns the in-flight preview operation state.",
+      "justification": "GTK delivers preview pagination and page-size callbacks asynchronously on the main loop, so the engine must share mutable state between signal closures and the dialog."
+    },
+    {
+      "path": "src/document_print_preview.rs",
+      "line": 18,
+      "match": "surface: RefCell<Option<cairo::ImageSurface>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The print preview engine owns the in-flight preview operation state.",
+      "justification": "GTK delivers preview pagination and page-size callbacks asynchronously on the main loop, so the engine must share mutable state between signal closures and the dialog."
+    },
+    {
+      "path": "src/document_print_preview.rs",
+      "line": 19,
+      "match": "n_pages: Cell<i32>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The print preview engine owns the in-flight preview operation state.",
+      "justification": "GTK delivers preview pagination and page-size callbacks asynchronously on the main loop, so the engine must share mutable state between signal closures and the dialog."
+    },
+    {
+      "path": "src/document_print_preview.rs",
+      "line": 20,
+      "match": "ready: Cell<bool>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The print preview engine owns the in-flight preview operation state.",
+      "justification": "GTK delivers preview pagination and page-size callbacks asynchronously on the main loop, so the engine must share mutable state between signal closures and the dialog."
+    },
+    {
+      "path": "src/document_print_preview.rs",
+      "line": 21,
+      "match": "on_ready: RefCell<Option<Box<dyn Fn()>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The print preview engine owns the in-flight preview operation state.",
+      "justification": "GTK delivers preview pagination and page-size callbacks asynchronously on the main loop, so the engine must share mutable state between signal closures and the dialog."
+    },
+    {
       "path": "src/document_tools.rs",
       "line": 20,
       "match": "print_runner: RefCell<PrintRunner>,",

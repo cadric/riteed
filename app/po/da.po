@@ -1182,6 +1182,9 @@ msgstr "Udskriv"
 msgid "Print Current Document"
 msgstr "Udskriv aktuelt dokument"
 
+msgid "Print preview failed."
+msgstr "Forhåndsvisning af udskrift mislykkedes."
+
 msgid "Printing failed."
 msgstr "Udskrivning mislykkedes."
 

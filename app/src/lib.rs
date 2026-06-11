@@ -10,6 +10,8 @@ pub mod document;
 mod document_limits;
 mod document_portal;
 mod document_print;
+#[cfg(test)]
+mod document_print_preview;
 mod document_statistics;
 mod document_tools;
 pub mod editor_format;
