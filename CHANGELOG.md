@@ -1,6 +1,6 @@
 ---
 created: 2026-04-19
-updated: 2026-06-10
+updated: 2026-06-11
 status: current
 priority: high
 type: changelog
@@ -29,6 +29,14 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
   copy, and post-decode editor loads cannot become active over the hard cap.
 
 ### Changed
+- Reorganized Preferences into four pages: General for language and autosave,
+  Appearance for style, palette, and editor font, Editor for view,
+  indentation, and large-file limits behind an expander, and Source Control
+  for Git identity.
+- Moved per-document encoding and line-ending controls from Preferences to a
+  document-format menu in the status bar.
+- Git identity fields now save with inline apply buttons instead of a separate
+  Apply row.
 - Differentiated policy line limits so production files keep the 600-line
   default, configured test files may reach 800 lines, and production overages
   require registered waivers capped at 720 lines.
