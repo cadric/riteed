@@ -55,15 +55,7 @@ fn exercise_minimap_toggle(rust_window: &Rc<Window>) {
     assert!(rust_window.selected_minimap_visible_for_tests());
     assert_eq!(
         rust_window.selected_minimap_scrollbar_policy_for_tests(),
-        Some(gtk4::PolicyType::External)
-    );
-    assert_eq!(
-        rust_window.selected_minimap_real_scrollbar_visible_for_tests(),
-        Some(true)
-    );
-    assert_eq!(
-        rust_window.selected_minimap_scrollbar_shares_adjustment_for_tests(),
-        Some(true)
+        Some(gtk4::PolicyType::Automatic)
     );
     rust_window.set_minimap_for_tests(false);
     assert!(!rust_window.selected_minimap_visible_for_tests());
@@ -71,19 +63,11 @@ fn exercise_minimap_toggle(rust_window: &Rc<Window>) {
         rust_window.selected_minimap_scrollbar_policy_for_tests(),
         Some(gtk4::PolicyType::Automatic)
     );
-    assert_eq!(
-        rust_window.selected_minimap_real_scrollbar_visible_for_tests(),
-        Some(false)
-    );
     rust_window.set_minimap_for_tests(true);
     assert!(rust_window.selected_minimap_visible_for_tests());
     assert_eq!(
         rust_window.selected_minimap_scrollbar_policy_for_tests(),
-        Some(gtk4::PolicyType::External)
-    );
-    assert_eq!(
-        rust_window.selected_minimap_real_scrollbar_visible_for_tests(),
-        Some(true)
+        Some(gtk4::PolicyType::Automatic)
     );
 }
 

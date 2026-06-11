@@ -142,16 +142,6 @@ impl Workspace {
             .map(|tab| tab.minimap_scrollbar_policy_for_tests())
     }
 
-    pub(crate) fn selected_minimap_real_scrollbar_visible(&self) -> Option<bool> {
-        self.selected_tab()
-            .map(|tab| tab.minimap_scrollbar_visible_for_tests())
-    }
-
-    pub(crate) fn selected_minimap_scrollbar_shares_adjustment(&self) -> Option<bool> {
-        self.selected_tab()
-            .map(|tab| tab.minimap_scrollbar_shares_adjustment_for_tests())
-    }
-
     pub(crate) fn selected_markdown_preview_active_for_tests(&self) -> bool {
         self.selected_tab()
             .is_some_and(|tab| tab.markdown_preview_active_for_tests())

@@ -53,6 +53,11 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
   of the session.
 
 ### Fixed
+- Fixed end-of-document minimap scrolling in editor and Compare/Diff panes by
+  using a viewport-relative 75% scroll-past-end buffer with the existing
+  font-based padding as the minimum, while keeping native scrollbars available
+  when minimaps are visible and suppressing Compare/Diff minimaps on narrow
+  panes where the scrollbar is the safer navigation edge.
 - Fixed printing: documents now print with the configured editor font at its
   stored point size (screen zoom no longer affects paper) and long lines wrap
   instead of being cut off.

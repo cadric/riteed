@@ -4,11 +4,17 @@ use std::time::Duration;
 use gtk4::{gio, glib, prelude::*};
 use libadwaita as adw;
 
-use crate::gtk_tests::{build_window, drain_events, spin_until, write_temp_file};
+use crate::editor_zoom::effective_scroll_past_end_padding;
+use crate::git_process::test_support::init_modified_fixture_repo_for_tests;
+use crate::gtk_tests::{
+    build_window, build_window_with_settings, drain_events, spin_until, write_temp_file,
+};
+use crate::settings::{AppSettings, CompareViewMode, SourceControlViewMode};
 use crate::workspace::OpenSource;
 
 pub(crate) fn exercise_v7_compare(test_app: &adw::Application) {
     exercise_compare_with_disk_and_file(test_app);
+    exercise_compare_minimap_stays_visible_with_sidebar(test_app);
     exercise_compare_navigation(test_app);
     exercise_compare_two_files(test_app);
     exercise_compare_tab_actions(test_app);
@@ -51,6 +57,98 @@ fn wait_for_sensitive_button(root: &gtk4::Widget, label: &str, reason: &str) {
     });
 }
 
+fn exercise_compare_viewport_scroll_past_end(window: &crate::window::Window, expected_floor: i32) {
+    assert!(expected_floor > 12);
+    window.set_selected_compare_viewport_page_sizes_for_tests(0.0);
+    assert_eq!(
+        window.selected_compare_scroll_past_end_padding_for_tests(),
+        (expected_floor, expected_floor, expected_floor)
+    );
+    window.set_selected_compare_viewport_page_sizes_for_tests(800.0);
+    let expected_padding = effective_scroll_past_end_padding(expected_floor, 800.0);
+    assert_eq!(
+        window.selected_compare_scroll_past_end_padding_for_tests(),
+        (expected_padding, expected_padding, expected_padding)
+    );
+    window.set_selected_compare_viewport_page_sizes_for_tests(0.0);
+    assert_eq!(
+        window.selected_compare_scroll_past_end_padding_for_tests(),
+        (expected_floor, expected_floor, expected_floor)
+    );
+}
+
+fn zoom_source_scroll_floor_for_compare(window: &crate::window::Window) -> i32 {
+    let scroll_floor_before = window
+        .selected_scroll_past_end_floor_for_tests()
+        .map_or(0, |floor| floor);
+    window.activate_status_zoom_in_for_tests();
+    window.activate_status_zoom_in_for_tests();
+    spin_until("v7 zoom raises compare padding floor", || {
+        window.zoom_percent_for_tests() == 120
+            && window
+                .selected_scroll_past_end_floor_for_tests()
+                .is_some_and(|floor| floor > scroll_floor_before)
+    });
+    window
+        .selected_scroll_past_end_floor_for_tests()
+        .map_or(0, |floor| floor)
+}
+
+fn exercise_compare_minimap_stays_visible_with_sidebar(test_app: &adw::Application) {
+    let settings = AppSettings::new_for_tests();
+    settings.set_compare_view_mode(CompareViewMode::Unified);
+    let Some(window) = build_window_with_settings(test_app, settings) else {
+        return;
+    };
+    window.widget().set_default_size(700, 1600);
+    window.present();
+    drain_events(20);
+    window.ensure_default_tab();
+    window.set_minimap_for_tests(true);
+
+    let root = std::env::temp_dir().join(format!(
+        "riteed-v7-sidebar-minimap-repo-{}",
+        std::process::id()
+    ));
+    let tracked_name = "sidebar-minimap.rs";
+    let long_line = "pub fn compare_minimap_sidebar_width_regression() { let value = Some(\"this line is deliberately long enough to force horizontal scrolling in the unified diff surface while the project sidebar is open\"); println!(\"{value:?}\"); }\n";
+    if init_modified_fixture_repo_for_tests(&root, tracked_name, b"old\n", long_line.as_bytes())
+        .is_err()
+    {
+        return;
+    }
+    let editable_path = root.join(tracked_name);
+    window.handle_application_open(vec![gio::File::for_path(&root)]);
+    window.set_source_control_view_mode_for_tests(SourceControlViewMode::List);
+    spin_until("v7 sidebar minimap source control row appears", || {
+        window.project_sidebar_visible_for_tests()
+            && window
+                .source_control_row_state_for_tests(tracked_name)
+                .is_some()
+    });
+    window.set_project_sidebar_position_for_tests(280);
+    spin_until("v7 sidebar minimap keeps visible sidebar", || {
+        window.project_sidebar_position_for_tests() >= 220
+    });
+    assert!(window.source_control_activate_path_for_tests(tracked_name));
+    let editable_uri = gio::File::for_path(&editable_path).uri().to_string();
+    spin_until("v7 sidebar source control compare starts", || {
+        window.selected_saved_uri_for_tests() == editable_uri
+            && window.selected_compare_active_for_tests()
+    });
+    spin_until("v7 narrow compare suppresses minimap", || {
+        !window.selected_compare_minimaps_visible_for_tests().2
+    });
+    assert_eq!(
+        window
+            .selected_compare_minimap_scrollbar_policies_for_tests()
+            .2,
+        gtk4::PolicyType::Automatic
+    );
+
+    let _removed = fs::remove_dir_all(root);
+}
+
 fn exercise_compare_with_disk_and_file(test_app: &adw::Application) {
     let Some(window) = build_window(test_app) else {
         return;
@@ -75,6 +173,7 @@ fn exercise_compare_with_disk_and_file(test_app: &adw::Application) {
         window.tab_compare_action_states_for_tests(),
         (true, false, true)
     );
+    let zoomed_floor = zoom_source_scroll_floor_for_compare(&window);
 
     window.compare_with_disk_for_tests();
     spin_until("v7 compare with disk starts", || {
@@ -86,6 +185,15 @@ fn exercise_compare_with_disk_and_file(test_app: &adw::Application) {
         window.selected_compare_minimaps_visible_for_tests(),
         (true, true, true)
     );
+    assert_eq!(
+        window.selected_compare_minimap_scrollbar_policies_for_tests(),
+        (
+            gtk4::PolicyType::Automatic,
+            gtk4::PolicyType::Automatic,
+            gtk4::PolicyType::Automatic
+        )
+    );
+    exercise_compare_viewport_scroll_past_end(&window, zoomed_floor);
     assert_eq!(
         window.compare_action_states_for_tests(),
         (true, true, true, true)

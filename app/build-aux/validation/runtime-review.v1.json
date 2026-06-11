@@ -355,7 +355,7 @@
     },
     {
       "path": "src/editor_tab/compare.rs",
-      "line": 104,
+      "line": 109,
       "match": "presentation: Rc<std::cell::RefCell<DiffPresentation>>,",
       "kind": "runtime-shared-state",
       "ownership": "The compare controller owns the tab-local rendered presentation rows and custom line-number gutter model.",
@@ -363,7 +363,7 @@
     },
     {
       "path": "src/editor_tab/compare.rs",
-      "line": 105,
+      "line": 110,
       "match": "display_model: Rc<std::cell::RefCell<CompareDisplayModel>>,",
       "kind": "runtime-shared-state",
       "ownership": "The compare controller owns the tab-local collapsed display model shared by split rendering and hunk navigation.",
@@ -371,7 +371,7 @@
     },
     {
       "path": "src/editor_tab/compare.rs",
-      "line": 106,
+      "line": 111,
       "match": "row_model: Rc<std::cell::RefCell<DiffRowModel>>,",
       "kind": "runtime-shared-state",
       "ownership": "The compare controller owns the tab-local logical diff row model.",
@@ -381,7 +381,7 @@
       "ownership": "Each compare controller owns presentation and view-mode state shared with its pane, gutter, and breakpoint callbacks.",
       "justification": "Compare panes rebuild asynchronously from user actions and settings changes, so small shared cells keep UI callbacks synchronized without global state.",
       "path": "src/editor_tab/compare.rs",
-      "line": 107,
+      "line": 112,
       "match": "unified_presentation: Rc<std::cell::RefCell<UnifiedPresentation>>,",
       "kind": "runtime-shared-state"
     },
@@ -389,8 +389,40 @@
       "ownership": "Each compare controller owns presentation and view-mode state shared with its pane, gutter, and breakpoint callbacks.",
       "justification": "Compare panes rebuild asynchronously from user actions and settings changes, so small shared cells keep UI callbacks synchronized without global state.",
       "path": "src/editor_tab/compare.rs",
-      "line": 120,
+      "line": 125,
       "match": "view_mode_cell: Rc<Cell<CompareViewMode>>,",
+      "kind": "runtime-shared-state"
+    },
+    {
+      "ownership": "Each compare controller owns the tab-local user minimap visibility state shared with narrow-width breakpoint callbacks.",
+      "justification": "Compare panes need to suppress minimaps on narrow allocations while still honoring the user's global minimap preference when space returns.",
+      "path": "src/editor_tab/compare.rs",
+      "line": 126,
+      "match": "minimap_user_visible: Rc<Cell<bool>>,",
+      "kind": "runtime-shared-state"
+    },
+    {
+      "ownership": "Each compare controller owns the tab-local narrow-width minimap suppression state shared with settings updates.",
+      "justification": "The compare minimap breakpoint must coordinate with later preference changes without global state or stale closure-local visibility.",
+      "path": "src/editor_tab/compare.rs",
+      "line": 127,
+      "match": "minimap_width_suppressed: Rc<Cell<bool>>,",
+      "kind": "runtime-shared-state"
+    },
+    {
+      "ownership": "The compare controller layout helper returns the tab-local adaptive view-mode cell owned by the CompareController.",
+      "justification": "The helper is a construction boundary for the existing view-mode cell so controller initialization stays under the line cap without duplicating adaptive breakpoint state.",
+      "path": "src/editor_tab/compare/controller.rs",
+      "line": 553,
+      "match": "Rc<Cell<CompareViewMode>>,",
+      "kind": "runtime-shared-state"
+    },
+    {
+      "ownership": "The compare controller construction helpers use a local alias for the two per-controller minimap visibility cells.",
+      "justification": "The alias keeps constructor signatures compact while the cells remain owned by the CompareController and shared only with its breakpoint callbacks.",
+      "path": "src/editor_tab/compare/controller.rs",
+      "line": 42,
+      "match": "type CompareMinimapVisibilityCells = (Rc<Cell<bool>>, Rc<Cell<bool>>);",
       "kind": "runtime-shared-state"
     },
     {
@@ -509,7 +541,7 @@
       "ownership": "The compare layout owns the adaptive breakpoint mode cell shared with breakpoint callbacks.",
       "justification": "Breakpoint apply/unapply signals need to observe the current explicit mode so adaptive resizing does not override user-selected split or unified layout.",
       "path": "src/editor_tab/compare/layout.rs",
-      "line": 48,
+      "line": 49,
       "match": "presentation: &Rc<RefCell<DiffPresentation>>,",
       "kind": "runtime-shared-state"
     },
@@ -517,7 +549,7 @@
       "ownership": "The compare layout owns the adaptive breakpoint mode cell shared with breakpoint callbacks.",
       "justification": "Breakpoint apply/unapply signals need to observe the current explicit mode so adaptive resizing does not override user-selected split or unified layout.",
       "path": "src/editor_tab/compare/layout.rs",
-      "line": 60,
+      "line": 61,
       "match": "presentation: &Rc<RefCell<DiffPresentation>>,",
       "kind": "runtime-shared-state"
     },
@@ -525,7 +557,7 @@
       "ownership": "The compare layout owns the adaptive breakpoint mode cell shared with breakpoint callbacks.",
       "justification": "Breakpoint apply/unapply signals need to observe the current explicit mode so adaptive resizing does not override user-selected split or unified layout.",
       "path": "src/editor_tab/compare/layout.rs",
-      "line": 95,
+      "line": 96,
       "match": "mode: Rc<Cell<CompareViewMode>>,",
       "kind": "runtime-shared-state"
     },
@@ -533,8 +565,24 @@
       "ownership": "The compare layout owns the adaptive breakpoint mode cell shared with breakpoint callbacks.",
       "justification": "Breakpoint apply/unapply signals need to observe the current explicit mode so adaptive resizing does not override user-selected split or unified layout.",
       "path": "src/editor_tab/compare/layout.rs",
-      "line": 176,
+      "line": 177,
       "match": "presentation: &Rc<RefCell<DiffPresentation>>,",
+      "kind": "runtime-shared-state"
+    },
+    {
+      "ownership": "The compare minimap width breakpoint owns a cloned handle to the tab-local user minimap visibility cell.",
+      "justification": "Breakpoint apply/unapply callbacks need the current user minimap preference so narrow-width suppression restores the correct state when the pane widens.",
+      "path": "src/editor_tab/compare/minimap.rs",
+      "line": 89,
+      "match": "user_visible: Rc<Cell<bool>>,",
+      "kind": "runtime-shared-state"
+    },
+    {
+      "ownership": "The compare minimap width breakpoint owns a cloned handle to the tab-local narrow-width suppression cell.",
+      "justification": "Preference updates and breakpoint callbacks must share one per-controller suppression flag so hidden minimaps remain intentional only while the pane is narrow.",
+      "path": "src/editor_tab/compare/minimap.rs",
+      "line": 90,
+      "match": "width_suppressed: Rc<Cell<bool>>,",
       "kind": "runtime-shared-state"
     },
     {

@@ -126,7 +126,6 @@ pub struct EditorTab {
     preview_buffer: gtk4::TextBuffer,
     preview_view: gtk4::TextView,
     preview_scrolled: gtk4::ScrolledWindow,
-    minimap_scrollbar: gtk4::Scrollbar,
 }
 
 impl EditorTab {
@@ -190,7 +189,6 @@ impl EditorTab {
             preview_buffer: view.preview_buffer,
             preview_view: view.preview_view,
             preview_scrolled: view.preview_scrolled,
-            minimap_scrollbar: view.minimap_scrollbar,
         });
         tab.install_callbacks();
         tab.apply_minimap_visibility();

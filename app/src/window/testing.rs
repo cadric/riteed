@@ -316,15 +316,6 @@ impl Window {
         self.workspace.selected_minimap_scrollbar_policy()
     }
 
-    pub(crate) fn selected_minimap_real_scrollbar_visible_for_tests(&self) -> Option<bool> {
-        self.workspace.selected_minimap_real_scrollbar_visible()
-    }
-
-    pub(crate) fn selected_minimap_scrollbar_shares_adjustment_for_tests(&self) -> Option<bool> {
-        self.workspace
-            .selected_minimap_scrollbar_shares_adjustment()
-    }
-
     pub(crate) fn selected_source_control_minimap_tag_counts_for_tests(
         &self,
     ) -> (usize, usize, usize) {

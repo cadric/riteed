@@ -53,13 +53,8 @@ impl EditorTab {
             && !self.is_markdown_preview_active()
             && self.state.borrow().io.pending_apply.is_none();
         self.minimap_holder.set_visible(show_minimap);
-        self.minimap_scrollbar.set_visible(show_minimap);
-        let policy = if show_minimap {
-            gtk4::PolicyType::External
-        } else {
-            gtk4::PolicyType::Automatic
-        };
-        self.scrolled.set_vscrollbar_policy(policy);
+        self.scrolled
+            .set_vscrollbar_policy(gtk4::PolicyType::Automatic);
     }
 
     pub fn apply_indentation(&self) {
@@ -92,8 +87,8 @@ impl EditorTab {
     pub fn apply_scroll_past_end_padding(&self, bottom_margin: i32) {
         self.state.borrow_mut().ui.scroll_past_end_floor = bottom_margin;
         self.refresh_scroll_past_end_padding();
-        if let Ok(state) = self.state.try_borrow()
-            && let Some(compare) = state.compare.active.as_ref()
+        if let Ok(mut state) = self.state.try_borrow_mut()
+            && let Some(compare) = state.compare.active.as_mut()
         {
             compare.apply_scroll_past_end_padding(bottom_margin);
         }
@@ -110,7 +105,7 @@ impl EditorTab {
         self.text_view.set_bottom_margin(padding);
     }
 
-    fn scroll_past_end_floor(&self) -> i32 {
+    pub(crate) fn scroll_past_end_floor(&self) -> i32 {
         let floor = self.state.borrow().ui.scroll_past_end_floor;
         if floor > 0 {
             floor
@@ -181,16 +176,6 @@ impl EditorTab {
     #[cfg(test)]
     pub(crate) fn minimap_scrollbar_policy_for_tests(&self) -> gtk4::PolicyType {
         self.scrolled.vscrollbar_policy()
-    }
-
-    #[cfg(test)]
-    pub(crate) fn minimap_scrollbar_visible_for_tests(&self) -> bool {
-        self.minimap_scrollbar.property::<bool>("visible")
-    }
-
-    #[cfg(test)]
-    pub(crate) fn minimap_scrollbar_shares_adjustment_for_tests(&self) -> bool {
-        self.minimap_scrollbar.adjustment() == self.scrolled.vadjustment()
     }
 
     #[cfg(test)]
