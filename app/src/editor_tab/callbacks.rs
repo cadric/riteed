@@ -73,6 +73,16 @@ impl EditorTab {
         });
 
         let weak = Rc::downgrade(self);
+        self.scrolled
+            .vadjustment()
+            .connect_page_size_notify(move |_| {
+                let Some(tab) = weak.upgrade() else {
+                    return;
+                };
+                tab.refresh_scroll_past_end_padding();
+            });
+
+        let weak = Rc::downgrade(self);
         install_file_drop_target(&self.root, &weak);
         install_file_drop_target(&self.text_view, &weak);
         install_file_drop_target(&self.preview_view, &weak);

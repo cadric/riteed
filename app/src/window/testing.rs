@@ -552,6 +552,15 @@ impl Window {
         self.workspace.selected_scroll_past_end_padding_for_tests()
     }
 
+    pub(crate) fn selected_scroll_past_end_floor_for_tests(&self) -> Option<i32> {
+        self.workspace.selected_scroll_past_end_floor_for_tests()
+    }
+
+    pub(crate) fn set_selected_viewport_page_size_for_tests(&self, page_size: f64) {
+        self.workspace
+            .set_selected_viewport_page_size_for_tests(page_size);
+    }
+
     pub(crate) fn preferences_write_log_for_tests(&self) -> Vec<String> {
         self.settings.write_log_for_tests()
     }
