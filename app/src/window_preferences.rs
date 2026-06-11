@@ -1,13 +1,11 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use gettextrs::{gettext, pgettext};
+use gettextrs::gettext;
 use gtk4::{gio, pango, prelude::*};
 use libadwaita as adw;
 use libadwaita::prelude::*;
 
-use crate::editor_format::LineEndingMode;
-use crate::editor_tab::EditorTab;
 use crate::editor_zoom::{
     EditorZoomController, font_row_subtitle, resolve_editor_font_description, resolve_font_family,
     resolve_font_family_in_map,
@@ -44,7 +42,6 @@ impl WindowPreferencesController {
         initialize_rows(shell, settings, &state);
         install_toggle_preferences(shell, settings, workspace, &state);
         install_spin_preferences(shell, settings, workspace, &state);
-        install_document_format_preferences(shell, workspace, &state);
         install_font_preference(shell, settings, zoom);
         install_language_preference(shell, settings, &state);
         install_git_identity_preference(shell, settings);
@@ -58,10 +55,6 @@ fn initialize_rows(
     settings: &AppSettings,
     state: &Rc<RefCell<PreferencesState>>,
 ) {
-    let lf = LineEndingMode::Lf.menu_label();
-    let crlf = LineEndingMode::CrLf.menu_label();
-    let cr = LineEndingMode::Cr.menu_label();
-    let line_endings = gtk4::StringList::new(&[lf.as_str(), crlf.as_str(), cr.as_str()]);
     let language_labels = AppLanguage::ALL.map(AppLanguage::label);
     let language_labels = language_labels
         .iter()
@@ -69,8 +62,6 @@ fn initialize_rows(
         .collect::<Vec<_>>();
     let languages = gtk4::StringList::new(&language_labels);
     with_syncing(state, || {
-        shell.line_ending_row.set_model(Some(&line_endings));
-        shell.line_ending_row.set_selected(0);
         shell.language_row.set_model(Some(&languages));
         shell
             .language_row
@@ -308,92 +299,6 @@ fn commit_spin_row(
         row.set_value(f64::from(applied));
     });
     set_spin_dirty(state, dirty_spin, false);
-}
-
-fn install_document_format_preferences(
-    shell: &WindowShell,
-    workspace: &Rc<Workspace>,
-    state: &Rc<RefCell<PreferencesState>>,
-) {
-    let weak = Rc::downgrade(workspace);
-    shell.encoding_row.connect_activated(move |_| {
-        if let Some(workspace) = weak.upgrade() {
-            workspace.request_selected_encoding_action();
-        }
-    });
-
-    let weak = Rc::downgrade(workspace);
-    let line_state = Rc::clone(state);
-    shell.line_ending_row.connect_selected_notify(move |row| {
-        if line_state.borrow().syncing {
-            return;
-        }
-        if let Some(workspace) = weak.upgrade()
-            && let Some(mode) = line_ending_mode_from_index(row.selected())
-        {
-            workspace.set_selected_line_ending_mode(mode);
-        }
-    });
-
-    let encoding_row = shell.encoding_row.clone();
-    let line_ending_row = shell.line_ending_row.clone();
-    let format_state = Rc::clone(state);
-    workspace.set_format_preferences_handler(Rc::new(move |tab| {
-        sync_document_format_rows(
-            &encoding_row,
-            &line_ending_row,
-            &format_state,
-            tab.as_deref(),
-        );
-    }));
-    sync_document_format_rows(
-        &shell.encoding_row,
-        &shell.line_ending_row,
-        state,
-        workspace.selected_tab().as_deref(),
-    );
-}
-
-fn sync_document_format_rows(
-    encoding_row: &adw::ActionRow,
-    line_ending_row: &adw::ComboRow,
-    state: &Rc<RefCell<PreferencesState>>,
-    tab: Option<&EditorTab>,
-) {
-    with_syncing(state, || {
-        if let Some(tab) = tab {
-            let format = tab.current_format();
-            encoding_row.set_sensitive(
-                tab.is_document()
-                    && (tab.document_uri().is_none() || tab.can_reopen_with_encoding()),
-            );
-            encoding_row.set_subtitle(format.encoding().charset());
-            line_ending_row.set_sensitive(tab.is_document());
-            line_ending_row.set_selected(line_ending_index(format.line_ending_mode()));
-        } else {
-            encoding_row.set_sensitive(false);
-            encoding_row.set_subtitle(&pgettext("document format", "No Document"));
-            line_ending_row.set_sensitive(false);
-            line_ending_row.set_selected(line_ending_index(LineEndingMode::Lf));
-        }
-    });
-}
-
-fn line_ending_index(mode: LineEndingMode) -> u32 {
-    match mode {
-        LineEndingMode::Lf => 0,
-        LineEndingMode::CrLf => 1,
-        LineEndingMode::Cr => 2,
-    }
-}
-
-fn line_ending_mode_from_index(index: u32) -> Option<LineEndingMode> {
-    match index {
-        0 => Some(LineEndingMode::Lf),
-        1 => Some(LineEndingMode::CrLf),
-        2 => Some(LineEndingMode::Cr),
-        _ => None,
-    }
 }
 
 fn install_font_preference(

@@ -246,29 +246,6 @@
       </object>
     </child>
     <child>
-      <object class="AdwPreferencesPage" id="format_preferences_page">
-        <property name="title" translatable="yes">Format</property>
-        <property name="icon-name">document-properties-symbolic</property>
-        <child>
-          <object class="AdwPreferencesGroup">
-            <property name="title" translatable="yes">Document Format</property>
-            <child>
-              <object class="AdwActionRow" id="encoding_row">
-                <property name="activatable">true</property>
-                <property name="title" translatable="yes">Text Encoding</property>
-                <property name="subtitle" translatable="yes">UTF-8</property>
-              </object>
-            </child>
-            <child>
-              <object class="AdwComboRow" id="line_ending_row">
-                <property name="title" translatable="yes">Line Endings</property>
-              </object>
-            </child>
-          </object>
-        </child>
-      </object>
-    </child>
-    <child>
       <object class="AdwPreferencesPage" id="source_control_preferences_page">
         <property name="title" translatable="yes">Source Control</property>
         <property name="icon-name">io.github.cadric.Riteed-source-control-symbolic</property>

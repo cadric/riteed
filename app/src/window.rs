@@ -77,6 +77,8 @@ pub struct Window {
     fullscreen_action: gio::SimpleAction,
     #[cfg(test)]
     theme_action: gio::SimpleAction,
+    change_encoding_action: gio::SimpleAction,
+    line_ending_action: gio::SimpleAction,
     settings: AppSettings,
     workspace: Rc<Workspace>,
     appearance: WindowAppearanceController,
@@ -210,6 +212,8 @@ impl Window {
             fullscreen_action: actions.fullscreen,
             #[cfg(test)]
             theme_action: actions.theme,
+            change_encoding_action: actions.change_encoding,
+            line_ending_action: actions.line_ending,
             settings,
             workspace,
             appearance,

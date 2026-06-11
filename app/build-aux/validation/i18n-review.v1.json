@@ -80,14 +80,14 @@
     },
     {
       "path": "src/editor_status.rs",
-      "line": 187,
+      "line": 190,
       "match": ".tooltip_text(gettext(\"Document Format\"))",
-      "resolution": "This short tooltip labels the read-only document format field in the bottom status bar, where it sits directly beside zoom and cursor status.",
+      "resolution": "This short tooltip labels the document-format menu button in the bottom status bar, where it sits directly beside zoom and cursor status.",
       "kind": "i18n-short-string"
     },
     {
       "path": "src/editor_status.rs",
-      "line": 256,
+      "line": 261,
       "match": "gettext(\"Modified\")",
       "resolution": "This short visible status tag appears immediately after the current document location in the bottom status bar, so its state meaning is explicit from placement.",
       "kind": "i18n-short-string"
@@ -262,35 +262,35 @@
     },
     {
       "path": "src/window.rs",
-      "line": 423,
+      "line": 427,
       "match": ".update_property(&[Property::Label(&gettext(\"New Tab\"))]);",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context.",
       "kind": "i18n-short-string"
     },
     {
       "path": "src/window.rs",
-      "line": 426,
+      "line": 430,
       "match": ".update_property(&[Property::Label(&gettext(\"Open Files\"))]);",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context.",
       "kind": "i18n-short-string"
     },
     {
       "path": "src/window.rs",
-      "line": 429,
+      "line": 433,
       "match": ".update_property(&[Property::Label(&gettext(\"Project Sidebar\"))]);",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context.",
       "kind": "i18n-short-string"
     },
     {
       "path": "src/window.rs",
-      "line": 432,
+      "line": 436,
       "match": ".update_property(&[Property::Label(&gettext(\"Save Current File\"))]);",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context.",
       "kind": "i18n-short-string"
     },
     {
       "path": "src/window.rs",
-      "line": 435,
+      "line": 439,
       "match": ".update_property(&[Property::Label(&gettext(\"Main Menu\"))]);",
       "resolution": "This short string is bound to a nearby control, banner, or status surface whose surrounding UI provides the missing context.",
       "kind": "i18n-short-string"
@@ -311,7 +311,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 421,
+      "line": 326,
       "match": "font_dialog.set_title(&gettext(\"Choose Editor Font\"));",
       "resolution": "This short dialog title appears at the top of the font chooser and the accompanying copy explains that the selection affects only the editor font.",
       "kind": "i18n-short-string"

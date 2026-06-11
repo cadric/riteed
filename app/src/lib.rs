@@ -42,7 +42,7 @@ mod source_styles;
 pub mod window;
 mod window_appearance;
 mod window_compare;
-pub mod window_format_menu;
+mod window_format_menu;
 mod window_preferences;
 mod window_preferences_large_file;
 mod window_project;

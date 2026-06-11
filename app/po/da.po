@@ -253,6 +253,10 @@ msgstr "Vælg en gemmeplacering, før dette dokument gemmes."
 msgid "Choose a Text Encoding"
 msgstr "Vælg en tekstkodning"
 
+msgctxt "format menu"
+msgid "Change Encoding"
+msgstr "Skift tegnkodning"
+
 msgid "Choose the encoding to use for the next save."
 msgstr "Vælg kodningen, der skal bruges ved næste gemning."
 
@@ -681,9 +685,6 @@ msgctxt "theme selector accessibility"
 msgid "Follow system style"
 msgstr "Følg systemstil"
 
-msgid "Format"
-msgstr "Format"
-
 msgctxt "status format"
 msgid "Format"
 msgstr "Format"
@@ -823,6 +824,7 @@ msgctxt "theme selector accessibility"
 msgid "Light style"
 msgstr "Lys stil"
 
+msgctxt "format menu"
 msgid "Line Endings"
 msgstr "Linjeslutninger"
 
@@ -968,10 +970,6 @@ msgstr "Næste træffer"
 
 msgid "Next Tab"
 msgstr "Næste fane"
-
-msgctxt "document format"
-msgid "No Document"
-msgstr "Intet dokument"
 
 msgid "No Git action is available for the active tab."
 msgstr "Ingen Git-handling er tilgængelig for den aktive fane."
@@ -1628,9 +1626,6 @@ msgctxt "help page"
 msgid "Technical Notes"
 msgstr "Tekniske noter"
 
-msgid "Text Encoding"
-msgstr "Tekstkodning"
-
 msgid "That folder could not be opened."
 msgstr "Mappen kunne ikke åbnes."
 
@@ -1771,9 +1766,6 @@ msgstr "Træ"
 
 msgid "Type to search the open folder."
 msgstr "Skriv for at søge i den åbne mappe."
-
-msgid "UTF-8"
-msgstr "UTF-8"
 
 msgid "Unable to Build the Window"
 msgstr "Kunne ikke opbygge vinduet"

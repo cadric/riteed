@@ -7,7 +7,7 @@ use crate::editor_format::LineEndingMode;
 use crate::editor_tab::EditorTab;
 use crate::workspace::Workspace;
 
-pub fn create_actions() -> (gio::SimpleAction, gio::SimpleAction) {
+pub(crate) fn create_actions() -> (gio::SimpleAction, gio::SimpleAction) {
     let change_encoding = gio::SimpleAction::new("change-encoding", None);
     let line_ending = gio::SimpleAction::new_stateful(
         "line-ending",
@@ -17,13 +17,11 @@ pub fn create_actions() -> (gio::SimpleAction, gio::SimpleAction) {
     (change_encoding, line_ending)
 }
 
-pub fn build_menu() -> gio::Menu {
+pub(crate) fn build_menu() -> gio::Menu {
     let menu = gio::Menu::new();
     let encoding_section = gio::Menu::new();
-    encoding_section.append(
-        Some(&pgettext("format menu", "Change Encoding…")),
-        Some("win.change-encoding"),
-    );
+    let change_encoding_label = ellipsis_label(pgettext("format menu", "Change Encoding"));
+    encoding_section.append(Some(&change_encoding_label), Some("win.change-encoding"));
     menu.append_section(None, &encoding_section);
 
     let line_section = gio::Menu::new();
@@ -35,11 +33,14 @@ pub fn build_menu() -> gio::Menu {
         );
         line_section.append_item(&item);
     }
-    menu.append_section(Some(&pgettext("format menu", "Line Endings")), &line_section);
+    menu.append_section(
+        Some(&pgettext("format menu", "Line Endings")),
+        &line_section,
+    );
     menu
 }
 
-pub fn install(
+pub(crate) fn install(
     change_encoding: &gio::SimpleAction,
     line_ending: &gio::SimpleAction,
     workspace: &Rc<Workspace>,
@@ -113,6 +114,11 @@ fn mode_from_nick(nick: &str) -> Option<LineEndingMode> {
     }
 }
 
+fn ellipsis_label(mut label: String) -> String {
+    label.push('…');
+    label
+}
+
 #[cfg(test)]
 mod tests {
     use gtk4::prelude::*;
@@ -148,7 +154,10 @@ mod tests {
             Some("win.change-encoding")
         );
 
-        assert_eq!(item_string(&menu, 1, "label").as_deref(), Some("Line Endings"));
+        assert_eq!(
+            item_string(&menu, 1, "label").as_deref(),
+            Some("Line Endings")
+        );
         let line_endings = section(&menu, 1);
         assert_eq!(line_endings.n_items(), 3);
         let expected = [

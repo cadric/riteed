@@ -231,6 +231,10 @@ msgstr ""
 msgid "Choose a Text Encoding"
 msgstr ""
 
+msgctxt "format menu"
+msgid "Change Encoding"
+msgstr ""
+
 msgid "Choose the encoding to use for the next save."
 msgstr ""
 
@@ -630,9 +634,6 @@ msgctxt "theme selector accessibility"
 msgid "Follow system style"
 msgstr ""
 
-msgid "Format"
-msgstr ""
-
 msgctxt "status format"
 msgid "Format"
 msgstr ""
@@ -758,6 +759,7 @@ msgctxt "theme selector accessibility"
 msgid "Light style"
 msgstr ""
 
+msgctxt "format menu"
 msgid "Line Endings"
 msgstr ""
 
@@ -902,10 +904,6 @@ msgid "Next Match"
 msgstr ""
 
 msgid "Next Tab"
-msgstr ""
-
-msgctxt "document format"
-msgid "No Document"
 msgstr ""
 
 msgid "No Git action is available for the active tab."
@@ -1519,9 +1517,6 @@ msgctxt "help page"
 msgid "Technical Notes"
 msgstr ""
 
-msgid "Text Encoding"
-msgstr ""
-
 msgid "That folder could not be opened."
 msgstr ""
 
@@ -1654,9 +1649,6 @@ msgid "Tree"
 msgstr ""
 
 msgid "Type to search the open folder."
-msgstr ""
-
-msgid "UTF-8"
 msgstr ""
 
 msgid "Unable to Build the Window"

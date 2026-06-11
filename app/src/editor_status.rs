@@ -5,7 +5,7 @@ use gtk4::prelude::*;
 use crate::editor_tab::EditorTab;
 
 struct StatusControls {
-    format_label: gtk4::Label,
+    format_button: gtk4::MenuButton,
     zoom_box: gtk4::Box,
     zoom_percent_label: gtk4::Label,
     zoom_out_button: gtk4::Button,
@@ -18,7 +18,7 @@ pub struct EditorStatusBar {
     location_label: gtk4::Label,
     modified_label: gtk4::Label,
     position_label: gtk4::Label,
-    format_label: gtk4::Label,
+    format_button: gtk4::MenuButton,
     zoom_box: gtk4::Box,
     zoom_percent_label: gtk4::Label,
     zoom_out_button: gtk4::Button,
@@ -76,7 +76,7 @@ impl EditorStatusBar {
         left.append(&location_label);
         left.append(&modified_label);
         right.append(&status_separator());
-        right.append(&controls.format_label);
+        right.append(&controls.format_button);
         right.append(&status_separator());
         right.append(&controls.zoom_box);
         right.append(&status_separator());
@@ -85,7 +85,7 @@ impl EditorStatusBar {
         root.append(&right);
 
         controls
-            .format_label
+            .format_button
             .update_property(&[Property::Label(&gettext("Document Format"))]);
         location_label.update_property(&[Property::Label(&gettext("Current Document Location"))]);
         modified_label.update_property(&[Property::Label(&gettext("Modification State"))]);
@@ -97,7 +97,7 @@ impl EditorStatusBar {
             location_label,
             modified_label,
             position_label,
-            format_label: controls.format_label,
+            format_button: controls.format_button,
             zoom_box: controls.zoom_box,
             zoom_percent_label: controls.zoom_percent_label,
             zoom_out_button: controls.zoom_out_button,
@@ -127,15 +127,15 @@ impl EditorStatusBar {
         self.position_label.set_label(&position);
 
         if let Some(tab) = tab {
-            self.format_label.set_label(&tab.current_format_summary());
-            self.format_label.set_sensitive(true);
+            self.format_button.set_label(&tab.current_format_summary());
+            self.format_button.set_sensitive(true);
             self.zoom_box.set_sensitive(true);
             self.zoom_out_button.set_sensitive(true);
             self.zoom_in_button.set_sensitive(true);
         } else {
-            self.format_label
+            self.format_button
                 .set_label(&pgettext("status format", "Format"));
-            self.format_label.set_sensitive(false);
+            self.format_button.set_sensitive(false);
             self.zoom_box.set_sensitive(false);
             self.zoom_out_button.set_sensitive(false);
             self.zoom_in_button.set_sensitive(false);
@@ -157,7 +157,10 @@ impl EditorStatusBar {
 
     #[cfg(test)]
     pub(crate) fn format_summary_for_tests(&self) -> String {
-        self.format_label.text().to_string()
+        self.format_button
+            .label()
+            .map(|label| label.to_string())
+            .unwrap_or_default()
     }
 
     #[cfg(test)]
@@ -182,11 +185,13 @@ impl EditorStatusBar {
 }
 
 fn build_status_controls() -> StatusControls {
-    let format_label = gtk4::Label::builder()
-        .xalign(0.5)
+    let format_button = gtk4::MenuButton::builder()
+        .menu_model(&crate::window_format_menu::build_menu())
         .tooltip_text(gettext("Document Format"))
+        .valign(gtk4::Align::Center)
+        .direction(gtk4::ArrowType::Up)
         .build();
-    format_label.add_css_class("dim-label");
+    format_button.add_css_class("flat");
 
     let zoom_box = gtk4::Box::builder()
         .orientation(gtk4::Orientation::Horizontal)
@@ -216,7 +221,7 @@ fn build_status_controls() -> StatusControls {
     zoom_box.append(&zoom_in_button);
 
     StatusControls {
-        format_label,
+        format_button,
         zoom_box,
         zoom_percent_label,
         zoom_out_button,

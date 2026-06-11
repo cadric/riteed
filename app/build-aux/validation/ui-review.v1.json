@@ -6,7 +6,7 @@
       "line": 5,
       "match": "<object class=\"AdwPreferencesDialog\" id=\"preferences_dialog\">",
       "smallest_width": 320,
-      "adaptive_pattern": "Five-page libadwaita preferences dialog with General, Editor, Appearance, Format, and Source Control pages. General owns app-level language, Editor keeps behavior, saving, and large-file threshold rows, Appearance owns app style and editor palette tiles, Format follows the selected document, and Source Control owns local Git identity.",
+      "adaptive_pattern": "Four-page libadwaita preferences dialog with General, Editor, Appearance, and Source Control pages. General owns app-level language, Editor keeps behavior, saving, and large-file threshold rows, Appearance owns app style and editor palette tiles, and Source Control owns local Git identity. Per-document encoding and line endings live in the status-bar document-format menu.",
       "collapse_behavior": "Rows stay vertically stacked, ComboRows use standard inline choices, SpinRows keep their numeric editor inline without horizontal scrolling, the Large Files SpinRows remain bounded and ordered by code sanitization, Appearance palette grids wrap within their page, and the Source Control identity rows remain separate from editor controls while keeping standard row labels.",
       "copy_reviewed": true,
       "a11y_reviewed": true

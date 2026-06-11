@@ -472,7 +472,7 @@ fn exercise_search_and_status(test_app: &adw::Application) {
         "UTF-8 · LF"
     );
 
-    search_window.choose_selected_line_ending_from_preferences_for_tests(LineEndingMode::CrLf);
+    search_window.choose_selected_line_ending_from_format_menu_for_tests(LineEndingMode::CrLf);
     assert_eq!(
         search_window.status_format_summary_for_tests(),
         "UTF-8 · CRLF"
@@ -485,7 +485,7 @@ fn exercise_search_and_status(test_app: &adw::Application) {
             String::from("Ln 1, Col 1")
         )
     );
-    search_window.choose_selected_line_ending_from_preferences_for_tests(LineEndingMode::Lf);
+    search_window.choose_selected_line_ending_from_format_menu_for_tests(LineEndingMode::Lf);
     assert_eq!(
         search_window.status_format_summary_for_tests(),
         "UTF-8 · LF"

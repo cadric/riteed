@@ -243,7 +243,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 20,
+      "line": 18,
       "match": "_state: Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The preferences controller owns the staged editor-preferences state for the dialog lifetime.",
@@ -251,71 +251,55 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 59,
+      "line": 56,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
-      "ownership": "The Preferences dialog owns one shared state handle for row callbacks and selected-document format controls.",
-      "justification": "Dialog rows update GSettings and selected-tab format state from GTK callbacks, so the shared main-thread state avoids divergent copies of preferences UI state."
+      "ownership": "The Preferences dialog owns one shared state handle for row callbacks.",
+      "justification": "Dialog rows update GSettings from GTK callbacks, so the shared main-thread state avoids divergent copies of preferences UI state."
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 121,
+      "line": 112,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
-      "ownership": "The Preferences dialog owns one shared state handle for row callbacks and selected-document format controls.",
-      "justification": "Dialog rows update GSettings and selected-tab format state from GTK callbacks, so the shared main-thread state avoids divergent copies of preferences UI state."
+      "ownership": "The Preferences dialog owns one shared state handle for row callbacks.",
+      "justification": "Dialog rows update GSettings from GTK callbacks, so the shared main-thread state avoids divergent copies of preferences UI state."
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 177,
+      "line": 168,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
-      "ownership": "The Preferences dialog owns one shared state handle for row callbacks and selected-document format controls.",
-      "justification": "Dialog rows update GSettings and selected-tab format state from GTK callbacks, so the shared main-thread state avoids divergent copies of preferences UI state."
+      "ownership": "The Preferences dialog owns one shared state handle for row callbacks.",
+      "justification": "Dialog rows update GSettings from GTK callbacks, so the shared main-thread state avoids divergent copies of preferences UI state."
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 199,
+      "line": 190,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
-      "ownership": "The Preferences dialog owns one shared state handle for row callbacks and selected-document format controls.",
-      "justification": "Dialog rows update GSettings and selected-tab format state from GTK callbacks, so the shared main-thread state avoids divergent copies of preferences UI state."
+      "ownership": "The Preferences dialog owns one shared state handle for row callbacks.",
+      "justification": "Dialog rows update GSettings from GTK callbacks, so the shared main-thread state avoids divergent copies of preferences UI state."
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 239,
+      "line": 230,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
-      "ownership": "The Preferences dialog owns one shared state handle for row callbacks and selected-document format controls.",
-      "justification": "Dialog rows update GSettings and selected-tab format state from GTK callbacks, so the shared main-thread state avoids divergent copies of preferences UI state."
+      "ownership": "The Preferences dialog owns one shared state handle for row callbacks.",
+      "justification": "Dialog rows update GSettings from GTK callbacks, so the shared main-thread state avoids divergent copies of preferences UI state."
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 294,
+      "line": 285,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
-      "ownership": "The Preferences dialog owns one shared state handle for row callbacks and selected-document format controls.",
-      "justification": "Dialog rows update GSettings and selected-tab format state from GTK callbacks, so the shared main-thread state avoids divergent copies of preferences UI state."
+      "ownership": "The Preferences dialog owns one shared state handle for row callbacks.",
+      "justification": "Dialog rows update GSettings from GTK callbacks, so the shared main-thread state avoids divergent copies of preferences UI state."
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 316,
-      "match": "state: &Rc<RefCell<PreferencesState>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The Preferences dialog owns one shared state handle for row callbacks and selected-document format controls.",
-      "justification": "Dialog rows update GSettings and selected-tab format state from GTK callbacks, so the shared main-thread state avoids divergent copies of preferences UI state."
-    },
-    {
-      "path": "src/window_preferences.rs",
-      "line": 360,
-      "match": "state: &Rc<RefCell<PreferencesState>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The Preferences dialog owns one shared state handle for row callbacks and selected-document format controls.",
-      "justification": "Dialog rows update GSettings and selected-tab format state from GTK callbacks, so the shared main-thread state avoids divergent copies of preferences UI state."
-    },
-    {
-      "path": "src/window_preferences.rs",
-      "line": 466,
+      "line": 371,
       "match": "state: &Rc<RefCell<PreferencesState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The Preferences dialog owns the shared state handle used by the language preference ComboRow.",
@@ -323,7 +307,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 517,
+      "line": 422,
       "match": "fn with_syncing(state: &Rc<RefCell<PreferencesState>>, operation: impl FnOnce()) {",
       "kind": "runtime-shared-state",
       "ownership": "The dialog-scoped syncing helper mutates the shared preferences state.",
@@ -331,7 +315,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 523,
+      "line": 428,
       "match": "fn spin_dirty(state: &Rc<RefCell<PreferencesState>>, dirty_spin: DirtySpin) -> bool {",
       "kind": "runtime-shared-state",
       "ownership": "The staged SpinRow read helper borrows the shared preferences state.",
@@ -339,7 +323,7 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 531,
+      "line": 436,
       "match": "fn set_spin_dirty(state: &Rc<RefCell<PreferencesState>>, dirty_spin: DirtySpin, value: bool) {",
       "kind": "runtime-shared-state",
       "ownership": "The staged SpinRow write helper mutates the shared preferences state.",
