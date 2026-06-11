@@ -15,6 +15,7 @@ pub struct EditorView {
     pub text_view: sourceview5::View,
     pub minimap: sourceview5::Map,
     pub minimap_holder: gtk4::Box,
+    pub minimap_scrollbar: gtk4::Scrollbar,
     pub scrolled: gtk4::ScrolledWindow,
     pub content: gtk4::Box,
     pub preview_buffer: gtk4::TextBuffer,
@@ -77,6 +78,12 @@ impl EditorView {
         minimap_holder.set_width_request(96);
         minimap_holder.append(&minimap);
 
+        // A real scrollbar bound to the editor's vadjustment guarantees
+        // mouse/scroll sync that GtkSourceMap's drag heuristics cannot.
+        let minimap_scrollbar =
+            gtk4::Scrollbar::new(gtk4::Orientation::Vertical, Some(&scrolled.vadjustment()));
+        minimap_scrollbar.set_visible(settings.show_minimap());
+
         let banner = adw::Banner::new("");
         banner.set_button_label(None);
         banner.set_revealed(false);
@@ -88,6 +95,7 @@ impl EditorView {
         content.set_hexpand(true);
         content.set_vexpand(true);
         content.append(&scrolled);
+        content.append(&minimap_scrollbar);
         content.append(&minimap_holder);
 
         let preview = build_markdown_preview_widgets();
@@ -107,6 +115,7 @@ impl EditorView {
             text_view,
             minimap,
             minimap_holder,
+            minimap_scrollbar,
             scrolled,
             content,
             preview_buffer: preview.buffer,

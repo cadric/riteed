@@ -1,4 +1,4 @@
-use std::fs;
+use std::{fs, rc::Rc};
 
 use gtk4::{gio, prelude::*};
 use libadwaita as adw;
@@ -10,6 +10,7 @@ use crate::gtk_tests::{
     write_temp_file,
 };
 use crate::settings::AppSettings;
+use crate::window::Window;
 use crate::workspace::OpenSource;
 
 fn exercise_external_banner(test_app: &adw::Application) {
@@ -49,6 +50,43 @@ fn exercise_external_banner(test_app: &adw::Application) {
     let _removed = fs::remove_file(banner_path);
 }
 
+fn exercise_minimap_toggle(rust_window: &Rc<Window>) {
+    rust_window.ensure_default_tab();
+    assert!(rust_window.selected_minimap_visible_for_tests());
+    assert_eq!(
+        rust_window.selected_minimap_scrollbar_policy_for_tests(),
+        Some(gtk4::PolicyType::External)
+    );
+    assert_eq!(
+        rust_window.selected_minimap_real_scrollbar_visible_for_tests(),
+        Some(true)
+    );
+    assert_eq!(
+        rust_window.selected_minimap_scrollbar_shares_adjustment_for_tests(),
+        Some(true)
+    );
+    rust_window.set_minimap_for_tests(false);
+    assert!(!rust_window.selected_minimap_visible_for_tests());
+    assert_eq!(
+        rust_window.selected_minimap_scrollbar_policy_for_tests(),
+        Some(gtk4::PolicyType::Automatic)
+    );
+    assert_eq!(
+        rust_window.selected_minimap_real_scrollbar_visible_for_tests(),
+        Some(false)
+    );
+    rust_window.set_minimap_for_tests(true);
+    assert!(rust_window.selected_minimap_visible_for_tests());
+    assert_eq!(
+        rust_window.selected_minimap_scrollbar_policy_for_tests(),
+        Some(gtk4::PolicyType::External)
+    );
+    assert_eq!(
+        rust_window.selected_minimap_real_scrollbar_visible_for_tests(),
+        Some(true)
+    );
+}
+
 pub(crate) fn exercise_v4_editor_features(test_app: &adw::Application) {
     let startup_settings = AppSettings::new_for_tests();
     startup_settings.set_show_minimap(true);
@@ -57,24 +95,7 @@ pub(crate) fn exercise_v4_editor_features(test_app: &adw::Application) {
     let Some(rust_window) = rust_window else {
         return;
     };
-    rust_window.ensure_default_tab();
-    assert!(rust_window.selected_minimap_visible_for_tests());
-    assert_eq!(
-        rust_window.selected_minimap_scrollbar_policy_for_tests(),
-        Some(gtk4::PolicyType::External)
-    );
-    rust_window.set_minimap_for_tests(false);
-    assert!(!rust_window.selected_minimap_visible_for_tests());
-    assert_eq!(
-        rust_window.selected_minimap_scrollbar_policy_for_tests(),
-        Some(gtk4::PolicyType::Automatic)
-    );
-    rust_window.set_minimap_for_tests(true);
-    assert!(rust_window.selected_minimap_visible_for_tests());
-    assert_eq!(
-        rust_window.selected_minimap_scrollbar_policy_for_tests(),
-        Some(gtk4::PolicyType::External)
-    );
+    exercise_minimap_toggle(&rust_window);
 
     let rust_path = write_temp_file("riteed-v4-syntax.rs", b"fn main() {}\n");
     rust_window.request_open_files(vec![gio::File::for_path(&rust_path)], OpenSource::AppOpen);

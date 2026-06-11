@@ -53,6 +53,7 @@ impl EditorTab {
             && !self.is_markdown_preview_active()
             && self.state.borrow().io.pending_apply.is_none();
         self.minimap_holder.set_visible(show_minimap);
+        self.minimap_scrollbar.set_visible(show_minimap);
         let policy = if show_minimap {
             gtk4::PolicyType::External
         } else {
@@ -180,6 +181,16 @@ impl EditorTab {
     #[cfg(test)]
     pub(crate) fn minimap_scrollbar_policy_for_tests(&self) -> gtk4::PolicyType {
         self.scrolled.vscrollbar_policy()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn minimap_scrollbar_visible_for_tests(&self) -> bool {
+        self.minimap_scrollbar.property::<bool>("visible")
+    }
+
+    #[cfg(test)]
+    pub(crate) fn minimap_scrollbar_shares_adjustment_for_tests(&self) -> bool {
+        self.minimap_scrollbar.adjustment() == self.scrolled.vadjustment()
     }
 
     #[cfg(test)]
