@@ -1121,6 +1121,10 @@ msgstr ""
 msgid "Print Current Document"
 msgstr ""
 
+msgctxt "menu item"
+msgid "Print Preview"
+msgstr ""
+
 msgid "Print Preview"
 msgstr ""
 

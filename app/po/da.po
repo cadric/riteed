@@ -1198,6 +1198,10 @@ msgstr "Udskriv"
 msgid "Print Current Document"
 msgstr "Udskriv aktuelt dokument"
 
+msgctxt "menu item"
+msgid "Print Preview"
+msgstr "Vis udskrift"
+
 msgid "Print Preview"
 msgstr "Vis udskrift"
 

@@ -86,6 +86,12 @@
             </child>
             <child>
               <object class="GtkShortcutsShortcut">
+                <property name="accelerator">&lt;Ctrl&gt;&lt;Shift&gt;p</property>
+                <property name="title" translatable="yes">Print Preview</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
                 <property name="accelerator">&lt;Ctrl&gt;w</property>
                 <property name="title" translatable="yes">Close Current Tab</property>
               </object>

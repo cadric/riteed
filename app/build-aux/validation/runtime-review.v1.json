@@ -27,7 +27,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 157,
+      "line": 158,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
@@ -35,7 +35,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 166,
+      "line": 167,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
@@ -43,7 +43,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 245,
+      "line": 246,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
@@ -51,7 +51,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 308,
+      "line": 309,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
@@ -59,7 +59,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 351,
+      "line": 352,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
@@ -67,7 +67,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 361,
+      "line": 362,
       "match": "fn resolve_window(state: &Rc<RefCell<AppState>>) -> Option<Rc<Window>> {",
       "kind": "runtime-shared-state",
       "ownership": "Active editor window resolution reads shared application state.",
@@ -75,7 +75,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 375,
+      "line": 376,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
@@ -83,7 +83,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 411,
+      "line": 412,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
@@ -91,7 +91,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 425,
+      "line": 426,
       "match": "fn register_window(state: &Rc<RefCell<AppState>>, window: &Rc<Window>) {",
       "kind": "runtime-shared-state",
       "ownership": "Window registration mutates shared application state.",
@@ -99,7 +99,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 464,
+      "line": 465,
       "match": "fn install_display_services(display: &gdk::Display, state: &Rc<RefCell<AppState>>) {",
       "kind": "runtime-shared-state",
       "ownership": "Startup display service installation mutates shared application state.",

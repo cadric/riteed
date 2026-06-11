@@ -129,6 +129,7 @@ fn install_accels(app: &adw::Application) {
     app.set_accels_for_action("win.save", &["<Ctrl>s"]);
     app.set_accels_for_action("win.save-as", &["<Ctrl><Shift>s"]);
     app.set_accels_for_action("win.print", &["<Ctrl>p"]);
+    app.set_accels_for_action("win.print-preview", &["<Ctrl><Shift>p"]);
     app.set_accels_for_action("win.close", &["<Ctrl>w"]);
     app.set_accels_for_action("win.search", &["<Ctrl>f"]);
     app.set_accels_for_action("win.replace", &["<Ctrl>h"]);

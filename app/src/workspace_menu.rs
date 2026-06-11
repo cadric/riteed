@@ -33,6 +33,10 @@ fn workflow_section() -> gio::Menu {
         Some("win.document-statistics"),
     );
     section.append(Some(&pgettext("menu item", "Print")), Some("win.print"));
+    section.append(
+        Some(&pgettext("menu item", "Print Preview")),
+        Some("win.print-preview"),
+    );
     section
 }
 
@@ -130,6 +134,7 @@ mod tests {
                 "Find in Files",
                 "Document Statistics",
                 "Print",
+                "Print Preview",
             ],
         );
         assert_menu_actions(
@@ -141,6 +146,7 @@ mod tests {
                 "win.find-in-files",
                 "win.document-statistics",
                 "win.print",
+                "win.print-preview",
             ],
         );
 
