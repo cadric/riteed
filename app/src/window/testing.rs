@@ -416,12 +416,23 @@ impl Window {
         self.document_tools.set_print_runner_for_tests(runner);
     }
 
+    pub(crate) fn set_print_preview_runner_for_tests(
+        &self,
+        runner: crate::document_tools::PreviewRunner,
+    ) {
+        self.document_tools.set_preview_runner_for_tests(runner);
+    }
+
     pub(crate) fn document_tool_actions_enabled_for_tests(&self) -> (bool, bool) {
         self.document_tools.actions_enabled_for_tests()
     }
 
     pub(crate) fn activate_print_for_tests(&self) -> bool {
         gtk4::prelude::WidgetExt::activate_action(self.widget(), "win.print", None).is_ok()
+    }
+
+    pub(crate) fn activate_print_preview_for_tests(&self) -> bool {
+        gtk4::prelude::WidgetExt::activate_action(self.widget(), "win.print-preview", None).is_ok()
     }
 
     pub(crate) fn start_print_preview_engine_for_tests(

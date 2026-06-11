@@ -23,6 +23,13 @@
       "kind": "i18n-short-string"
     },
     {
+      "path": "src/document_print_preview.rs",
+      "line": 210,
+      "match": ".title(gettext(\"Print Preview\"))",
+      "resolution": "This short dialog title appears at the top of the print preview dialog, whose toolbar and page image make the preview context explicit.",
+      "kind": "i18n-short-string"
+    },
+    {
       "path": "src/document_statistics.rs",
       "line": 27,
       "match": "crate::dialog_shell::build_dialog_shell(&gettext(\"Document Statistics\"), 420, None, true);",

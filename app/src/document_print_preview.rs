@@ -1,8 +1,10 @@
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
+use gettextrs::{gettext, pgettext};
 use gtk4::{cairo, gdk, glib, prelude::*};
 use libadwaita as adw;
+use libadwaita::prelude::*;
 use sourceview5::prelude::*;
 
 const PREVIEW_DPI: f64 = 96.0;
@@ -89,7 +91,7 @@ impl PreviewEngine {
                 engine.finish();
                 crate::dialogs::present_error(
                     parent,
-                    &crate::error::AppError::Internal(gettextrs::gettext("Print preview failed.")),
+                    &crate::error::AppError::Internal(gettext("Print preview failed.")),
                 );
                 None
             }
@@ -97,6 +99,14 @@ impl PreviewEngine {
         }
     }
 
+    pub(crate) fn set_on_ready(&self, callback: Box<dyn Fn()>) {
+        if self.ready.get() {
+            callback();
+        }
+        self.on_ready.replace(Some(callback));
+    }
+
+    #[cfg(test)]
     pub(crate) fn is_ready(&self) -> bool {
         self.ready.get()
     }
@@ -122,6 +132,185 @@ impl PreviewEngine {
         self.operation.borrow_mut().take();
         self.ready.set(false);
     }
+}
+
+struct PreviewDialogState {
+    engine: RefCell<Option<Rc<PreviewEngine>>>,
+    current_page: Cell<i32>,
+    parent: adw::ApplicationWindow,
+    view: sourceview5::View,
+    title: String,
+    font_family: String,
+    picture: gtk4::Picture,
+    page_label: gtk4::Label,
+    previous_button: gtk4::Button,
+    next_button: gtk4::Button,
+}
+
+pub(crate) fn present_preview(
+    parent: &adw::ApplicationWindow,
+    view: &sourceview5::View,
+    title: &str,
+    body_font: &str,
+    on_print: Rc<dyn Fn(&str)>,
+) {
+    let desc = gtk4::pango::FontDescription::from_string(body_font);
+    let font_family = desc
+        .family()
+        .map_or_else(|| String::from("Monospace"), |family| family.to_string());
+    let initial_size = (desc.size() / gtk4::pango::SCALE).max(6);
+
+    let picture = gtk4::Picture::builder()
+        .can_shrink(true)
+        .content_fit(gtk4::ContentFit::Contain)
+        .build();
+    picture.add_css_class("card");
+
+    let page_label = gtk4::Label::new(None);
+    page_label.add_css_class("dim-label");
+
+    let previous_button = gtk4::Button::builder()
+        .icon_name("go-previous-symbolic")
+        .tooltip_text(pgettext("print preview", "Previous Page"))
+        .build();
+    previous_button.set_sensitive(false);
+    let next_button = gtk4::Button::builder()
+        .icon_name("go-next-symbolic")
+        .tooltip_text(pgettext("print preview", "Next Page"))
+        .build();
+    next_button.set_sensitive(false);
+
+    let size_adjustment = gtk4::Adjustment::new(f64::from(initial_size), 6.0, 32.0, 1.0, 4.0, 0.0);
+    let size_spin = gtk4::SpinButton::new(Some(&size_adjustment), 1.0, 0);
+    size_spin.set_tooltip_text(Some(&pgettext("print preview", "Text Size")));
+
+    let mut print_label = pgettext("print preview", "Print");
+    print_label.push('…');
+    let print_button = gtk4::Button::with_label(&print_label);
+    print_button.add_css_class("suggested-action");
+
+    let header = adw::HeaderBar::new();
+    header.pack_start(&previous_button);
+    header.pack_start(&page_label);
+    header.pack_start(&next_button);
+    header.pack_end(&print_button);
+    header.pack_end(&size_spin);
+
+    let scrolled = gtk4::ScrolledWindow::builder()
+        .hexpand(true)
+        .vexpand(true)
+        .child(&picture)
+        .build();
+
+    let toolbar_view = adw::ToolbarView::new();
+    toolbar_view.add_top_bar(&header);
+    toolbar_view.set_content(Some(&scrolled));
+
+    let dialog = adw::Dialog::builder()
+        .title(gettext("Print Preview"))
+        .content_width(760)
+        .content_height(980)
+        .child(&toolbar_view)
+        .build();
+
+    let Some(engine) = PreviewEngine::start(parent, view, title, body_font) else {
+        return;
+    };
+    let state = Rc::new(PreviewDialogState {
+        engine: RefCell::new(Some(engine)),
+        current_page: Cell::new(0),
+        parent: parent.clone(),
+        view: view.clone(),
+        title: String::from(title),
+        font_family,
+        picture,
+        page_label,
+        previous_button,
+        next_button,
+    });
+
+    wire_ready(&state);
+
+    let nav_state = Rc::clone(&state);
+    state.previous_button.connect_clicked(move |_| {
+        nav_state.show_page(nav_state.current_page.get() - 1);
+    });
+    let nav_state = Rc::clone(&state);
+    state.next_button.connect_clicked(move |_| {
+        nav_state.show_page(nav_state.current_page.get() + 1);
+    });
+
+    let size_state = Rc::clone(&state);
+    size_spin.connect_value_changed(move |spin| {
+        size_state.restart_with_size(spin.value_as_int());
+    });
+
+    let print_state = Rc::clone(&state);
+    let print_dialog = dialog.clone();
+    let print_size_spin = size_spin.clone();
+    print_button.connect_clicked(move |_| {
+        if let Some(engine) = print_state.engine.borrow().as_ref() {
+            engine.finish();
+        }
+        print_dialog.close();
+        let body_font = format!(
+            "{} {}",
+            print_state.font_family,
+            print_size_spin.value_as_int()
+        );
+        on_print(&body_font);
+    });
+
+    let close_state = Rc::clone(&state);
+    dialog.connect_closed(move |_| {
+        if let Some(engine) = close_state.engine.borrow().as_ref() {
+            engine.finish();
+        }
+    });
+
+    dialog.present(Some(parent));
+}
+
+impl PreviewDialogState {
+    fn show_page(self: &Rc<Self>, page: i32) {
+        let Some(engine) = self.engine.borrow().clone() else {
+            return;
+        };
+        let total = engine.n_pages().max(1);
+        let page = page.clamp(0, total - 1);
+        self.current_page.set(page);
+        if let Some(texture) = engine.render_page(page) {
+            self.picture.set_paintable(Some(&texture));
+        }
+        let template = pgettext("print preview", "Page %1$d of %2$d");
+        self.page_label.set_label(
+            &template
+                .replace("%1$d", &(page + 1).to_string())
+                .replace("%2$d", &total.to_string()),
+        );
+        self.previous_button.set_sensitive(page > 0);
+        self.next_button.set_sensitive(page + 1 < total);
+    }
+
+    fn restart_with_size(self: &Rc<Self>, size: i32) {
+        if let Some(engine) = self.engine.borrow().as_ref() {
+            engine.finish();
+        }
+        let body_font = format!("{} {}", self.font_family, size.max(6));
+        let engine = PreviewEngine::start(&self.parent, &self.view, &self.title, &body_font);
+        self.engine.replace(engine);
+        wire_ready(self);
+    }
+}
+
+fn wire_ready(state: &Rc<PreviewDialogState>) {
+    let Some(engine) = state.engine.borrow().clone() else {
+        return;
+    };
+    let ready_state = Rc::clone(state);
+    engine.set_on_ready(Box::new(move || {
+        ready_state.show_page(ready_state.current_page.get());
+    }));
 }
 
 /// Copies the rendered page into an exclusively owned surface and wraps it as a

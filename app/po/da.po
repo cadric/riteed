@@ -968,6 +968,10 @@ msgctxt "search action"
 msgid "Next Match"
 msgstr "Næste træffer"
 
+msgctxt "print preview"
+msgid "Next Page"
+msgstr "Næste side"
+
 msgid "Next Tab"
 msgstr "Næste fane"
 
@@ -1109,6 +1113,10 @@ msgstr "Oversigt"
 msgid "Overwrite the Changed File?"
 msgstr "Overskriv den ændrede fil?"
 
+msgctxt "print preview"
+msgid "Page %1$d of %2$d"
+msgstr "Side %1$d af %2$d"
+
 msgctxt "print header"
 msgid "Page %N of %Q"
 msgstr "Side %N af %Q"
@@ -1172,6 +1180,10 @@ msgctxt "search action"
 msgid "Previous Match"
 msgstr "Forrige træffer"
 
+msgctxt "print preview"
+msgid "Previous Page"
+msgstr "Forrige side"
+
 msgid "Previous Tab"
 msgstr "Forrige fane"
 
@@ -1179,8 +1191,15 @@ msgctxt "menu item"
 msgid "Print"
 msgstr "Udskriv"
 
+msgctxt "print preview"
+msgid "Print"
+msgstr "Udskriv"
+
 msgid "Print Current Document"
 msgstr "Udskriv aktuelt dokument"
+
+msgid "Print Preview"
+msgstr "Vis udskrift"
 
 msgid "Print preview failed."
 msgstr "Forhåndsvisning af udskrift mislykkedes."
@@ -1691,6 +1710,10 @@ msgstr "Startafgrænseren for frontmatter mangler en slutafgrænser."
 
 msgid "The previous project folder could not be restored."
 msgstr "Den forrige projektmappe kunne ikke gendannes."
+
+msgctxt "print preview"
+msgid "Text Size"
+msgstr "Tekststørrelse"
 
 msgid "Theme Preference"
 msgstr "Temaindstilling"

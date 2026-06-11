@@ -171,7 +171,7 @@
     },
     {
       "path": "src/document_print_preview.rs",
-      "line": 16,
+      "line": 18,
       "match": "operation: RefCell<Option<gtk4::PrintOperation>>,",
       "kind": "runtime-shared-state",
       "ownership": "The print preview engine owns the in-flight preview operation state.",
@@ -179,7 +179,7 @@
     },
     {
       "path": "src/document_print_preview.rs",
-      "line": 17,
+      "line": 19,
       "match": "preview: RefCell<Option<gtk4::PrintOperationPreview>>,",
       "kind": "runtime-shared-state",
       "ownership": "The print preview engine owns the in-flight preview operation state.",
@@ -187,7 +187,7 @@
     },
     {
       "path": "src/document_print_preview.rs",
-      "line": 18,
+      "line": 20,
       "match": "surface: RefCell<Option<cairo::ImageSurface>>,",
       "kind": "runtime-shared-state",
       "ownership": "The print preview engine owns the in-flight preview operation state.",
@@ -195,7 +195,7 @@
     },
     {
       "path": "src/document_print_preview.rs",
-      "line": 19,
+      "line": 21,
       "match": "n_pages: Cell<i32>,",
       "kind": "runtime-shared-state",
       "ownership": "The print preview engine owns the in-flight preview operation state.",
@@ -203,7 +203,7 @@
     },
     {
       "path": "src/document_print_preview.rs",
-      "line": 20,
+      "line": 22,
       "match": "ready: Cell<bool>,",
       "kind": "runtime-shared-state",
       "ownership": "The print preview engine owns the in-flight preview operation state.",
@@ -211,19 +211,43 @@
     },
     {
       "path": "src/document_print_preview.rs",
-      "line": 21,
+      "line": 23,
       "match": "on_ready: RefCell<Option<Box<dyn Fn()>>>,",
       "kind": "runtime-shared-state",
       "ownership": "The print preview engine owns the in-flight preview operation state.",
       "justification": "GTK delivers preview pagination and page-size callbacks asynchronously on the main loop, so the engine must share mutable state between signal closures and the dialog."
     },
     {
+      "path": "src/document_print_preview.rs",
+      "line": 138,
+      "match": "engine: RefCell<Option<Rc<PreviewEngine>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The print preview dialog owns its page navigation state and active engine.",
+      "justification": "Dialog callbacks restart rendering, navigate pages, and clean up the active preview engine while GTK signals run on the main loop."
+    },
+    {
+      "path": "src/document_print_preview.rs",
+      "line": 139,
+      "match": "current_page: Cell<i32>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The print preview dialog owns its page navigation state and active engine.",
+      "justification": "Dialog callbacks restart rendering, navigate pages, and clean up the active preview engine while GTK signals run on the main loop."
+    },
+    {
       "path": "src/document_tools.rs",
-      "line": 20,
+      "line": 22,
       "match": "print_runner: RefCell<PrintRunner>,",
       "kind": "runtime-shared-state",
       "ownership": "The document tools controller owns the mutable print runner injection point.",
       "justification": "Print action tests replace only this scoped runner while runtime action state remains owned by the window-local controller."
+    },
+    {
+      "path": "src/document_tools.rs",
+      "line": 23,
+      "match": "preview_runner: RefCell<PreviewRunner>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The document tools controller owns the mutable print preview runner injection point.",
+      "justification": "Preview action tests replace only this scoped runner while runtime action state remains owned by the window-local controller."
     },
     {
       "path": "src/editor_monitor.rs",

@@ -9,6 +9,7 @@ use crate::settings::AppSettings;
 use crate::workspace::Workspace;
 
 pub(crate) type PrintRunner = Rc<dyn Fn(&crate::document_print::PrintJob<'_>)>;
+pub(crate) type PreviewRunner = Rc<dyn Fn(&adw::ApplicationWindow, &sourceview5::View, &str, &str)>;
 
 pub(crate) struct DocumentToolsController {
     parent: adw::ApplicationWindow,
@@ -17,7 +18,9 @@ pub(crate) struct DocumentToolsController {
     print_session: crate::document_print::PrintSession,
     statistics_action: gio::SimpleAction,
     print_action: gio::SimpleAction,
+    preview_action: gio::SimpleAction,
     print_runner: RefCell<PrintRunner>,
+    preview_runner: RefCell<PreviewRunner>,
 }
 
 impl DocumentToolsController {
@@ -29,8 +32,10 @@ impl DocumentToolsController {
     ) -> Rc<Self> {
         let statistics_action = gio::SimpleAction::new("document-statistics", None);
         let print_action = gio::SimpleAction::new("print", None);
+        let preview_action = gio::SimpleAction::new("print-preview", None);
         parent.add_action(&statistics_action);
         parent.add_action(&print_action);
+        parent.add_action(&preview_action);
 
         let controller = Rc::new(Self {
             parent: parent.clone(),
@@ -39,8 +44,13 @@ impl DocumentToolsController {
             print_session: crate::document_print::PrintSession::default(),
             statistics_action,
             print_action,
+            preview_action,
             print_runner: RefCell::new(default_print_runner()),
+            preview_runner: RefCell::new(Rc::new(|_, _, _, _| {})),
         });
+        controller
+            .preview_runner
+            .replace(default_preview_runner(Rc::downgrade(&controller)));
         controller.install_callbacks();
         let selected = workspace.selected_tab();
         controller.sync_actions(selected.as_ref());
@@ -67,6 +77,13 @@ impl DocumentToolsController {
                 controller.print_document();
             }
         });
+
+        let weak = Rc::downgrade(self);
+        self.preview_action.connect_activate(move |_, _| {
+            if let Some(controller) = weak.upgrade() {
+                controller.preview_document();
+            }
+        });
     }
 
     pub(crate) fn sync_current(&self) {
@@ -80,6 +97,7 @@ impl DocumentToolsController {
             .is_some_and(|tab| tab.is_document() && !tab.is_loading() && !tab.is_compare_active());
         self.statistics_action.set_enabled(statistics_enabled);
         self.print_action.set_enabled(print_enabled);
+        self.preview_action.set_enabled(print_enabled);
     }
 
     fn present_statistics(&self) {
@@ -93,6 +111,11 @@ impl DocumentToolsController {
     }
 
     fn print_document(&self) {
+        let body_font = crate::document_print::print_body_font_name(&self.settings.editor_font());
+        self.print_document_with_font(&body_font);
+    }
+
+    pub(crate) fn print_document_with_font(&self, body_font: &str) {
         let Some(tab) = self.workspace.selected_tab() else {
             return;
         };
@@ -102,19 +125,37 @@ impl DocumentToolsController {
         let runner = self.print_runner.borrow().clone();
         let view = tab.text_view();
         let title = tab.title();
-        let body_font = crate::document_print::print_body_font_name(&self.settings.editor_font());
         runner(&crate::document_print::PrintJob {
             parent: &self.parent,
             view: &view,
             title: &title,
-            body_font: &body_font,
+            body_font,
             session: &self.print_session,
         });
+    }
+
+    fn preview_document(&self) {
+        let Some(tab) = self.workspace.selected_tab() else {
+            return;
+        };
+        if !tab.is_document() || tab.is_loading() || tab.is_compare_active() {
+            return;
+        }
+        let runner = self.preview_runner.borrow().clone();
+        let view = tab.text_view();
+        let title = tab.title();
+        let body_font = crate::document_print::print_body_font_name(&self.settings.editor_font());
+        runner(&self.parent, &view, &title, &body_font);
     }
 
     #[cfg(test)]
     pub(crate) fn set_print_runner_for_tests(&self, runner: PrintRunner) {
         self.print_runner.replace(runner);
+    }
+
+    #[cfg(test)]
+    pub(crate) fn set_preview_runner_for_tests(&self, runner: PreviewRunner) {
+        self.preview_runner.replace(runner);
     }
 
     #[cfg(test)]
@@ -128,4 +169,21 @@ impl DocumentToolsController {
 
 fn default_print_runner() -> PrintRunner {
     Rc::new(crate::document_print::run_print)
+}
+
+fn default_preview_runner(controller: std::rc::Weak<DocumentToolsController>) -> PreviewRunner {
+    Rc::new(move |parent, view, title, body_font| {
+        let controller = controller.clone();
+        crate::document_print_preview::present_preview(
+            parent,
+            view,
+            title,
+            body_font,
+            Rc::new(move |chosen_font: &str| {
+                if let Some(controller) = controller.upgrade() {
+                    controller.print_document_with_font(chosen_font);
+                }
+            }),
+        );
+    })
 }
