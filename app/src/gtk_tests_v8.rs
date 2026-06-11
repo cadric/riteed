@@ -59,6 +59,10 @@ fn exercise_presentation_preferences(test_app: &adw::Application) {
     };
     window.ensure_default_tab();
     assert_eq!(window.preferences_page_count_for_tests(), 4);
+    assert_eq!(
+        window.preferences_page_titles_for_tests(),
+        ["General", "Appearance", "Editor", "Source Control"]
+    );
     let writes_before_sync = window.preferences_write_log_for_tests();
     window.sync_appearance_for_tests();
     assert_eq!(window.preferences_write_log_for_tests(), writes_before_sync);

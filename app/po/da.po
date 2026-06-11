@@ -624,6 +624,9 @@ msgstr "Afslut sammenligning"
 msgid "File"
 msgstr "Fil"
 
+msgid "Files"
+msgstr "Filer"
+
 msgctxt "sidebar mode"
 msgid "Files"
 msgstr "Filer"
@@ -672,6 +675,9 @@ msgstr "Begrænsninger for Søg i filer"
 
 msgid "First Tab"
 msgstr "Første fane"
+
+msgid "Font"
+msgstr "Skrifttype"
 
 msgctxt "file filter"
 msgid "Folders"
@@ -1431,9 +1437,6 @@ msgstr "Gem dokumentet"
 msgid "Save the open document before using Git actions."
 msgstr "Gem det åbne dokument, før du bruger Git-handlinger."
 
-msgid "Saving"
-msgstr "Gemning"
-
 msgctxt "help row"
 msgid "Saving Work"
 msgstr "Gem arbejdet"
@@ -2009,14 +2012,20 @@ msgstr "Redigering af denne fil kan tage 30 sekunder eller mere og kan gøre app
 msgid "Editing this file may take 5-15 seconds."
 msgstr "Redigering af denne fil kan tage 5-15 sekunder."
 
-msgid "Editor Below"
-msgstr "Redigering under"
+msgid "Editor Below (MiB)"
+msgstr "Editor under (MiB)"
 
 msgid "Editor File Limit"
 msgstr "Filgrænse for redigering"
 
 msgid "Enter a valid line number."
 msgstr "Indtast et gyldigt linjenummer."
+
+msgid "Files larger than this always open in the read-only viewer"
+msgstr "Filer større end dette åbnes altid i den skrivebeskyttede fremviser"
+
+msgid "Files smaller than this keep every editor feature; must stay below the editor limit"
+msgstr "Filer mindre end dette beholder alle editorfunktioner; skal være under editorgrænsen"
 
 msgid "Files above this size remain viewable, but editing is refused by policy."
 msgstr "Filer over denne størrelse kan stadig vises, men redigering afvises af policy."
@@ -2036,8 +2045,11 @@ msgstr "Finder linje..."
 msgid "Full Feature File Limit"
 msgstr "Filgrænse for fulde funktioner"
 
-msgid "Full Features Below"
-msgstr "Fulde funktioner under"
+msgid "Full Features Below (MiB)"
+msgstr "Fuld funktionalitet under (MiB)"
+
+msgid "Large File Limits"
+msgstr "Grænser for store filer"
 
 msgid "Large Files"
 msgstr "Store filer"
@@ -2051,17 +2063,8 @@ msgstr "Indlæser filside..."
 msgid "Many matches found; showing the first match."
 msgstr "Mange træffere fundet; viser den første træffer."
 
-msgid "MiB policy ceiling for editor opt-in"
-msgstr "MiB policy-loft for tilvalg af redigering"
-
-msgid "MiB measured safe editor threshold; maximum 25"
-msgstr "MiB målt sikker redigeringstærskel; maksimum 25"
-
-msgid "MiB threshold for normal editor behavior; must stay below the editor limit"
-msgstr "MiB-tærskel for normal redigeringsadfærd; skal være under redigeringsgrænsen"
-
-msgid "MiB threshold for the stronger editing warning"
-msgstr "MiB-tærskel for den stærkere redigeringsadvarsel"
+msgid "Largest size that opens directly in the editor; maximum 25"
+msgstr "Største størrelse der åbnes direkte i editoren; højst 25"
 
 msgid "No matches found."
 msgstr "Ingen træffere fundet."
@@ -2085,8 +2088,14 @@ msgstr "Springer prompten for redigering af store filer over under Riteeds målt
 msgid "Strong Warning File Limit"
 msgstr "Filgrænse for stærk advarsel"
 
-msgid "Strong Warning From"
-msgstr "Stærk advarsel fra"
+msgid "Advanced thresholds for opening big files"
+msgstr "Avancerede tærskler for åbning af store filer"
+
+msgid "Show the stronger editing warning for files at least this large"
+msgstr "Vis den kraftigere redigeringsadvarsel for filer mindst så store"
+
+msgid "Strong Warning From (MiB)"
+msgstr "Kraftig advarsel fra (MiB)"
 
 msgid "Syntax highlighting, minimap, Markdown preview, Source Control diff, and autosave remain disabled."
 msgstr "Syntaksfremhævning, minikort, Markdown-forhåndsvisning, Source Control-diff og autogem forbliver deaktiveret."
@@ -2109,8 +2118,8 @@ msgstr "Denne fil er %1$s bytes. Indlæsning i redigeringen kan fryse vinduet mi
 msgid "This file is above Riteed's measured safe editing limit."
 msgstr "Denne fil er over Riteeds målte sikre redigeringsgrænse."
 
-msgid "Viewer Only Above"
-msgstr "Kun visning over"
+msgid "Viewer Only Above (MiB)"
+msgstr "Kun fremviser over (MiB)"
 
 msgid "Viewer Only File Limit"
 msgstr "Filgrænse for kun visning"

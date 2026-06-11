@@ -1,6 +1,7 @@
 use std::rc::Rc;
 
 use gtk4::{gio, glib, prelude::*};
+use libadwaita::prelude::PreferencesPageExt;
 
 use super::Window;
 
@@ -274,6 +275,25 @@ impl Window {
             + u32::from(self.shell.appearance_page.parent().is_some())
             + u32::from(self.shell.word_wrap_row.parent().is_some())
             + u32::from(self.shell.git_name_row.parent().is_some())
+    }
+
+    pub(crate) fn preferences_page_titles_for_tests(&self) -> Vec<String> {
+        fn collect(widget: &gtk4::Widget, out: &mut Vec<String>) {
+            if let Some(page) = widget.downcast_ref::<libadwaita::PreferencesPage>() {
+                out.push(page.title().to_string());
+                return;
+            }
+            let mut child = widget.first_child();
+            while let Some(current) = child {
+                collect(&current, out);
+                child = current.next_sibling();
+            }
+        }
+        let mut titles = Vec::new();
+        if let Some(parent) = self.shell.general_preferences_page.parent() {
+            collect(&parent, &mut titles);
+        }
+        titles
     }
 
     pub(crate) fn chrome_css_for_tests(&self) -> String {

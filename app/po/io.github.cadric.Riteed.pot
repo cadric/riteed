@@ -573,6 +573,9 @@ msgstr ""
 msgid "File"
 msgstr ""
 
+msgid "Files"
+msgstr ""
+
 msgctxt "sidebar mode"
 msgid "Files"
 msgstr ""
@@ -620,6 +623,9 @@ msgid "Find in Files Limits"
 msgstr ""
 
 msgid "First Tab"
+msgstr ""
+
+msgid "Font"
 msgstr ""
 
 msgctxt "file filter"
@@ -1337,9 +1343,6 @@ msgstr ""
 msgid "Save the open document before using Git actions."
 msgstr ""
 
-msgid "Saving"
-msgstr ""
-
 msgctxt "help row"
 msgid "Saving Work"
 msgstr ""
@@ -1879,13 +1882,19 @@ msgstr ""
 msgid "Editing this file may take 5-15 seconds."
 msgstr ""
 
-msgid "Editor Below"
+msgid "Editor Below (MiB)"
 msgstr ""
 
 msgid "Editor File Limit"
 msgstr ""
 
 msgid "Enter a valid line number."
+msgstr ""
+
+msgid "Files larger than this always open in the read-only viewer"
+msgstr ""
+
+msgid "Files smaller than this keep every editor feature; must stay below the editor limit"
 msgstr ""
 
 msgid "Files above this size remain viewable, but editing is refused by policy."
@@ -1906,7 +1915,10 @@ msgstr ""
 msgid "Full Feature File Limit"
 msgstr ""
 
-msgid "Full Features Below"
+msgid "Full Features Below (MiB)"
+msgstr ""
+
+msgid "Large File Limits"
 msgstr ""
 
 msgid "Large Files"
@@ -1921,16 +1933,7 @@ msgstr ""
 msgid "Many matches found; showing the first match."
 msgstr ""
 
-msgid "MiB policy ceiling for editor opt-in"
-msgstr ""
-
-msgid "MiB measured safe editor threshold; maximum 25"
-msgstr ""
-
-msgid "MiB threshold for normal editor behavior; must stay below the editor limit"
-msgstr ""
-
-msgid "MiB threshold for the stronger editing warning"
+msgid "Largest size that opens directly in the editor; maximum 25"
 msgstr ""
 
 msgid "No matches found."
@@ -1955,7 +1958,13 @@ msgstr ""
 msgid "Strong Warning File Limit"
 msgstr ""
 
-msgid "Strong Warning From"
+msgid "Advanced thresholds for opening big files"
+msgstr ""
+
+msgid "Show the stronger editing warning for files at least this large"
+msgstr ""
+
+msgid "Strong Warning From (MiB)"
 msgstr ""
 
 msgid "Syntax highlighting, minimap, Markdown preview, Source Control diff, and autosave remain disabled."
@@ -1979,7 +1988,7 @@ msgstr ""
 msgid "This file is above Riteed's measured safe editing limit."
 msgstr ""
 
-msgid "Viewer Only Above"
+msgid "Viewer Only Above (MiB)"
 msgstr ""
 
 msgid "Viewer Only File Limit"

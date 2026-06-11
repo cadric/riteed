@@ -22,6 +22,59 @@
             </child>
           </object>
         </child>
+        <child>
+          <object class="AdwPreferencesGroup">
+            <property name="title" translatable="yes">Files</property>
+            <child>
+              <object class="AdwSwitchRow" id="autosave_row">
+                <property name="title" translatable="yes">Autosave Saved Files</property>
+                <property name="subtitle" translatable="yes">Automatically save existing writable files after edits</property>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+    <child>
+      <object class="AdwPreferencesPage" id="appearance_page">
+        <property name="title" translatable="yes">Appearance</property>
+        <property name="icon-name">color-select-symbolic</property>
+        <child>
+          <object class="AdwPreferencesGroup" id="style_group">
+            <property name="title" translatable="yes">Style</property>
+          </object>
+        </child>
+        <child>
+          <object class="AdwPreferencesGroup">
+            <property name="title" translatable="yes">Palette</property>
+            <child>
+              <object class="GtkFlowBox" id="palette_flow_box">
+                <property name="selection-mode">single</property>
+                <property name="activate-on-single-click">true</property>
+                <property name="homogeneous">false</property>
+                <property name="min-children-per-line">2</property>
+                <property name="max-children-per-line">4</property>
+                <property name="column-spacing">8</property>
+                <property name="row-spacing">10</property>
+                <property name="halign">center</property>
+                <property name="margin-top">6</property>
+                <property name="margin-bottom">6</property>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="AdwPreferencesGroup">
+            <property name="title" translatable="yes">Font</property>
+            <child>
+              <object class="AdwActionRow" id="editor_font_row">
+                <property name="activatable">true</property>
+                <property name="title" translatable="yes">Editor Font</property>
+                <property name="subtitle" translatable="yes">Monospace</property>
+              </object>
+            </child>
+          </object>
+        </child>
       </object>
     </child>
     <child>
@@ -53,13 +106,6 @@
               <object class="AdwSwitchRow" id="minimap_row">
                 <property name="title" translatable="yes">Show Minimap</property>
                 <property name="subtitle" translatable="yes">Show a narrow document overview beside the editor</property>
-              </object>
-            </child>
-            <child>
-              <object class="AdwActionRow" id="editor_font_row">
-                <property name="activatable">true</property>
-                <property name="title" translatable="yes">Editor Font</property>
-                <property name="subtitle" translatable="yes">Monospace</property>
               </object>
             </child>
           </object>
@@ -117,128 +163,93 @@
         </child>
         <child>
           <object class="AdwPreferencesGroup">
-            <property name="title" translatable="yes">Saving</property>
-            <child>
-              <object class="AdwSwitchRow" id="autosave_row">
-                <property name="title" translatable="yes">Autosave Saved Files</property>
-                <property name="subtitle" translatable="yes">Automatically save existing writable files after edits</property>
-              </object>
-            </child>
-          </object>
-        </child>
-        <child>
-          <object class="AdwPreferencesGroup">
             <property name="title" translatable="yes">Large Files</property>
             <child>
-              <object class="AdwSpinRow" id="large_file_full_feature_limit_row">
-                <property name="title" translatable="yes">Full Features Below</property>
-                <property name="subtitle" translatable="yes">MiB threshold for normal editor behavior; must stay below the editor limit</property>
-                <property name="editable">true</property>
-                <property name="numeric">true</property>
-                <property name="snap-to-ticks">true</property>
-                <property name="digits">0</property>
-                <property name="adjustment">
-                  <object class="GtkAdjustment">
-                    <property name="lower">1</property>
-                    <property name="upper">24</property>
-                    <property name="value">5</property>
-                    <property name="step-increment">1</property>
-                    <property name="page-increment">5</property>
+              <object class="AdwExpanderRow" id="large_file_expander_row">
+                <property name="title" translatable="yes">Large File Limits</property>
+                <property name="subtitle" translatable="yes">Advanced thresholds for opening big files</property>
+                <child>
+                  <object class="AdwSpinRow" id="large_file_full_feature_limit_row">
+                    <property name="title" translatable="yes">Full Features Below (MiB)</property>
+                    <property name="subtitle" translatable="yes">Files smaller than this keep every editor feature; must stay below the editor limit</property>
+                    <property name="editable">true</property>
+                    <property name="numeric">true</property>
+                    <property name="snap-to-ticks">true</property>
+                    <property name="digits">0</property>
+                    <property name="adjustment">
+                      <object class="GtkAdjustment">
+                        <property name="lower">1</property>
+                        <property name="upper">24</property>
+                        <property name="value">5</property>
+                        <property name="step-increment">1</property>
+                        <property name="page-increment">5</property>
+                      </object>
+                    </property>
                   </object>
-                </property>
-              </object>
-            </child>
-            <child>
-              <object class="AdwSpinRow" id="large_file_editor_limit_row">
-                <property name="title" translatable="yes">Editor Below</property>
-                <property name="subtitle" translatable="yes">MiB measured safe editor threshold; maximum 25</property>
-                <property name="editable">true</property>
-                <property name="numeric">true</property>
-                <property name="snap-to-ticks">true</property>
-                <property name="digits">0</property>
-                <property name="adjustment">
-                  <object class="GtkAdjustment">
-                    <property name="lower">2</property>
-                    <property name="upper">25</property>
-                    <property name="value">25</property>
-                    <property name="step-increment">1</property>
-                    <property name="page-increment">5</property>
+                </child>
+                <child>
+                  <object class="AdwSpinRow" id="large_file_editor_limit_row">
+                    <property name="title" translatable="yes">Editor Below (MiB)</property>
+                    <property name="subtitle" translatable="yes">Largest size that opens directly in the editor; maximum 25</property>
+                    <property name="editable">true</property>
+                    <property name="numeric">true</property>
+                    <property name="snap-to-ticks">true</property>
+                    <property name="digits">0</property>
+                    <property name="adjustment">
+                      <object class="GtkAdjustment">
+                        <property name="lower">2</property>
+                        <property name="upper">25</property>
+                        <property name="value">25</property>
+                        <property name="step-increment">1</property>
+                        <property name="page-increment">5</property>
+                      </object>
+                    </property>
                   </object>
-                </property>
-              </object>
-            </child>
-            <child>
-              <object class="AdwSpinRow" id="large_file_strong_warning_limit_row">
-                <property name="title" translatable="yes">Strong Warning From</property>
-                <property name="subtitle" translatable="yes">MiB threshold for the stronger editing warning</property>
-                <property name="editable">true</property>
-                <property name="numeric">true</property>
-                <property name="snap-to-ticks">true</property>
-                <property name="digits">0</property>
-                <property name="adjustment">
-                  <object class="GtkAdjustment">
-                    <property name="lower">3</property>
-                    <property name="upper">500</property>
-                    <property name="value">75</property>
-                    <property name="step-increment">1</property>
-                    <property name="page-increment">10</property>
+                </child>
+                <child>
+                  <object class="AdwSpinRow" id="large_file_strong_warning_limit_row">
+                    <property name="title" translatable="yes">Strong Warning From (MiB)</property>
+                    <property name="subtitle" translatable="yes">Show the stronger editing warning for files at least this large</property>
+                    <property name="editable">true</property>
+                    <property name="numeric">true</property>
+                    <property name="snap-to-ticks">true</property>
+                    <property name="digits">0</property>
+                    <property name="adjustment">
+                      <object class="GtkAdjustment">
+                        <property name="lower">3</property>
+                        <property name="upper">500</property>
+                        <property name="value">75</property>
+                        <property name="step-increment">1</property>
+                        <property name="page-increment">10</property>
+                      </object>
+                    </property>
                   </object>
-                </property>
-              </object>
-            </child>
-            <child>
-              <object class="AdwSpinRow" id="large_file_viewer_only_limit_row">
-                <property name="title" translatable="yes">Viewer Only Above</property>
-                <property name="subtitle" translatable="yes">MiB policy ceiling for editor opt-in</property>
-                <property name="editable">true</property>
-                <property name="numeric">true</property>
-                <property name="snap-to-ticks">true</property>
-                <property name="digits">0</property>
-                <property name="adjustment">
-                  <object class="GtkAdjustment">
-                    <property name="lower">4</property>
-                    <property name="upper">500</property>
-                    <property name="value">500</property>
-                    <property name="step-increment">1</property>
-                    <property name="page-increment">25</property>
+                </child>
+                <child>
+                  <object class="AdwSpinRow" id="large_file_viewer_only_limit_row">
+                    <property name="title" translatable="yes">Viewer Only Above (MiB)</property>
+                    <property name="subtitle" translatable="yes">Files larger than this always open in the read-only viewer</property>
+                    <property name="editable">true</property>
+                    <property name="numeric">true</property>
+                    <property name="snap-to-ticks">true</property>
+                    <property name="digits">0</property>
+                    <property name="adjustment">
+                      <object class="GtkAdjustment">
+                        <property name="lower">4</property>
+                        <property name="upper">500</property>
+                        <property name="value">500</property>
+                        <property name="step-increment">1</property>
+                        <property name="page-increment">25</property>
+                      </object>
+                    </property>
                   </object>
-                </property>
-              </object>
-            </child>
-            <child>
-              <object class="AdwSwitchRow" id="large_file_always_edit_row">
-                <property name="title" translatable="yes">Always Allow Large File Editing</property>
-                <property name="subtitle" translatable="yes">Skip prompts below the measured hard editing limit</property>
-              </object>
-            </child>
-          </object>
-        </child>
-      </object>
-    </child>
-    <child>
-      <object class="AdwPreferencesPage" id="appearance_page">
-        <property name="title" translatable="yes">Appearance</property>
-        <property name="icon-name">color-select-symbolic</property>
-        <child>
-          <object class="AdwPreferencesGroup" id="style_group">
-            <property name="title" translatable="yes">Style</property>
-          </object>
-        </child>
-        <child>
-          <object class="AdwPreferencesGroup">
-            <property name="title" translatable="yes">Palette</property>
-            <child>
-              <object class="GtkFlowBox" id="palette_flow_box">
-                <property name="selection-mode">single</property>
-                <property name="activate-on-single-click">true</property>
-                <property name="homogeneous">false</property>
-                <property name="min-children-per-line">2</property>
-                <property name="max-children-per-line">4</property>
-                <property name="column-spacing">8</property>
-                <property name="row-spacing">10</property>
-                <property name="halign">center</property>
-                <property name="margin-top">6</property>
-                <property name="margin-bottom">6</property>
+                </child>
+                <child>
+                  <object class="AdwSwitchRow" id="large_file_always_edit_row">
+                    <property name="title" translatable="yes">Always Allow Large File Editing</property>
+                    <property name="subtitle" translatable="yes">Skip prompts below the measured hard editing limit</property>
+                  </object>
+                </child>
               </object>
             </child>
           </object>
