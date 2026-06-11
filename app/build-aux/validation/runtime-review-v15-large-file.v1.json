@@ -67,7 +67,7 @@
     },
     {
       "path": "src/window_preferences_large_file.rs",
-      "line": 86,
+      "line": 87,
       "match": "syncing: &Rc<Cell<bool>>,",
       "kind": "runtime-shared-state",
       "ownership": "The large-file preferences controller owns a local syncing guard for its rows.",
@@ -75,7 +75,7 @@
     },
     {
       "path": "src/window_preferences_large_file.rs",
-      "line": 103,
+      "line": 104,
       "match": "fn sync_rows(rows: &LargeFileRows, settings: &AppSettings, syncing: &Rc<Cell<bool>>) {",
       "kind": "runtime-shared-state",
       "ownership": "The large-file preferences controller owns a local syncing guard for row synchronization.",

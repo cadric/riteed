@@ -2,6 +2,7 @@ use std::cell::Cell;
 use std::rc::Rc;
 
 use crate::settings::{AppSettings, LargeFileLimitValues};
+use crate::window_preferences::rounded_spin_value;
 use crate::window_shell::WindowShell;
 use crate::workspace::Workspace;
 
@@ -111,18 +112,4 @@ fn sync_rows(rows: &LargeFileRows, settings: &AppSettings, syncing: &Rc<Cell<boo
     rows.always_edit
         .set_active(settings.always_allow_large_file_edit());
     syncing.set(false);
-}
-
-fn rounded_spin_value(value: f64) -> i32 {
-    let text = format!(
-        "{:.0}",
-        value
-            .round()
-            .clamp(f64::from(i32::MIN), f64::from(i32::MAX))
-    );
-    match text.parse::<i32>() {
-        Ok(value) => value,
-        Err(_) if value.is_sign_negative() => i32::MIN,
-        Err(_) => i32::MAX,
-    }
 }

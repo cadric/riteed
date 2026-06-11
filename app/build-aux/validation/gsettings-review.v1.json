@@ -347,15 +347,23 @@
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 105,
-      "match": "row.set_value(f64::from(value));",
+      "line": 78,
+      "match": ".set_value(f64::from(settings.tab_width().cast_signed()));",
       "kind": "gsettings-write",
-      "key": "tab-width-or-indent-width",
-      "trigger": "Startup-safe SpinRow synchronization only. The shared row helper updates the visible value while the syncing guard prevents this widget write from touching GSettings."
+      "key": "tab-width",
+      "trigger": "Startup-safe tab-width SpinRow synchronization only. The syncing guard prevents this widget write from touching GSettings."
     },
     {
       "path": "src/window_preferences.rs",
-      "line": 299,
+      "line": 81,
+      "match": ".set_value(f64::from(settings.indent_width()));",
+      "kind": "gsettings-write",
+      "key": "indent-width",
+      "trigger": "Startup-safe indent-width SpinRow synchronization only. The syncing guard prevents this widget write from touching GSettings."
+    },
+    {
+      "path": "src/window_preferences.rs",
+      "line": 282,
       "match": "row.set_value(f64::from(applied));",
       "kind": "gsettings-write",
       "key": "tab-width-or-indent-width",
@@ -363,7 +371,7 @@
     },
     {
       "path": "src/window_preferences_large_file.rs",
-      "line": 106,
+      "line": 107,
       "match": "rows.full_feature.set_value(f64::from(limits.full_feature));",
       "kind": "gsettings-write",
       "key": "large-file-full-feature-limit-mib",
@@ -371,7 +379,7 @@
     },
     {
       "path": "src/window_preferences_large_file.rs",
-      "line": 107,
+      "line": 108,
       "match": "rows.editor.set_value(f64::from(limits.editor));",
       "kind": "gsettings-write",
       "key": "large-file-editor-limit-mib",
@@ -379,7 +387,7 @@
     },
     {
       "path": "src/window_preferences_large_file.rs",
-      "line": 109,
+      "line": 110,
       "match": ".set_value(f64::from(limits.strong_warning));",
       "kind": "gsettings-write",
       "key": "large-file-strong-warning-limit-mib",
@@ -387,7 +395,7 @@
     },
     {
       "path": "src/window_preferences_large_file.rs",
-      "line": 110,
+      "line": 111,
       "match": "rows.viewer_only.set_value(f64::from(limits.viewer_only));",
       "kind": "gsettings-write",
       "key": "large-file-viewer-only-limit-mib",

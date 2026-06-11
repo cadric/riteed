@@ -25,11 +25,6 @@ struct PreferencesState {
     indent_width_staged: bool,
 }
 
-const MIN_EDITOR_WIDTH: f64 = 1.0;
-const MAX_EDITOR_WIDTH: f64 = 16.0;
-const EDITOR_WIDTH_STEP: f64 = 1.0;
-const EDITOR_WIDTH_PAGE: f64 = 4.0;
-
 impl WindowPreferencesController {
     #[must_use]
     pub fn new(
@@ -78,8 +73,12 @@ fn initialize_rows(
         shell
             .insert_spaces_row
             .set_active(settings.insert_spaces_instead_of_tabs());
-        configure_spin_row(&shell.tab_width_row, settings.tab_width().cast_signed());
-        configure_spin_row(&shell.indent_width_row, settings.indent_width());
+        shell
+            .tab_width_row
+            .set_value(f64::from(settings.tab_width().cast_signed()));
+        shell
+            .indent_width_row
+            .set_value(f64::from(settings.indent_width()));
         shell
             .editor_font_row
             .set_subtitle(&font_row_subtitle(&settings.editor_font()));
@@ -87,22 +86,6 @@ fn initialize_rows(
         shell.git_name_row.set_text(&name);
         shell.git_email_row.set_text(&email);
     });
-}
-
-fn configure_spin_row(row: &adw::SpinRow, value: i32) {
-    row.adjustment().configure(
-        f64::from(value),
-        MIN_EDITOR_WIDTH,
-        MAX_EDITOR_WIDTH,
-        EDITOR_WIDTH_STEP,
-        EDITOR_WIDTH_PAGE,
-        0.0,
-    );
-    row.set_editable(true);
-    row.set_numeric(true);
-    row.set_snap_to_ticks(true);
-    row.set_digits(0);
-    row.set_value(f64::from(value));
 }
 
 fn install_toggle_preferences(
@@ -446,7 +429,7 @@ fn set_spin_dirty(state: &Rc<RefCell<PreferencesState>>, dirty_spin: DirtySpin, 
     }
 }
 
-fn rounded_spin_value(value: f64) -> i32 {
+pub(crate) fn rounded_spin_value(value: f64) -> i32 {
     let text = format!(
         "{:.0}",
         value
