@@ -15,6 +15,8 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 ## Unreleased
 
 ### Added
+- Added an in-app print preview (Ctrl+Shift+P) with page navigation and
+  adjustable text size, working inside the Flatpak sandbox.
 - Started V15 large-file handling with async Gio paged reads, a separate
   read-only GTK viewer surface, streaming viewer search, lazy line jumps,
   session-restore placeholders, bounded viewer-page memory, and Preferences
@@ -45,8 +47,15 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 - Reworked the V15 roadmap contract to drop `memmap2`, keep hard edit caps in
   code-owned policy, preserve the existing SourceView editor path until measured
   evidence justifies expansion, and document large-file compare as out of scope.
+- Print output gained a page header with the document name and page numbers,
+  and smaller line numbers.
+- The print dialog now remembers paper size and printer choices for the rest
+  of the session.
 
 ### Fixed
+- Fixed printing: documents now print with the configured editor font at its
+  stored point size (screen zoom no longer affects paper) and long lines wrap
+  instead of being cut off.
 - Made invalid-character save failure detection locale-independent, so Danish
   locale validation reports the same recovery path as `LC_ALL=C`.
 - Delivered cancelled-load callbacks for chunked applies and superseded
