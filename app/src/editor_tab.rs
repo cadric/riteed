@@ -382,7 +382,7 @@ impl EditorTab {
     pub fn buffer_text(&self) -> String {
         let start = self.text_buffer.start_iter();
         let end = self.text_buffer.end_iter();
-        self.text_buffer.text(&start, &end, true).to_string()
+        String::from(self.text_buffer.text(&start, &end, true))
     }
 
     #[must_use]
@@ -391,7 +391,7 @@ impl EditorTab {
         if start.line() != end.line() || start.offset() == end.offset() {
             return None;
         }
-        Some(self.text_buffer.text(&start, &end, true).to_string())
+        Some(String::from(self.text_buffer.text(&start, &end, true)))
     }
 
     #[must_use]

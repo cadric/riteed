@@ -401,7 +401,7 @@ fn source_control_state_visible(root: &gtk4::Widget) -> bool {
 fn text_buffer_text(buffer: &gtk4::TextBuffer) -> String {
     let start = buffer.start_iter();
     let end = buffer.end_iter();
-    buffer.text(&start, &end, true).to_string()
+    String::from(buffer.text(&start, &end, true))
 }
 
 fn absolute_path(path: PathBuf) -> Result<PathBuf, StressError> {

@@ -202,7 +202,7 @@ impl TextLoadRequest {
                     let start = scratch_buffer.start_iter();
                     let end = scratch_buffer.end_iter();
                     let loaded_format = LoadedTextFormat::from_disk_text(
-                        scratch_buffer.text(&start, &end, true).to_string(),
+                        String::from(scratch_buffer.text(&start, &end, true)),
                         LineEndingMode::from_source(callback_loader.newline_type()),
                         EncodingInfo::from_encoding(&callback_loader.encoding()),
                     );
