@@ -122,15 +122,9 @@ msgstr "Program"
 msgid "Applied after restart"
 msgstr "Anvendes efter genstart"
 
-msgid "Apply"
-msgstr "Anvend"
-
 msgctxt "dialog button"
 msgid "Apply"
 msgstr "Anvend"
-
-msgid "Apply Git Identity"
-msgstr "Anvend Git-identitet"
 
 msgctxt "editor palette"
 msgid "Auto"
@@ -252,6 +246,10 @@ msgstr "Vælg en gemmeplacering, før dette dokument gemmes."
 
 msgid "Choose a Text Encoding"
 msgstr "Vælg en tekstkodning"
+
+msgctxt "format menu"
+msgid "Change Encoding"
+msgstr "Skift tegnkodning"
 
 msgid "Choose the encoding to use for the next save."
 msgstr "Vælg kodningen, der skal bruges ved næste gemning."
@@ -620,6 +618,9 @@ msgstr "Afslut sammenligning"
 msgid "File"
 msgstr "Fil"
 
+msgid "Files"
+msgstr "Filer"
+
 msgctxt "sidebar mode"
 msgid "Files"
 msgstr "Filer"
@@ -669,6 +670,9 @@ msgstr "Begrænsninger for Søg i filer"
 msgid "First Tab"
 msgstr "Første fane"
 
+msgid "Font"
+msgstr "Skrifttype"
+
 msgctxt "file filter"
 msgid "Folders"
 msgstr "Mapper"
@@ -680,9 +684,6 @@ msgstr "Følg systemstil"
 msgctxt "theme selector accessibility"
 msgid "Follow system style"
 msgstr "Følg systemstil"
-
-msgid "Format"
-msgstr "Format"
 
 msgctxt "status format"
 msgid "Format"
@@ -823,6 +824,7 @@ msgctxt "theme selector accessibility"
 msgid "Light style"
 msgstr "Lys stil"
 
+msgctxt "format menu"
 msgid "Line Endings"
 msgstr "Linjeslutninger"
 
@@ -966,12 +968,12 @@ msgctxt "search action"
 msgid "Next Match"
 msgstr "Næste træffer"
 
+msgctxt "print preview"
+msgid "Next Page"
+msgstr "Næste side"
+
 msgid "Next Tab"
 msgstr "Næste fane"
-
-msgctxt "document format"
-msgid "No Document"
-msgstr "Intet dokument"
 
 msgid "No Git action is available for the active tab."
 msgstr "Ingen Git-handling er tilgængelig for den aktive fane."
@@ -1111,6 +1113,14 @@ msgstr "Oversigt"
 msgid "Overwrite the Changed File?"
 msgstr "Overskriv den ændrede fil?"
 
+msgctxt "print preview"
+msgid "Page %1$d of %2$d"
+msgstr "Side %1$d af %2$d"
+
+msgctxt "print header"
+msgid "Page %N of %Q"
+msgstr "Side %N af %Q"
+
 msgid "Palette"
 msgstr "Palette"
 
@@ -1170,6 +1180,10 @@ msgctxt "search action"
 msgid "Previous Match"
 msgstr "Forrige træffer"
 
+msgctxt "print preview"
+msgid "Previous Page"
+msgstr "Forrige side"
+
 msgid "Previous Tab"
 msgstr "Forrige fane"
 
@@ -1177,8 +1191,22 @@ msgctxt "menu item"
 msgid "Print"
 msgstr "Udskriv"
 
+msgctxt "print preview"
+msgid "Print"
+msgstr "Udskriv"
+
 msgid "Print Current Document"
 msgstr "Udskriv aktuelt dokument"
+
+msgctxt "menu item"
+msgid "Print Preview"
+msgstr "Vis udskrift"
+
+msgid "Print Preview"
+msgstr "Vis udskrift"
+
+msgid "Print preview failed."
+msgstr "Forhåndsvisning af udskrift mislykkedes."
 
 msgid "Printing failed."
 msgstr "Udskrivning mislykkedes."
@@ -1433,9 +1461,6 @@ msgstr "Gem dokumentet"
 msgid "Save the open document before using Git actions."
 msgstr "Gem det åbne dokument, før du bruger Git-handlinger."
 
-msgid "Saving"
-msgstr "Gemning"
-
 msgctxt "help row"
 msgid "Saving Work"
 msgstr "Gem arbejdet"
@@ -1628,9 +1653,6 @@ msgctxt "help page"
 msgid "Technical Notes"
 msgstr "Tekniske noter"
 
-msgid "Text Encoding"
-msgstr "Tekstkodning"
-
 msgid "That folder could not be opened."
 msgstr "Mappen kunne ikke åbnes."
 
@@ -1674,8 +1696,14 @@ msgstr "Filen ændrede sig igen på disken og kunne ikke overskrives."
 msgid "The file changed on disk."
 msgstr "Filen blev ændret på disken."
 
+msgid "Riteed could not determine the file size and did not open the file."
+msgstr "Riteed kunne ikke fastslå filstørrelsen og åbnede derfor ikke filen."
+
 msgid "The file is too large to open safely."
 msgstr "Filen er for stor til at åbne sikkert."
+
+msgid "The file contains lines that are too long to edit safely."
+msgstr "Filen indeholder linjer, der er for lange til at kunne redigeres sikkert."
 
 msgid "The document is too large to save safely."
 msgstr "Dokumentet er for stort til at blive gemt sikkert."
@@ -1686,6 +1714,10 @@ msgstr "Startafgrænseren for frontmatter mangler en slutafgrænser."
 
 msgid "The previous project folder could not be restored."
 msgstr "Den forrige projektmappe kunne ikke gendannes."
+
+msgctxt "print preview"
+msgid "Text Size"
+msgstr "Tekststørrelse"
 
 msgid "Theme Preference"
 msgstr "Temaindstilling"
@@ -1765,9 +1797,6 @@ msgstr "Træ"
 
 msgid "Type to search the open folder."
 msgstr "Skriv for at søge i den åbne mappe."
-
-msgid "UTF-8"
-msgstr "UTF-8"
 
 msgid "Unable to Build the Window"
 msgstr "Kunne ikke opbygge vinduet"
@@ -1990,3 +2019,188 @@ msgstr "tekst;redigering;editor;kode;markdown;konfiguration;config;"
 msgctxt "markdown extension label"
 msgid "wiki links"
 msgstr "wiki-links"
+
+msgid "%d match found; showing the first match."
+msgid_plural "%d matches found; showing the first match."
+msgstr[0] "%d træffer fundet; viser den første træffer."
+msgstr[1] "%d træffere fundet; viser den første træffer."
+
+msgid "Always Allow Large File Editing"
+msgstr "Tillad altid redigering af store filer"
+
+msgid "Edit the Large File Anyway?"
+msgstr "Rediger den store fil alligevel?"
+
+msgid "Editing Is Not Available"
+msgstr "Redigering er ikke tilgængelig"
+
+msgid "Editing this file may take 30 seconds or more and can significantly slow the app."
+msgstr "Redigering af denne fil kan tage 30 sekunder eller mere og kan gøre appen betydeligt langsommere."
+
+msgid "Editing this file may take 5-15 seconds."
+msgstr "Redigering af denne fil kan tage 5-15 sekunder."
+
+msgid "Editor Below (MiB)"
+msgstr "Editor under (MiB)"
+
+msgid "Editor File Limit"
+msgstr "Filgrænse for redigering"
+
+msgid "Enter a valid line number."
+msgstr "Indtast et gyldigt linjenummer."
+
+msgid "Files larger than this always open in the read-only viewer"
+msgstr "Filer større end dette åbnes altid i den skrivebeskyttede fremviser"
+
+msgid "Files smaller than this keep every editor feature; must stay below the editor limit"
+msgstr "Filer mindre end dette beholder alle editorfunktioner; skal være under editorgrænsen"
+
+msgid "Files above this size remain viewable, but editing is refused by policy."
+msgstr "Filer over denne størrelse kan stadig vises, men redigering afvises af policy."
+
+msgid "Files at or above this size use the strongest large-file editing warning."
+msgstr "Filer på eller over denne størrelse bruger den stærkeste advarsel om redigering af store filer."
+
+msgid "Files below this measured safe limit can open in the editor with expensive features disabled when needed."
+msgstr "Filer under denne målte sikre grænse kan åbnes i redigeringen med tunge funktioner deaktiveret efter behov."
+
+msgid "Files below this size open in the normal editor with all editor features available."
+msgstr "Filer under denne størrelse åbnes i den normale redigering med alle redigeringsfunktioner tilgængelige."
+
+msgid "Finding line..."
+msgstr "Finder linje..."
+
+msgid "Full Feature File Limit"
+msgstr "Filgrænse for fulde funktioner"
+
+msgid "Full Features Below (MiB)"
+msgstr "Fuld funktionalitet under (MiB)"
+
+msgid "Large File Limits"
+msgstr "Grænser for store filer"
+
+msgid "Large Files"
+msgstr "Store filer"
+
+msgid "Large file restored as a placeholder."
+msgstr "Stor fil gendannet som pladsholder."
+
+msgid "Loading file page..."
+msgstr "Indlæser filside..."
+
+msgid "Many matches found; showing the first match."
+msgstr "Mange træffere fundet; viser den første træffer."
+
+msgid "Largest size that opens directly in the editor; maximum 25"
+msgstr "Største størrelse der åbnes direkte i editoren; højst 25"
+
+msgid "No matches found."
+msgstr "Ingen træffere fundet."
+
+msgctxt "viewer button"
+msgid "Refresh"
+msgstr "Opdater"
+
+msgid "Riteed did not load this file during startup, so the session stays responsive."
+msgstr "Riteed indlæste ikke denne fil under opstart, så sessionen forbliver responsiv."
+
+msgid "Searching file..."
+msgstr "Søger i fil..."
+
+msgid "Skip prompts below the measured hard editing limit"
+msgstr "Spring prompter over under den målte hårde redigeringsgrænse"
+
+msgid "Skips the large-file editing prompt below Riteed's measured hard editing limit. This never overrides the hard limit."
+msgstr "Springer prompten for redigering af store filer over under Riteeds målte hårde redigeringsgrænse. Dette tilsidesætter aldrig den hårde grænse."
+
+msgid "Strong Warning File Limit"
+msgstr "Filgrænse for stærk advarsel"
+
+msgid "Advanced thresholds for opening big files"
+msgstr "Avancerede tærskler for åbning af store filer"
+
+msgid "Show the stronger editing warning for files at least this large"
+msgstr "Vis den kraftigere redigeringsadvarsel for filer mindst så store"
+
+msgid "Strong Warning From (MiB)"
+msgstr "Kraftig advarsel fra (MiB)"
+
+msgid "Syntax highlighting, minimap, Markdown preview, Source Control diff, and autosave remain disabled."
+msgstr "Syntaksfremhævning, minikort, Markdown-forhåndsvisning, Source Control-diff og autogem forbliver deaktiveret."
+
+msgid "Syntax highlighting, minimap, Markdown preview, Source Control diff, and autosave will stay disabled."
+msgstr "Syntaksfremhævning, minikort, Markdown-forhåndsvisning, Source Control-diff og autogem vil forblive deaktiveret."
+
+msgid "The current measured safe editing limit is %1$s bytes."
+msgstr "Den aktuelle målte sikre redigeringsgrænse er %1$s bytes."
+
+msgid "The file position is too large for this system."
+msgstr "Filpositionen er for stor til dette system."
+
+msgid "The selected item is not a regular file."
+msgstr "Det valgte element er ikke en almindelig fil."
+
+msgid "This file is %1$s bytes. Loading it into the editor can freeze the window temporarily and may use several times the file size in memory."
+msgstr "Denne fil er %1$s bytes. Indlæsning i redigeringen kan fryse vinduet midlertidigt og kan bruge flere gange filstørrelsen i hukommelse."
+
+msgid "This file is above Riteed's measured safe editing limit."
+msgstr "Denne fil er over Riteeds målte sikre redigeringsgrænse."
+
+msgid "Viewer Only Above (MiB)"
+msgstr "Kun fremviser over (MiB)"
+
+msgid "Viewer Only File Limit"
+msgstr "Filgrænse for kun visning"
+
+msgid "Viewer keeps only the current file page in memory."
+msgstr "Viseren holder kun den aktuelle filside i hukommelsen."
+
+msgid "Viewing bytes %1$s-%2$s of %3$s."
+msgstr "Viser bytes %1$s-%2$s af %3$s."
+
+msgid "Viewing remains available, but editing is refused above the measured safe editing limit."
+msgstr "Visning er stadig tilgængelig, men redigering afvises over den målte sikre redigeringsgrænse."
+
+msgctxt "alert response"
+msgid "Edit Anyway"
+msgstr "Rediger alligevel"
+
+msgctxt "placeholder button"
+msgid "Open in Editor"
+msgstr "Åbn i redigering"
+
+msgctxt "placeholder button"
+msgid "Open in Viewer"
+msgstr "Åbn i viser"
+
+msgctxt "placeholder button"
+msgid "Remove"
+msgstr "Fjern"
+
+msgctxt "viewer button"
+msgid "Edit Anyway"
+msgstr "Rediger alligevel"
+
+msgctxt "viewer button"
+msgid "Find"
+msgstr "Find"
+
+msgctxt "viewer button"
+msgid "Go"
+msgstr "Gå"
+
+msgctxt "viewer button"
+msgid "Next"
+msgstr "Næste"
+
+msgctxt "viewer button"
+msgid "Previous"
+msgstr "Forrige"
+
+msgctxt "viewer line jump"
+msgid "Line"
+msgstr "Linje"
+
+msgctxt "viewer search"
+msgid "Find"
+msgstr "Find"

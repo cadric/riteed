@@ -15,7 +15,7 @@ use crate::dialogs::encoding::{
 use crate::dialogs::{self, StaleSaveResponse};
 use crate::editor_format::LineEndingMode;
 use crate::editor_monitor::ExternalFileEvent;
-use crate::gtk_tests::{build_window, drain_events, spin_until, write_temp_file};
+use crate::gtk_tests::{TempFileFixture, build_window, drain_events, spin_until, write_temp_file};
 use crate::window::Window;
 use crate::workspace::OpenSource;
 
@@ -104,7 +104,7 @@ fn exercise_manual_open_and_reopen(window: &Rc<Window>, latin1_path: &Path, lati
     queue_encoding_choices_for_tests(&[Some("UTF-8"), Some("ISO-8859-1")]);
     queue_reopen_with_encoding_responses_for_tests(&[ReopenWithEncodingResponse::Reopen]);
     queue_decode_failure_responses_for_tests(&[DecodeFailureResponse::ChooseEncoding]);
-    window.request_selected_encoding_from_preferences_for_tests();
+    window.request_selected_encoding_from_format_menu_for_tests();
     spin_until("dirty reopen with fallback encoding", || {
         window.selected_text_for_tests() == "héj"
             && window.status_format_summary_for_tests() == "ISO-8859-1 · LF"
@@ -120,15 +120,16 @@ fn exercise_save_and_stale(window: &Rc<Window>, ascii_path: &Path, ascii_uri: &s
             && window.status_format_summary_for_tests() == "UTF-8 · LF"
     });
     queue_encoding_choices_for_tests(&[Some("ISO-8859-1")]);
-    window.request_selected_encoding_from_preferences_for_tests();
+    window.request_selected_encoding_from_format_menu_for_tests();
     spin_until("ascii reopen switches encoding", || {
         window.selected_text_for_tests() == "plain"
             && window.status_format_summary_for_tests() == "ISO-8859-1 · LF"
     });
 
-    window.choose_selected_line_ending_from_preferences_for_tests(LineEndingMode::CrLf);
+    window.choose_selected_line_ending_from_format_menu_for_tests(LineEndingMode::CrLf);
     spin_until("preferences choose crlf", || {
         window.status_format_summary_for_tests() == "ISO-8859-1 · CRLF"
+            && window.line_ending_action_state_for_tests() == "crlf"
     });
     window.request_save();
     spin_until("status line ending saves crlf", || {
@@ -137,9 +138,10 @@ fn exercise_save_and_stale(window: &Rc<Window>, ascii_path: &Path, ascii_uri: &s
             && window.status_labels_for_tests().1.is_empty()
     });
 
-    window.choose_selected_line_ending_from_preferences_for_tests(LineEndingMode::Cr);
+    window.choose_selected_line_ending_from_format_menu_for_tests(LineEndingMode::Cr);
     spin_until("preferences choose cr", || {
         window.status_format_summary_for_tests() == "ISO-8859-1 · CR"
+            && window.line_ending_action_state_for_tests() == "cr"
     });
     window.request_save();
     spin_until("status line ending saves cr", || {
@@ -148,9 +150,10 @@ fn exercise_save_and_stale(window: &Rc<Window>, ascii_path: &Path, ascii_uri: &s
             && window.status_labels_for_tests().1.is_empty()
     });
 
-    window.choose_selected_line_ending_from_preferences_for_tests(LineEndingMode::Lf);
+    window.choose_selected_line_ending_from_format_menu_for_tests(LineEndingMode::Lf);
     spin_until("preferences choose lf", || {
         window.status_format_summary_for_tests() == "ISO-8859-1 · LF"
+            && window.line_ending_action_state_for_tests() == "lf"
     });
     window.request_save();
     spin_until("status line ending restores lf", || {
@@ -181,9 +184,9 @@ fn exercise_save_and_stale(window: &Rc<Window>, ascii_path: &Path, ascii_uri: &s
 }
 
 pub(crate) fn exercise_v5_format_io(test_app: &adw::Application) {
-    let latin1_path = write_temp_file("riteed-v5-latin1.txt", b"h\xe9j\n");
+    let latin1_path = write_temp_file(TempFileFixture::V5_LATIN1, b"h\xe9j\n");
     let latin1_uri = gio::File::for_path(&latin1_path).uri().to_string();
-    let ascii_path = write_temp_file("riteed-v5-ascii.txt", b"plain\n");
+    let ascii_path = write_temp_file(TempFileFixture::V5_ASCII, b"plain\n");
     let ascii_uri = gio::File::for_path(&ascii_path).uri().to_string();
 
     let window = build_window(test_app);

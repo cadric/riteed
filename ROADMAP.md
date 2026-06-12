@@ -2036,11 +2036,11 @@ Do not start V15 or V16 work inside this milestone.
 # V15 — Large File Handling
 
 > created: 2026-05-20
-> updated: 2026-05-20
-> status: planned
+> updated: 2026-06-01
+> status: in progress
 > priority: high
 > type: roadmap-milestone
-> implementation: not started
+> implementation: viewer-first backend in progress
 
 ## Purpose
 
@@ -2051,13 +2051,13 @@ This is not a buffer replacement. Riteed keeps `GtkSourceView` for normal editin
 ## What V15 adds
 
 * A tiered file-size model with explicit user-visible thresholds: small / medium / large / very large / refuse-edit
-* Background chunked file loading so mid-sized editor opens stay responsive
+* Measured editor-mode expansion that preserves sourceview5 encoding/BOM/newline behavior before raising the editor cap
 * Auto-disable of syntax highlighting, minimap, Markdown preview, and Source Control diff on files above per-feature thresholds, in normal editor mode
-* A native GTK read-only large-file viewer mode for files above the editor threshold, backed by memory-mapped file access and a lazy line-offset index
+* A native GTK read-only large-file viewer mode for files above the editor threshold, backed by async Gio paged reads, bounded page memory, seam-safe UTF-8 page rendering, explicit size refresh, streaming search, and lazy line jumps
 * An "Edit anyway" opt-in path from viewer mode back into editor mode, with honest warnings about expected load time and reduced feature availability
 * Placeholder tabs on session restore for large files so app startup is not blocked by eager loads
-* User-configurable thresholds in Preferences for users on capable hardware
-* Hard refusal of edit mode above a final upper limit, with viewer still available up to filesystem limits
+* User-configurable soft thresholds in Preferences for users on capable hardware, sanitized against code-owned policy caps
+* Hard refusal of edit mode above the measured editor cap, with viewer still available through bounded pages
 
 ## Why this version matters
 
@@ -2073,6 +2073,8 @@ V15 must not add:
 
 * a replacement text-buffer datastructure (piece-tree or rope) for editor mode
 * edit support above the hard upper limit
+* memory-mapped file access or any crate that requires `unsafe`
+* a user-configurable escape hatch around code-owned hard safety caps
 * virtualized rendering retrofit inside the existing `GtkSourceView` editor mode
 * IDE features, terminal, LSP, debugger, or build tools
 * network access of any kind for file loading
@@ -2086,12 +2088,12 @@ The goal is for Riteed to remain a lightweight GNOME-native text editor that ope
 
 What V15 adds:
 - A tiered open model with size-based thresholds: small (default editor with all features), medium (editor with auto-disabled heavy features), large (read-only viewer by default, editor on opt-in), very large (read-only viewer with stronger edit warning), and a hard upper limit where edit is refused entirely while viewer remains available
-- Background chunked file load in editor mode so loading mid-sized files does not freeze the UI
+- Measured editor-mode expansion that preserves sourceview5 encoding/BOM/newline behavior; keep the existing `GtkSourceFileLoader` editor path unless measurements prove a new streamed loader is necessary
 - Auto-disable behavior for syntax highlighting, minimap, Markdown preview, and Source Control per-file diff above per-feature thresholds, including inside normal editor mode
-- A native GTK read-only large-file viewer mode that uses memory-mapped file access, builds a lazy line-offset index in the background, and renders only visible lines via a virtualized native widget
+- A native GTK read-only large-file viewer mode that uses async Gio paged reads, bounded page memory, seam-safe UTF-8 page rendering, explicit size refresh, streaming search, lazy line jumps, and never loads the whole file into a `GtkTextBuffer`
 - Viewer-mode operations: scroll, copy, select, line jump, find within file
 - An "Edit anyway" path from viewer mode to editor mode with an explicit warning that includes expected load time, estimated memory use, and the list of features that will remain disabled
-- Per-file "remember this choice" opt-in plus a global preference for "always allow editing large files" so power users can skip the prompt
+- Global preference for "always allow editing large files" so power users can skip the prompt below the measured hard editing cap; this setting must never override the code-owned cap
 - Placeholder tabs on session restore so large files restore as a lightweight status page with "Open in Viewer", "Open in Editor", and "Remove" actions instead of blocking startup with eager loads
 - Preferences entries to adjust threshold values for users on capable hardware, with sane defaults for the general case
 - Honest user-facing copy about freeze risk, memory cost, and the editor's hard upper limit
@@ -2101,22 +2103,28 @@ Default thresholds (all configurable in Preferences):
 - 5-25 MB: editor with syntax highlighting, minimap, Markdown preview, and Source Control diff auto-disabled; autosave still active
 - 25-75 MB: read-only viewer by default; edit opt-in with "may take 5-15 seconds and disable several features" warning; autosave off in edit mode
 - 75-500 MB: read-only viewer by default; edit opt-in with stronger "may take 30+ seconds and significantly slow the app" warning; autosave off; all heavy features disabled
-- > 500 MB: read-only viewer only; edit refused with explanation
+- > measured edit cap: viewer remains available, editor opt-in is refused with explanation; 500 MB is the default policy ceiling for the strongest warning tier, not a promise that `GtkTextBuffer` editing is safe there
 
 Compare and Markdown preview on large files:
-- Compare actions remain available but show an explicit warning before running on files above the medium tier; refused outright above the hard upper limit
+- Existing compare remains editor-scale; large-file compare above the editor tier is out of scope for V15 and should not force a viewer file into an editor buffer
 - Markdown preview is hard-disabled above 5 MB regardless of mode; the toggle is hidden rather than warning the user
 
 Technical expectations:
 - Keep the existing `GtkSourceView`/`GtkTextBuffer` editor path unchanged for small files
-- Add chunked background load via `glib::idle_add_local` or async file IO into the existing editor buffer for medium-sized files
-- Build the viewer as a separate widget that does not embed `GtkSourceView`; use `memmap2` for the file, a `Vec<u64>` line-offset index built incrementally in a worker, and a virtualized rendering approach (custom widget with Pango per-visible-line layout or a GtkColumnView-backed model that lazy-loads line content)
+- Verify sourceview5 `FileLoader`/`FileSaver` behavior before raising the measured edit cap; manual chunked editor decode is forbidden unless it reproduces encoding/BOM/newline behavior and avoids whole-file transient copies
+- Build the viewer as a separate widget that does not embed `GtkSourceView`; use async Gio `File`/`InputStream` operations on a driven `glib::MainContext`, pass owned byte buffers to parsing/indexing/search work, and keep all GTK mutation on the main thread
+- Do not use `memmap2`; the app forbids unsafe code, and memory mapping cannot satisfy that contract here
+- Keep viewer memory bounded to visible file pages, preserve valid UTF-8 characters across page seams, and compute exact line offsets lazily for line-jump/search windows rather than maintaining a background line index in this iteration
+- Search in viewer mode must be streaming, cancellable, generation-guarded, and capped
+- Session restore must create lightweight tabs first and resolve file size/tier asynchronously; startup must not synchronously stat every restored file
+- Manual save above the snapshot cap is conditional: implement live-buffer save only if measurements show a safe edit cap above the snapshot cap, and treat the edit lock as the replacement for snapshot isolation
 - Keep viewer mode strictly read-only; never load the entire file into a `GtkTextBuffer` in viewer mode
 - Make viewer search and selection feel close enough to the editor that switching between modes is not jarring
 - Keep all user-visible strings gettext-ready
 - Persist threshold preferences in GSettings using the existing schema patterns
-- Preserve hard limits: no source file over 600 lines, no `unsafe`/`unwrap`/`expect`, no broad Flatpak permissions, no network access
-- Tests: unit tests for tier-decision logic, focused tests for the line-offset index builder, GTK tests for viewer mode rendering and Edit anyway flow, and a regression test that session restore with a large file produces a placeholder tab rather than freezing
+- Keep hard safety limits in code-owned constants; GSettings may lower/raise soft thresholds only inside bounded ranges and can never raise the measured edit cap
+- Preserve hard limits: follow the current source line-limit policy including registered waivers when justified, no `unsafe`/`unwrap`/`expect`, no broad Flatpak permissions, no network access
+- Tests: unit tests for tier-decision logic and paged reader/search behavior, GTK tests for viewer mode rendering and Edit anyway flow, and regression tests that session restore with a large file produces a placeholder tab rather than freezing and that viewer/placeholder tabs release cleanly after close
 
 Non-goals:
 - No piece-tree or rope buffer replacement; edit mode remains backed by `GtkTextBuffer`

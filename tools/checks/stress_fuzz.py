@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 import json
-import datetime as dt
 import re
 from fnmatch import fnmatch
 from pathlib import Path
 from typing import Any
 
 from tools.checks import foundation, remediation
-from tools.validation_tooling import contract_root, normalize_path, read_text
+from tools.validation_tooling import contract_root, iso_date_not_future_status, normalize_path, read_text
 
 
 POLICY_FILE = "policy/stress-fuzz.policy.json"
@@ -584,14 +583,8 @@ def _scan_path_shape(shape: dict[str, bool], path: bytes) -> None:
 
 
 def _require_date(value: Any, label: str, field: str, errors: list[str]) -> None:
-    if not isinstance(value, str):
+    status, today = iso_date_not_future_status(value)
+    if status == "invalid":
         foundation.add(errors, f"{label}: {field} must be YYYY-MM-DD")
-        return
-    try:
-        reviewed = dt.date.fromisoformat(value)
-    except ValueError:
-        foundation.add(errors, f"{label}: {field} must be YYYY-MM-DD")
-        return
-    today = dt.datetime.now(dt.UTC).date()
-    if reviewed > today:
+    elif status == "future":
         foundation.add(errors, f"{label}: {field} must not be after {today}")

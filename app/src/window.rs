@@ -35,6 +35,8 @@ mod testing;
 #[cfg(test)]
 mod testing_compare;
 #[cfg(test)]
+mod testing_large_file;
+#[cfg(test)]
 mod testing_markdown;
 
 #[derive(Clone, Copy, Debug)]
@@ -75,6 +77,8 @@ pub struct Window {
     fullscreen_action: gio::SimpleAction,
     #[cfg(test)]
     theme_action: gio::SimpleAction,
+    change_encoding_action: gio::SimpleAction,
+    line_ending_action: gio::SimpleAction,
     settings: AppSettings,
     workspace: Rc<Workspace>,
     appearance: WindowAppearanceController,
@@ -189,7 +193,7 @@ impl Window {
         );
         let preferences = WindowPreferencesController::new(&shell, &settings, &workspace, &zoom);
         let compare = WindowCompareController::new(&shell.window, &workspace);
-        let document_tools = DocumentToolsController::new(&shell.window, &workspace);
+        let document_tools = DocumentToolsController::new(&shell.window, &workspace, &settings);
         let project =
             WindowProjectController::new(&shell, &settings, &workspace, init.restore_project);
         let sidebar = sidebar_wiring::install(&shell, &settings, &workspace, &project);
@@ -208,6 +212,8 @@ impl Window {
             fullscreen_action: actions.fullscreen,
             #[cfg(test)]
             theme_action: actions.theme,
+            change_encoding_action: actions.change_encoding,
+            line_ending_action: actions.line_ending,
             settings,
             workspace,
             appearance,

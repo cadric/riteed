@@ -1,6 +1,6 @@
 ---
 created: 2026-04-19
-updated: 2026-05-30
+updated: 2026-06-12
 status: current
 priority: high
 type: changelog
@@ -14,10 +14,94 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 
 ## Unreleased
 
+### Added
+- Added local Flatpak build guardrails: `scripts/integration-preflight` reports
+  branch state before user-test builds, `scripts/local-flatpak-build` wraps the
+  standard build/install/verify loop, and policy now records that normal
+  testable builds come from `main` or `integrate/*`.
+- Added an in-app print preview (Ctrl+Shift+P) with page navigation and
+  adjustable text size, working inside the Flatpak sandbox.
+- Started V15 large-file handling with async Gio paged reads, a separate
+  read-only GTK viewer surface, streaming viewer search, lazy line jumps,
+  session-restore placeholders, bounded viewer-page memory, and Preferences
+  entries for bounded large-file thresholds.
+- Hardened the V15 large-file path so viewer/placeholder tabs break callback
+  ownership cycles on close, short non-EOF Gio reads keep filling the current
+  window, feature gates use on-disk file size, medium files re-apply minimap
+  and Source Control diff gating after load, and autosave reports the exact
+  snapshot cap consistently.
+- Tightened V15 open-size routing so normal editor opens reuse the async
+  preflight size query, unknown-size routed opens fail closed with explicit
+  copy, and post-decode editor loads cannot become active over the hard cap.
+
+### Changed
+- Reorganized Preferences into four pages: General for language and autosave,
+  Appearance for style, palette, and editor font, Editor for view,
+  indentation, and large-file limits behind an expander, and Source Control
+  for Git identity.
+- Moved per-document encoding and line-ending controls from Preferences to a
+  document-format menu in the status bar.
+- Git identity fields now save with inline apply buttons instead of a separate
+  Apply row.
+- Differentiated policy line limits so production files keep the 600-line
+  default, configured test files may reach 800 lines, and production overages
+  require registered waivers capped at 720 lines.
+- Routed decoded files with lines longer than 64 KiB to the existing read-only
+  large-file viewer instead of allowing them into the editable SourceView path.
+- Reworked the V15 roadmap contract to drop `memmap2`, keep hard edit caps in
+  code-owned policy, preserve the existing SourceView editor path until measured
+  evidence justifies expansion, and document large-file compare as out of scope.
+- Print output gained a page header with the document name and page numbers,
+  and smaller line numbers.
+- The print dialog now remembers paper size and printer choices for the rest
+  of the session.
+
 ### Fixed
+- Added progress markers and bounded timeouts to the native GitHub Actions
+  validation job, including image pull and dependency/tool installation phases,
+  so cold-build failures produce actionable logs and artifacts instead of
+  leaving stale `native-tests` runs pending indefinitely; full push validation
+  is now scoped to `main` so PR branch updates rely on the PR run instead of a
+  duplicate push `native-tests` context, and policy required commands now stream
+  their own start/end markers so native CI timeouts identify the active
+  underlying command. Coverage validation now streams the `cargo llvm-cov`
+  command for the same reason.
+- Stabilized the native CI stress runner by waiting for the Save action to
+  become enabled before asserting the open/search/save round trip, and recorded
+  a narrow line-limit waiver for the stress driver.
+- Fixed end-of-document minimap scrolling in editor and Compare/Diff panes by
+  using a viewport-relative 75% scroll-past-end buffer with the existing
+  font-based padding as the minimum, while keeping native scrollbars available
+  when minimaps are visible and suppressing Compare/Diff minimaps on narrow
+  panes where the scrollbar is the safer navigation edge.
+- Fixed printing: documents now print with the configured editor font at its
+  stored point size (screen zoom no longer affects paper) and long lines wrap
+  instead of being cut off.
+- Made invalid-character save failure detection locale-independent, so Danish
+  locale validation reports the same recovery path as `LC_ALL=C`.
+- Delivered cancelled-load callbacks for chunked applies and superseded
+  requests, so closing a tab while a session-restored document is still
+  loading no longer freezes session persistence for the rest of the run.
+- Stopped overriding GtkSourceMap bottom margins with the unscaled editor
+  scroll-past-end padding in editor and Compare minimaps; GtkSourceMap's own
+  scaled margin binding now applies, fixing minimap drag losing the mouse
+  near the bottom of larger documents.
+- Hid the minimap while a chunked document apply is filling the buffer, so
+  large loads no longer pay a second full map re-layout per chunk and the
+  minimap appears fully synchronized once loading completes.
+- Replaced whole-document editor apply for large loads with chunked,
+  cancellable main-loop insertion and blocked save/replace mutations until
+  apply completes, so opening large editable documents no longer monopolizes
+  the UI while SourceView builds the buffer.
+- Fixed V15 large-file viewer follow-ups so valid UTF-8 split across page
+  boundaries no longer renders replacement glyphs, restored placeholder
+  Remove closes the tab, viewer Refresh sees appended bytes, and large-file
+  threshold preferences no longer imply editor access beyond the measured cap.
 - Fixed the Flatpak publish workflow so manual dispatch can target a validated
   release tag, checkout that tag before signing, and migrate legacy beta Pages
   metadata only when publishing a newer version.
+- Restored AppStream release descriptions for software-center version history
+  while keeping release-note prose out of gettext POT/PO catalogs.
 
 ## 0.3.6 - 2026-05-30
 

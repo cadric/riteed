@@ -1,5 +1,6 @@
 use libadwaita as adw;
 
+use crate::editor_zoom::effective_scroll_past_end_padding;
 use crate::gtk_tests::spin_until;
 use crate::settings::AppSettings;
 use crate::window::Window;
@@ -123,15 +124,19 @@ fn exercise_zoom_controller(test_app: &adw::Application) {
     spin_until("default minimap font resolves", || {
         window.selected_minimap_font_for_tests().is_some()
     });
+    // GtkSourceMap mirrors the editor's bottom margin through its own scaled
+    // binding, so the minimap margin must stay well below the editor margin.
+    // On headless GTK backends the map can remain unallocated and report zero
+    // while the editor margin is already resolved.
     spin_until("default scroll past end padding resolves", || {
         window
             .selected_scroll_past_end_padding_for_tests()
-            .is_some_and(|(editor, minimap)| editor == minimap && editor > 12)
+            .is_some_and(scroll_past_end_padding_resolved_for_tests)
     });
     let scroll_padding_before = window.selected_scroll_past_end_padding_for_tests();
-    assert!(
-        scroll_padding_before.is_some_and(|(editor, minimap)| { editor == minimap && editor > 12 })
-    );
+    assert!(scroll_padding_before.is_some_and(scroll_past_end_padding_resolved_for_tests));
+    let scroll_floor_before = window.selected_scroll_past_end_floor_for_tests();
+    assert!(scroll_floor_before.is_some_and(|floor| floor > 12));
     let minimap_before = window
         .selected_minimap_font_for_tests()
         .map(|desc| desc.to_string());
@@ -162,27 +167,77 @@ fn exercise_zoom_controller(test_app: &adw::Application) {
 
     window.activate_status_zoom_in_for_tests();
     window.activate_status_zoom_in_for_tests();
-    spin_until("zoom in increases scroll past end padding", || {
+    spin_until("zoom in raises the scroll past end floor", || {
         window.zoom_percent_for_tests() == 120
             && window.status_zoom_percent_for_tests() == "120%"
             && window
+                .selected_scroll_past_end_floor_for_tests()
+                .zip(scroll_floor_before)
+                .is_some_and(|(after, before)| after > before)
+            && window
                 .selected_scroll_past_end_padding_for_tests()
-                .is_some_and(|(editor, minimap)| {
-                    scroll_padding_before.is_some_and(|(before_editor, before_minimap)| {
-                        editor == minimap && editor > before_editor && minimap > before_minimap
-                    })
-                })
+                .is_some_and(scroll_past_end_padding_resolved_for_tests)
     });
     window.activate_status_zoom_reset_for_tests();
     spin_until("zoom reset action works", || {
         window.zoom_percent_for_tests() == 100
             && window.status_zoom_percent_for_tests() == "100%"
-            && window.selected_scroll_past_end_padding_for_tests() == scroll_padding_before
+            && window.selected_scroll_past_end_floor_for_tests() == scroll_floor_before
     });
+}
+
+fn scroll_past_end_padding_resolved_for_tests((editor, minimap): (i32, i32)) -> bool {
+    editor > 12 && minimap >= 0 && minimap < editor
+}
+
+fn exercise_viewport_scroll_past_end(test_app: &adw::Application) {
+    let settings = AppSettings::new_for_tests();
+    let window = Window::new_with_settings_for_tests(test_app, settings).ok();
+    assert!(window.is_some());
+    let Some(window) = window else {
+        return;
+    };
+    window.ensure_default_tab();
+    spin_until("scroll past end floor resolves", || {
+        window
+            .selected_scroll_past_end_floor_for_tests()
+            .is_some_and(|floor| floor > 12)
+    });
+    let Some(floor) = window.selected_scroll_past_end_floor_for_tests() else {
+        return;
+    };
+
+    // notify::page-size fires synchronously inside set_page_size, so the
+    // margins below can be asserted without spinning the main loop (which
+    // could reallocate the window and overwrite the injected page size).
+    window.set_selected_viewport_page_size_for_tests(800.0);
+    assert_eq!(
+        window
+            .selected_scroll_past_end_padding_for_tests()
+            .map(|(editor, _minimap)| editor),
+        Some(effective_scroll_past_end_padding(floor, 800.0)),
+        "a large viewport raises the editor margin to the 75 % share",
+    );
+    assert!(
+        window
+            .selected_scroll_past_end_padding_for_tests()
+            .is_some_and(scroll_past_end_padding_resolved_for_tests),
+        "the minimap keeps its own scaled margin binding",
+    );
+
+    window.set_selected_viewport_page_size_for_tests(0.0);
+    assert_eq!(
+        window
+            .selected_scroll_past_end_padding_for_tests()
+            .map(|(editor, _minimap)| editor),
+        Some(floor),
+        "an unallocated viewport falls back to the font floor",
+    );
 }
 
 pub(crate) fn exercise_v5b_editor_controls(test_app: &adw::Application) {
     exercise_preference_startup_and_indentation(test_app);
     exercise_indentation_content_behavior(test_app);
     exercise_zoom_controller(test_app);
+    exercise_viewport_scroll_past_end(test_app);
 }

@@ -1,13 +1,30 @@
 use std::rc::Rc;
 
 use gtk4::{gio, glib, prelude::*};
-use libadwaita::prelude::*;
+use libadwaita::prelude::PreferencesPageExt;
 
 use super::Window;
 
 impl Window {
     pub(crate) fn tab_count_for_tests(&self) -> i32 {
         self.workspace.tab_count()
+    }
+
+    pub(crate) fn close_selected_page_for_tests(&self) -> bool {
+        let Some(tab) = self.workspace.selected_tab() else {
+            return false;
+        };
+        let Some(page) = tab.page() else {
+            return false;
+        };
+        self.workspace.tab_view.close_page(&page);
+        true
+    }
+
+    pub(crate) fn selected_char_count_for_tests(&self) -> i32 {
+        self.workspace
+            .selected_tab()
+            .map_or(0, |tab| tab.text_buffer().char_count())
     }
 
     pub(crate) fn selected_title_for_tests(&self) -> String {
@@ -131,20 +148,35 @@ impl Window {
         self.workspace.status_format_summary()
     }
 
-    pub(crate) fn choose_selected_line_ending_from_preferences_for_tests(
+    pub(crate) fn choose_selected_line_ending_from_format_menu_for_tests(
         &self,
         line_ending_mode: crate::editor_format::LineEndingMode,
     ) {
-        let index = match line_ending_mode {
-            crate::editor_format::LineEndingMode::Lf => 0,
-            crate::editor_format::LineEndingMode::CrLf => 1,
-            crate::editor_format::LineEndingMode::Cr => 2,
+        use gtk4::glib::variant::ToVariant;
+        let nick = match line_ending_mode {
+            crate::editor_format::LineEndingMode::Lf => "lf",
+            crate::editor_format::LineEndingMode::CrLf => "crlf",
+            crate::editor_format::LineEndingMode::Cr => "cr",
         };
-        self.shell.line_ending_row.set_selected(index);
+        gtk4::gio::prelude::ActionGroupExt::activate_action(
+            &self.shell.window,
+            "line-ending",
+            Some(&nick.to_variant()),
+        );
     }
 
-    pub(crate) fn request_selected_encoding_from_preferences_for_tests(&self) {
-        libadwaita::prelude::ActionRowExt::activate(&self.shell.encoding_row);
+    pub(crate) fn request_selected_encoding_from_format_menu_for_tests(&self) {
+        gtk4::gio::prelude::ActionGroupExt::activate_action(
+            &self.shell.window,
+            "change-encoding",
+            None,
+        );
+    }
+
+    pub(crate) fn line_ending_action_state_for_tests(&self) -> String {
+        gtk4::gio::prelude::ActionGroupExt::action_state(&self.shell.window, "line-ending")
+            .and_then(|state| state.str().map(String::from))
+            .unwrap_or_default()
     }
 
     pub(crate) fn status_zoom_percent_for_tests(&self) -> String {
@@ -241,9 +273,27 @@ impl Window {
     pub(crate) fn preferences_page_count_for_tests(&self) -> u32 {
         u32::from(self.shell.general_preferences_page.parent().is_some())
             + u32::from(self.shell.appearance_page.parent().is_some())
-            + u32::from(self.shell.encoding_row.parent().is_some())
-            + u32::from(self.shell.git_name_row.parent().is_some())
             + u32::from(self.shell.word_wrap_row.parent().is_some())
+            + u32::from(self.shell.git_name_row.parent().is_some())
+    }
+
+    pub(crate) fn preferences_page_titles_for_tests(&self) -> Vec<String> {
+        fn collect(widget: &gtk4::Widget, out: &mut Vec<String>) {
+            if let Some(page) = widget.downcast_ref::<libadwaita::PreferencesPage>() {
+                out.push(page.title().to_string());
+                return;
+            }
+            let mut child = widget.first_child();
+            while let Some(current) = child {
+                collect(&current, out);
+                child = current.next_sibling();
+            }
+        }
+        let mut titles = Vec::new();
+        if let Some(parent) = self.shell.general_preferences_page.parent() {
+            collect(&parent, &mut titles);
+        }
+        titles
     }
 
     pub(crate) fn chrome_css_for_tests(&self) -> String {
@@ -306,6 +356,32 @@ impl Window {
         self.workspace.selected_loading_for_tests()
     }
 
+    pub(crate) fn selected_large_file_surface_for_tests(&self) -> Option<&'static str> {
+        self.workspace.selected_large_file_surface_for_tests()
+    }
+
+    pub(crate) fn selected_large_file_viewer_text_for_tests(&self) -> String {
+        self.workspace.selected_large_file_viewer_text_for_tests()
+    }
+
+    pub(crate) fn selected_large_file_viewer_status_for_tests(&self) -> String {
+        self.workspace.selected_large_file_viewer_status_for_tests()
+    }
+
+    pub(crate) fn activate_selected_large_file_edit_for_tests(&self) -> bool {
+        self.workspace.activate_selected_large_file_edit_for_tests()
+    }
+
+    pub(crate) fn activate_selected_large_file_refresh_for_tests(&self) -> bool {
+        self.workspace
+            .activate_selected_large_file_refresh_for_tests()
+    }
+
+    pub(crate) fn activate_selected_large_file_placeholder_remove_for_tests(&self) -> bool {
+        self.workspace
+            .activate_selected_large_file_placeholder_remove_for_tests()
+    }
+
     pub(crate) fn selected_writability_for_tests(&self) -> Option<crate::editor_tab::Writability> {
         self.workspace.selected_writability()
     }
@@ -340,12 +416,36 @@ impl Window {
         self.document_tools.set_print_runner_for_tests(runner);
     }
 
+    pub(crate) fn set_print_preview_runner_for_tests(
+        &self,
+        runner: crate::document_tools::PreviewRunner,
+    ) {
+        self.document_tools.set_preview_runner_for_tests(runner);
+    }
+
     pub(crate) fn document_tool_actions_enabled_for_tests(&self) -> (bool, bool) {
         self.document_tools.actions_enabled_for_tests()
     }
 
     pub(crate) fn activate_print_for_tests(&self) -> bool {
         gtk4::prelude::WidgetExt::activate_action(self.widget(), "win.print", None).is_ok()
+    }
+
+    pub(crate) fn activate_print_preview_for_tests(&self) -> bool {
+        gtk4::prelude::WidgetExt::activate_action(self.widget(), "win.print-preview", None).is_ok()
+    }
+
+    pub(crate) fn start_print_preview_engine_for_tests(
+        &self,
+    ) -> Option<Rc<crate::document_print_preview::PreviewEngine>> {
+        let tab = self.workspace.selected_tab()?;
+        let view = tab.text_view();
+        crate::document_print_preview::PreviewEngine::start(
+            &self.shell.window,
+            &view,
+            &tab.title(),
+            "Monospace 11",
+        )
     }
 
     pub(crate) fn source_control_row_count_for_tests(&self) -> usize {
@@ -450,6 +550,15 @@ impl Window {
 
     pub(crate) fn selected_scroll_past_end_padding_for_tests(&self) -> Option<(i32, i32)> {
         self.workspace.selected_scroll_past_end_padding_for_tests()
+    }
+
+    pub(crate) fn selected_scroll_past_end_floor_for_tests(&self) -> Option<i32> {
+        self.workspace.selected_scroll_past_end_floor_for_tests()
+    }
+
+    pub(crate) fn set_selected_viewport_page_size_for_tests(&self, page_size: f64) {
+        self.workspace
+            .set_selected_viewport_page_size_for_tests(page_size);
     }
 
     pub(crate) fn preferences_write_log_for_tests(&self) -> Vec<String> {

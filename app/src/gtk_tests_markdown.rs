@@ -2,7 +2,7 @@ use gtk4::{gio, prelude::*};
 use libadwaita as adw;
 use std::rc::Rc;
 
-use crate::gtk_tests::{build_window, spin_until, write_temp_file};
+use crate::gtk_tests::{TempFileFixture, build_window, spin_until, write_temp_file};
 use crate::settings::ThemePreference;
 use crate::window::Window;
 use crate::workspace::OpenSource;
@@ -12,7 +12,7 @@ pub(crate) fn exercise_markdown_preview(test_app: &adw::Application) {
         return;
     };
     let markdown = markdown_fixture();
-    let path = write_temp_file("riteed-markdown-preview.md", markdown.as_bytes());
+    let path = write_temp_file(TempFileFixture::MARKDOWN_PREVIEW, markdown.as_bytes());
     let file = gio::File::for_path(&path);
     let uri = file.uri().to_string();
     window.request_open_files(vec![file], OpenSource::AppOpen);

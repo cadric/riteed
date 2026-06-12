@@ -1,6 +1,16 @@
 # Continuity
 
 ## OUTCOMES
+- 2026-06-01 V15 large-file viewer follow-up is in progress locally: valid
+  UTF-8 page seams are decoded without boundary-induced replacement glyphs,
+  viewer search and line-jump use retained async streams for sequential scans,
+  restored placeholder Remove routes through the normal tab close flow, viewer
+  Refresh re-queries file size so appended bytes become reachable, and
+  Preferences now cap the editor threshold at the measured 25 MiB hard limit.
+- 2026-05-30 differentiated line-limit policy is implemented: production
+  files keep the 600-line default, configured test files get an 800-line hard
+  cap, production waivers are scope-relative and capped at 720 lines, and the
+  policy-pack self-gate validates contract-root tooling without app checks.
 - 2026-05-30 0.3.6 beta release metadata landed on `main` via PR #16 as
   verified squash commit `b9ba63042ee96595489b627f4f79d22d3c35dde1`, and
   annotated tag `v0.3.6` now points there. The first Publish Flatpak run
@@ -10,6 +20,11 @@
   signing, and permits legacy Pages metadata only when the candidate version is
   newer. Release-note prose stays in `CHANGELOG.md`/GitHub Releases, not
   gettext catalogs.
+- 2026-05-30 follow-up: AppStream release descriptions were restored for
+  GNOME Software/Flatpak version history with `translate="no"` so they remain
+  excluded from POT/PO catalogs. Policy/docs now distinguish full release notes
+  in `CHANGELOG.md`/GitHub Releases from short non-translatable AppStream
+  version-history summaries.
 - 2026-05-30 nightly stress `markdown_parse` crash is fixed locally with a
   release-critical `pulldown-cmark 0.13.4` patch under
   `app/build-aux/cargo-patches/pulldown-cmark`. The patch backports the
@@ -482,6 +497,8 @@
 - V11 compare gutter `-`/`+` markers are visual and not part of the document text; line numbers and markers are separate gutter renderers so marker glyph widths cannot shift the number column.
 
 ## PROGRESS
+- V15 large-file handling started with viewer-first implementation: `document_limits.rs` now owns configurable tier policy and measured edit cap fallback, large files route through a separate read-only GTK viewer backed by async Gio paged reads, session restore creates placeholder tabs for viewer-tier files, heavy editor features are gated above the full-feature threshold, and large-file threshold preferences live in GSettings with code-side sanitization. Current measured edit cap remains the 25 MiB snapshot-safe fallback until FileLoader/FileSaver measurement evidence justifies raising it. The correctness follow-up removes the unused line-index scaffold, keeps viewer memory bounded to page windows with streaming search/lazy line jumps, uses on-disk size for editor feature gates, fixes short-read EOF handling, and requires viewer/placeholder close tests to prove `Weak::upgrade()` fails after normal close.
+- V15 open-size routing follow-up keeps the normal `workspace_open` editor path on one async Gio metadata query by passing the preflight size into the editor load, maps unknown-size routed opens to an explicit fail-closed error, and keeps reload/reopen/compare/Edit Anyway on their existing load-time query while adding a post-decode hard-cap guard before any over-cap text becomes active editor state.
 - V13 diff-review maturity validation passed: `scripts/policy-check --root app --strict`, `python3 -m tools.coverage_check --root app` (80.0% line coverage), `cargo fmt --all --check`, `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, focused `cargo test git_process::tests::read_only_git_ops_work_against_current_repo --workspace --all-targets --all-features -- --exact`, `glib-compile-schemas --strict --dry-run app/data/schemas`, `glib-compile-resources --sourcedir app/data --target /tmp/riteed.gresource --generate app/data/resources.gresource.xml`, `msgfmt --check-format --check-header -o /dev/null app/po/da.po`, `desktop-file-validate app/data/io.github.cadric.Riteed.desktop`, `appstreamcli validate --no-net --pedantic app/data/io.github.cadric.Riteed.metainfo.xml` (existing uppercase app-id pedantic note only), `flatpak-builder --show-manifest app/build-aux/io.github.cadric.Riteed.yml`, `scripts/v13-line-budget`, and `git diff --check`.
 - V13 local user Flatpak rebuild/install passed with app commit `f11a626f5bcf0d029d9125e9ea9ffd450d4b556c0953b21b563348183dedd0b3`; `flatpak info --user io.github.cadric.Riteed` reports version `0.3.1`, installed size `8.4 MB` on `org.gnome.Platform//50`, and `/app/bin/git` reports `git version 2.54.0`.
 - Source Control Recent Commits split validation passed: `cd app && cargo fmt --all --check`, `cd app && cargo check --workspace --all-targets --all-features`, `cd app && cargo clippy --workspace --all-targets --all-features -- -D warnings`, `GTK_A11Y=none GSK_RENDERER=cairo cargo test gtk_surfaces_and_editor_flow_work --workspace --all-targets --all-features`, `GTK_A11Y=none GSK_RENDERER=cairo cargo test --workspace --all-targets --all-features`, `scripts/policy-check --root app --strict`, `python3 -m tools.coverage_check --root app` (82.7% line coverage), and `git diff --check`.

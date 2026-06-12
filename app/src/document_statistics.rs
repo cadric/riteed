@@ -154,4 +154,48 @@ mod tests {
     fn selection_lines_are_inclusive() {
         assert_eq!(line_span_count(0, 1), 2);
     }
+
+    #[test]
+    fn empty_text_statistics_keep_reported_line_count() {
+        assert_eq!(
+            count_text("", 1),
+            TextStatistics {
+                lines: 1,
+                words: 0,
+                characters: 0,
+                characters_without_spaces: 0,
+            }
+        );
+    }
+
+    #[test]
+    fn whitespace_only_text_has_no_words() {
+        assert_eq!(
+            count_text(" \n\t", 2),
+            TextStatistics {
+                lines: 2,
+                words: 0,
+                characters: 3,
+                characters_without_spaces: 0,
+            }
+        );
+    }
+
+    #[test]
+    fn unicode_text_counts_characters_not_bytes() {
+        assert_eq!(
+            count_text("å β", 1),
+            TextStatistics {
+                lines: 1,
+                words: 2,
+                characters: 3,
+                characters_without_spaces: 2,
+            }
+        );
+    }
+
+    #[test]
+    fn reversed_selection_lines_report_zero_lines() {
+        assert_eq!(line_span_count(5, 4), 0);
+    }
 }

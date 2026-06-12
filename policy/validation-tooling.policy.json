@@ -59,6 +59,8 @@
   },
   "thresholds": {
     "max_file_lines": 600,
+    "max_file_lines_test": 800,
+    "max_file_lines_waiver_cap": 720,
     "min_line_coverage_percent": 80.0
   },
   "required_policy_files": [
@@ -75,6 +77,9 @@
     "policy/validation-tooling.policy.json"
   ],
   "required_tools": ["cargo", "rustc", "xgettext", "desktop-file-validate", "appstreamcli", "glib-compile-schemas", "msgfmt", "flatpak-builder"],
+  "workflow_safety": {
+    "local_flatpak_test_builds": {"preflight_script": "scripts/integration-preflight", "standard_build_script": "scripts/local-flatpak-build", "allowed_build_branches": ["main", "integrate/*"], "feature_only_override": "--feature-only-ok", "report_unmerged_branches": true}
+  },
   "line_limit_globs": [
     "AGENTS.md",
     "policy/README.md",
@@ -101,6 +106,9 @@
     "data/**/*.desktop",
     "data/**/*.metainfo.xml"
   ],
+  "test_file_globs": ["**/tests.rs", "**/*_tests.rs", "**/test_support.rs", "**/testing.rs", "**/testing_*.rs", "**/gtk_tests*.rs", "tests/**/*.rs", "tools/tests/test_*.py"],
+  "line_limit_waivers": [{"scope": "app", "path": "src/bin/riteed_stress.rs", "max_total_lines": 620, "reason": "CI stress runner keeps flow execution, action-state waits, and failure artifact trail together so native-test failures remain diagnosable without splitting one reviewed driver.", "finding_id": "ci-native-tests-stress-save-action-race", "last_reviewed": "2026-06-12"}],
+  "line_limit_waiver_required_fields": ["scope", "path", "max_total_lines", "reason", "finding_id", "last_reviewed"],
   "dependency_policy": {
     "required_runtime_crates": [
       "gtk4",

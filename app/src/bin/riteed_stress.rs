@@ -77,15 +77,27 @@ fn run_open_save_search(
     artifact_lines: &mut Vec<String>,
 ) -> Result<(), StressError> {
     const RELATIVE: &str = "stress/corpus/generated/open-save-search.txt";
+    artifact_lines.push(String::from("step=open:start"));
     app.open(&[script.declared_file(RELATIVE)?], "");
+    artifact_lines.push(String::from("step=open:wait-source"));
     wait_for_source_contains(app, "needle")?;
+    artifact_lines.push(String::from("step=open:source-ready"));
+    artifact_lines.push(String::from("step=search:activate"));
     activate_window_action(app, "win.search")?;
+    artifact_lines.push(String::from("step=search:set-query"));
     set_search_query(app, "needle")?;
+    artifact_lines.push(String::from("step=search:find-next"));
     activate_window_action(app, "win.find-next")?;
     let marker = "riteed-stress-saved-marker\n";
+    artifact_lines.push(String::from("step=save:set-text"));
     set_first_source_text(app, &format!("needle\n{marker}"))?;
+    artifact_lines.push(String::from("step=save:wait-action-enabled"));
+    wait_until(|| window_action_enabled(app, "save"))?;
+    artifact_lines.push(String::from("step=save:activate"));
     activate_window_action(app, "win.save")?;
+    artifact_lines.push(String::from("step=save:wait-disk-marker"));
     wait_until(|| script.declared_file_contains(RELATIVE, marker))?;
+    artifact_lines.push(String::from("step=save:disk-marker-ready"));
     artifact_lines.push(String::from("action=open"));
     artifact_lines.push(String::from("action=search"));
     artifact_lines.push(String::from("action=save"));
@@ -401,7 +413,7 @@ fn source_control_state_visible(root: &gtk4::Widget) -> bool {
 fn text_buffer_text(buffer: &gtk4::TextBuffer) -> String {
     let start = buffer.start_iter();
     let end = buffer.end_iter();
-    buffer.text(&start, &end, true).to_string()
+    String::from(buffer.text(&start, &end, true))
 }
 
 fn absolute_path(path: PathBuf) -> Result<PathBuf, StressError> {
@@ -525,6 +537,12 @@ fn optional_window_action(app: &impl IsA<gtk4::Application>, action: &str) -> &'
         Some(_) => "unavailable",
         None => "missing-window",
     }
+}
+
+fn window_action_enabled(app: &impl IsA<gtk4::Application>, action: &str) -> bool {
+    app.active_window()
+        .and_then(|window| window.downcast::<gtk4::ApplicationWindow>().ok())
+        .is_some_and(|window| window.is_action_enabled(action))
 }
 
 #[derive(Clone, Copy)]

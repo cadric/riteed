@@ -203,7 +203,15 @@
     },
     {
       "path": "src/workspace.rs",
-      "line": 74,
+      "line": 68,
+      "match": "selected_state_refresh_queued: Cell<bool>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The workspace owns the selected-state refresh coalescing flag.",
+      "justification": "Visual-change bursts are GTK-main-thread confined and can schedule one idle refresh through this flag so status, actions, and search rebinding update once per main-loop turn."
+    },
+    {
+      "path": "src/workspace.rs",
+      "line": 75,
       "match": "pub(crate) state: RefCell<WorkspaceState>,",
       "kind": "runtime-shared-state",
       "ownership": "The workspace owns tab collection, recent/session caches, restore gating, and active close flow.",
@@ -211,7 +219,7 @@
     },
     {
       "path": "src/workspace/autosave.rs",
-      "line": 19,
+      "line": 20,
       "match": "pub(crate) result: Rc<RefCell<Option<SaveResult>>>,",
       "kind": "runtime-shared-state",
       "ownership": "The autosave helper owns a callback result slot for one save attempt.",
@@ -235,7 +243,7 @@
     },
     {
       "path": "src/workspace_open.rs",
-      "line": 143,
+      "line": 149,
       "match": "fn process_open_request(workspace: &Rc<Workspace>, request: Rc<RefCell<OpenRequest>>) {",
       "kind": "runtime-shared-state",
       "ownership": "The shared open-request state tracks a multi-file open batch.",
@@ -243,7 +251,7 @@
     },
     {
       "path": "src/workspace_open.rs",
-      "line": 255,
+      "line": 375,
       "match": "fn finish_open_request(workspace: &Rc<Workspace>, request: &Rc<RefCell<OpenRequest>>) {",
       "kind": "runtime-shared-state",
       "ownership": "The open-request finisher reads shared batch state.",

@@ -11,6 +11,20 @@ impl Workspace {
         crate::workspace_monitor::on_selected_tab_changed(self);
     }
 
+    pub(crate) fn queue_refresh_selected_state(self: &std::rc::Rc<Self>) {
+        if self.selected_state_refresh_queued.replace(true) {
+            return;
+        }
+        let weak = std::rc::Rc::downgrade(self);
+        gtk4::glib::idle_add_local_once(move || {
+            let Some(workspace) = weak.upgrade() else {
+                return;
+            };
+            workspace.selected_state_refresh_queued.set(false);
+            workspace.refresh_selected_state();
+        });
+    }
+
     pub(crate) fn refresh_selected_state(&self) {
         self.sync_tab_action_state();
         let selected = self.selected_tab();
@@ -31,8 +45,9 @@ impl Workspace {
         if let Some(tab) = selected {
             self.title_widget.set_title(&tab.title());
             self.title_widget.set_subtitle("");
-            self.save_action.set_enabled(tab.is_dirty());
-            self.save_as_action.set_enabled(true);
+            self.save_action
+                .set_enabled(tab.can_save_document() && tab.is_dirty());
+            self.save_as_action.set_enabled(tab.can_save_document());
             self.close_action.set_enabled(true);
             return;
         }

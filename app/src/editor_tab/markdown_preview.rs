@@ -11,8 +11,6 @@ use crate::editor_zoom::restore_preview_zoom_css_class;
 use crate::editor_zoom::{EDITOR_ZOOM_CSS_CLASS_PREFIX, MARKDOWN_PREVIEW_CSS_CLASS};
 
 const MARKDOWN_PREVIEW_DEBOUNCE_MS: u64 = 180;
-const MARKDOWN_PREVIEW_MAX_BYTES: usize = 1_000_000;
-
 struct MarkdownPreviewSnapshot {
     scroll_value: f64,
     selection: Option<(i32, i32)>,
@@ -23,6 +21,12 @@ impl EditorTab {
     pub fn markdown_preview_available(&self) -> bool {
         self.is_document()
             && !self.is_compare_active()
+            && self
+                .state
+                .borrow()
+                .large_file
+                .file_size
+                .is_none_or(crate::document_limits::markdown_preview_enabled)
             && self
                 .state
                 .borrow()
@@ -410,7 +414,7 @@ fn single_line_buffer_selection_text(buffer: &gtk4::TextBuffer) -> Option<String
     if start.line() != end.line() || start.offset() == end.offset() {
         return None;
     }
-    Some(buffer.text(&start, &end, true).to_string())
+    Some(String::from(buffer.text(&start, &end, true)))
 }
 
 fn selection_offsets(buffer: &gtk4::TextBuffer) -> Option<(i32, i32)> {
@@ -439,7 +443,9 @@ fn markdown_link_is_launchable(target: &str) -> bool {
 }
 
 fn markdown_preview_uses_fallback(len: usize) -> bool {
-    len > MARKDOWN_PREVIEW_MAX_BYTES
+    u64::try_from(len).map_or(true, |len| {
+        !crate::document_limits::markdown_preview_enabled(len)
+    })
 }
 
 fn text_view_coordinate(value: f64) -> i32 {
@@ -454,24 +460,25 @@ fn text_view_coordinate(value: f64) -> i32 {
 
 #[cfg(test)]
 mod tests {
-    use super::{MARKDOWN_PREVIEW_MAX_BYTES, markdown_preview_uses_fallback};
+    use super::markdown_preview_uses_fallback;
 
-    #[test]
-    fn markdown_preview_at_minus_one_renders() {
-        assert!(!markdown_preview_uses_fallback(
-            MARKDOWN_PREVIEW_MAX_BYTES - 1
-        ));
+    fn preview_limit() -> usize {
+        usize::try_from(crate::document_limits::SMALL_FILE_LIMIT_BYTES)
+            .map_or(usize::MAX, |value| value)
     }
 
     #[test]
-    fn markdown_preview_at_exact_renders() {
-        assert!(!markdown_preview_uses_fallback(MARKDOWN_PREVIEW_MAX_BYTES));
+    fn markdown_preview_at_minus_one_renders() {
+        assert!(!markdown_preview_uses_fallback(preview_limit() - 1));
+    }
+
+    #[test]
+    fn markdown_preview_at_exact_falls_back() {
+        assert!(markdown_preview_uses_fallback(preview_limit()));
     }
 
     #[test]
     fn markdown_preview_at_plus_one_falls_back() {
-        assert!(markdown_preview_uses_fallback(
-            MARKDOWN_PREVIEW_MAX_BYTES + 1
-        ));
+        assert!(markdown_preview_uses_fallback(preview_limit() + 1));
     }
 }

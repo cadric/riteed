@@ -1,13 +1,11 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use gettextrs::{gettext, pgettext};
+use gettextrs::gettext;
 use gtk4::{gio, pango, prelude::*};
 use libadwaita as adw;
 use libadwaita::prelude::*;
 
-use crate::editor_format::LineEndingMode;
-use crate::editor_tab::EditorTab;
 use crate::editor_zoom::{
     EditorZoomController, font_row_subtitle, resolve_editor_font_description, resolve_font_family,
     resolve_font_family_in_map,
@@ -27,11 +25,6 @@ struct PreferencesState {
     indent_width_staged: bool,
 }
 
-const MIN_EDITOR_WIDTH: f64 = 1.0;
-const MAX_EDITOR_WIDTH: f64 = 16.0;
-const EDITOR_WIDTH_STEP: f64 = 1.0;
-const EDITOR_WIDTH_PAGE: f64 = 4.0;
-
 impl WindowPreferencesController {
     #[must_use]
     pub fn new(
@@ -44,10 +37,10 @@ impl WindowPreferencesController {
         initialize_rows(shell, settings, &state);
         install_toggle_preferences(shell, settings, workspace, &state);
         install_spin_preferences(shell, settings, workspace, &state);
-        install_document_format_preferences(shell, workspace, &state);
         install_font_preference(shell, settings, zoom);
         install_language_preference(shell, settings, &state);
         install_git_identity_preference(shell, settings);
+        crate::window_preferences_large_file::install(shell, settings, workspace);
         Self { _state: state }
     }
 }
@@ -57,10 +50,6 @@ fn initialize_rows(
     settings: &AppSettings,
     state: &Rc<RefCell<PreferencesState>>,
 ) {
-    let lf = LineEndingMode::Lf.menu_label();
-    let crlf = LineEndingMode::CrLf.menu_label();
-    let cr = LineEndingMode::Cr.menu_label();
-    let line_endings = gtk4::StringList::new(&[lf.as_str(), crlf.as_str(), cr.as_str()]);
     let language_labels = AppLanguage::ALL.map(AppLanguage::label);
     let language_labels = language_labels
         .iter()
@@ -68,8 +57,6 @@ fn initialize_rows(
         .collect::<Vec<_>>();
     let languages = gtk4::StringList::new(&language_labels);
     with_syncing(state, || {
-        shell.line_ending_row.set_model(Some(&line_endings));
-        shell.line_ending_row.set_selected(0);
         shell.language_row.set_model(Some(&languages));
         shell
             .language_row
@@ -86,8 +73,12 @@ fn initialize_rows(
         shell
             .insert_spaces_row
             .set_active(settings.insert_spaces_instead_of_tabs());
-        configure_spin_row(&shell.tab_width_row, settings.tab_width().cast_signed());
-        configure_spin_row(&shell.indent_width_row, settings.indent_width());
+        shell
+            .tab_width_row
+            .set_value(f64::from(settings.tab_width().cast_signed()));
+        shell
+            .indent_width_row
+            .set_value(f64::from(settings.indent_width()));
         shell
             .editor_font_row
             .set_subtitle(&font_row_subtitle(&settings.editor_font()));
@@ -95,22 +86,6 @@ fn initialize_rows(
         shell.git_name_row.set_text(&name);
         shell.git_email_row.set_text(&email);
     });
-}
-
-fn configure_spin_row(row: &adw::SpinRow, value: i32) {
-    row.adjustment().configure(
-        f64::from(value),
-        MIN_EDITOR_WIDTH,
-        MAX_EDITOR_WIDTH,
-        EDITOR_WIDTH_STEP,
-        EDITOR_WIDTH_PAGE,
-        0.0,
-    );
-    row.set_editable(true);
-    row.set_numeric(true);
-    row.set_snap_to_ticks(true);
-    row.set_digits(0);
-    row.set_value(f64::from(value));
 }
 
 fn install_toggle_preferences(
@@ -309,92 +284,6 @@ fn commit_spin_row(
     set_spin_dirty(state, dirty_spin, false);
 }
 
-fn install_document_format_preferences(
-    shell: &WindowShell,
-    workspace: &Rc<Workspace>,
-    state: &Rc<RefCell<PreferencesState>>,
-) {
-    let weak = Rc::downgrade(workspace);
-    shell.encoding_row.connect_activated(move |_| {
-        if let Some(workspace) = weak.upgrade() {
-            workspace.request_selected_encoding_action();
-        }
-    });
-
-    let weak = Rc::downgrade(workspace);
-    let line_state = Rc::clone(state);
-    shell.line_ending_row.connect_selected_notify(move |row| {
-        if line_state.borrow().syncing {
-            return;
-        }
-        if let Some(workspace) = weak.upgrade()
-            && let Some(mode) = line_ending_mode_from_index(row.selected())
-        {
-            workspace.set_selected_line_ending_mode(mode);
-        }
-    });
-
-    let encoding_row = shell.encoding_row.clone();
-    let line_ending_row = shell.line_ending_row.clone();
-    let format_state = Rc::clone(state);
-    workspace.set_format_preferences_handler(Rc::new(move |tab| {
-        sync_document_format_rows(
-            &encoding_row,
-            &line_ending_row,
-            &format_state,
-            tab.as_deref(),
-        );
-    }));
-    sync_document_format_rows(
-        &shell.encoding_row,
-        &shell.line_ending_row,
-        state,
-        workspace.selected_tab().as_deref(),
-    );
-}
-
-fn sync_document_format_rows(
-    encoding_row: &adw::ActionRow,
-    line_ending_row: &adw::ComboRow,
-    state: &Rc<RefCell<PreferencesState>>,
-    tab: Option<&EditorTab>,
-) {
-    with_syncing(state, || {
-        if let Some(tab) = tab {
-            let format = tab.current_format();
-            encoding_row.set_sensitive(
-                tab.is_document()
-                    && (tab.document_uri().is_none() || tab.can_reopen_with_encoding()),
-            );
-            encoding_row.set_subtitle(format.encoding().charset());
-            line_ending_row.set_sensitive(tab.is_document());
-            line_ending_row.set_selected(line_ending_index(format.line_ending_mode()));
-        } else {
-            encoding_row.set_sensitive(false);
-            encoding_row.set_subtitle(&pgettext("document format", "No Document"));
-            line_ending_row.set_sensitive(false);
-            line_ending_row.set_selected(line_ending_index(LineEndingMode::Lf));
-        }
-    });
-}
-
-fn line_ending_index(mode: LineEndingMode) -> u32 {
-    match mode {
-        LineEndingMode::Lf => 0,
-        LineEndingMode::CrLf => 1,
-        LineEndingMode::Cr => 2,
-    }
-}
-
-fn line_ending_mode_from_index(index: u32) -> Option<LineEndingMode> {
-    match index {
-        0 => Some(LineEndingMode::Lf),
-        1 => Some(LineEndingMode::CrLf),
-        2 => Some(LineEndingMode::Cr),
-        _ => None,
-    }
-}
-
 fn install_font_preference(
     shell: &WindowShell,
     settings: &AppSettings,
@@ -475,11 +364,16 @@ fn install_language_preference(
 }
 
 fn install_git_identity_preference(shell: &WindowShell, settings: &AppSettings) {
-    let settings = settings.clone();
-    let name_row = shell.git_name_row.clone();
     let email_row = shell.git_email_row.clone();
-    shell.git_identity_apply_button.connect_clicked(move |_| {
-        settings.set_git_identity(&name_row.text(), &email_row.text());
+    let apply_settings = settings.clone();
+    shell.git_name_row.connect_apply(move |row| {
+        apply_settings.set_git_identity(&row.text(), &email_row.text());
+    });
+
+    let name_row = shell.git_name_row.clone();
+    let apply_settings = settings.clone();
+    shell.git_email_row.connect_apply(move |row| {
+        apply_settings.set_git_identity(&name_row.text(), &row.text());
     });
 }
 
@@ -535,7 +429,7 @@ fn set_spin_dirty(state: &Rc<RefCell<PreferencesState>>, dirty_spin: DirtySpin, 
     }
 }
 
-fn rounded_spin_value(value: f64) -> i32 {
+pub(crate) fn rounded_spin_value(value: f64) -> i32 {
     let text = format!(
         "{:.0}",
         value

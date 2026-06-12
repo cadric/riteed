@@ -6,7 +6,9 @@ use gtk4::{gdk, gio, prelude::*};
 use libadwaita as adw;
 
 use crate::editor_tab::{SaveResult, Writability};
-use crate::gtk_tests::{build_window_with_settings, drain_events, spin_until, write_temp_file};
+use crate::gtk_tests::{
+    TempFileFixture, build_window_with_settings, drain_events, spin_until, write_temp_file,
+};
 use crate::settings::AppSettings;
 use crate::workspace::OpenSource;
 
@@ -31,8 +33,8 @@ fn exercise_manual_compare_surface(test_app: &adw::Application) {
     let reference_text = format!("a0\nnew\nc0\nc1\nc2\nc3\nlast changed\n{long_reference_tail}");
     let expected_rows =
         crate::editor_tab::compare_row_count_for_texts_for_tests(editable_text, &reference_text);
-    let editable_path = write_temp_file("riteed-v11-editable.rs", editable_text.as_bytes());
-    let reference_path = write_temp_file("riteed-v11-reference.rs", reference_text.as_bytes());
+    let editable_path = write_temp_file(TempFileFixture::V11_EDITABLE, editable_text.as_bytes());
+    let reference_path = write_temp_file(TempFileFixture::V11_REFERENCE, reference_text.as_bytes());
 
     window.request_open_files(
         vec![gio::File::for_path(&editable_path)],
@@ -122,9 +124,14 @@ fn exercise_navigation_copy_and_gutter_surface(test_app: &adw::Application) {
     };
     let editable_text = numbered_compare_text("left eighty", "left one twenty");
     let reference_text = numbered_compare_text("right eighty", "right one twenty");
-    let editable_path = write_temp_file("riteed-v11-gutter-editable.txt", editable_text.as_bytes());
-    let reference_path =
-        write_temp_file("riteed-v11-gutter-reference.txt", reference_text.as_bytes());
+    let editable_path = write_temp_file(
+        TempFileFixture::V11_GUTTER_EDITABLE,
+        editable_text.as_bytes(),
+    );
+    let reference_path = write_temp_file(
+        TempFileFixture::V11_GUTTER_REFERENCE,
+        reference_text.as_bytes(),
+    );
 
     window.request_open_files(
         vec![gio::File::for_path(&editable_path)],
@@ -217,9 +224,12 @@ fn exercise_asymmetric_gutter_width_surface(test_app: &adw::Application) {
     };
     let editable_text = numbered_lines(120);
     let reference_text = "line 001\n";
-    let editable_path = write_temp_file("riteed-v11-wide-current.txt", editable_text.as_bytes());
-    let reference_path =
-        write_temp_file("riteed-v11-narrow-reference.txt", reference_text.as_bytes());
+    let editable_path =
+        write_temp_file(TempFileFixture::V11_WIDE_CURRENT, editable_text.as_bytes());
+    let reference_path = write_temp_file(
+        TempFileFixture::V11_NARROW_REFERENCE,
+        reference_text.as_bytes(),
+    );
 
     window.request_open_files(
         vec![gio::File::for_path(&editable_path)],
@@ -284,7 +294,7 @@ fn exercise_saved_reference_rebuild(test_app: &adw::Application) {
     let Some(window) = build_window_with_settings(test_app, settings) else {
         return;
     };
-    let editable_path = write_temp_file("riteed-v11-save-sync.txt", b"before\n");
+    let editable_path = write_temp_file(TempFileFixture::V11_SAVE_SYNC, b"before\n");
 
     window.request_open_files(
         vec![gio::File::for_path(&editable_path)],
@@ -320,8 +330,8 @@ fn exercise_compare_pauses_guarded_autosave(test_app: &adw::Application) {
     let Some(window) = build_window_with_settings(test_app, settings) else {
         return;
     };
-    let editable_path = write_temp_file("riteed-v11-autosave-compare.txt", b"before\n");
-    let reference_path = write_temp_file("riteed-v11-autosave-reference.txt", b"reference\n");
+    let editable_path = write_temp_file(TempFileFixture::V11_AUTOSAVE_COMPARE, b"before\n");
+    let reference_path = write_temp_file(TempFileFixture::V11_AUTOSAVE_REFERENCE, b"reference\n");
     let editable_file = gio::File::for_path(&editable_path);
     let reference_file = gio::File::for_path(&reference_path);
     let editable_uri = editable_file.uri().to_string();

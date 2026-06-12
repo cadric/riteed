@@ -195,7 +195,7 @@ evidence becomes available.
   `app/fuzz/corpus/` while also requiring committed seed inputs. The plan now
   ignores only fuzz `target/` and `artifacts/`; seed corpus files stay tracked.
 - **Line limits verified**: new Rust stress/fuzz files are well under the
-  600-line cap: `gtk_tests_boundaries.rs` 70 lines, `riteed_stress.rs`
+  differentiated cap (600 production / 800 test / 720 waiver-cap): `gtk_tests_boundaries.rs` 70 lines, `riteed_stress.rs`
   131 lines, and each fuzz target 7 lines.
 - **Full local Flatpak build now verified**: after adding `proptest`,
   `app/build-aux/cargo/cargo-sources.json` had to be regenerated so the

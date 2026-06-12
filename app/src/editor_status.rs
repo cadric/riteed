@@ -1,11 +1,13 @@
 use gettextrs::{gettext, pgettext};
 use gtk4::accessible::Property;
 use gtk4::prelude::*;
+#[cfg(test)]
+use std::cell::Cell;
 
 use crate::editor_tab::EditorTab;
 
 struct StatusControls {
-    format_label: gtk4::Label,
+    format_button: gtk4::MenuButton,
     zoom_box: gtk4::Box,
     zoom_percent_label: gtk4::Label,
     zoom_out_button: gtk4::Button,
@@ -18,7 +20,9 @@ pub struct EditorStatusBar {
     location_label: gtk4::Label,
     modified_label: gtk4::Label,
     position_label: gtk4::Label,
-    format_label: gtk4::Label,
+    format_button: gtk4::MenuButton,
+    #[cfg(test)]
+    format_button_label_updates: Cell<usize>,
     zoom_box: gtk4::Box,
     zoom_percent_label: gtk4::Label,
     zoom_out_button: gtk4::Button,
@@ -76,7 +80,7 @@ impl EditorStatusBar {
         left.append(&location_label);
         left.append(&modified_label);
         right.append(&status_separator());
-        right.append(&controls.format_label);
+        right.append(&controls.format_button);
         right.append(&status_separator());
         right.append(&controls.zoom_box);
         right.append(&status_separator());
@@ -85,7 +89,7 @@ impl EditorStatusBar {
         root.append(&right);
 
         controls
-            .format_label
+            .format_button
             .update_property(&[Property::Label(&gettext("Document Format"))]);
         location_label.update_property(&[Property::Label(&gettext("Current Document Location"))]);
         modified_label.update_property(&[Property::Label(&gettext("Modification State"))]);
@@ -97,7 +101,9 @@ impl EditorStatusBar {
             location_label,
             modified_label,
             position_label,
-            format_label: controls.format_label,
+            format_button: controls.format_button,
+            #[cfg(test)]
+            format_button_label_updates: Cell::new(0),
             zoom_box: controls.zoom_box,
             zoom_percent_label: controls.zoom_percent_label,
             zoom_out_button: controls.zoom_out_button,
@@ -115,27 +121,28 @@ impl EditorStatusBar {
     pub fn update(&self, tab: Option<&EditorTab>) {
         let (name, modified, position) = status_strings(tab);
         let location = status_location(tab);
-        self.name_label.set_label(&name);
-        self.location_label.set_label(&location);
-        self.location_label
-            .set_tooltip_text(if location.is_empty() {
-                None
-            } else {
-                Some(&location)
-            });
-        self.modified_label.set_label(&modified);
-        self.position_label.set_label(&position);
+        set_label_if_changed(&self.name_label, &name);
+        set_label_if_changed(&self.location_label, &location);
+        let tooltip = if location.is_empty() {
+            None
+        } else {
+            Some(location.as_str())
+        };
+        if self.location_label.tooltip_text().as_deref() != tooltip {
+            self.location_label.set_tooltip_text(tooltip);
+        }
+        set_label_if_changed(&self.modified_label, &modified);
+        set_label_if_changed(&self.position_label, &position);
 
         if let Some(tab) = tab {
-            self.format_label.set_label(&tab.current_format_summary());
-            self.format_label.set_sensitive(true);
+            self.set_format_button_label_if_changed(&tab.current_format_summary());
+            self.format_button.set_sensitive(true);
             self.zoom_box.set_sensitive(true);
             self.zoom_out_button.set_sensitive(true);
             self.zoom_in_button.set_sensitive(true);
         } else {
-            self.format_label
-                .set_label(&pgettext("status format", "Format"));
-            self.format_label.set_sensitive(false);
+            self.set_format_button_label_if_changed(&pgettext("status format", "Format"));
+            self.format_button.set_sensitive(false);
             self.zoom_box.set_sensitive(false);
             self.zoom_out_button.set_sensitive(false);
             self.zoom_in_button.set_sensitive(false);
@@ -144,6 +151,13 @@ impl EditorStatusBar {
 
     pub fn set_zoom_percent(&self, percent: i32) {
         self.zoom_percent_label.set_label(&format!("{percent}%"));
+    }
+
+    fn set_format_button_label_if_changed(&self, label: &str) {
+        if set_menu_button_label_if_changed(&self.format_button, label) {
+            #[cfg(test)]
+            self.record_format_button_label_update_for_tests();
+        }
     }
 
     #[cfg(test)]
@@ -156,8 +170,22 @@ impl EditorStatusBar {
     }
 
     #[cfg(test)]
+    fn record_format_button_label_update_for_tests(&self) {
+        self.format_button_label_updates
+            .set(self.format_button_label_updates.get().saturating_add(1));
+    }
+
+    #[cfg(test)]
+    pub(crate) fn format_button_label_updates_for_tests(&self) -> usize {
+        self.format_button_label_updates.get()
+    }
+
+    #[cfg(test)]
     pub(crate) fn format_summary_for_tests(&self) -> String {
-        self.format_label.text().to_string()
+        self.format_button
+            .label()
+            .map(|label| label.to_string())
+            .unwrap_or_default()
     }
 
     #[cfg(test)]
@@ -182,11 +210,13 @@ impl EditorStatusBar {
 }
 
 fn build_status_controls() -> StatusControls {
-    let format_label = gtk4::Label::builder()
-        .xalign(0.5)
+    let format_button = gtk4::MenuButton::builder()
+        .menu_model(&crate::window_format_menu::build_menu())
         .tooltip_text(gettext("Document Format"))
+        .valign(gtk4::Align::Center)
+        .direction(gtk4::ArrowType::Up)
         .build();
-    format_label.add_css_class("dim-label");
+    format_button.add_css_class("flat");
 
     let zoom_box = gtk4::Box::builder()
         .orientation(gtk4::Orientation::Horizontal)
@@ -216,7 +246,7 @@ fn build_status_controls() -> StatusControls {
     zoom_box.append(&zoom_in_button);
 
     StatusControls {
-        format_label,
+        format_button,
         zoom_box,
         zoom_percent_label,
         zoom_out_button,
@@ -239,6 +269,20 @@ fn zoom_button(icon_name: &str, label: &str, action_name: &str) -> gtk4::Button 
     button.set_action_name(Some(action_name));
     button.update_property(&[Property::Label(label)]);
     button
+}
+
+fn set_label_if_changed(label: &gtk4::Label, text: &str) {
+    if label.label().as_str() != text {
+        label.set_label(text);
+    }
+}
+
+fn set_menu_button_label_if_changed(button: &gtk4::MenuButton, label: &str) -> bool {
+    if button.label().as_deref() == Some(label) {
+        return false;
+    }
+    button.set_label(label);
+    true
 }
 
 #[must_use]

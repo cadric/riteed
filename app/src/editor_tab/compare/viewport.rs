@@ -38,6 +38,9 @@ pub(in crate::editor_tab) fn restore_with_cursor_line(
     {
         buffer.place_cursor(&cursor);
     }
+    if view.allocated_width() <= 0 || view.allocated_height() <= 0 {
+        return;
+    }
     if let Some(mut top) = state
         .top_line
         .and_then(|line| iter_at_line_clamped(&buffer, line))

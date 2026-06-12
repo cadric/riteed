@@ -2,6 +2,8 @@ name: Validate
 
 on:
   push:
+    branches:
+      - main
   pull_request:
   workflow_dispatch:
   schedule:
@@ -9,6 +11,10 @@ on:
 
 permissions:
   contents: read
+
+concurrency:
+  group: validate-${{ github.event_name }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
 
 jobs:
   dependency-preflight:
@@ -29,17 +35,23 @@ jobs:
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with:
           python-version: "3.12"
+      - name: Validate policy-pack contract
+        run: python3 -m tools.policy_check --policy-pack-check --strict
       - name: Run root validator tests
-        run: python3 -m unittest tools.tests.test_policy_check tools.tests.test_release_rulesets tools.tests.test_release_hardening tools.tests.test_release_stress_policy tools.tests.test_stress_fuzz_hardening tools.tests.test_validation_tooling_security tools.tests.test_coverage_check tools.tests.test_dependency_preflight -v
+        run: python3 -m unittest discover -s tools/tests -v
 
   native-tests:
     needs: dependency-preflight
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - name: Pull Fedora validation image
+        run: timeout 10m docker pull fedora:42
       - name: Validate app subtree
         run: |
           docker run --rm \
+            --pull=never \
             --privileged \
             -e GSK_RENDERER=cairo \
             -e G_DEBUG=fatal-criticals \
@@ -51,7 +63,21 @@ jobs:
             fedora:42 \
             bash -lc '
               set -euo pipefail
-              dnf install -y \
+              run_phase() {
+                label="$1"
+                limit="$2"
+                shift 2
+                echo "::group::$label"
+                date -u +"phase-start=%Y-%m-%dT%H:%M:%SZ label=$label"
+                set +e
+                timeout "$limit" "$@"
+                status="$?"
+                set -e
+                date -u +"phase-end=%Y-%m-%dT%H:%M:%SZ label=$label status=$status"
+                echo "::endgroup::"
+                return "$status"
+              }
+              run_phase "Install Fedora validation dependencies" 10m dnf install -y \
                 appstream \
                 clang \
                 curl \
@@ -78,39 +104,55 @@ jobs:
               rustup_version=1.28.2
               rustup_arch=x86_64-unknown-linux-gnu
               rustup_sha256=20a06e644b0d9bd2fbdbfd52d42540bdde820ea7df86e92e533c073da0cdd43c
-              curl --proto "=https" --tlsv1.2 -sSf \
+              run_phase "Download pinned rustup" 6m curl --proto "=https" --tlsv1.2 -sSf \
+                --connect-timeout 30 --max-time 300 \
                 -o rustup-init \
                 "https://static.rust-lang.org/rustup/archive/${rustup_version}/${rustup_arch}/rustup-init"
               echo "${rustup_sha256}  rustup-init" | sha256sum -c -
               chmod +x rustup-init
-              ./rustup-init -y --profile minimal --default-toolchain 1.95.0 \
+              run_phase "Install Rust 1.95 validation toolchain" 10m ./rustup-init -y --profile minimal --default-toolchain 1.95.0 \
                 --component rustfmt --component clippy --component llvm-tools-preview
               rm rustup-init
               . "$HOME/.cargo/env"
-              cargo install cargo-llvm-cov --version 0.8.7 --locked
-              cargo install xtr --version 0.1.11 --locked
+              run_phase "Install cargo-llvm-cov" 10m cargo install cargo-llvm-cov --version 0.8.7 --locked
+              run_phase "Install xtr" 10m cargo install xtr --version 0.1.11 --locked
+              echo "::group::Start headless display"
               mkdir -p stress/artifacts
               Xvfb :99 -screen 0 1280x1024x24 >stress/artifacts/xvfb.log 2>&1 &
               xvfb_pid=$!
               trap "kill $xvfb_pid" EXIT
               export DISPLAY=:99
               export GDK_BACKEND=x11
-              dbus-run-session -- python3 -m tools.policy_check --root app --strict
-              dbus-run-session -- python3 -m tools.coverage_check --root app
+              echo "::endgroup::"
+              run_phase "Run strict app policy gate" 20m dbus-run-session -- python3 -m tools.policy_check --root app --strict
+              run_phase "Run coverage gate" 20m dbus-run-session -- python3 -m tools.coverage_check --root app
+              echo "::group::Prepare native stress smoke inputs"
               mkdir -p /tmp/riteed-schemas
               cp -R app/data/schemas/. /tmp/riteed-schemas/
               glib-compile-schemas --strict /tmp/riteed-schemas
               export GSETTINGS_SCHEMA_DIR=/tmp/riteed-schemas
               python3 stress/make_corpus.py
+              echo "::endgroup::"
               cd app
-              cargo build --bin riteed-stress --features stress
-              dbus-run-session -- env RITEED_STRESS_SCRIPT=../stress/scripts/open-save-search.json ./target/debug/riteed-stress
-              if dbus-run-session -- env RITEED_STRESS_SCRIPT=../stress/scripts/intentional-failure.json ./target/debug/riteed-stress; then
+              run_phase "Build native stress runner" 10m cargo build --bin riteed-stress --features stress
+              run_phase "Run open-save-search stress smoke" 5m dbus-run-session -- env RITEED_STRESS_SCRIPT=../stress/scripts/open-save-search.json ./target/debug/riteed-stress
+              echo "::group::Run intentional-failure stress smoke"
+              date -u +"phase-start=%Y-%m-%dT%H:%M:%SZ label=Run intentional-failure stress smoke"
+              set +e
+              timeout 5m dbus-run-session -- env RITEED_STRESS_SCRIPT=../stress/scripts/intentional-failure.json ./target/debug/riteed-stress
+              status=$?
+              set -e
+              date -u +"phase-end=%Y-%m-%dT%H:%M:%SZ label=Run intentional-failure stress smoke status=$status"
+              echo "::endgroup::"
+              if [ "$status" -eq 0 ]; then
                 exit 1
+              fi
+              if [ "$status" -eq 124 ] || [ "$status" -eq 137 ]; then
+                exit "$status"
               fi
             '
       - name: Upload stress artifacts
-        if: failure()
+        if: failure() || cancelled()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: riteed-native-stress-artifacts

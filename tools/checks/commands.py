@@ -24,6 +24,7 @@ from tools.validation_tooling import (
     require_tool,
     run_capture,
     run_checked,
+    run_checked_streaming,
     scoped_files,
     validation_command_lock,
 )
@@ -166,7 +167,9 @@ def run_required_commands(root: Path, errors: list[str]) -> None:
         require_tool(tool)
     with validation_command_lock(root, "policy_check_required_commands"):
         for command in cfg["required_commands"]:
-            run_checked(shlex.split(command), root, command, env=_headless_gtk_env())
+            print(f"[policy-check] required-command-start: {command}", flush=True)
+            run_checked_streaming(shlex.split(command), root, command, env=_headless_gtk_env())
+            print(f"[policy-check] required-command-end: {command}", flush=True)
 
         check_xgettext_completeness(root, errors)
 

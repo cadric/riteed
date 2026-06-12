@@ -4,11 +4,20 @@ use std::time::Duration;
 use gtk4::{gio, glib, prelude::*};
 use libadwaita as adw;
 
-use crate::gtk_tests::{build_window, drain_events, spin_until, write_temp_file};
+use crate::editor_zoom::effective_scroll_past_end_padding;
+use crate::git_process::test_support::{
+    FixtureRepoFile, FixtureRepoKind, init_modified_fixture_repo_for_tests,
+};
+use crate::gtk_tests::{
+    TempFileFixture, build_window, build_window_with_settings, drain_events, spin_until,
+    write_temp_file,
+};
+use crate::settings::{AppSettings, CompareViewMode, SourceControlViewMode};
 use crate::workspace::OpenSource;
 
 pub(crate) fn exercise_v7_compare(test_app: &adw::Application) {
     exercise_compare_with_disk_and_file(test_app);
+    exercise_compare_minimap_stays_visible_with_sidebar(test_app);
     exercise_compare_navigation(test_app);
     exercise_compare_two_files(test_app);
     exercise_compare_tab_actions(test_app);
@@ -51,6 +60,96 @@ fn wait_for_sensitive_button(root: &gtk4::Widget, label: &str, reason: &str) {
     });
 }
 
+fn exercise_compare_viewport_scroll_past_end(window: &crate::window::Window, expected_floor: i32) {
+    assert!(expected_floor > 12);
+    window.set_selected_compare_viewport_page_sizes_for_tests(0.0);
+    assert_eq!(
+        window.selected_compare_scroll_past_end_padding_for_tests(),
+        (expected_floor, expected_floor, expected_floor)
+    );
+    window.set_selected_compare_viewport_page_sizes_for_tests(800.0);
+    let expected_padding = effective_scroll_past_end_padding(expected_floor, 800.0);
+    assert_eq!(
+        window.selected_compare_scroll_past_end_padding_for_tests(),
+        (expected_padding, expected_padding, expected_padding)
+    );
+    window.set_selected_compare_viewport_page_sizes_for_tests(0.0);
+    assert_eq!(
+        window.selected_compare_scroll_past_end_padding_for_tests(),
+        (expected_floor, expected_floor, expected_floor)
+    );
+}
+
+fn zoom_source_scroll_floor_for_compare(window: &crate::window::Window) -> i32 {
+    let scroll_floor_before = window
+        .selected_scroll_past_end_floor_for_tests()
+        .map_or(0, |floor| floor);
+    window.activate_status_zoom_in_for_tests();
+    window.activate_status_zoom_in_for_tests();
+    spin_until("v7 zoom raises compare padding floor", || {
+        window.zoom_percent_for_tests() == 120
+            && window
+                .selected_scroll_past_end_floor_for_tests()
+                .is_some_and(|floor| floor > scroll_floor_before)
+    });
+    window
+        .selected_scroll_past_end_floor_for_tests()
+        .map_or(0, |floor| floor)
+}
+
+fn exercise_compare_minimap_stays_visible_with_sidebar(test_app: &adw::Application) {
+    let settings = AppSettings::new_for_tests();
+    settings.set_compare_view_mode(CompareViewMode::Unified);
+    let Some(window) = build_window_with_settings(test_app, settings) else {
+        return;
+    };
+    window.widget().set_default_size(700, 1600);
+    window.present();
+    drain_events(20);
+    window.ensure_default_tab();
+    window.set_minimap_for_tests(true);
+
+    let tracked_file = FixtureRepoFile::SIDEBAR_MINIMAP;
+    let tracked_name = tracked_file.name();
+    let long_line = "pub fn compare_minimap_sidebar_width_regression() { let value = Some(\"this line is deliberately long enough to force horizontal scrolling in the unified diff surface while the project sidebar is open\"); println!(\"{value:?}\"); }\n";
+    let Ok(repo) = init_modified_fixture_repo_for_tests(
+        FixtureRepoKind::V7_SIDEBAR_MINIMAP,
+        tracked_file,
+        b"old\n",
+        long_line.as_bytes(),
+    ) else {
+        return;
+    };
+    let editable_path = repo.file_path(tracked_file);
+    window.handle_application_open(vec![gio::File::for_path(repo.path())]);
+    window.set_source_control_view_mode_for_tests(SourceControlViewMode::List);
+    spin_until("v7 sidebar minimap source control row appears", || {
+        window.project_sidebar_visible_for_tests()
+            && window
+                .source_control_row_state_for_tests(tracked_name)
+                .is_some()
+    });
+    window.set_project_sidebar_position_for_tests(280);
+    spin_until("v7 sidebar minimap keeps visible sidebar", || {
+        window.project_sidebar_position_for_tests() >= 220
+    });
+    assert!(window.source_control_activate_path_for_tests(tracked_name));
+    let editable_uri = gio::File::for_path(&editable_path).uri().to_string();
+    spin_until("v7 sidebar source control compare starts", || {
+        window.selected_saved_uri_for_tests() == editable_uri
+            && window.selected_compare_active_for_tests()
+    });
+    spin_until("v7 narrow compare suppresses minimap", || {
+        !window.selected_compare_minimaps_visible_for_tests().2
+    });
+    assert_eq!(
+        window
+            .selected_compare_minimap_scrollbar_policies_for_tests()
+            .2,
+        gtk4::PolicyType::Automatic
+    );
+}
+
 fn exercise_compare_with_disk_and_file(test_app: &adw::Application) {
     let Some(window) = build_window(test_app) else {
         return;
@@ -58,7 +157,7 @@ fn exercise_compare_with_disk_and_file(test_app: &adw::Application) {
     window.ensure_default_tab();
     window.set_minimap_for_tests(true);
 
-    let editable_path = write_temp_file("riteed-v7-editable.txt", b"a\nb\nc\n");
+    let editable_path = write_temp_file(TempFileFixture::V7_EDITABLE, b"a\nb\nc\n");
     let editable_uri = gio::File::for_path(&editable_path).uri().to_string();
     window.request_open_files(
         vec![gio::File::for_path(&editable_path)],
@@ -75,6 +174,7 @@ fn exercise_compare_with_disk_and_file(test_app: &adw::Application) {
         window.tab_compare_action_states_for_tests(),
         (true, false, true)
     );
+    let zoomed_floor = zoom_source_scroll_floor_for_compare(&window);
 
     window.compare_with_disk_for_tests();
     spin_until("v7 compare with disk starts", || {
@@ -86,6 +186,15 @@ fn exercise_compare_with_disk_and_file(test_app: &adw::Application) {
         window.selected_compare_minimaps_visible_for_tests(),
         (true, true, true)
     );
+    assert_eq!(
+        window.selected_compare_minimap_scrollbar_policies_for_tests(),
+        (
+            gtk4::PolicyType::Automatic,
+            gtk4::PolicyType::Automatic,
+            gtk4::PolicyType::Automatic
+        )
+    );
+    exercise_compare_viewport_scroll_past_end(&window, zoomed_floor);
     assert_eq!(
         window.compare_action_states_for_tests(),
         (true, true, true, true)
@@ -120,7 +229,7 @@ fn exercise_compare_with_disk_and_file(test_app: &adw::Application) {
         window.selected_compare_diff_count_for_tests() == 1
     });
 
-    let reference_path = write_temp_file("riteed-v7-reference.txt", b"x\nchanged\nc\n");
+    let reference_path = write_temp_file(TempFileFixture::V7_REFERENCE, b"x\nchanged\nc\n");
     window.compare_with_file_for_tests(&gio::File::for_path(&reference_path));
     spin_until("v7 compare with file starts", || {
         window.selected_compare_active_for_tests()
@@ -143,11 +252,11 @@ fn exercise_compare_navigation(test_app: &adw::Application) {
         return;
     };
     let nav_path = write_temp_file(
-        "riteed-v7-nav.txt",
+        TempFileFixture::V7_NAV,
         b"0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n",
     );
     let nav_ref = write_temp_file(
-        "riteed-v7-nav-ref.txt",
+        TempFileFixture::V7_NAV_REF,
         b"x\n1\n2\n3\n4\n5\n6\n7\n8\n9\ny\n11\n",
     );
     window.request_open_files(vec![gio::File::for_path(&nav_path)], OpenSource::AppOpen);
@@ -191,8 +300,8 @@ fn exercise_compare_two_files(test_app: &adw::Application) {
     let Some(window) = build_window(test_app) else {
         return;
     };
-    let left = write_temp_file("riteed-v7-two-left.txt", b"left\nsame\n");
-    let right = write_temp_file("riteed-v7-two-right.txt", b"right\nsame\n");
+    let left = write_temp_file(TempFileFixture::V7_TWO_LEFT, b"left\nsame\n");
+    let right = write_temp_file(TempFileFixture::V7_TWO_RIGHT, b"right\nsame\n");
     window.compare_two_files_for_tests(&gio::File::for_path(&left), &gio::File::for_path(&right));
     spin_until("v7 compare two files opens current and reference", || {
         window
@@ -210,8 +319,8 @@ fn exercise_compare_exits_on_open(test_app: &adw::Application) {
     let Some(window) = build_window(test_app) else {
         return;
     };
-    let compare_path = write_temp_file("riteed-v7-exit-compare.txt", b"compare\n");
-    let reference_path = write_temp_file("riteed-v7-exit-reference.txt", b"reference\n");
+    let compare_path = write_temp_file(TempFileFixture::V7_EXIT_COMPARE, b"compare\n");
+    let reference_path = write_temp_file(TempFileFixture::V7_EXIT_REFERENCE, b"reference\n");
     window.request_open_files(
         vec![gio::File::for_path(&compare_path)],
         OpenSource::AppOpen,
@@ -226,7 +335,7 @@ fn exercise_compare_exits_on_open(test_app: &adw::Application) {
         window.selected_compare_active_for_tests()
     });
 
-    let replacement_path = write_temp_file("riteed-v7-replacement.txt", b"replacement");
+    let replacement_path = write_temp_file(TempFileFixture::V7_REPLACEMENT, b"replacement");
     window.request_open_files(
         vec![gio::File::for_path(&replacement_path)],
         OpenSource::AppOpen,
@@ -247,7 +356,7 @@ fn exercise_compare_tab_actions(test_app: &adw::Application) {
     let Some(window) = build_window(test_app) else {
         return;
     };
-    let compare_path = write_temp_file("riteed-v7-tab-actions.txt", b"before\n");
+    let compare_path = write_temp_file(TempFileFixture::V7_TAB_ACTIONS, b"before\n");
     let compare_uri = gio::File::for_path(&compare_path).uri().to_string();
     window.request_open_files(
         vec![gio::File::for_path(&compare_path)],
@@ -318,7 +427,7 @@ fn exercise_compare_tab_actions(test_app: &adw::Application) {
     });
     window.exit_compare_for_tests();
 
-    let reference_path = write_temp_file("riteed-v7-tab-action-ref.txt", b"reference\n");
+    let reference_path = write_temp_file(TempFileFixture::V7_TAB_ACTION_REFERENCE, b"reference\n");
     window.compare_with_file_for_tests(&gio::File::for_path(&reference_path));
     spin_until("v7 compare with file helper still starts", || {
         window.selected_compare_active_for_tests()

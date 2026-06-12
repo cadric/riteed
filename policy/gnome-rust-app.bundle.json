@@ -325,8 +325,8 @@
   "artifact_index": [
     {
       "file": "rust.policy.json",
-      "sha256": "5ccc635d970f76bcc6c5cc4931ba21090f844b24ee438ff0ac97b0935441b0c0",
-      "bytes": 12327
+      "sha256": "b026a470e3c81a4a391b0b4c798ba85893ced21b46731fdc2823ba9150dadcb4",
+      "bytes": 12372
     },
     {
       "file": "gtk4-rs.policy.json",
@@ -345,8 +345,8 @@
     },
     {
       "file": "gettext-i18n.policy.json",
-      "sha256": "0ebf586718ef8fe42f1c3dbf468e0d265125c895a3042b58cce39f6db09d3d09",
-      "bytes": 4690
+      "sha256": "0744b5752a723cbb79e29e771bd34a4180bd2fb651eacbfb241d814467777a06",
+      "bytes": 4768
     },
     {
       "file": "gsettings.policy.json",
@@ -370,8 +370,8 @@
     },
     {
       "file": "validation-tooling.policy.json",
-      "sha256": "6c7b0e679f95de385b5810df65762967197b66ed86eb0018494647ce310ba883",
-      "bytes": 14878
+      "sha256": "ac09123f6615cd046a3b62714160d44aaea8ae43efcadebb2c4d4ad58952ca39",
+      "bytes": 15925
     }
   ]
 }

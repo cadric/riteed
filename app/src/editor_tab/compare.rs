@@ -26,6 +26,7 @@ mod minimap;
 mod minimap_rows;
 mod model;
 mod navigation;
+mod padding;
 mod presentation;
 mod presentation_display;
 mod render;
@@ -99,6 +100,10 @@ pub(crate) struct CompareController {
     unified_view: sourceview5::View,
     unified_buffer: sourceview5::Buffer,
     unified_minimap: minimap::CompareMinimap,
+    left_vadjustment: gtk4::Adjustment,
+    right_vadjustment: gtk4::Adjustment,
+    unified_vadjustment: gtk4::Adjustment,
+    scroll_past_end_floor: i32,
     tags: CompareTags,
     unified_tags: UnifiedTags,
     presentation: Rc<std::cell::RefCell<DiffPresentation>>,
@@ -118,6 +123,8 @@ pub(crate) struct CompareController {
     review_settings: CompareReviewSettingsSnapshot,
     view_mode: CompareViewMode,
     view_mode_cell: Rc<Cell<CompareViewMode>>,
+    minimap_user_visible: Rc<Cell<bool>>,
+    minimap_width_suppressed: Rc<Cell<bool>>,
     revealed_rows: std::collections::BTreeSet<usize>,
     hidden_trim_whitespace_differences: bool,
 }
@@ -546,6 +553,7 @@ fn map_reference_load_error(error: LoadFailure) -> AppError {
     match error {
         LoadFailure::DecodeFailed(path) => AppError::DecodeFailed(path),
         LoadFailure::TooBig(path) => AppError::FileTooBig(path),
+        LoadFailure::LineTooLong { path, .. } => AppError::LineTooLong(path),
         LoadFailure::Failed(error) => error,
     }
 }

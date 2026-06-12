@@ -20,6 +20,7 @@ const DEFAULT_FONT_SIZE_PT: i32 = 11;
 const MINIMAP_FONT_SIZE_PT: i32 = 1;
 const DEFAULT_VIEW_MARGIN_PX: i32 = 12;
 const SCROLL_PAST_END_LINES: i32 = 10;
+const SCROLL_PAST_END_VIEWPORT_PERCENT: i32 = 75;
 const DEFAULT_ZOOM_PERCENT: i32 = 100;
 const MIN_ZOOM_PERCENT: i32 = 50;
 const MAX_ZOOM_PERCENT: i32 = 200;
@@ -250,7 +251,27 @@ pub fn resolve_minimap_font_description(stored_font: &str) -> pango::FontDescrip
 
 #[must_use]
 pub fn resolve_scroll_past_end_padding(stored_font: &str) -> i32 {
-    scroll_past_end_bottom_margin(&resolve_editor_font_description(stored_font))
+    effective_scroll_past_end_padding(
+        scroll_past_end_bottom_margin(&resolve_editor_font_description(stored_font)),
+        0.0,
+    )
+}
+
+// GtkSourceMap maps drags as (y - slider_y_shift) / (height - map margin),
+// so a viewport-relative bottom margin keeps the mouse and the document in
+// sync near the end; GNOME Text Editor uses the same 75 % share.
+#[must_use]
+pub fn effective_scroll_past_end_padding(floor_px: i32, viewport_height_px: f64) -> i32 {
+    if !viewport_height_px.is_finite() || viewport_height_px <= 0.0 {
+        return floor_px;
+    }
+    let share = (viewport_height_px * f64::from(SCROLL_PAST_END_VIEWPORT_PERCENT) / 100.0)
+        .round()
+        .clamp(0.0, f64::from(i32::MAX));
+    match format!("{share:.0}").parse::<i32>() {
+        Ok(value) => floor_px.max(value),
+        Err(_) => floor_px,
+    }
 }
 
 #[must_use]
@@ -390,8 +411,9 @@ fn css_escape(value: &str) -> String {
 mod tests {
     use super::{
         DEFAULT_FONT_SIZE_PT, EDITOR_ZOOM_CSS_CLASS_PREFIX, clamp_zoom_percent, editor_view_css,
-        font_family_name_matches, font_row_subtitle, resolve_editor_font_description,
-        resolve_minimap_font_description, resolve_scroll_past_end_padding, scale_font_size,
+        effective_scroll_past_end_padding, font_family_name_matches, font_row_subtitle,
+        resolve_editor_font_description, resolve_minimap_font_description,
+        resolve_scroll_past_end_padding, scale_font_size,
     };
 
     #[test]
@@ -450,6 +472,18 @@ mod tests {
     fn scroll_past_end_padding_scales_with_font_size() {
         assert_eq!(resolve_scroll_past_end_padding("Monospace 11"), 110);
         assert_eq!(resolve_scroll_past_end_padding("Monospace 22"), 220);
+    }
+
+    #[test]
+    fn effective_scroll_past_end_padding_prefers_viewport_share() {
+        // 75 % of an 800 px viewport beats the 110 px font floor.
+        assert_eq!(effective_scroll_past_end_padding(110, 800.0), 600);
+        // The font floor wins for small viewports.
+        assert_eq!(effective_scroll_past_end_padding(110, 100.0), 110);
+        // Unallocated or nonsensical viewports fall back to the floor.
+        assert_eq!(effective_scroll_past_end_padding(110, 0.0), 110);
+        assert_eq!(effective_scroll_past_end_padding(110, -5.0), 110);
+        assert_eq!(effective_scroll_past_end_padding(110, f64::NAN), 110);
     }
 
     #[test]

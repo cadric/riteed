@@ -87,6 +87,22 @@ impl PreviewSearchBinding {
         }
     }
 
+    fn move_active_tag(&self, previous: Option<usize>) {
+        if previous == self.current {
+            return;
+        }
+        if let Some(search_match) = previous.and_then(|index| self.matches.get(index)) {
+            let start = self.buffer.iter_at_offset(search_match.start);
+            let end = self.buffer.iter_at_offset(search_match.end);
+            self.buffer.remove_tag(&self.active_tag, &start, &end);
+        }
+        if let Some(search_match) = self.current.and_then(|index| self.matches.get(index)) {
+            let start = self.buffer.iter_at_offset(search_match.start);
+            let end = self.buffer.iter_at_offset(search_match.end);
+            self.buffer.apply_tag(&self.active_tag, &start, &end);
+        }
+    }
+
     pub(super) fn occurrence_count(&self) -> usize {
         self.matches.len()
     }
@@ -96,32 +112,34 @@ impl PreviewSearchBinding {
     }
 
     pub(super) fn select_next(&mut self) {
+        let previous = self.current;
         let Some(current) = self.current else {
             self.current = (!self.matches.is_empty()).then_some(0);
-            self.reapply_highlights();
+            self.move_active_tag(previous);
             self.select_current();
             return;
         };
         if self.matches.is_empty() {
             self.current = None;
-            self.reapply_highlights();
+            self.move_active_tag(previous);
             return;
         }
         self.current = Some((current + 1) % self.matches.len());
-        self.reapply_highlights();
+        self.move_active_tag(previous);
         self.select_current();
     }
 
     pub(super) fn select_previous(&mut self) {
+        let previous = self.current;
         let Some(current) = self.current else {
             self.current = (!self.matches.is_empty()).then_some(0);
-            self.reapply_highlights();
+            self.move_active_tag(previous);
             self.select_current();
             return;
         };
         if self.matches.is_empty() {
             self.current = None;
-            self.reapply_highlights();
+            self.move_active_tag(previous);
             return;
         }
         self.current = Some(if current == 0 {
@@ -129,7 +147,7 @@ impl PreviewSearchBinding {
         } else {
             current - 1
         });
-        self.reapply_highlights();
+        self.move_active_tag(previous);
         self.select_current();
     }
 
@@ -235,6 +253,28 @@ fn search_tag(buffer: &gtk4::TextBuffer, name: &str) -> gtk4::TextTag {
 
 fn with_alpha(color: &gdk::RGBA, alpha: f32) -> gdk::RGBA {
     gdk::RGBA::new(color.red(), color.green(), color.blue(), alpha)
+}
+
+#[cfg(test)]
+pub(crate) fn exercise_preview_search_navigation_for_tests() {
+    let buffer = gtk4::TextBuffer::new(None);
+    buffer.set_text("match match match");
+    let view = gtk4::TextView::with_buffer(&buffer);
+    let scrolled = gtk4::ScrolledWindow::new();
+    scrolled.set_child(Some(&view));
+    let mut binding = PreviewSearchBinding::new(&buffer, &view, &scrolled, "match", true);
+    assert_eq!(binding.occurrence_count(), 3);
+    assert!(buffer.iter_at_offset(0).has_tag(&binding.active_tag));
+
+    binding.select_next();
+    assert!(buffer.iter_at_offset(6).has_tag(&binding.active_tag));
+    assert!(!buffer.iter_at_offset(0).has_tag(&binding.active_tag));
+    assert!(buffer.iter_at_offset(0).has_tag(&binding.normal_tag));
+    assert!(buffer.iter_at_offset(12).has_tag(&binding.normal_tag));
+
+    binding.select_previous();
+    assert!(buffer.iter_at_offset(0).has_tag(&binding.active_tag));
+    assert!(!buffer.iter_at_offset(6).has_tag(&binding.active_tag));
 }
 
 #[cfg(test)]

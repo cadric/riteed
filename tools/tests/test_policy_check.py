@@ -49,6 +49,64 @@ class PolicyCheckTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0)
         self.assertIn("--update-artifact-index", result.stdout)
 
+    def test_policy_pack_check_help_entrypoint(self) -> None:
+        result = subprocess.run(
+            ["python3", "-m", "tools.policy_check", "--policy-pack-check", "--help"],
+            cwd=REPO_ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("--policy-pack-check", result.stdout)
+
+    def test_policy_pack_check_conflicts_with_artifact_update(self) -> None:
+        result = subprocess.run(
+            ["python3", "-m", "tools.policy_check", "--policy-pack-check", "--update-artifact-index"],
+            cwd=REPO_ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("not allowed", result.stderr)
+
+    def test_policy_pack_check_self_mode_does_not_require_app_layout(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            shutil.copytree(REPO_ROOT / "policy", root / "policy")
+            shutil.copytree(REPO_ROOT / "tools", root / "tools")
+            _write(root / "AGENTS.md", "# root\n")
+            result = subprocess.run(
+                ["python3", "-m", "tools.policy_check", "--policy-pack-check", "--root", str(root)],
+                cwd=REPO_ROOT,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("[policy-check] OK", result.stdout)
+
+    def test_policy_pack_check_with_app_root_scans_contract_root(self) -> None:
+        result = subprocess.run(
+            ["python3", "-m", "tools.policy_check", "--policy-pack-check", "--root", "app"],
+            cwd=REPO_ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("[policy-check] OK", result.stdout)
+
+    def test_validation_policy_declares_local_flatpak_workflow_safety(self) -> None:
+        policy = json.loads((REPO_ROOT / "policy" / "validation-tooling.policy.json").read_text(encoding="utf-8"))
+        safety = policy["workflow_safety"]["local_flatpak_test_builds"]
+        self.assertEqual(safety["preflight_script"], "scripts/integration-preflight")
+        self.assertEqual(safety["standard_build_script"], "scripts/local-flatpak-build")
+        self.assertEqual(safety["allowed_build_branches"], ["main", "integrate/*"])
+        self.assertEqual(safety["feature_only_override"], "--feature-only-ok")
+        self.assertTrue(safety["report_unmerged_branches"])
+
     def test_orphaned_script_fails_clearly(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             script = Path(tmpdir) / "policy_check.py"
@@ -540,6 +598,34 @@ class PolicyCheckTests(unittest.TestCase):
         self.assertNotIn((None, "Hidden developer", None), messages)
         self.assertNotIn((None, "Release note belongs in changelog, not gettext.", None), messages)
 
+    def test_metainfo_release_descriptions_must_be_nontranslatable(self) -> None:
+        from tools.checks import metainfo
+
+        root = REPO_ROOT
+        meta = foundation.ET.fromstring(
+            """<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <releases>
+    <release version="1.0.0">
+      <description>
+        <p>Release note</p>
+      </description>
+    </release>
+    <release version="1.0.1">
+      <description translate="no">
+        <p xml:lang="da">Versionsnote</p>
+      </description>
+    </release>
+  </releases>
+</component>
+"""
+        )
+        errors: list[str] = []
+        metainfo.check_release_descriptions(meta, root / "demo.metainfo.xml", root, errors)
+
+        self.assertTrue(any('release 1.0.0 descriptions must use translate="no"' in item for item in errors), errors)
+        self.assertTrue(any("release 1.0.1 descriptions must not carry localized xml:lang" in item for item in errors), errors)
+
     def test_required_commands_use_headless_gtk_environment(self) -> None:
         from tools.checks import commands
 
@@ -568,7 +654,7 @@ class PolicyCheckTests(unittest.TestCase):
                     "conditional_validators": [],
                 },
             ):
-                with patch.object(commands, "run_checked", side_effect=fake_run_checked):
+                with patch.object(commands, "run_checked_streaming", side_effect=fake_run_checked):
                     with patch.object(commands, "validation_command_lock", return_value=nullcontext()):
                         with patch.object(commands, "check_xgettext_completeness"):
                             errors: list[str] = []

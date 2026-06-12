@@ -69,13 +69,13 @@
       "ownership": "Each review tab owns the optional compare-side ReviewSession for its rendered Git review.",
       "justification": "The session must be shared by cursor actions, stale banners, change-list navigation, and renderer refreshes while staying private to the tab.",
       "path": "src/editor_tab/state.rs",
-      "line": 194,
+      "line": 247,
       "match": "pub(super) session: Option<Rc<RefCell<ReviewSession>>>,",
       "kind": "runtime-shared-state"
     },
     {
       "path": "src/editor_zoom.rs",
-      "line": 35,
+      "line": 36,
       "match": "base_font: RefCell<pango::FontDescription>,",
       "kind": "runtime-shared-state",
       "ownership": "The window-owned zoom controller owns the resolved base editor font description.",
@@ -83,7 +83,7 @@
     },
     {
       "path": "src/editor_zoom.rs",
-      "line": 36,
+      "line": 37,
       "match": "zoom_percent: Cell<i32>,",
       "kind": "runtime-shared-state",
       "ownership": "The window-owned zoom controller owns the current zoom percentage for the whole workspace window.",
@@ -291,7 +291,7 @@
     },
     {
       "path": "src/git_process/test_support.rs",
-      "line": 47,
+      "line": 138,
       "match": "let slot: Rc<RefCell<Option<Result<T, GitProcessError>>>> = Rc::new(RefCell::new(None));",
       "kind": "runtime-shared-state",
       "ownership": "The Git process test support owns a one-shot callback result slot.",

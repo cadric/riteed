@@ -6,12 +6,12 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any
 
+from tools.checks import metainfo as metainfo_checks
 from tools.scanners.textdomain import textdomain_init_present
 from tools.scanners.ui_xml import translatable_property_errors
 from tools.validation_tooling import (
     cargo_packages,
     contract_root,
-    count_lines,
     dump_json,
     file_hash,
     first_file,
@@ -294,11 +294,9 @@ def check_required_patterns(root: Path, errors: list[str]) -> None:
 
 
 def check_line_limits(root: Path, errors: list[str]) -> None:
-    limit = int(validation_policy(root)["thresholds"]["max_file_lines"])
-    for path in scoped_files(root, validation_policy(root)["line_limit_globs"]):
-        lines = count_lines(path)
-        if lines > limit:
-            add(errors, f"{relpath(path, root)} exceeds hard LOC limit {limit}: {lines}")
+    from tools.checks import line_limits
+
+    line_limits.check_line_limits(root, errors, scope="app")
 
 
 def _walk_json(value: Any) -> list[dict[str, Any]]:
@@ -526,6 +524,7 @@ def check_flatpak_and_identity(root: Path, errors: list[str]) -> str | None:
             meta_name = (meta.findtext(".//name") or "").strip()
             if desktop is not None and desktop_name and meta_name and desktop_name != meta_name:
                 add(errors, f"{relpath(desktop, root)} and {relpath(metainfo, root)} must use the same app name")
+            metainfo_checks.check_release_descriptions(meta, metainfo, root, errors)
 
     icon_files = [
         path

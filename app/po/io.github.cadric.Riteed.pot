@@ -108,14 +108,8 @@ msgstr ""
 msgid "Applied after restart"
 msgstr ""
 
-msgid "Apply"
-msgstr ""
-
 msgctxt "dialog button"
 msgid "Apply"
-msgstr ""
-
-msgid "Apply Git Identity"
 msgstr ""
 
 msgctxt "editor palette"
@@ -229,6 +223,10 @@ msgid "Choose a Save Location Before Saving This Document."
 msgstr ""
 
 msgid "Choose a Text Encoding"
+msgstr ""
+
+msgctxt "format menu"
+msgid "Change Encoding"
 msgstr ""
 
 msgid "Choose the encoding to use for the next save."
@@ -569,6 +567,9 @@ msgstr ""
 msgid "File"
 msgstr ""
 
+msgid "Files"
+msgstr ""
+
 msgctxt "sidebar mode"
 msgid "Files"
 msgstr ""
@@ -618,6 +619,9 @@ msgstr ""
 msgid "First Tab"
 msgstr ""
 
+msgid "Font"
+msgstr ""
+
 msgctxt "file filter"
 msgid "Folders"
 msgstr ""
@@ -628,9 +632,6 @@ msgstr ""
 
 msgctxt "theme selector accessibility"
 msgid "Follow system style"
-msgstr ""
-
-msgid "Format"
 msgstr ""
 
 msgctxt "status format"
@@ -758,6 +759,7 @@ msgctxt "theme selector accessibility"
 msgid "Light style"
 msgstr ""
 
+msgctxt "format menu"
 msgid "Line Endings"
 msgstr ""
 
@@ -901,11 +903,11 @@ msgctxt "search action"
 msgid "Next Match"
 msgstr ""
 
-msgid "Next Tab"
+msgctxt "print preview"
+msgid "Next Page"
 msgstr ""
 
-msgctxt "document format"
-msgid "No Document"
+msgid "Next Tab"
 msgstr ""
 
 msgid "No Git action is available for the active tab."
@@ -1041,6 +1043,14 @@ msgstr ""
 msgid "Overwrite the Changed File?"
 msgstr ""
 
+msgctxt "print preview"
+msgid "Page %1$d of %2$d"
+msgstr ""
+
+msgctxt "print header"
+msgid "Page %N of %Q"
+msgstr ""
+
 msgid "Palette"
 msgstr ""
 
@@ -1093,6 +1103,10 @@ msgctxt "search action"
 msgid "Previous Match"
 msgstr ""
 
+msgctxt "print preview"
+msgid "Previous Page"
+msgstr ""
+
 msgid "Previous Tab"
 msgstr ""
 
@@ -1100,7 +1114,21 @@ msgctxt "menu item"
 msgid "Print"
 msgstr ""
 
+msgctxt "print preview"
+msgid "Print"
+msgstr ""
+
 msgid "Print Current Document"
+msgstr ""
+
+msgctxt "menu item"
+msgid "Print Preview"
+msgstr ""
+
+msgid "Print Preview"
+msgstr ""
+
+msgid "Print preview failed."
 msgstr ""
 
 msgid "Printing failed."
@@ -1339,9 +1367,6 @@ msgstr ""
 msgid "Save the open document before using Git actions."
 msgstr ""
 
-msgid "Saving"
-msgstr ""
-
 msgctxt "help row"
 msgid "Saving Work"
 msgstr ""
@@ -1519,9 +1544,6 @@ msgctxt "help page"
 msgid "Technical Notes"
 msgstr ""
 
-msgid "Text Encoding"
-msgstr ""
-
 msgid "That folder could not be opened."
 msgstr ""
 
@@ -1563,7 +1585,13 @@ msgstr ""
 msgid "The file changed on disk."
 msgstr ""
 
+msgid "Riteed could not determine the file size and did not open the file."
+msgstr ""
+
 msgid "The file is too large to open safely."
+msgstr ""
+
+msgid "The file contains lines that are too long to edit safely."
 msgstr ""
 
 msgid "The document is too large to save safely."
@@ -1574,6 +1602,10 @@ msgid "The opening frontmatter delimiter has no closing delimiter."
 msgstr ""
 
 msgid "The previous project folder could not be restored."
+msgstr ""
+
+msgctxt "print preview"
+msgid "Text Size"
 msgstr ""
 
 msgid "Theme Preference"
@@ -1648,9 +1680,6 @@ msgid "Tree"
 msgstr ""
 
 msgid "Type to search the open folder."
-msgstr ""
-
-msgid "UTF-8"
 msgstr ""
 
 msgid "Unable to Build the Window"
@@ -1859,4 +1888,189 @@ msgstr ""
 
 msgctxt "markdown extension label"
 msgid "wiki links"
+msgstr ""
+
+msgid "%d match found; showing the first match."
+msgid_plural "%d matches found; showing the first match."
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "Always Allow Large File Editing"
+msgstr ""
+
+msgid "Edit the Large File Anyway?"
+msgstr ""
+
+msgid "Editing Is Not Available"
+msgstr ""
+
+msgid "Editing this file may take 30 seconds or more and can significantly slow the app."
+msgstr ""
+
+msgid "Editing this file may take 5-15 seconds."
+msgstr ""
+
+msgid "Editor Below (MiB)"
+msgstr ""
+
+msgid "Editor File Limit"
+msgstr ""
+
+msgid "Enter a valid line number."
+msgstr ""
+
+msgid "Files larger than this always open in the read-only viewer"
+msgstr ""
+
+msgid "Files smaller than this keep every editor feature; must stay below the editor limit"
+msgstr ""
+
+msgid "Files above this size remain viewable, but editing is refused by policy."
+msgstr ""
+
+msgid "Files at or above this size use the strongest large-file editing warning."
+msgstr ""
+
+msgid "Files below this measured safe limit can open in the editor with expensive features disabled when needed."
+msgstr ""
+
+msgid "Files below this size open in the normal editor with all editor features available."
+msgstr ""
+
+msgid "Finding line..."
+msgstr ""
+
+msgid "Full Feature File Limit"
+msgstr ""
+
+msgid "Full Features Below (MiB)"
+msgstr ""
+
+msgid "Large File Limits"
+msgstr ""
+
+msgid "Large Files"
+msgstr ""
+
+msgid "Large file restored as a placeholder."
+msgstr ""
+
+msgid "Loading file page..."
+msgstr ""
+
+msgid "Many matches found; showing the first match."
+msgstr ""
+
+msgid "Largest size that opens directly in the editor; maximum 25"
+msgstr ""
+
+msgid "No matches found."
+msgstr ""
+
+msgctxt "viewer button"
+msgid "Refresh"
+msgstr ""
+
+msgid "Riteed did not load this file during startup, so the session stays responsive."
+msgstr ""
+
+msgid "Searching file..."
+msgstr ""
+
+msgid "Skip prompts below the measured hard editing limit"
+msgstr ""
+
+msgid "Skips the large-file editing prompt below Riteed's measured hard editing limit. This never overrides the hard limit."
+msgstr ""
+
+msgid "Strong Warning File Limit"
+msgstr ""
+
+msgid "Advanced thresholds for opening big files"
+msgstr ""
+
+msgid "Show the stronger editing warning for files at least this large"
+msgstr ""
+
+msgid "Strong Warning From (MiB)"
+msgstr ""
+
+msgid "Syntax highlighting, minimap, Markdown preview, Source Control diff, and autosave remain disabled."
+msgstr ""
+
+msgid "Syntax highlighting, minimap, Markdown preview, Source Control diff, and autosave will stay disabled."
+msgstr ""
+
+msgid "The current measured safe editing limit is %1$s bytes."
+msgstr ""
+
+msgid "The file position is too large for this system."
+msgstr ""
+
+msgid "The selected item is not a regular file."
+msgstr ""
+
+msgid "This file is %1$s bytes. Loading it into the editor can freeze the window temporarily and may use several times the file size in memory."
+msgstr ""
+
+msgid "This file is above Riteed's measured safe editing limit."
+msgstr ""
+
+msgid "Viewer Only Above (MiB)"
+msgstr ""
+
+msgid "Viewer Only File Limit"
+msgstr ""
+
+msgid "Viewer keeps only the current file page in memory."
+msgstr ""
+
+msgid "Viewing bytes %1$s-%2$s of %3$s."
+msgstr ""
+
+msgid "Viewing remains available, but editing is refused above the measured safe editing limit."
+msgstr ""
+
+msgctxt "alert response"
+msgid "Edit Anyway"
+msgstr ""
+
+msgctxt "placeholder button"
+msgid "Open in Editor"
+msgstr ""
+
+msgctxt "placeholder button"
+msgid "Open in Viewer"
+msgstr ""
+
+msgctxt "placeholder button"
+msgid "Remove"
+msgstr ""
+
+msgctxt "viewer button"
+msgid "Edit Anyway"
+msgstr ""
+
+msgctxt "viewer button"
+msgid "Find"
+msgstr ""
+
+msgctxt "viewer button"
+msgid "Go"
+msgstr ""
+
+msgctxt "viewer button"
+msgid "Next"
+msgstr ""
+
+msgctxt "viewer button"
+msgid "Previous"
+msgstr ""
+
+msgctxt "viewer line jump"
+msgid "Line"
+msgstr ""
+
+msgctxt "viewer search"
+msgid "Find"
 msgstr ""

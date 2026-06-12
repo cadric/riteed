@@ -2,7 +2,10 @@ use gtk4::{pango, prelude::*};
 use sourceview5::prelude::*;
 
 use super::EditorTab;
-use crate::editor_zoom::{clear_zoom_css_classes, restore_zoom_css_class};
+use crate::editor_zoom::{
+    clear_zoom_css_classes, effective_scroll_past_end_padding, resolve_scroll_past_end_padding,
+    restore_zoom_css_class,
+};
 
 #[cfg(test)]
 use crate::editor_zoom::{EDITOR_VIEW_CSS_CLASS, EDITOR_ZOOM_CSS_CLASS_PREFIX};
@@ -44,15 +47,14 @@ impl EditorTab {
         {
             compare.apply_minimap_visibility(show_minimap);
         }
-        let show_minimap =
-            show_minimap && !self.is_compare_active() && !self.is_markdown_preview_active();
+        let show_minimap = show_minimap
+            && self.editor_heavy_features_enabled()
+            && !self.is_compare_active()
+            && !self.is_markdown_preview_active()
+            && self.state.borrow().io.pending_apply.is_none();
         self.minimap_holder.set_visible(show_minimap);
-        let policy = if show_minimap {
-            gtk4::PolicyType::External
-        } else {
-            gtk4::PolicyType::Automatic
-        };
-        self.scrolled.set_vscrollbar_policy(policy);
+        self.scrolled
+            .set_vscrollbar_policy(gtk4::PolicyType::Automatic);
     }
 
     pub fn apply_indentation(&self) {
@@ -79,13 +81,36 @@ impl EditorTab {
         }
     }
 
+    // GtkSourceMap mirrors the view's bottom margin through its own scaled
+    // property binding; setting the unscaled value on the map directly breaks
+    // its drag-position math near the end of large documents.
     pub fn apply_scroll_past_end_padding(&self, bottom_margin: i32) {
-        self.text_view.set_bottom_margin(bottom_margin);
-        self.minimap.set_bottom_margin(bottom_margin);
-        if let Ok(state) = self.state.try_borrow()
-            && let Some(compare) = state.compare.active.as_ref()
+        self.state.borrow_mut().ui.scroll_past_end_floor = bottom_margin;
+        self.refresh_scroll_past_end_padding();
+        if let Ok(mut state) = self.state.try_borrow_mut()
+            && let Some(compare) = state.compare.active.as_mut()
         {
             compare.apply_scroll_past_end_padding(bottom_margin);
+        }
+    }
+
+    // The effective margin is the larger of the zoom-scaled font floor and
+    // 75 % of the visible viewport, re-resolved whenever the viewport's
+    // page-size changes.
+    pub(crate) fn refresh_scroll_past_end_padding(&self) {
+        let padding = effective_scroll_past_end_padding(
+            self.scroll_past_end_floor(),
+            self.scrolled.vadjustment().page_size(),
+        );
+        self.text_view.set_bottom_margin(padding);
+    }
+
+    pub(crate) fn scroll_past_end_floor(&self) -> i32 {
+        let floor = self.state.borrow().ui.scroll_past_end_floor;
+        if floor > 0 {
+            floor
+        } else {
+            resolve_scroll_past_end_padding(&self.settings.editor_font())
         }
     }
 
@@ -204,6 +229,16 @@ impl EditorTab {
     #[cfg(test)]
     pub(crate) fn scroll_past_end_padding_for_tests(&self) -> (i32, i32) {
         (self.text_view.bottom_margin(), self.minimap.bottom_margin())
+    }
+
+    #[cfg(test)]
+    pub(crate) fn scroll_past_end_floor_for_tests(&self) -> i32 {
+        self.scroll_past_end_floor()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn set_viewport_page_size_for_tests(&self, page_size: f64) {
+        self.scrolled.vadjustment().set_page_size(page_size);
     }
 
     #[cfg(test)]

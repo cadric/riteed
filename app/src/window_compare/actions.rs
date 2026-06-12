@@ -121,7 +121,7 @@ impl WindowCompareController {
                 tab.compare_can_reveal_context()
             }
         });
-        let can_start = selected.is_some_and(|tab| !tab.is_compare_active());
+        let can_start = selected.is_some_and(|tab| tab.is_document() && !tab.is_compare_active());
         self.tab_compare_file_action.set_enabled(can_start);
         self.tab_compare_pasted_text_action.set_enabled(can_start);
         self.tab_compare_saved_action

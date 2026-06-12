@@ -17,6 +17,8 @@ use crate::settings::{AppSettings, ThemePreference};
 use crate::window::Window;
 use crate::workspace::OpenSource;
 
+pub(crate) use crate::gtk_test_fixtures::TempFileFixture;
+
 pub(crate) fn spin_until(label: &str, done: impl Fn() -> bool) {
     let deadline = std::time::Instant::now() + Duration::from_secs(30);
     while std::time::Instant::now() < deadline {
@@ -57,12 +59,16 @@ pub(crate) fn build_window_with_settings(
     Window::new_with_settings_for_tests(app, settings).ok()
 }
 
-pub(crate) fn write_temp_file(name: &str, contents: &[u8]) -> std::path::PathBuf {
-    let path = std::env::temp_dir().join(name);
+pub(crate) fn write_temp_file(fixture: TempFileFixture, contents: &[u8]) -> std::path::PathBuf {
+    let path = test_tmp_dir().join(fixture.name());
     let _removed = fs::remove_file(&path);
     let write_result = fs::write(&path, contents);
     assert!(write_result.is_ok());
     path
+}
+
+pub(crate) fn test_tmp_dir() -> std::path::PathBuf {
+    std::path::PathBuf::from("/tmp")
 }
 
 pub(crate) fn atomic_replace_file(path: &std::path::Path, contents: &[u8]) {
@@ -140,9 +146,9 @@ fn exercise_window_tab_flow(test_app: &adw::Application) {
         Some("app.open")
     );
 
-    let first_path = write_temp_file("riteed-v2-first.txt", b"alpha");
-    let second_path = write_temp_file("riteed-v2-second.txt", b"beta");
-    let third_path = write_temp_file("riteed-v2-third.txt", b"gamma");
+    let first_path = write_temp_file(TempFileFixture::V2_FIRST, b"alpha");
+    let second_path = write_temp_file(TempFileFixture::V2_SECOND, b"beta");
+    let third_path = write_temp_file(TempFileFixture::V2_THIRD, b"gamma");
 
     window.request_open_files(
         vec![
@@ -221,9 +227,9 @@ fn exercise_window_tab_flow(test_app: &adw::Application) {
 }
 
 fn exercise_restore_and_recent_pruning(test_app: &adw::Application) {
-    let first_path = write_temp_file("riteed-restore-one.txt", b"one");
-    let second_path = write_temp_file("riteed-restore-two.txt", b"two");
-    let missing_path = std::env::temp_dir().join("riteed-missing-recent.txt");
+    let first_path = write_temp_file(TempFileFixture::RESTORE_ONE, b"one");
+    let second_path = write_temp_file(TempFileFixture::RESTORE_TWO, b"two");
+    let missing_path = test_tmp_dir().join("riteed-missing-recent.txt");
     let _removed = fs::remove_file(&missing_path);
 
     let first_uri = gio::File::for_path(&first_path).uri().to_string();
@@ -289,7 +295,7 @@ fn exercise_restore_and_recent_pruning(test_app: &adw::Application) {
 }
 
 fn exercise_close_flows(test_app: &adw::Application) {
-    let save_path = write_temp_file("riteed-close-save.txt", b"saved");
+    let save_path = write_temp_file(TempFileFixture::CLOSE_SAVE, b"saved");
     let save_window = build_window(test_app);
     assert!(save_window.is_some());
     let Some(save_window) = save_window else {
@@ -328,8 +334,8 @@ fn exercise_close_flows(test_app: &adw::Application) {
     discard_window.request_close_current_tab();
     drain_events(12);
 
-    let first_path = write_temp_file("riteed-window-close-a.txt", b"one");
-    let second_path = write_temp_file("riteed-window-close-b.txt", b"two");
+    let first_path = write_temp_file(TempFileFixture::WINDOW_CLOSE_A, b"one");
+    let second_path = write_temp_file(TempFileFixture::WINDOW_CLOSE_B, b"two");
     let first_uri = gio::File::for_path(&first_path).uri().to_string();
     let second_uri = gio::File::for_path(&second_path).uri().to_string();
     let window_close = build_window(test_app);
@@ -383,8 +389,8 @@ fn exercise_app_open_actions() {
     }));
     install_for_tests(&test_app, &state);
 
-    let first_path = write_temp_file("riteed-open-a.txt", b"uno");
-    let second_path = write_temp_file("riteed-open-b.txt", b"dos");
+    let first_path = write_temp_file(TempFileFixture::OPEN_A, b"uno");
+    let second_path = write_temp_file(TempFileFixture::OPEN_B, b"dos");
     let first_uri = gio::File::for_path(&first_path).uri().to_string();
 
     test_app.open(
@@ -472,7 +478,7 @@ fn exercise_search_and_status(test_app: &adw::Application) {
         "UTF-8 · LF"
     );
 
-    search_window.choose_selected_line_ending_from_preferences_for_tests(LineEndingMode::CrLf);
+    search_window.choose_selected_line_ending_from_format_menu_for_tests(LineEndingMode::CrLf);
     assert_eq!(
         search_window.status_format_summary_for_tests(),
         "UTF-8 · CRLF"
@@ -485,7 +491,7 @@ fn exercise_search_and_status(test_app: &adw::Application) {
             String::from("Ln 1, Col 1")
         )
     );
-    search_window.choose_selected_line_ending_from_preferences_for_tests(LineEndingMode::Lf);
+    search_window.choose_selected_line_ending_from_format_menu_for_tests(LineEndingMode::Lf);
     assert_eq!(
         search_window.status_format_summary_for_tests(),
         "UTF-8 · LF"
@@ -594,6 +600,10 @@ fn gtk_surfaces_and_editor_flow_work() {
     crate::gtk_tests_v11_git::exercise_v11_git_compare_renderer_path(&test_app);
     crate::gtk_tests_v12::exercise_v12_power_tools(&test_app);
     crate::gtk_tests_v13::exercise_v13_review_change_list(&test_app);
+    crate::gtk_tests_v13::exercise_v13_status_bar_label_reuse(&test_app);
+    crate::gtk_tests_v13::exercise_v13_status_refresh_coalescing(&test_app);
+    crate::gtk_tests_v13::exercise_v13_minimap_palette_cache(&test_app);
+    crate::gtk_tests_v13::exercise_v13_preview_search_active_tag_move(&test_app);
     crate::gtk_tests_markdown::exercise_markdown_preview(&test_app);
     crate::gtk_tests_boundaries::exercise_boundary_smokes(&test_app);
 }

@@ -27,18 +27,21 @@ from tools.checks import (
     hig,
     i18n,
     libadwaita,
+    line_limits,
     release,
     runtime,
     stress_fuzz,
 )
-from tools.validation_tooling import repo_root
+from tools.validation_tooling import contract_root, repo_root
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Hard-fail policy checker for strict GNOME Rust apps.")
     parser.add_argument("--root", help="Repository root. Defaults to auto-detection.")
     parser.add_argument("--strict", action="store_true", help="Accepted for compatibility; strict mode is always enabled.")
-    parser.add_argument("--update-artifact-index", action="store_true", help="Regenerate the bundle artifact index in the policy-pack repo.")
+    modes = parser.add_mutually_exclusive_group()
+    modes.add_argument("--update-artifact-index", action="store_true", help="Regenerate the bundle artifact index in the policy-pack repo.")
+    modes.add_argument("--policy-pack-check", action="store_true", help="Validate the policy-pack contract without running app checks.")
     return parser.parse_args()
 
 
@@ -50,6 +53,17 @@ def _print_errors(errors: list[str]) -> int:
 
 def main() -> int:
     args = parse_args()
+    if args.policy_pack_check:
+        target = repo_root(args.root, allow_policy_pack=True)
+        root = contract_root(target)
+        errors: list[str] = []
+        foundation.check_policy_stack(root, errors)
+        line_limits.check_line_limits(root, errors, scope="policy-pack")
+        if errors:
+            return _print_errors(errors)
+        print("[policy-check] OK")
+        return 0
+
     root = repo_root(args.root, allow_policy_pack=args.update_artifact_index)
     if args.update_artifact_index:
         return commands.run_update_artifact_index(root, args)

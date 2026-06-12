@@ -291,7 +291,7 @@ Anbefaling: **#1** — stress-binary er et separat program der driver appen via 
 - Stress-infrastruktur i `stress/` (repo root). Fuzz crate i `app/fuzz/` (ekskluderet fra stable workspace per spike-konklusion).
 - **Phase 4 stress runner er separat binary**, ikke runtime path i `riteed`-app. `required-features = ["stress"]` sikrer aldrig i Flatpak release.
 - Fuzz targets tester pure-Rust modules — ingen GTK init i fuzz.
-- AGENTS.md 600-line limit pr. ny Rust-fil.
+- AGENTS.md differentieret line limit pr. ny Rust-fil: 600 produktion / 800 test / 720 waiver-cap.
 - `proptest` som `[dev-dependencies]` i `app/Cargo.toml`. `app/fuzz/` må tilføje `libfuzzer-sys` og `arbitrary` i sin egen Cargo.toml.
 - Generated corpus gitignored. Generator + small seeds committed.
 - Stress runner FS-probes via async Gio paths (per AGENTS runtime-sync-fs rule).

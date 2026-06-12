@@ -195,6 +195,17 @@ impl Workspace {
             .map(|tab| tab.scroll_past_end_padding_for_tests())
     }
 
+    pub(crate) fn selected_scroll_past_end_floor_for_tests(&self) -> Option<i32> {
+        self.selected_tab()
+            .map(|tab| tab.scroll_past_end_floor_for_tests())
+    }
+
+    pub(crate) fn set_selected_viewport_page_size_for_tests(&self, page_size: f64) {
+        if let Some(tab) = self.selected_tab() {
+            tab.set_viewport_page_size_for_tests(page_size);
+        }
+    }
+
     pub(crate) fn selected_language_id(&self) -> Option<String> {
         self.selected_tab().and_then(|tab| tab.language_id())
     }
@@ -206,6 +217,36 @@ impl Workspace {
 
     pub(crate) fn selected_loading_for_tests(&self) -> bool {
         self.selected_tab().is_some_and(|tab| tab.is_loading())
+    }
+
+    pub(crate) fn selected_large_file_surface_for_tests(&self) -> Option<&'static str> {
+        self.selected_tab()
+            .map(|tab| tab.large_file_surface_for_tests())
+    }
+
+    pub(crate) fn selected_large_file_viewer_text_for_tests(&self) -> String {
+        self.selected_tab()
+            .map_or_else(String::new, |tab| tab.large_file_viewer_text_for_tests())
+    }
+
+    pub(crate) fn selected_large_file_viewer_status_for_tests(&self) -> String {
+        self.selected_tab()
+            .map_or_else(String::new, |tab| tab.large_file_viewer_status_for_tests())
+    }
+
+    pub(crate) fn activate_selected_large_file_edit_for_tests(&self) -> bool {
+        self.selected_tab()
+            .is_some_and(|tab| tab.activate_large_file_edit_for_tests())
+    }
+
+    pub(crate) fn activate_selected_large_file_refresh_for_tests(&self) -> bool {
+        self.selected_tab()
+            .is_some_and(|tab| tab.activate_large_file_refresh_for_tests())
+    }
+
+    pub(crate) fn activate_selected_large_file_placeholder_remove_for_tests(&self) -> bool {
+        self.selected_tab()
+            .is_some_and(|tab| tab.activate_large_file_placeholder_remove_for_tests())
     }
 
     pub(crate) fn selected_writability(&self) -> Option<crate::editor_tab::Writability> {

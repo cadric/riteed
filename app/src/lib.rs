@@ -10,6 +10,7 @@ pub mod document;
 mod document_limits;
 mod document_portal;
 mod document_print;
+mod document_print_preview;
 mod document_statistics;
 mod document_tools;
 pub mod editor_format;
@@ -25,6 +26,7 @@ pub mod error;
 mod find_in_files;
 mod git_process;
 mod git_status;
+mod large_file;
 mod markdown;
 mod palette_engine;
 mod palette_preview;
@@ -41,7 +43,9 @@ mod source_styles;
 pub mod window;
 mod window_appearance;
 mod window_compare;
+mod window_format_menu;
 mod window_preferences;
+mod window_preferences_large_file;
 mod window_project;
 pub mod window_shell;
 mod window_support;
@@ -90,6 +94,8 @@ pub mod fuzzing {
     }
 }
 
+#[cfg(test)]
+mod gtk_test_fixtures;
 #[cfg(test)]
 mod gtk_tests;
 #[cfg(test)]

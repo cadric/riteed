@@ -154,6 +154,7 @@ fn request_reload(workspace: &Rc<Workspace>, tab: &Rc<EditorTab>, automatic: boo
                             workspace.refresh_selected_state();
                         }
                     }
+                    Err(crate::error::AppError::Cancelled) => {}
                     Err(error) => dialogs::present_error(&workspace.shell, &error),
                 }
             }

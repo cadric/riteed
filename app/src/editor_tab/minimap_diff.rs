@@ -1,12 +1,11 @@
 use std::time::Duration;
 
-use gtk4::{gdk, glib, prelude::*};
-use libadwaita as adw;
+use gtk4::{glib, prelude::*};
 
 use super::EditorTab;
 use super::compare::{MinimapRow, MinimapRowKind, compute_minimap_rows};
+use super::minimap_palette::Palette;
 
-const COLOR_PROBE_CSS_RESOURCE: &str = "/io/github/cadric/Riteed/ui/compare.css";
 const TAG_ADDED: &str = "riteed-scm-minimap-added";
 const TAG_MODIFIED: &str = "riteed-scm-minimap-modified";
 const TAG_DELETED: &str = "riteed-scm-minimap-deleted";
@@ -32,6 +31,7 @@ pub(crate) struct MinimapDiffBand {
 pub(crate) struct TextFingerprint {
     pub(crate) hash: u64,
     pub(crate) len: usize,
+    pub(crate) chars: usize,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -172,14 +172,19 @@ impl EditorTab {
     }
 
     fn refresh_source_control_minimap_stale_state(&self) {
-        let is_stale = self
+        let applied = self
             .state
             .borrow()
             .ui
             .minimap_diff
             .applied
             .as_ref()
-            .is_some_and(|applied| applied.text != text_fingerprint(&self.buffer_text()));
+            .map(|applied| applied.text);
+        let is_stale = applied.is_some_and(|fingerprint| {
+            let buffer_chars = usize::try_from(self.text_buffer.char_count()).unwrap_or_default();
+            buffer_chars != fingerprint.chars
+                || fingerprint != text_fingerprint(&self.buffer_text())
+        });
         let changed = {
             let mut state = self.state.borrow_mut();
             state.ui.minimap_diff.debounce = None;
@@ -238,13 +243,18 @@ impl MinimapDiffFingerprint {
 
 pub(crate) fn text_fingerprint(text: &str) -> TextFingerprint {
     let mut hash = FNV_OFFSET;
+    let mut chars = 0_usize;
     for byte in text.as_bytes() {
         hash ^= u64::from(*byte);
         hash = hash.wrapping_mul(FNV_PRIME);
+        if (*byte & 0xC0) != 0x80 {
+            chars = chars.saturating_add(1);
+        }
     }
     TextFingerprint {
         hash,
         len: text.len(),
+        chars,
     }
 }
 
@@ -405,77 +415,6 @@ fn apply_band(buffer: &sourceview5::Buffer, tag: &gtk4::TextTag, band: &MinimapD
     buffer.apply_tag(tag, &start_iter, &end_iter);
 }
 
-struct Palette {
-    added: gdk::RGBA,
-    modified: gdk::RGBA,
-    deleted: gdk::RGBA,
-}
-
-impl Palette {
-    fn from_view(view: &sourceview5::View, stale: bool) -> Self {
-        let alpha = minimap_alpha(stale);
-        let fallback_added = adw::AccentColor::Green.to_rgba();
-        let fallback_modified = adw::AccentColor::Yellow.to_rgba();
-        let fallback_deleted = adw::AccentColor::Red.to_rgba();
-        let added = resolve_probe_color(view, "riteed-diff-current-color-probe", &fallback_added);
-        let modified =
-            resolve_probe_color(view, "riteed-diff-modified-color-probe", &fallback_modified);
-        let deleted =
-            resolve_probe_color(view, "riteed-diff-reference-color-probe", &fallback_deleted);
-        Self {
-            added: with_alpha(&added, alpha),
-            modified: with_alpha(&modified, alpha),
-            deleted: with_alpha(&deleted, alpha),
-        }
-    }
-}
-
-fn minimap_alpha(stale: bool) -> f32 {
-    let high_contrast = adw::StyleManager::default().is_high_contrast();
-    match (high_contrast, stale) {
-        (true, true) => 0.12,
-        (true, false) => 0.22,
-        (false, true) => 0.04,
-        (false, false) => 0.10,
-    }
-}
-
-fn with_alpha(color: &gdk::RGBA, alpha: f32) -> gdk::RGBA {
-    gdk::RGBA::new(color.red(), color.green(), color.blue(), alpha)
-}
-
-fn resolve_probe_color(
-    view: &sourceview5::View,
-    css_class: &str,
-    fallback: &gdk::RGBA,
-) -> gdk::RGBA {
-    let base = view.color();
-    let display = view.display();
-    let provider = gtk4::CssProvider::new();
-    provider.load_from_resource(COLOR_PROBE_CSS_RESOURCE);
-    gtk4::style_context_add_provider_for_display(
-        &display,
-        &provider,
-        gtk4::STYLE_PROVIDER_PRIORITY_APPLICATION,
-    );
-    view.add_css_class(css_class);
-    let resolved = view.color();
-    view.remove_css_class(css_class);
-    gtk4::style_context_remove_provider_for_display(&display, &provider);
-    if rgba_close(&resolved, &base) {
-        *fallback
-    } else {
-        resolved
-    }
-}
-
-fn rgba_close(left: &gdk::RGBA, right: &gdk::RGBA) -> bool {
-    (left.red() - right.red()).abs() < f32::EPSILON
-        && (left.green() - right.green()).abs() < f32::EPSILON
-        && (left.blue() - right.blue()).abs() < f32::EPSILON
-        && (left.alpha() - right.alpha()).abs() < f32::EPSILON
-}
-
 #[cfg(test)]
 fn tagged_line_count(buffer: &sourceview5::Buffer, name: &str) -> usize {
     let Some(tag) = buffer.tag_table().lookup(name) else {
@@ -570,5 +509,13 @@ mod tests {
         assert_eq!(first, second);
         assert_ne!(first, different);
         assert_eq!(first.len, 3);
+    }
+
+    #[test]
+    fn fingerprint_counts_characters_not_bytes() {
+        assert_eq!(text_fingerprint("abc").chars, 3);
+        assert_eq!(text_fingerprint("æøå").chars, 3);
+        assert_eq!(text_fingerprint("æøå").len, 6);
+        assert_eq!(text_fingerprint("").chars, 0);
     }
 }

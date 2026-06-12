@@ -5,6 +5,12 @@ use crate::window::Window;
 
 impl Window {
     pub(super) fn install_document_callbacks(self: &Rc<Self>) {
+        crate::window_format_menu::install(
+            &self.change_encoding_action,
+            &self.line_ending_action,
+            &self.workspace,
+        );
+
         let weak = Rc::downgrade(self);
         self.save_action.connect_activate(move |_, _| {
             if let Some(window) = weak.upgrade() {

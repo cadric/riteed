@@ -11,6 +11,7 @@ use super::{
 use crate::document::DocumentState;
 use crate::editor_format::SavedTextFormat;
 use crate::editor_monitor::{MonitorBinding, PendingExternalState};
+use crate::large_file::viewer::LargeFileViewer;
 
 #[derive(Default)]
 pub(super) struct EditorTabState {
@@ -18,10 +19,19 @@ pub(super) struct EditorTabState {
     pub(super) io: EditorIoState,
     pub(super) external: ExternalFileState,
     pub(super) autosave: AutosaveState,
+    pub(super) large_file: LargeFileAttachment,
     pub(super) compare: CompareAttachment,
     pub(super) review: ReviewAttachment,
     pub(super) ui: UiState,
     dirty_generation: u64,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub(super) enum DocumentSurface {
+    #[default]
+    Editor,
+    LargeFileViewer,
+    RestorePlaceholder,
 }
 
 impl EditorTabState {
@@ -37,6 +47,32 @@ impl EditorTabState {
 
     pub(super) fn mark_dirty_generation(&mut self) {
         self.dirty_generation = self.dirty_generation.saturating_add(1);
+    }
+}
+
+#[derive(Default)]
+pub(super) struct LargeFileAttachment {
+    pub(super) surface: DocumentSurface,
+    pub(super) widget: Option<gtk4::Widget>,
+    pub(super) viewer: Option<Rc<LargeFileViewer>>,
+    pub(super) file_size: Option<u64>,
+}
+
+impl LargeFileAttachment {
+    pub(super) fn cancel_operations(&self) {
+        if let Some(viewer) = self.viewer.as_ref() {
+            viewer.cancel();
+        }
+    }
+
+    pub(super) fn clear_surface(&mut self) -> Option<gtk4::Widget> {
+        if let Some(viewer) = self.viewer.take() {
+            viewer.cancel();
+        }
+        let widget = self.widget.take();
+        self.surface = DocumentSurface::Editor;
+        self.file_size = None;
+        widget
     }
 }
 
@@ -75,6 +111,18 @@ impl Default for DocumentRuntimeState {
     }
 }
 
+#[derive(Clone, Copy)]
+pub(super) struct PendingApplyRestore {
+    pub(super) editable: bool,
+    pub(super) undo: bool,
+}
+
+pub(super) struct PendingApplySource {
+    pub(super) source: gtk4::glib::SourceId,
+    pub(super) restore: PendingApplyRestore,
+    pub(super) on_cancelled: Rc<dyn Fn()>,
+}
+
 #[derive(Default)]
 pub(super) struct EditorIoState {
     pub(super) generation: u64,
@@ -82,9 +130,14 @@ pub(super) struct EditorIoState {
     pub(super) candidate_encodings: Option<SList<sourceview5::Encoding>>,
     pub(super) loading: bool,
     pub(super) external_reload_in_progress: bool,
+    pub(super) pending_apply: Option<PendingApplySource>,
 }
 
 impl EditorIoState {
+    pub(super) fn take_pending_apply(&mut self) -> Option<PendingApplySource> {
+        self.pending_apply.take()
+    }
+
     pub(super) fn cancel_request(&mut self) -> Option<gio::Cancellable> {
         self.candidate_encodings = None;
         self.generation = self.generation.saturating_add(1);
@@ -211,13 +264,15 @@ pub(super) struct UiState {
     pub(super) visible_banner: VisibleBannerState,
     pub(super) markdown_preview: MarkdownPreviewAttachment,
     pub(super) minimap_diff: MinimapDiffAttachment,
+    // 0 means "not applied yet"; readers fall back to the settings font.
+    pub(super) scroll_past_end_floor: i32,
 }
 
 #[cfg(test)]
 mod tests {
     use super::{
         AutosaveState, CompareAttachment, DocumentRuntimeState, EditorIoState, EditorTabState,
-        ExternalFileState,
+        ExternalFileState, PendingApplyRestore, PendingApplySource,
     };
     use crate::editor_format::LineEndingMode;
     use gtk4::prelude::*;
@@ -257,6 +312,28 @@ mod tests {
         let (third_generation, third_cancellable) = state.start_request(None);
         assert_eq!(state.cancel_request(), Some(third_cancellable));
         assert!(!state.finish_request(third_generation));
+    }
+
+    #[test]
+    fn editor_io_take_pending_apply_clears_stored_source() {
+        let mut state = EditorIoState::default();
+        assert!(state.take_pending_apply().is_none());
+
+        let source = gtk4::glib::timeout_add_local_once(std::time::Duration::from_hours(1), || {});
+        state.pending_apply = Some(PendingApplySource {
+            source,
+            restore: PendingApplyRestore {
+                editable: true,
+                undo: true,
+            },
+            on_cancelled: std::rc::Rc::new(|| {}),
+        });
+        let pending = state.take_pending_apply();
+        assert!(pending.is_some());
+        if let Some(pending) = pending {
+            pending.source.remove();
+        }
+        assert!(state.take_pending_apply().is_none());
     }
 
     #[test]

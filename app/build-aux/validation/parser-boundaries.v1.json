@@ -77,14 +77,43 @@
       "kind": "file-load",
       "source_paths": ["app/src/editor_io.rs", "app/src/workspace_open.rs", "app/src/document_limits.rs"],
       "entrypoints": ["Gio file open", "Workspace::open_files", "EditorTab::load_file"],
-      "real_input_shape": "User-selected local, portal, or mounted document file bytes decoded with selected encoding and bounded by open-size policy.",
+      "real_input_shape": "User-selected local, portal, or mounted document file bytes decoded with selected encoding, bounded by open-size policy, and routed away from editable SourceView when any decoded line exceeds the 64 KiB editor line gate.",
       "coverage": [
         {"type": "integration", "path": "app/src/gtk_tests_boundaries.rs", "target": "exercise_open_file_at_cap", "input_shape_asserted": "Generated file at the open byte cap is opened through the real GTK flow"},
+        {"type": "integration", "path": "app/src/gtk_tests_boundaries.rs", "target": "exercise_long_line_file_routes_to_viewer", "input_shape_asserted": "Generated file with a decoded line over 64 KiB opens through the real GTK flow and routes to the read-only viewer"},
         {"type": "stress", "path": "stress/scripts/open-save-search.json", "target": "open-save-search", "input_shape_asserted": "Stress runner opens a declared generated corpus file through GApplication open"}
       ],
       "gaps": [],
       "reviewed_exceptions": [],
-      "last_reviewed": "2026-05-26"
+      "last_reviewed": "2026-06-10"
+    },
+    {
+      "id": "large_file_paged_reader",
+      "kind": "untrusted-file-byte-boundary",
+      "source_paths": ["app/src/large_file/reader.rs"],
+      "entrypoints": ["large_file::reader::read_window"],
+      "real_input_shape": "User-selected local, portal, or mounted document file bytes read through async Gio windows without loading the whole file into GtkTextBuffer.",
+      "coverage": [
+        {"type": "unit", "path": "app/src/large_file/reader.rs", "target": "read_window_records_offset_and_eof", "input_shape_asserted": "Window metadata for a bounded paged read"},
+        {"type": "unit", "path": "app/src/large_file/reader.rs", "target": "short_nonzero_read_requests_more_bytes", "input_shape_asserted": "Short non-EOF reads continue filling the requested window"}
+      ],
+      "gaps": [],
+      "reviewed_exceptions": [],
+      "last_reviewed": "2026-05-31"
+    },
+    {
+      "id": "large_file_streaming_search",
+      "kind": "untrusted-file-byte-boundary",
+      "source_paths": ["app/src/large_file/search.rs"],
+      "entrypoints": ["large_file::search::search_file"],
+      "real_input_shape": "Raw file bytes searched incrementally through async Gio windows with cross-window carry and a match cap.",
+      "coverage": [
+        {"type": "unit", "path": "app/src/large_file/search.rs", "target": "search_records_cross_chunk_match_once", "input_shape_asserted": "Needle match crossing a chunk boundary is reported once"},
+        {"type": "unit", "path": "app/src/large_file/search.rs", "target": "suffix_is_bounded_by_query_length", "input_shape_asserted": "Search carry is bounded by query length"}
+      ],
+      "gaps": [],
+      "reviewed_exceptions": [],
+      "last_reviewed": "2026-05-31"
     },
     {
       "id": "markdown_preview_render",

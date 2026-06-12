@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+import datetime as dt
 import json
 import os
 import re
@@ -32,6 +33,19 @@ BUILD_OUTPUT_PREFIXES = (
     ("fuzz", "target"),
 )
 AMBIENT_SECRET_ENV = ("GITHUB_TOKEN", "GH_TOKEN")
+
+
+def iso_date_not_future_status(value: Any) -> tuple[str, dt.date]:
+    today = dt.datetime.now(dt.UTC).date()
+    if not isinstance(value, str):
+        return "invalid", today
+    try:
+        parsed = dt.date.fromisoformat(value)
+    except ValueError:
+        return "invalid", today
+    if parsed > today:
+        return "future", today
+    return "ok", today
 
 
 def fail(message: str) -> NoReturn:
@@ -239,20 +253,24 @@ def require_tool(name: str) -> None:
         fail(f"[validation] required tool not found: {name}")
 
 
+def _validation_env(env: dict[str, str] | None = None) -> dict[str, str]:
+    merged_env = os.environ.copy()
+    for name in AMBIENT_SECRET_ENV:
+        merged_env.pop(name, None)
+    if env:
+        merged_env.update(env)
+    return merged_env
+
+
 def run_capture(cmd: Sequence[str], cwd: Path, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
     try:
-        merged_env = os.environ.copy()
-        for name in AMBIENT_SECRET_ENV:
-            merged_env.pop(name, None)
-        if env:
-            merged_env.update(env)
         return subprocess.run(
             list(cmd),
             cwd=str(cwd),
             text=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            env=merged_env,
+            env=_validation_env(env),
             check=False,
         )
     except OSError as exc:
@@ -265,6 +283,21 @@ def run_checked(cmd: Sequence[str], cwd: Path, label: str | None = None, env: di
         detail = failure_detail(result.stdout, result.stderr)
         fail(f"[validation] {label or 'command failed'}: {' '.join(cmd)} :: {detail}")
     return result.stdout
+
+
+def run_checked_streaming(cmd: Sequence[str], cwd: Path, label: str | None = None, env: dict[str, str] | None = None) -> None:
+    try:
+        result = subprocess.run(
+            list(cmd),
+            cwd=str(cwd),
+            text=True,
+            env=_validation_env(env),
+            check=False,
+        )
+    except OSError as exc:
+        fail(f"[validation] failed to run {' '.join(cmd)}: {exc}")
+    if result.returncode != 0:
+        fail(f"[validation] {label or 'command failed'}: {' '.join(cmd)} exited with {result.returncode}")
 
 
 @contextmanager

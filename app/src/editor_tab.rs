@@ -2,19 +2,22 @@ use std::cell::{OnceCell, RefCell};
 use std::rc::Rc;
 
 use gettextrs::pgettext;
-use gtk4::{gdk, gio, prelude::*};
+use gtk4::{gio, prelude::*};
 use libadwaita as adw;
-use sourceview5::prelude::*;
 
 use crate::editor_monitor::PendingExternalState;
 use crate::editor_view::EditorView;
 use crate::error::AppError;
 use crate::settings::AppSettings;
 
+mod apply;
 mod banner;
+mod callbacks;
 mod compare;
+mod large_file;
 mod markdown_preview;
 pub(crate) mod minimap_diff;
+pub(crate) mod minimap_palette;
 mod open;
 mod review;
 mod runtime;
@@ -26,7 +29,7 @@ pub(crate) use compare::{ReviewFileInput, ReviewScrollTarget};
 pub use review::{
     ReviewFileId, ReviewFileSpec, ReviewKind, ReviewSnapshotFingerprint, ReviewTabSpec, TabKind,
 };
-use state::EditorTabState;
+use state::{DocumentSurface, EditorTabState};
 
 #[cfg(test)]
 pub(crate) fn compare_row_count_for_texts_for_tests(
@@ -241,13 +244,21 @@ impl EditorTab {
     }
 
     #[must_use]
+    pub fn session_uri(&self) -> Option<String> {
+        if self.kind != TabKind::Document {
+            return None;
+        }
+        self.state.borrow().document.document.uri()
+    }
+
+    #[must_use]
     pub fn kind(&self) -> TabKind {
         self.kind
     }
 
     #[must_use]
     pub fn is_document(&self) -> bool {
-        self.kind == TabKind::Document
+        self.kind == TabKind::Document && self.is_editor_surface()
     }
 
     #[must_use]
@@ -260,7 +271,11 @@ impl EditorTab {
         if !self.is_document() {
             return false;
         }
-        self.state.borrow().is_dirty(self.text_buffer.is_modified())
+        let state = self.state.borrow();
+        if state.io.pending_apply.is_some() {
+            return false;
+        }
+        state.is_dirty(self.text_buffer.is_modified())
     }
 
     #[must_use]
@@ -282,6 +297,18 @@ impl EditorTab {
             && state.external.writability == Writability::Writable
             && !state.io.loading
             && state.compare.active.is_none()
+            && crate::document_limits::autosave_supports_current_size(self.text_buffer.char_count())
+    }
+
+    #[must_use]
+    pub fn autosave_blocked_by_current_size(&self) -> bool {
+        self.is_document()
+            && self.settings.autosave_enabled()
+            && self.is_dirty()
+            && self.state.borrow().document.document.path().is_some()
+            && !crate::document_limits::autosave_supports_current_size(
+                self.text_buffer.char_count(),
+            )
     }
 
     #[must_use]
@@ -332,7 +359,7 @@ impl EditorTab {
 
     #[must_use]
     pub fn path_display(&self) -> Option<String> {
-        if !self.is_document() {
+        if self.kind == TabKind::GitReview {
             return None;
         }
         self.state.borrow().document.document.path_display()
@@ -355,7 +382,7 @@ impl EditorTab {
     pub fn buffer_text(&self) -> String {
         let start = self.text_buffer.start_iter();
         let end = self.text_buffer.end_iter();
-        self.text_buffer.text(&start, &end, true).to_string()
+        String::from(self.text_buffer.text(&start, &end, true))
     }
 
     #[must_use]
@@ -364,16 +391,19 @@ impl EditorTab {
         if start.line() != end.line() || start.offset() == end.offset() {
             return None;
         }
-        Some(self.text_buffer.text(&start, &end, true).to_string())
+        Some(String::from(self.text_buffer.text(&start, &end, true)))
     }
 
     #[must_use]
     pub fn supports_search(&self) -> bool {
-        crate::document_limits::buffer_supports_search(&self.text_buffer)
+        self.is_document() && crate::document_limits::buffer_supports_search(&self.text_buffer)
     }
 
     #[must_use]
     pub fn cursor_position(&self) -> (u32, u32) {
+        if !self.is_document() {
+            return (1, 1);
+        }
         let iter = self
             .text_buffer
             .iter_at_mark(&self.text_buffer.get_insert());
@@ -430,79 +460,6 @@ impl EditorTab {
         current == target
     }
 
-    fn install_callbacks(self: &Rc<Self>) {
-        let weak = Rc::downgrade(self);
-        self.text_buffer.connect_changed(move |_| {
-            if let Some(tab) = weak.upgrade()
-                && !tab.state.borrow().ui.suppress_changes
-            {
-                tab.state.borrow_mut().mark_dirty_generation();
-                tab.sync_presentation();
-                tab.schedule_markdown_preview_update();
-                tab.schedule_source_control_minimap_stale_check();
-            }
-        });
-
-        let weak = Rc::downgrade(self);
-        self.text_buffer.connect_modified_changed(move |_| {
-            if let Some(tab) = weak.upgrade()
-                && !tab.state.borrow().ui.suppress_changes
-            {
-                tab.sync_presentation();
-                tab.schedule_source_control_minimap_stale_check();
-            }
-        });
-
-        let weak = Rc::downgrade(self);
-        self.text_buffer.connect_cursor_moved(move |_| {
-            let Some(tab) = weak.upgrade() else {
-                return;
-            };
-            let callback = tab.on_visual_change.borrow().clone();
-            if let Some(callback) = callback {
-                callback();
-            }
-        });
-
-        let weak = Rc::downgrade(self);
-        self.banner.connect_button_clicked(move |_| {
-            let Some(tab) = weak.upgrade() else {
-                return;
-            };
-            let callback = tab.on_external_action.borrow().clone();
-            if let Some(callback) = callback {
-                callback();
-            }
-        });
-
-        let weak = Rc::downgrade(self);
-        self.banner.connect_revealed_notify(move |banner| {
-            if banner.is_revealed() {
-                return;
-            }
-            let Some(tab) = weak.upgrade() else {
-                return;
-            };
-            let should_ack = {
-                let state = tab.state.borrow();
-                !state.ui.banner_syncing
-                    && matches!(
-                        state.ui.visible_banner,
-                        VisibleBannerState::External | VisibleBannerState::Missing
-                    )
-            };
-            if should_ack {
-                tab.acknowledge_pending_external();
-            }
-        });
-
-        let weak = Rc::downgrade(self);
-        install_file_drop_target(&self.root, &weak);
-        install_file_drop_target(&self.text_view, &weak);
-        install_file_drop_target(&self.preview_view, &weak);
-        self.install_markdown_preview_interactions();
-    }
-
     fn sync_presentation(&self) {
         if let Some(page) = self.page() {
             page.set_title(&self.title());
@@ -522,35 +479,11 @@ impl EditorTab {
     }
 }
 
-fn install_file_drop_target(widget: &impl IsA<gtk4::Widget>, weak: &std::rc::Weak<EditorTab>) {
-    let drop_target = gtk4::DropTarget::new(gdk::FileList::static_type(), gdk::DragAction::COPY);
-    drop_target.set_propagation_phase(gtk4::PropagationPhase::Capture);
-    let weak = weak.clone();
-    drop_target.connect_drop(move |_, value, _, _| {
-        let Some(tab) = weak.upgrade() else {
-            return false;
-        };
-        let handler = tab.on_file_drop.borrow().clone();
-        let Some(handler) = handler else {
-            return false;
-        };
-        match value.get::<gdk::FileList>() {
-            Ok(file_list) => {
-                handler(file_list.files());
-                true
-            }
-            Err(_) => false,
-        }
-    });
-    widget.add_controller(drop_target);
-}
-
 fn apply_text_filters(dialog: &gtk4::FileDialog) {
     let text_filter = gtk4::FileFilter::new();
     text_filter.set_name(Some(&pgettext("file filter", "Plain Text Files")));
     text_filter.add_mime_type("text/plain");
     text_filter.add_suffix("txt");
-
     let markdown_filter = gtk4::FileFilter::new();
     markdown_filter.set_name(Some(&pgettext("file filter", "Markdown Source Files")));
     markdown_filter.add_mime_type("text/markdown");

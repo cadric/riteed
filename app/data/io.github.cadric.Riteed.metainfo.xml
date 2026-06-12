@@ -43,14 +43,51 @@
     </screenshot>
   </screenshots>
   <releases>
-    <release version="0.3.6" type="development" date="2026-05-30"/>
-    <release version="0.3.5" type="development" date="2026-05-25"/>
-    <release version="0.3.4" type="development" date="2026-05-22"/>
-    <release version="0.3.3" type="development" date="2026-05-21"/>
-    <release version="0.3.2" type="development" date="2026-05-20"/>
-    <release version="0.3.1" type="development" date="2026-05-08"/>
-    <release version="0.3.0" type="development" date="2026-05-06"/>
-    <release version="0.2.0" type="development" date="2026-05-05"/>
+    <release version="0.3.6" type="development" date="2026-05-30">
+      <description translate="no">
+        <p>Adds hardened release, stress, and dependency policy gates, including live ruleset governance, exact-commit publish preflight, rollback safeguards, and coordinated GTK-stack dependency validation.</p>
+        <p>Restores Source Control minimap diff bands and fixes the scheduled Markdown stress crash, async open/save races, Source Control cap handling, and release-note gettext extraction.</p>
+      </description>
+    </release>
+    <release version="0.3.5" type="development" date="2026-05-25">
+      <description translate="no">
+        <p>Fixes Markdown preview zoom, copy, and find behavior so the native preview follows editor zoom, keeps its scroll position while copying or navigating matches, and searches rendered Markdown text without exposing replace controls.</p>
+        <p>Updates app dependencies, beta screenshots, and Dependabot rules while preserving the reviewed GTK binding versions.</p>
+      </description>
+    </release>
+    <release version="0.3.4" type="development" date="2026-05-22">
+      <description translate="no">
+        <p>Adds the pre-Flathub GitHub Pages beta Flatpak remote, GitHub security hygiene, Dependabot configuration, contribution templates, and CodeQL triage follow-up notes.</p>
+        <p>Fixes a scheduled Markdown fuzz crash by normalizing ASCII control characters before Markdown preview parsing.</p>
+      </description>
+    </release>
+    <release version="0.3.3" type="development" date="2026-05-21">
+      <description translate="no">
+        <p>Adds a complete Danish locale, an app language preference for System, English, or Danish, and the first stress-test infrastructure for boundary, parser, fuzz, Flatpak Git, ASan, and Valgrind coverage.</p>
+        <p>Fixes a fuzz-discovered Compare crash with lone carriage-return line endings by aligning Riteed's row model with the diff engine's line tokenization.</p>
+      </description>
+    </release>
+    <release version="0.3.2" type="development" date="2026-05-20">
+      <description translate="no">
+        <p>Adds native Markdown preview polish, staged and unstaged multi-file review tabs, and a V15 roadmap for split Markdown edit/preview.</p>
+        <p>Fixes Source Control so ordinary untracked folders expand to changed file paths while nested Git repositories remain visible as guarded directory entries.</p>
+      </description>
+    </release>
+    <release version="0.3.1" type="development" date="2026-05-08">
+      <description translate="no">
+        <p>Compacts Source Control rows, moves active-file Git actions into the header bar, and unifies document and project search in the Find bar.</p>
+      </description>
+    </release>
+    <release version="0.3.0" type="development" date="2026-05-06">
+      <description translate="no">
+        <p>Adds Find in Files, document statistics, and print support while preserving the existing Find and Replace workflow.</p>
+      </description>
+    </release>
+    <release version="0.2.0" type="development" date="2026-05-05">
+      <description translate="no">
+        <p>First public beta with tabs, syntax highlighting, folder navigation, split diffs, lightweight local Git source control, autosave, and guarded file monitoring.</p>
+      </description>
+    </release>
   </releases>
   <content_rating type="oars-1.1"/>
 </component>

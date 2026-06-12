@@ -122,4 +122,26 @@ mod tests {
 
         assert_eq!(output, "same\nnew");
     }
+
+    #[test]
+    fn unified_clipboard_keeps_blank_projected_lines() {
+        let mut output = String::new();
+        let mut wrote = false;
+
+        append_projected_line(&mut output, &mut wrote, "");
+        append_projected_line(&mut output, &mut wrote, "after");
+
+        assert_eq!(output, "\nafter");
+    }
+
+    #[test]
+    fn unified_clipboard_first_projected_line_has_no_prefix_newline() {
+        let mut output = String::new();
+        let mut wrote = false;
+
+        append_projected_line(&mut output, &mut wrote, "first");
+
+        assert_eq!(output, "first");
+        assert!(wrote);
+    }
 }

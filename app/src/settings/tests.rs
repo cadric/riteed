@@ -1,6 +1,7 @@
 use super::{
-    AppLanguage, AppSettings, CompareViewMode, EditorPalette, SourceControlViewMode,
-    ThemePreference, WindowPalette, sanitize_editor_width, sanitize_restored_dimension,
+    AppLanguage, AppSettings, CompareViewMode, EditorPalette, LargeFileLimitValues,
+    SourceControlViewMode, ThemePreference, WindowPalette, sanitize_editor_width,
+    sanitize_restored_dimension,
 };
 #[test]
 fn theme_preference_roundtrips_enum_values() {
@@ -159,6 +160,13 @@ fn memory_backend_roundtrips_values() {
     settings.set_project_folder_display_name("Project");
     settings.set_project_sidebar_visible(true);
     settings.set_project_show_hidden(true);
+    settings.set_large_file_limit_values(LargeFileLimitValues {
+        full_feature: 4,
+        editor: 20,
+        strong_warning: 80,
+        viewer_only: 400,
+    });
+    settings.set_always_allow_large_file_edit(true);
 
     assert_eq!(settings.theme(), ThemePreference::Dark);
     assert_eq!(settings.language(), AppLanguage::Danish);
@@ -206,6 +214,16 @@ fn memory_backend_roundtrips_values() {
     assert_eq!(settings.project_folder_display_name(), "Project");
     assert!(settings.project_sidebar_visible());
     assert!(settings.project_show_hidden());
+    assert_eq!(
+        settings.large_file_limit_values(),
+        LargeFileLimitValues {
+            full_feature: 4,
+            editor: 20,
+            strong_warning: 80,
+            viewer_only: 400,
+        }
+    );
+    assert!(settings.always_allow_large_file_edit());
 }
 
 #[test]
@@ -223,6 +241,7 @@ fn memory_backend_records_writes_for_tests() {
     settings.set_compare_view_mode(CompareViewMode::Split);
     settings.set_compare_context_lines(8);
     settings.set_compare_word_wrap(true);
+    settings.set_always_allow_large_file_edit(true);
     assert_eq!(
         settings.write_log_for_tests(),
         vec![
@@ -238,7 +257,29 @@ fn memory_backend_records_writes_for_tests() {
             String::from("compare-view-mode"),
             String::from("compare-context-lines"),
             String::from("compare-word-wrap"),
+            String::from("always-allow-large-file-edit"),
         ]
+    );
+}
+
+#[test]
+fn large_file_limits_are_sanitized_and_ordered() {
+    let settings = AppSettings::new_for_tests();
+    settings.set_large_file_limit_values(LargeFileLimitValues {
+        full_feature: 40,
+        editor: 1,
+        strong_warning: 2,
+        viewer_only: 3,
+    });
+
+    assert_eq!(
+        settings.large_file_limit_values(),
+        LargeFileLimitValues {
+            full_feature: 24,
+            editor: 25,
+            strong_warning: 26,
+            viewer_only: 26,
+        }
     );
 }
 
@@ -271,4 +312,6 @@ fn schema_defines_compare_settings() {
     assert!(schema.contains(
         "<key name=\"compare-context-lines\" type=\"i\">\n      <range min=\"1\" max=\"10\"/>"
     ));
+    assert!(schema.contains("large-file-full-feature-limit-mib"));
+    assert!(schema.contains("always-allow-large-file-edit"));
 }

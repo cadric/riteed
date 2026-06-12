@@ -27,7 +27,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 157,
+      "line": 158,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
@@ -35,7 +35,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 166,
+      "line": 167,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
@@ -43,7 +43,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 245,
+      "line": 246,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
@@ -51,7 +51,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 308,
+      "line": 309,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
@@ -59,7 +59,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 351,
+      "line": 352,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
@@ -67,7 +67,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 361,
+      "line": 362,
       "match": "fn resolve_window(state: &Rc<RefCell<AppState>>) -> Option<Rc<Window>> {",
       "kind": "runtime-shared-state",
       "ownership": "Active editor window resolution reads shared application state.",
@@ -75,7 +75,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 375,
+      "line": 376,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
@@ -83,7 +83,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 411,
+      "line": 412,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
@@ -91,7 +91,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 425,
+      "line": 426,
       "match": "fn register_window(state: &Rc<RefCell<AppState>>, window: &Rc<Window>) {",
       "kind": "runtime-shared-state",
       "ownership": "Window registration mutates shared application state.",
@@ -99,7 +99,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 464,
+      "line": 465,
       "match": "fn install_display_services(display: &gdk::Display, state: &Rc<RefCell<AppState>>) {",
       "kind": "runtime-shared-state",
       "ownership": "Startup display service installation mutates shared application state.",
@@ -154,12 +154,100 @@
       "justification": "Display-path rendering must not block the UI on portal D-Bus calls, so async GetHostPaths results are coalesced and cached while portal access paths remain authoritative for I/O."
     },
     {
+      "path": "src/document_print.rs",
+      "line": 15,
+      "match": "print_settings: RefCell<Option<gtk4::PrintSettings>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The window's document tools controller owns remembered print dialog choices.",
+      "justification": "Print settings must survive between print runs in the same window so the user's paper and printer choices are not reset on every print."
+    },
+    {
+      "path": "src/document_print.rs",
+      "line": 16,
+      "match": "page_setup: RefCell<Option<gtk4::PageSetup>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The window's document tools controller owns remembered print dialog choices.",
+      "justification": "Page setup must survive between print runs in the same window so the user's paper and orientation choices are not reset on every print."
+    },
+    {
+      "path": "src/document_print_preview.rs",
+      "line": 18,
+      "match": "operation: RefCell<Option<gtk4::PrintOperation>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The print preview engine owns the in-flight preview operation state.",
+      "justification": "GTK delivers preview pagination and page-size callbacks asynchronously on the main loop, so the engine must share mutable state between signal closures and the dialog."
+    },
+    {
+      "path": "src/document_print_preview.rs",
+      "line": 19,
+      "match": "preview: RefCell<Option<gtk4::PrintOperationPreview>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The print preview engine owns the in-flight preview operation state.",
+      "justification": "GTK delivers preview pagination and page-size callbacks asynchronously on the main loop, so the engine must share mutable state between signal closures and the dialog."
+    },
+    {
+      "path": "src/document_print_preview.rs",
+      "line": 20,
+      "match": "surface: RefCell<Option<cairo::ImageSurface>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The print preview engine owns the in-flight preview operation state.",
+      "justification": "GTK delivers preview pagination and page-size callbacks asynchronously on the main loop, so the engine must share mutable state between signal closures and the dialog."
+    },
+    {
+      "path": "src/document_print_preview.rs",
+      "line": 21,
+      "match": "n_pages: Cell<i32>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The print preview engine owns the in-flight preview operation state.",
+      "justification": "GTK delivers preview pagination and page-size callbacks asynchronously on the main loop, so the engine must share mutable state between signal closures and the dialog."
+    },
+    {
+      "path": "src/document_print_preview.rs",
+      "line": 22,
+      "match": "ready: Cell<bool>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The print preview engine owns the in-flight preview operation state.",
+      "justification": "GTK delivers preview pagination and page-size callbacks asynchronously on the main loop, so the engine must share mutable state between signal closures and the dialog."
+    },
+    {
+      "path": "src/document_print_preview.rs",
+      "line": 23,
+      "match": "on_ready: RefCell<Option<Box<dyn Fn()>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The print preview engine owns the in-flight preview operation state.",
+      "justification": "GTK delivers preview pagination and page-size callbacks asynchronously on the main loop, so the engine must share mutable state between signal closures and the dialog."
+    },
+    {
+      "path": "src/document_print_preview.rs",
+      "line": 138,
+      "match": "engine: RefCell<Option<Rc<PreviewEngine>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The print preview dialog owns its page navigation state and active engine.",
+      "justification": "Dialog callbacks restart rendering, navigate pages, and clean up the active preview engine while GTK signals run on the main loop."
+    },
+    {
+      "path": "src/document_print_preview.rs",
+      "line": 139,
+      "match": "current_page: Cell<i32>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The print preview dialog owns its page navigation state and active engine.",
+      "justification": "Dialog callbacks restart rendering, navigate pages, and clean up the active preview engine while GTK signals run on the main loop."
+    },
+    {
       "path": "src/document_tools.rs",
-      "line": 17,
+      "line": 22,
       "match": "print_runner: RefCell<PrintRunner>,",
       "kind": "runtime-shared-state",
       "ownership": "The document tools controller owns the mutable print runner injection point.",
       "justification": "Print action tests replace only this scoped runner while runtime action state remains owned by the window-local controller."
+    },
+    {
+      "path": "src/document_tools.rs",
+      "line": 23,
+      "match": "preview_runner: RefCell<PreviewRunner>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The document tools controller owns the mutable print preview runner injection point.",
+      "justification": "Preview action tests replace only this scoped runner while runtime action state remains owned by the window-local controller."
     },
     {
       "path": "src/editor_monitor.rs",
@@ -179,7 +267,7 @@
     },
     {
       "path": "src/editor_search/mod.rs",
-      "line": 55,
+      "line": 57,
       "match": "project_search_dispatch: RefCell<Option<ProjectSearchDispatch>>,",
       "kind": "runtime-shared-state",
       "ownership": "The find bar owns document/project search scope state and callback dispatch.",
@@ -187,7 +275,7 @@
     },
     {
       "path": "src/editor_search/mod.rs",
-      "line": 56,
+      "line": 58,
       "match": "last_replace_mode: Cell<bool>,",
       "kind": "runtime-shared-state",
       "ownership": "The find bar owns document/project search scope state and the project-search dispatch hook.",
@@ -195,7 +283,7 @@
     },
     {
       "path": "src/editor_search/mod.rs",
-      "line": 57,
+      "line": 59,
       "match": "state: RefCell<SearchState>,",
       "kind": "runtime-shared-state",
       "ownership": "The search controller owns one mutable binding to the active tab and active search context.",
@@ -218,8 +306,16 @@
       "justification": "Search and replace callbacks share this main-thread state so document search, project dispatch, and scope toggles stay synchronized."
     },
     {
+      "path": "src/editor_status.rs",
+      "line": 25,
+      "match": "format_button_label_updates: Cell<usize>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The status bar test harness owns the format-label update counter.",
+      "justification": "GTK regression tests need a main-thread-confined counter to verify redundant status label updates are skipped without depending on MenuButton child internals."
+    },
+    {
       "path": "src/editor_tab.rs",
-      "line": 117,
+      "line": 120,
       "match": "state: RefCell<EditorTabState>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns one shared mutable state cell split into document runtime, IO, external-file, autosave, compare, and UI owner structs.",
@@ -227,7 +323,7 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 119,
+      "line": 122,
       "match": "on_file_drop: RefCell<Option<FileDropHandler>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns its current workspace file-drop callback.",
@@ -235,7 +331,7 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 120,
+      "line": 123,
       "match": "on_visual_change: RefCell<Option<TabCallback>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns its current workspace visual-state callback.",
@@ -243,7 +339,7 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 121,
+      "line": 124,
       "match": "on_markdown_preview_change: RefCell<Option<TabCallback>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns its current Markdown preview-state callback.",
@@ -251,7 +347,7 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 122,
+      "line": 125,
       "match": "on_external_state_change: RefCell<Option<TabCallback>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns its current external-state callback.",
@@ -259,15 +355,31 @@
     },
     {
       "path": "src/editor_tab.rs",
-      "line": 123,
+      "line": 126,
       "match": "on_external_action: RefCell<Option<TabCallback>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each editor tab owns its current external-action callback.",
       "justification": "Reload, save, and compare banner actions must route to the workspace that currently owns the tab."
     },
     {
+      "path": "src/editor_tab/minimap_palette.rs",
+      "line": 17,
+      "match": "static PROBE_CACHE: RefCell<HashMap<(bool, bool), ProbeColors>> =",
+      "kind": "runtime-shared-state",
+      "ownership": "The minimap palette resolver owns a process-local cache keyed by libadwaita dark and high-contrast style state.",
+      "justification": "The cache is GTK-main-thread confined and stores deterministic colors probed from resource CSS so minimap rendering avoids repeating display-wide style-provider probes on every refresh."
+    },
+    {
+      "path": "src/editor_tab/minimap_palette.rs",
+      "line": 23,
+      "match": "static PROBE_MISSES: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };",
+      "kind": "runtime-shared-state",
+      "ownership": "The minimap palette test harness owns the cache-miss counter.",
+      "justification": "GTK regression tests need a main-thread-confined counter to prove repeated minimap palette requests reuse the cached probe result without exposing runtime diagnostics."
+    },
+    {
       "path": "src/editor_tab/compare.rs",
-      "line": 104,
+      "line": 109,
       "match": "presentation: Rc<std::cell::RefCell<DiffPresentation>>,",
       "kind": "runtime-shared-state",
       "ownership": "The compare controller owns the tab-local rendered presentation rows and custom line-number gutter model.",
@@ -275,7 +387,7 @@
     },
     {
       "path": "src/editor_tab/compare.rs",
-      "line": 105,
+      "line": 110,
       "match": "display_model: Rc<std::cell::RefCell<CompareDisplayModel>>,",
       "kind": "runtime-shared-state",
       "ownership": "The compare controller owns the tab-local collapsed display model shared by split rendering and hunk navigation.",
@@ -283,28 +395,18 @@
     },
     {
       "path": "src/editor_tab/compare.rs",
-      "line": 106,
+      "line": 111,
       "match": "row_model: Rc<std::cell::RefCell<DiffRowModel>>,",
       "kind": "runtime-shared-state",
       "ownership": "The compare controller owns the tab-local logical diff row model.",
       "justification": "Presentation rendering, hunk navigation, status, and test accessors must share one ephemeral row model so manual Compare and Git compare cannot drift into parallel diff states."
     },
-    {
-      "ownership": "Each compare controller owns presentation and view-mode state shared with its pane, gutter, and breakpoint callbacks.",
-      "justification": "Compare panes rebuild asynchronously from user actions and settings changes, so small shared cells keep UI callbacks synchronized without global state.",
-      "path": "src/editor_tab/compare.rs",
-      "line": 107,
-      "match": "unified_presentation: Rc<std::cell::RefCell<UnifiedPresentation>>,",
-      "kind": "runtime-shared-state"
-    },
-    {
-      "ownership": "Each compare controller owns presentation and view-mode state shared with its pane, gutter, and breakpoint callbacks.",
-      "justification": "Compare panes rebuild asynchronously from user actions and settings changes, so small shared cells keep UI callbacks synchronized without global state.",
-      "path": "src/editor_tab/compare.rs",
-      "line": 120,
-      "match": "view_mode_cell: Rc<Cell<CompareViewMode>>,",
-      "kind": "runtime-shared-state"
-    },
+    {"ownership": "Each compare controller owns presentation and view-mode state shared with its pane, gutter, and breakpoint callbacks.", "justification": "Compare panes rebuild asynchronously from user actions and settings changes, so small shared cells keep UI callbacks synchronized without global state.", "path": "src/editor_tab/compare.rs", "line": 112, "match": "unified_presentation: Rc<std::cell::RefCell<UnifiedPresentation>>,", "kind": "runtime-shared-state"},
+    {"ownership": "Each compare controller owns presentation and view-mode state shared with its pane, gutter, and breakpoint callbacks.", "justification": "Compare panes rebuild asynchronously from user actions and settings changes, so small shared cells keep UI callbacks synchronized without global state.", "path": "src/editor_tab/compare.rs", "line": 125, "match": "view_mode_cell: Rc<Cell<CompareViewMode>>,", "kind": "runtime-shared-state"},
+    {"ownership": "Each compare controller owns the tab-local user minimap visibility state shared with narrow-width breakpoint callbacks.", "justification": "Compare panes need to suppress minimaps on narrow allocations while still honoring the user's global minimap preference when space returns.", "path": "src/editor_tab/compare.rs", "line": 126, "match": "minimap_user_visible: Rc<Cell<bool>>,", "kind": "runtime-shared-state"},
+    {"ownership": "Each compare controller owns the tab-local narrow-width minimap suppression state shared with settings updates.", "justification": "The compare minimap breakpoint must coordinate with later preference changes without global state or stale closure-local visibility.", "path": "src/editor_tab/compare.rs", "line": 127, "match": "minimap_width_suppressed: Rc<Cell<bool>>,", "kind": "runtime-shared-state"},
+    {"ownership": "The compare controller layout helper returns the tab-local adaptive view-mode cell owned by the CompareController.", "justification": "The helper is a construction boundary for the existing view-mode cell so controller initialization stays under the line cap without duplicating adaptive breakpoint state.", "path": "src/editor_tab/compare/controller.rs", "line": 553, "match": "Rc<Cell<CompareViewMode>>,", "kind": "runtime-shared-state"},
+    {"ownership": "The compare controller construction helpers use a local alias for the two per-controller minimap visibility cells.", "justification": "The alias keeps constructor signatures compact while the cells remain owned by the CompareController and shared only with its breakpoint callbacks.", "path": "src/editor_tab/compare/controller.rs", "line": 42, "match": "type CompareMinimapVisibilityCells = (Rc<Cell<bool>>, Rc<Cell<bool>>);", "kind": "runtime-shared-state"},
     {
       "path": "src/editor_tab/compare/diff.rs",
       "line": 16,
@@ -417,38 +519,12 @@
       "ownership": "Presentation pane interactions borrow the controller-owned presentation metadata.",
       "justification": "Selection copy must replace generated placeholder marker rows with blank text while preserving clipboard line layout."
     },
-    {
-      "ownership": "The compare layout owns the adaptive breakpoint mode cell shared with breakpoint callbacks.",
-      "justification": "Breakpoint apply/unapply signals need to observe the current explicit mode so adaptive resizing does not override user-selected split or unified layout.",
-      "path": "src/editor_tab/compare/layout.rs",
-      "line": 48,
-      "match": "presentation: &Rc<RefCell<DiffPresentation>>,",
-      "kind": "runtime-shared-state"
-    },
-    {
-      "ownership": "The compare layout owns the adaptive breakpoint mode cell shared with breakpoint callbacks.",
-      "justification": "Breakpoint apply/unapply signals need to observe the current explicit mode so adaptive resizing does not override user-selected split or unified layout.",
-      "path": "src/editor_tab/compare/layout.rs",
-      "line": 60,
-      "match": "presentation: &Rc<RefCell<DiffPresentation>>,",
-      "kind": "runtime-shared-state"
-    },
-    {
-      "ownership": "The compare layout owns the adaptive breakpoint mode cell shared with breakpoint callbacks.",
-      "justification": "Breakpoint apply/unapply signals need to observe the current explicit mode so adaptive resizing does not override user-selected split or unified layout.",
-      "path": "src/editor_tab/compare/layout.rs",
-      "line": 95,
-      "match": "mode: Rc<Cell<CompareViewMode>>,",
-      "kind": "runtime-shared-state"
-    },
-    {
-      "ownership": "The compare layout owns the adaptive breakpoint mode cell shared with breakpoint callbacks.",
-      "justification": "Breakpoint apply/unapply signals need to observe the current explicit mode so adaptive resizing does not override user-selected split or unified layout.",
-      "path": "src/editor_tab/compare/layout.rs",
-      "line": 176,
-      "match": "presentation: &Rc<RefCell<DiffPresentation>>,",
-      "kind": "runtime-shared-state"
-    },
+    {"ownership": "The compare layout owns the adaptive breakpoint mode cell shared with breakpoint callbacks.", "justification": "Breakpoint apply/unapply signals need to observe the current explicit mode so adaptive resizing does not override user-selected split or unified layout.", "path": "src/editor_tab/compare/layout.rs", "line": 49, "match": "presentation: &Rc<RefCell<DiffPresentation>>,", "kind": "runtime-shared-state"},
+    {"ownership": "The compare layout owns the adaptive breakpoint mode cell shared with breakpoint callbacks.", "justification": "Breakpoint apply/unapply signals need to observe the current explicit mode so adaptive resizing does not override user-selected split or unified layout.", "path": "src/editor_tab/compare/layout.rs", "line": 61, "match": "presentation: &Rc<RefCell<DiffPresentation>>,", "kind": "runtime-shared-state"},
+    {"ownership": "The compare layout owns the adaptive breakpoint mode cell shared with breakpoint callbacks.", "justification": "Breakpoint apply/unapply signals need to observe the current explicit mode so adaptive resizing does not override user-selected split or unified layout.", "path": "src/editor_tab/compare/layout.rs", "line": 96, "match": "mode: Rc<Cell<CompareViewMode>>,", "kind": "runtime-shared-state"},
+    {"ownership": "The compare layout owns the adaptive breakpoint mode cell shared with breakpoint callbacks.", "justification": "Breakpoint apply/unapply signals need to observe the current explicit mode so adaptive resizing does not override user-selected split or unified layout.", "path": "src/editor_tab/compare/layout.rs", "line": 177, "match": "presentation: &Rc<RefCell<DiffPresentation>>,", "kind": "runtime-shared-state"},
+    {"ownership": "The compare minimap width breakpoint owns a cloned handle to the tab-local user minimap visibility cell.", "justification": "Breakpoint apply/unapply callbacks need the current user minimap preference so narrow-width suppression restores the correct state when the pane widens.", "path": "src/editor_tab/compare/minimap.rs", "line": 89, "match": "user_visible: Rc<Cell<bool>>,", "kind": "runtime-shared-state"},
+    {"ownership": "The compare minimap width breakpoint owns a cloned handle to the tab-local narrow-width suppression cell.", "justification": "Preference updates and breakpoint callbacks must share one per-controller suppression flag so hidden minimaps remain intentional only while the pane is narrow.", "path": "src/editor_tab/compare/minimap.rs", "line": 90, "match": "width_suppressed: Rc<Cell<bool>>,", "kind": "runtime-shared-state"},
     {
       "path": "src/editor_tab/compare/scroll.rs",
       "line": 19,

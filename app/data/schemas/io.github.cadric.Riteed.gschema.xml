@@ -84,6 +84,35 @@
       <summary>Autosave</summary>
       <description>Controls whether Riteed automatically saves already-saved writable files after edits.</description>
     </key>
+    <key name="large-file-full-feature-limit-mib" type="i">
+      <range min="1" max="24"/>
+      <default>5</default>
+      <summary>Full Feature File Limit</summary>
+      <description>Files below this size open in the normal editor with all editor features available.</description>
+    </key>
+    <key name="large-file-editor-limit-mib" type="i">
+      <range min="2" max="25"/>
+      <default>25</default>
+      <summary>Editor File Limit</summary>
+      <description>Files below this measured safe limit can open in the editor with expensive features disabled when needed.</description>
+    </key>
+    <key name="large-file-strong-warning-limit-mib" type="i">
+      <range min="3" max="500"/>
+      <default>75</default>
+      <summary>Strong Warning File Limit</summary>
+      <description>Files at or above this size use the strongest large-file editing warning.</description>
+    </key>
+    <key name="large-file-viewer-only-limit-mib" type="i">
+      <range min="4" max="500"/>
+      <default>500</default>
+      <summary>Viewer Only File Limit</summary>
+      <description>Files above this size remain viewable, but editing is refused by policy.</description>
+    </key>
+    <key name="always-allow-large-file-edit" type="b">
+      <default>false</default>
+      <summary>Always Allow Large File Editing</summary>
+      <description>Skips the large-file editing prompt below Riteed's measured hard editing limit. This never overrides the hard limit.</description>
+    </key>
     <key name="insert-spaces-instead-of-tabs" type="b">
       <default>true</default>
       <summary>Insert Spaces Instead of Tabs</summary>

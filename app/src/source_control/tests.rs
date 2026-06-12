@@ -98,6 +98,13 @@ fn review_and_minimap_cancellation_keep_scoped_cleanup() {
 }
 
 #[test]
+fn source_control_minimap_respects_large_file_feature_gate() {
+    let minimap = include_str!("minimap.rs");
+    assert!(minimap.contains("!tab.editor_heavy_features_enabled()"));
+    assert!(minimap.contains("tab.clear_source_control_minimap_diff();"));
+}
+
+#[test]
 fn contextual_git_actions_have_header_buttons_and_a11y_state_binding() {
     let window_ui = include_str!("../../data/ui/window.ui");
     assert!(window_ui.contains("git_actions_group"));

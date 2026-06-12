@@ -12,6 +12,7 @@ This directory is the canonical contract for policy scope, validator behavior, a
 - `hard_fail_patterns[].exceptions` are narrow repo-relative globs applied before scanner regex matching; keep them path-scoped.
 - CSS review and resource scanning covers `data/**/*.css`, including CSS stored beside UI resources under `data/ui/`.
 - `po/*.po` and `po/*.pot` are exempt only from generic line-count enforcement; gettext extraction, `msgfmt`, untranslated-catalog checks, and i18n review artifacts still apply.
+- Generic line-count enforcement keeps production files at 600 lines by default, allows configured test files up to 800 lines, and permits production files up to the 720 waiver cap only through explicit `line_limit_waivers` with scope-relative paths and frozen per-file caps.
 
 ## Review Evidence
 
@@ -57,10 +58,16 @@ Review artifacts use fixed semantic tags where a field would otherwise be ambigu
 
 - `ui.menus[].standard_items` is a list of lowercase semantic tags, not raw labels. Supported tags are `about`, `preferences`, `shortcuts`, `help`, `quit`, and `close`.
 - AppStream gettext extraction covers app identity, description, and
-  screenshot copy, but skips the `<releases>` section; release entries should
-  stay version/date metadata, while release-note prose belongs in
-  `CHANGELOG.md` and GitHub release notes.
+  screenshot copy, but release descriptions must use `translate="no"` and stay
+  out of POT/PO catalogs. `CHANGELOG.md` and GitHub Releases remain the full
+  release-note sources; AppStream release text exists only for software-center
+  version history.
 - `ui.surfaces[].smallest_width` is the reviewed narrowest supported window width in logical pixels.
+- `workflow_safety.local_flatpak_test_builds` defines the local preflight and
+  wrapper scripts that must guard user-test Flatpak builds against split local
+  feature branches. `allowed_build_branches` names normal build candidates,
+  while `feature_only_override` is the explicit opt-in for partial feature-only
+  builds.
 - `gsettings.sites[].kind` must match the scanner kinds `gsettings-write` or `gsettings-bind`.
 - GSettings schema keys satisfy the schema-type check with exactly one of `type`, `enum`, or `flags`, matching `glib-compile-schemas`.
 - `runtime.sites[].kind` must match the scanner kinds emitted from policy, currently `runtime-strong-capture`, `runtime-shared-state`, `runtime-git-subprocess`, and `runtime-sync-fs`.

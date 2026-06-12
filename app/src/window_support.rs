@@ -22,12 +22,15 @@ pub(crate) struct WindowActions {
     pub(crate) find_prev: gio::SimpleAction,
     pub(crate) fullscreen: gio::SimpleAction,
     pub(crate) theme: gio::SimpleAction,
+    pub(crate) change_encoding: gio::SimpleAction,
+    pub(crate) line_ending: gio::SimpleAction,
 }
 
 pub(crate) fn create_window_actions(
     window: &adw::ApplicationWindow,
     settings: &AppSettings,
 ) -> WindowActions {
+    let (change_encoding, line_ending) = crate::window_format_menu::create_actions();
     let actions = WindowActions {
         save: gio::SimpleAction::new("save", None),
         save_as: gio::SimpleAction::new("save-as", None),
@@ -40,6 +43,8 @@ pub(crate) fn create_window_actions(
         find_prev: gio::SimpleAction::new("find-prev", None),
         fullscreen: gio::SimpleAction::new_stateful("fullscreen", None, &false.to_variant()),
         theme: crate::window_theme::create_action(settings),
+        change_encoding,
+        line_ending,
     };
     add_window_actions(window, &actions);
     actions
@@ -58,6 +63,8 @@ fn add_window_actions(window: &adw::ApplicationWindow, actions: &WindowActions) 
         &actions.find_prev,
         &actions.fullscreen,
         &actions.theme,
+        &actions.change_encoding,
+        &actions.line_ending,
     ] {
         window.add_action(action);
     }
