@@ -16,6 +16,8 @@ mod replace;
 mod scope;
 mod state;
 mod support;
+#[cfg(test)]
+pub(crate) use preview::exercise_preview_search_navigation_for_tests;
 use scope::ScopeBar;
 pub(crate) use scope::SearchScope;
 use state::{SearchBinding, SearchState};

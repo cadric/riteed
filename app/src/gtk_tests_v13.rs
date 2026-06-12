@@ -102,3 +102,7 @@ pub(crate) fn exercise_v13_minimap_palette_cache(test_app: &adw::Application) {
         1
     );
 }
+
+pub(crate) fn exercise_v13_preview_search_active_tag_move(_test_app: &adw::Application) {
+    crate::editor_search::exercise_preview_search_navigation_for_tests();
+}

@@ -256,39 +256,33 @@ fn with_alpha(color: &gdk::RGBA, alpha: f32) -> gdk::RGBA {
 }
 
 #[cfg(test)]
-mod tests {
-    use gtk4::prelude::*;
+pub(crate) fn exercise_preview_search_navigation_for_tests() {
+    let buffer = gtk4::TextBuffer::new(None);
+    buffer.set_text("match match match");
+    let view = gtk4::TextView::with_buffer(&buffer);
+    let scrolled = gtk4::ScrolledWindow::new();
+    scrolled.set_child(Some(&view));
+    let mut binding = PreviewSearchBinding::new(&buffer, &view, &scrolled, "match", true);
+    assert_eq!(binding.occurrence_count(), 3);
+    assert!(buffer.iter_at_offset(0).has_tag(&binding.active_tag));
 
-    use super::{MAX_PREVIEW_MATCHES, PreviewSearchBinding};
+    binding.select_next();
+    assert!(buffer.iter_at_offset(6).has_tag(&binding.active_tag));
+    assert!(!buffer.iter_at_offset(0).has_tag(&binding.active_tag));
+    assert!(buffer.iter_at_offset(0).has_tag(&binding.normal_tag));
+    assert!(buffer.iter_at_offset(12).has_tag(&binding.normal_tag));
+
+    binding.select_previous();
+    assert!(buffer.iter_at_offset(0).has_tag(&binding.active_tag));
+    assert!(!buffer.iter_at_offset(6).has_tag(&binding.active_tag));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::MAX_PREVIEW_MATCHES;
 
     #[test]
     fn preview_search_limit_is_bounded() {
         assert_eq!(MAX_PREVIEW_MATCHES, 5_000);
-    }
-
-    #[test]
-    fn navigation_keeps_active_tag_on_current_match_only() {
-        let _guard = crate::test_support::init_gtk_for_tests();
-        if gtk4::gdk::Display::default().is_none() {
-            return;
-        }
-        let buffer = gtk4::TextBuffer::new(None);
-        buffer.set_text("match match match");
-        let view = gtk4::TextView::with_buffer(&buffer);
-        let scrolled = gtk4::ScrolledWindow::new();
-        scrolled.set_child(Some(&view));
-        let mut binding = PreviewSearchBinding::new(&buffer, &view, &scrolled, "match", true);
-        assert_eq!(binding.occurrence_count(), 3);
-        assert!(buffer.iter_at_offset(0).has_tag(&binding.active_tag));
-
-        binding.select_next();
-        assert!(buffer.iter_at_offset(6).has_tag(&binding.active_tag));
-        assert!(!buffer.iter_at_offset(0).has_tag(&binding.active_tag));
-        assert!(buffer.iter_at_offset(0).has_tag(&binding.normal_tag));
-        assert!(buffer.iter_at_offset(12).has_tag(&binding.normal_tag));
-
-        binding.select_previous();
-        assert!(buffer.iter_at_offset(0).has_tag(&binding.active_tag));
-        assert!(!buffer.iter_at_offset(6).has_tag(&binding.active_tag));
     }
 }
