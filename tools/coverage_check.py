@@ -29,7 +29,7 @@ from tools.validation_tooling import (
     load_json,
     repo_root,
     require_tool,
-    run_checked,
+    run_checked_streaming,
     validation_command_lock,
 )
 
@@ -103,7 +103,8 @@ def main() -> int:
             target_dir = Path(tmpdir) / "target"
             command = [str(out) if part == "<output-path>" else str(part) for part in coverage.get("default_command", ["cargo", "llvm-cov", "--workspace", "--all-features", "--json", "--summary-only", "--output-path", "<output-path>"])]
             with validation_command_lock(root, "coverage_check"):
-                run_checked(
+                print(f"[coverage-check] command-start: {' '.join(command)}", flush=True)
+                run_checked_streaming(
                     command,
                     root,
                     "cargo llvm-cov failed",
@@ -114,6 +115,7 @@ def main() -> int:
                         "CARGO_LLVM_COV_TARGET_DIR": str(target_dir),
                     },
                 )
+                print(f"[coverage-check] command-end: {' '.join(command)}", flush=True)
             payload = json.loads(out.read_text(encoding="utf-8"))
     percent = extract_line_percent(payload)
     if percent < threshold:

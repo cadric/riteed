@@ -64,7 +64,8 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
   is now scoped to `main` so PR branch updates rely on the PR run instead of a
   duplicate push `native-tests` context, and policy required commands now stream
   their own start/end markers so native CI timeouts identify the active
-  underlying command.
+  underlying command. Coverage validation now streams the `cargo llvm-cov`
+  command for the same reason.
 - Stabilized the native CI stress runner by waiting for the Save action to
   become enabled before asserting the open/search/save round trip, and recorded
   a narrow line-limit waiver for the stress driver.

@@ -18,12 +18,12 @@ class CoverageCheckTests(unittest.TestCase):
             root = Path(tmpdir)
             captured: dict[str, object] = {}
 
-            def fake_run_checked(
+            def fake_run_checked_streaming(
                 cmd: list[str],
                 cwd: Path,
                 label: str | None = None,
                 env: dict[str, str] | None = None,
-            ) -> str:
+            ) -> None:
                 captured["cmd"] = cmd
                 captured["cwd"] = cwd
                 captured["label"] = label
@@ -32,7 +32,6 @@ class CoverageCheckTests(unittest.TestCase):
                     json.dumps({"totals": {"lines": {"percent": 100.0}}}),
                     encoding="utf-8",
                 )
-                return ""
 
             with patch.object(coverage_check, "parse_args", return_value=Namespace(root=str(root), json_summary=None)):
                 with patch.object(coverage_check, "repo_root", return_value=root):
@@ -58,7 +57,7 @@ class CoverageCheckTests(unittest.TestCase):
                     ):
                         with patch.object(coverage_check, "require_tool"):
                             with patch.object(coverage_check, "validation_command_lock", return_value=nullcontext()):
-                                with patch.object(coverage_check, "run_checked", side_effect=fake_run_checked):
+                                with patch.object(coverage_check, "run_checked_streaming", side_effect=fake_run_checked_streaming):
                                     self.assertEqual(coverage_check.main(), 0)
 
             self.assertEqual(captured["cwd"], root)
