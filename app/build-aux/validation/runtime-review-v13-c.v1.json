@@ -203,7 +203,15 @@
     },
     {
       "path": "src/workspace.rs",
-      "line": 74,
+      "line": 68,
+      "match": "selected_state_refresh_queued: Cell<bool>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The workspace owns the selected-state refresh coalescing flag.",
+      "justification": "Visual-change bursts are GTK-main-thread confined and can schedule one idle refresh through this flag so status, actions, and search rebinding update once per main-loop turn."
+    },
+    {
+      "path": "src/workspace.rs",
+      "line": 75,
       "match": "pub(crate) state: RefCell<WorkspaceState>,",
       "kind": "runtime-shared-state",
       "ownership": "The workspace owns tab collection, recent/session caches, restore gating, and active close flow.",
