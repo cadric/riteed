@@ -654,7 +654,7 @@ class PolicyCheckTests(unittest.TestCase):
                     "conditional_validators": [],
                 },
             ):
-                with patch.object(commands, "run_checked", side_effect=fake_run_checked):
+                with patch.object(commands, "run_checked_streaming", side_effect=fake_run_checked):
                     with patch.object(commands, "validation_command_lock", return_value=nullcontext()):
                         with patch.object(commands, "check_xgettext_completeness"):
                             errors: list[str] = []
