@@ -32,6 +32,7 @@ pub(crate) struct MinimapDiffBand {
 pub(crate) struct TextFingerprint {
     pub(crate) hash: u64,
     pub(crate) len: usize,
+    pub(crate) chars: usize,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -172,14 +173,19 @@ impl EditorTab {
     }
 
     fn refresh_source_control_minimap_stale_state(&self) {
-        let is_stale = self
+        let applied = self
             .state
             .borrow()
             .ui
             .minimap_diff
             .applied
             .as_ref()
-            .is_some_and(|applied| applied.text != text_fingerprint(&self.buffer_text()));
+            .map(|applied| applied.text);
+        let is_stale = applied.is_some_and(|fingerprint| {
+            let buffer_chars = usize::try_from(self.text_buffer.char_count()).unwrap_or_default();
+            buffer_chars != fingerprint.chars
+                || fingerprint != text_fingerprint(&self.buffer_text())
+        });
         let changed = {
             let mut state = self.state.borrow_mut();
             state.ui.minimap_diff.debounce = None;
@@ -238,13 +244,18 @@ impl MinimapDiffFingerprint {
 
 pub(crate) fn text_fingerprint(text: &str) -> TextFingerprint {
     let mut hash = FNV_OFFSET;
+    let mut chars = 0_usize;
     for byte in text.as_bytes() {
         hash ^= u64::from(*byte);
         hash = hash.wrapping_mul(FNV_PRIME);
+        if (*byte & 0xC0) != 0x80 {
+            chars = chars.saturating_add(1);
+        }
     }
     TextFingerprint {
         hash,
         len: text.len(),
+        chars,
     }
 }
 
@@ -570,5 +581,13 @@ mod tests {
         assert_eq!(first, second);
         assert_ne!(first, different);
         assert_eq!(first.len, 3);
+    }
+
+    #[test]
+    fn fingerprint_counts_characters_not_bytes() {
+        assert_eq!(text_fingerprint("abc").chars, 3);
+        assert_eq!(text_fingerprint("æøå").chars, 3);
+        assert_eq!(text_fingerprint("æøå").len, 6);
+        assert_eq!(text_fingerprint("").chars, 0);
     }
 }
