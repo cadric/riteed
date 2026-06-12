@@ -595,6 +595,7 @@ fn gtk_surfaces_and_editor_flow_work() {
     crate::gtk_tests_v12::exercise_v12_power_tools(&test_app);
     crate::gtk_tests_v13::exercise_v13_review_change_list(&test_app);
     crate::gtk_tests_v13::exercise_v13_status_bar_label_reuse(&test_app);
+    crate::gtk_tests_v13::exercise_v13_status_refresh_coalescing(&test_app);
     crate::gtk_tests_markdown::exercise_markdown_preview(&test_app);
     crate::gtk_tests_boundaries::exercise_boundary_smokes(&test_app);
 }
