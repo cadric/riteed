@@ -78,6 +78,23 @@ System gettext is encoded through the `gettext-rs/gettext-system` Cargo feature 
 - `appstreamcli validate --no-net --pedantic app/data/<application-id>.metainfo.xml`
 - `flatpak-builder --show-manifest app/build-aux/<application-id>.yml`
 
+## Branch Integration Gate for Local Flatpak Builds
+Before any local Flatpak test build, report:
+- `git branch --show-current`
+- `git status --short --branch`
+- `git branch --no-merged main`
+
+Local Flatpak test builds normally run only from `main` or `integrate/*`.
+Feature-branch Flatpak builds are allowed only when the user explicitly asks
+for a feature-only build; report them as partial and not representative of all
+unmerged local work.
+
+Use `scripts/local-flatpak-build` for local test builds. It runs
+`scripts/integration-preflight` before `flatpak-builder` and then verifies the
+installed user Flatpak with `flatpak info --user io.github.cadric.Riteed`.
+If relevant parallel feature branches exist, stop and create or update an
+integration branch before building.
+
 ## Hard Limits
 - Production source and enforced metadata default to `600` total lines. Test files matched by `test_file_globs` may reach `800` total lines. Production files over `600` require a registered line-limit waiver with `scope`, scope-relative path, reason, finding ID, review date, and frozen per-file cap no higher than `720`; inline `#[cfg(test)]` in a production file still counts as production. Gettext `po/*.po` and `po/*.pot` catalogs/templates remain exempt from generic line-count enforcement and covered by gettext extraction, i18n review, and `msgfmt`.
 - No runtime Rust path may use `unsafe`, `unwrap`, `expect`, `panic!`, `todo!`, `unimplemented!`, `dbg!`, or external command spawning, except the reviewed typed `/app/bin/git` Gio subprocess boundary in `src/git_process.rs`.

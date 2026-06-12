@@ -98,6 +98,15 @@ class PolicyCheckTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("[policy-check] OK", result.stdout)
 
+    def test_validation_policy_declares_local_flatpak_workflow_safety(self) -> None:
+        policy = json.loads((REPO_ROOT / "policy" / "validation-tooling.policy.json").read_text(encoding="utf-8"))
+        safety = policy["workflow_safety"]["local_flatpak_test_builds"]
+        self.assertEqual(safety["preflight_script"], "scripts/integration-preflight")
+        self.assertEqual(safety["standard_build_script"], "scripts/local-flatpak-build")
+        self.assertEqual(safety["allowed_build_branches"], ["main", "integrate/*"])
+        self.assertEqual(safety["feature_only_override"], "--feature-only-ok")
+        self.assertTrue(safety["report_unmerged_branches"])
+
     def test_orphaned_script_fails_clearly(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             script = Path(tmpdir) / "policy_check.py"

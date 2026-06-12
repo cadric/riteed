@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+preflight_args=()
+if [[ "${1:-}" == "--feature-only-ok" ]]; then
+  preflight_args+=("--feature-only-ok")
+  shift
+fi
+
+python3 -m tools.checks.integration_preflight "${preflight_args[@]}"
+flatpak-builder --user --install --force-clean app/build-dir app/build-aux/io.github.cadric.Riteed.yml "$@"
+flatpak info --user io.github.cadric.Riteed

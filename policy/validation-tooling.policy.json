@@ -77,6 +77,9 @@
     "policy/validation-tooling.policy.json"
   ],
   "required_tools": ["cargo", "rustc", "xgettext", "desktop-file-validate", "appstreamcli", "glib-compile-schemas", "msgfmt", "flatpak-builder"],
+  "workflow_safety": {
+    "local_flatpak_test_builds": {"preflight_script": "scripts/integration-preflight", "standard_build_script": "scripts/local-flatpak-build", "allowed_build_branches": ["main", "integrate/*"], "feature_only_override": "--feature-only-ok", "report_unmerged_branches": true}
+  },
   "line_limit_globs": [
     "AGENTS.md",
     "policy/README.md",

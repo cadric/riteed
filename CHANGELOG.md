@@ -1,6 +1,6 @@
 ---
 created: 2026-04-19
-updated: 2026-06-11
+updated: 2026-06-12
 status: current
 priority: high
 type: changelog
@@ -15,6 +15,10 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 ## Unreleased
 
 ### Added
+- Added local Flatpak build guardrails: `scripts/integration-preflight` reports
+  branch state before user-test builds, `scripts/local-flatpak-build` wraps the
+  standard build/install/verify loop, and policy now records that normal
+  testable builds come from `main` or `integrate/*`.
 - Added an in-app print preview (Ctrl+Shift+P) with page navigation and
   adjustable text size, working inside the Flatpak sandbox.
 - Started V15 large-file handling with async Gio paged reads, a separate

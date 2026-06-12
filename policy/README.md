@@ -63,6 +63,11 @@ Review artifacts use fixed semantic tags where a field would otherwise be ambigu
   release-note sources; AppStream release text exists only for software-center
   version history.
 - `ui.surfaces[].smallest_width` is the reviewed narrowest supported window width in logical pixels.
+- `workflow_safety.local_flatpak_test_builds` defines the local preflight and
+  wrapper scripts that must guard user-test Flatpak builds against split local
+  feature branches. `allowed_build_branches` names normal build candidates,
+  while `feature_only_override` is the explicit opt-in for partial feature-only
+  builds.
 - `gsettings.sites[].kind` must match the scanner kinds `gsettings-write` or `gsettings-bind`.
 - GSettings schema keys satisfy the schema-type check with exactly one of `type`, `enum`, or `flags`, matching `glib-compile-schemas`.
 - `runtime.sites[].kind` must match the scanner kinds emitted from policy, currently `runtime-strong-capture`, `runtime-shared-state`, `runtime-git-subprocess`, and `runtime-sync-fs`.
