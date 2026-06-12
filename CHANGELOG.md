@@ -58,9 +58,9 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 
 ### Fixed
 - Added progress markers and bounded timeouts to the native GitHub Actions
-  validation job, including dependency/tool installation phases, so cold-build
-  failures produce actionable logs and artifacts instead of leaving stale
-  `native-tests` runs pending indefinitely.
+  validation job, including image pull and dependency/tool installation phases,
+  so cold-build failures produce actionable logs and artifacts instead of
+  leaving stale `native-tests` runs pending indefinitely.
 - Stabilized the native CI stress runner by waiting for the Save action to
   become enabled before asserting the open/search/save round trip, and recorded
   a narrow line-limit waiver for the stress driver.
