@@ -78,3 +78,27 @@ pub(crate) fn exercise_v13_status_refresh_coalescing(test_app: &adw::Application
     assert!(!dirty_modified.is_empty());
     assert_ne!(moved_position, start_position);
 }
+
+pub(crate) fn exercise_v13_minimap_palette_cache(test_app: &adw::Application) {
+    let Some(window) = build_window(test_app) else {
+        return;
+    };
+    let workspace = window.workspace();
+    let tab = workspace.add_empty_tab(true);
+    drain_events(2);
+    crate::editor_tab::minimap_palette::clear_probe_cache_for_tests();
+    tab.refresh_source_control_minimap_colors();
+    assert_eq!(
+        crate::editor_tab::minimap_palette::probe_miss_count_for_tests(),
+        1
+    );
+    assert_eq!(
+        crate::editor_tab::minimap_palette::probe_cache_len_for_tests(),
+        1
+    );
+    tab.refresh_source_control_minimap_colors();
+    assert_eq!(
+        crate::editor_tab::minimap_palette::probe_miss_count_for_tests(),
+        1
+    );
+}
