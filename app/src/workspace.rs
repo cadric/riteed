@@ -1,4 +1,4 @@
-use std::cell::{OnceCell, RefCell};
+use std::cell::{Cell, OnceCell, RefCell};
 use std::rc::Rc;
 
 use gettextrs::{gettext, pgettext};
@@ -65,6 +65,7 @@ pub struct Workspace {
     pub(crate) tab_controls: tabs::TabControls,
     pub(crate) search: Rc<EditorSearch>,
     pub(crate) status_bar: EditorStatusBar,
+    selected_state_refresh_queued: Cell<bool>,
     format_preferences_handler: OnceCell<FormatPreferencesHandler>,
     compare_action_sync_handler: OnceCell<CompareActionSyncHandler>,
     document_tools_sync_handler: OnceCell<DocumentToolsSyncHandler>,
@@ -126,6 +127,7 @@ impl Workspace {
             tab_controls: tabs::TabControls::new(),
             search,
             status_bar,
+            selected_state_refresh_queued: Cell::new(false),
             format_preferences_handler: OnceCell::new(),
             compare_action_sync_handler: OnceCell::new(),
             document_tools_sync_handler: OnceCell::new(),

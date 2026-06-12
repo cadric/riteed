@@ -414,7 +414,7 @@ fn single_line_buffer_selection_text(buffer: &gtk4::TextBuffer) -> Option<String
     if start.line() != end.line() || start.offset() == end.offset() {
         return None;
     }
-    Some(buffer.text(&start, &end, true).to_string())
+    Some(String::from(buffer.text(&start, &end, true)))
 }
 
 fn selection_offsets(buffer: &gtk4::TextBuffer) -> Option<(i32, i32)> {

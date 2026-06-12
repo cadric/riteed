@@ -1,6 +1,8 @@
 use gettextrs::{gettext, pgettext};
 use gtk4::accessible::Property;
 use gtk4::prelude::*;
+#[cfg(test)]
+use std::cell::Cell;
 
 use crate::editor_tab::EditorTab;
 
@@ -19,6 +21,8 @@ pub struct EditorStatusBar {
     modified_label: gtk4::Label,
     position_label: gtk4::Label,
     format_button: gtk4::MenuButton,
+    #[cfg(test)]
+    format_button_label_updates: Cell<usize>,
     zoom_box: gtk4::Box,
     zoom_percent_label: gtk4::Label,
     zoom_out_button: gtk4::Button,
@@ -98,6 +102,8 @@ impl EditorStatusBar {
             modified_label,
             position_label,
             format_button: controls.format_button,
+            #[cfg(test)]
+            format_button_label_updates: Cell::new(0),
             zoom_box: controls.zoom_box,
             zoom_percent_label: controls.zoom_percent_label,
             zoom_out_button: controls.zoom_out_button,
@@ -115,26 +121,27 @@ impl EditorStatusBar {
     pub fn update(&self, tab: Option<&EditorTab>) {
         let (name, modified, position) = status_strings(tab);
         let location = status_location(tab);
-        self.name_label.set_label(&name);
-        self.location_label.set_label(&location);
-        self.location_label
-            .set_tooltip_text(if location.is_empty() {
-                None
-            } else {
-                Some(&location)
-            });
-        self.modified_label.set_label(&modified);
-        self.position_label.set_label(&position);
+        set_label_if_changed(&self.name_label, &name);
+        set_label_if_changed(&self.location_label, &location);
+        let tooltip = if location.is_empty() {
+            None
+        } else {
+            Some(location.as_str())
+        };
+        if self.location_label.tooltip_text().as_deref() != tooltip {
+            self.location_label.set_tooltip_text(tooltip);
+        }
+        set_label_if_changed(&self.modified_label, &modified);
+        set_label_if_changed(&self.position_label, &position);
 
         if let Some(tab) = tab {
-            self.format_button.set_label(&tab.current_format_summary());
+            self.set_format_button_label_if_changed(&tab.current_format_summary());
             self.format_button.set_sensitive(true);
             self.zoom_box.set_sensitive(true);
             self.zoom_out_button.set_sensitive(true);
             self.zoom_in_button.set_sensitive(true);
         } else {
-            self.format_button
-                .set_label(&pgettext("status format", "Format"));
+            self.set_format_button_label_if_changed(&pgettext("status format", "Format"));
             self.format_button.set_sensitive(false);
             self.zoom_box.set_sensitive(false);
             self.zoom_out_button.set_sensitive(false);
@@ -146,6 +153,13 @@ impl EditorStatusBar {
         self.zoom_percent_label.set_label(&format!("{percent}%"));
     }
 
+    fn set_format_button_label_if_changed(&self, label: &str) {
+        if set_menu_button_label_if_changed(&self.format_button, label) {
+            #[cfg(test)]
+            self.record_format_button_label_update_for_tests();
+        }
+    }
+
     #[cfg(test)]
     pub(crate) fn labels_for_tests(&self) -> (String, String, String) {
         (
@@ -153,6 +167,17 @@ impl EditorStatusBar {
             self.modified_label.text().to_string(),
             self.position_label.text().to_string(),
         )
+    }
+
+    #[cfg(test)]
+    fn record_format_button_label_update_for_tests(&self) {
+        self.format_button_label_updates
+            .set(self.format_button_label_updates.get().saturating_add(1));
+    }
+
+    #[cfg(test)]
+    pub(crate) fn format_button_label_updates_for_tests(&self) -> usize {
+        self.format_button_label_updates.get()
     }
 
     #[cfg(test)]
@@ -244,6 +269,20 @@ fn zoom_button(icon_name: &str, label: &str, action_name: &str) -> gtk4::Button 
     button.set_action_name(Some(action_name));
     button.update_property(&[Property::Label(label)]);
     button
+}
+
+fn set_label_if_changed(label: &gtk4::Label, text: &str) {
+    if label.label().as_str() != text {
+        label.set_label(text);
+    }
+}
+
+fn set_menu_button_label_if_changed(button: &gtk4::MenuButton, label: &str) -> bool {
+    if button.label().as_deref() == Some(label) {
+        return false;
+    }
+    button.set_label(label);
+    true
 }
 
 #[must_use]

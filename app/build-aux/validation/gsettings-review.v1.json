@@ -27,7 +27,7 @@
     },
     {
       "path": "src/editor_search/preview.rs",
-      "line": 155,
+      "line": 173,
       "match": "adjustment.set_value(target.clamp(adjustment.lower(), upper));",
       "kind": "gsettings-write",
       "key": "gtk-adjustment",

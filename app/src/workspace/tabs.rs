@@ -447,7 +447,7 @@ impl Workspace {
         let weak = Rc::downgrade(self);
         tab.set_visual_change_handler(Rc::new(move || {
             if let Some(workspace) = weak.upgrade() {
-                workspace.refresh_selected_state();
+                workspace.queue_refresh_selected_state();
             }
         }));
         let weak = Rc::downgrade(self);

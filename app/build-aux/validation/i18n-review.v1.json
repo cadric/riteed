@@ -45,7 +45,7 @@
     },
     {
       "path": "src/editor_search/mod.rs",
-      "line": 481,
+      "line": 483,
       "match": "gettext(\"No matches\")",
       "resolution": "This short result label appears inside the find bar next to the previous/next controls and only after a concrete query produced zero matches.",
       "kind": "i18n-short-string"
@@ -66,35 +66,35 @@
     },
     {
       "path": "src/editor_status.rs",
-      "line": 89,
+      "line": 93,
       "match": ".update_property(&[Property::Label(&gettext(\"Document Format\"))]);",
       "resolution": "This short string is used only as the accessible label for the read-only format field in the status bar.",
       "kind": "i18n-short-string"
     },
     {
       "path": "src/editor_status.rs",
-      "line": 91,
+      "line": 95,
       "match": "modified_label.update_property(&[Property::Label(&gettext(\"Modification State\"))]);",
       "resolution": "This short string is used only as the accessible label for the status field that reports whether the selected document is modified.",
       "kind": "i18n-short-string"
     },
     {
       "path": "src/editor_status.rs",
-      "line": 92,
+      "line": 96,
       "match": "position_label.update_property(&[Property::Label(&gettext(\"Cursor Position\"))]);",
       "resolution": "This short string is used only as the accessible label for the right-aligned line and column readout in the status bar.",
       "kind": "i18n-short-string"
     },
     {
       "path": "src/editor_status.rs",
-      "line": 190,
+      "line": 215,
       "match": ".tooltip_text(gettext(\"Document Format\"))",
       "resolution": "This short tooltip labels the document-format menu button in the bottom status bar, where it sits directly beside zoom and cursor status.",
       "kind": "i18n-short-string"
     },
     {
       "path": "src/editor_status.rs",
-      "line": 261,
+      "line": 300,
       "match": "gettext(\"Modified\")",
       "resolution": "This short visible status tag appears immediately after the current document location in the bottom status bar, so its state meaning is explicit from placement.",
       "kind": "i18n-short-string"

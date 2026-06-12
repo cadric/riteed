@@ -17,6 +17,7 @@ mod compare;
 mod large_file;
 mod markdown_preview;
 pub(crate) mod minimap_diff;
+pub(crate) mod minimap_palette;
 mod open;
 mod review;
 mod runtime;
@@ -381,7 +382,7 @@ impl EditorTab {
     pub fn buffer_text(&self) -> String {
         let start = self.text_buffer.start_iter();
         let end = self.text_buffer.end_iter();
-        self.text_buffer.text(&start, &end, true).to_string()
+        String::from(self.text_buffer.text(&start, &end, true))
     }
 
     #[must_use]
@@ -390,7 +391,7 @@ impl EditorTab {
         if start.line() != end.line() || start.offset() == end.offset() {
             return None;
         }
-        Some(self.text_buffer.text(&start, &end, true).to_string())
+        Some(String::from(self.text_buffer.text(&start, &end, true)))
     }
 
     #[must_use]
@@ -483,7 +484,6 @@ fn apply_text_filters(dialog: &gtk4::FileDialog) {
     text_filter.set_name(Some(&pgettext("file filter", "Plain Text Files")));
     text_filter.add_mime_type("text/plain");
     text_filter.add_suffix("txt");
-
     let markdown_filter = gtk4::FileFilter::new();
     markdown_filter.set_name(Some(&pgettext("file filter", "Markdown Source Files")));
     markdown_filter.add_mime_type("text/markdown");
