@@ -4,7 +4,7 @@ use libadwaita as adw;
 use crate::app::{AppState, ensure_window_for_tests, install_for_tests};
 use crate::dialogs::{self, UnsavedResponse};
 use crate::document_limits::MIB;
-use crate::gtk_tests::{drain_events, spin_until, write_temp_file};
+use crate::gtk_tests::{TempFileFixture, drain_events, spin_until, write_temp_file};
 use crate::settings::{AppSettings, LargeFileLimitValues};
 use crate::workspace::OpenSource;
 
@@ -121,7 +121,7 @@ fn exercise_large_viewer_tab_transfer(
     window: &std::rc::Rc<crate::window::Window>,
 ) {
     let path = write_temp_file(
-        "riteed-large-viewer-transfer.txt",
+        TempFileFixture::TABS_LARGE_VIEWER_TRANSFER,
         &repeat_seed(b"viewer-transfer\nviewer-line\n", large_viewer_test_len()),
     );
     let file = gio::File::for_path(&path);

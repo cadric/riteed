@@ -183,7 +183,7 @@ mod tests {
 
     #[test]
     fn empty_query_finishes_without_io() {
-        let (path, file) = temp_file("empty-query", b"ignored");
+        let (path, file) = temp_file(SearchTempFile::EmptyQuery, b"ignored");
         let result = wait_for_search(&file, "");
 
         assert!(result.is_ok());
@@ -203,7 +203,7 @@ mod tests {
 
     #[test]
     fn search_file_finds_offsets_in_window() {
-        let (path, file) = temp_file("matches", b"one two one");
+        let (path, file) = temp_file(SearchTempFile::Matches, b"one two one");
         let result = wait_for_search(&file, "one");
 
         assert!(result.is_ok());
@@ -218,7 +218,7 @@ mod tests {
 
     #[test]
     fn search_file_honors_cancelled_request_before_io() {
-        let (path, file) = temp_file("cancelled", b"needle");
+        let (path, file) = temp_file(SearchTempFile::Cancelled, b"needle");
         let cancellable = gio::Cancellable::new();
         cancellable.cancel();
         let result = wait_for_search_with_cancellable(&file, "needle", Some(&cancellable));
@@ -230,7 +230,7 @@ mod tests {
     #[test]
     fn search_file_stops_at_match_cap() {
         let contents = vec![b'a'; VIEWER_SEARCH_MATCH_LIMIT.saturating_add(32)];
-        let (path, file) = temp_file("cap", &contents);
+        let (path, file) = temp_file(SearchTempFile::Cap, &contents);
         let result = wait_for_search(&file, "a");
 
         assert!(result.is_ok());
@@ -242,10 +242,30 @@ mod tests {
         let _removed = fs::remove_file(path);
     }
 
-    fn temp_file(name: &str, contents: &[u8]) -> (PathBuf, gio::File) {
-        let path = std::env::temp_dir().join(format!(
-            "riteed-large-file-search-{}-{name}.txt",
-            std::process::id()
+    #[derive(Clone, Copy)]
+    enum SearchTempFile {
+        EmptyQuery,
+        Matches,
+        Cancelled,
+        Cap,
+    }
+
+    impl SearchTempFile {
+        fn name(self) -> &'static str {
+            match self {
+                Self::EmptyQuery => "empty-query",
+                Self::Matches => "matches",
+                Self::Cancelled => "cancelled",
+                Self::Cap => "cap",
+            }
+        }
+    }
+
+    fn temp_file(fixture: SearchTempFile, contents: &[u8]) -> (PathBuf, gio::File) {
+        let path = PathBuf::from("/tmp").join(format!(
+            "riteed-large-file-search-{}-{}.txt",
+            std::process::id(),
+            fixture.name()
         ));
         assert!(fs::write(&path, contents).is_ok());
         let file = gio::File::for_path(&path);

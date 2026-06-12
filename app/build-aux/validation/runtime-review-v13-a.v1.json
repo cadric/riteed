@@ -291,7 +291,7 @@
     },
     {
       "path": "src/git_process/test_support.rs",
-      "line": 47,
+      "line": 138,
       "match": "let slot: Rc<RefCell<Option<Result<T, GitProcessError>>>> = Rc::new(RefCell::new(None));",
       "kind": "runtime-shared-state",
       "ownership": "The Git process test support owns a one-shot callback result slot.",

@@ -4,7 +4,9 @@ use gtk4::{gio, prelude::*};
 use libadwaita as adw;
 
 use crate::editor_tab::Writability;
-use crate::gtk_tests::{build_window_with_settings, drain_events, spin_until, write_temp_file};
+use crate::gtk_tests::{
+    TempFileFixture, build_window_with_settings, drain_events, spin_until, write_temp_file,
+};
 use crate::settings::{AppSettings, EditorPalette, ThemePreference};
 use crate::workspace::OpenSource;
 
@@ -114,7 +116,7 @@ fn exercise_autosave_is_silent_and_gsettings_clean(test_app: &adw::Application) 
     let Some(window) = build_window_with_settings(test_app, settings) else {
         return;
     };
-    let path = write_temp_file("riteed-v8-autosave.txt", b"before");
+    let path = write_temp_file(TempFileFixture::V8_AUTOSAVE, b"before");
     let uri = gio::File::for_path(&path).uri().to_string();
     window.request_open_files(vec![gio::File::for_path(&path)], OpenSource::AppOpen);
     spin_until("v8 autosave file opened", || {
@@ -139,8 +141,8 @@ fn exercise_autosave_is_silent_and_gsettings_clean(test_app: &adw::Application) 
 
 fn exercise_recent_files_dialog(test_app: &adw::Application) {
     let settings = AppSettings::new_for_tests();
-    let first = write_temp_file("riteed-v8-recent-first.txt", b"first");
-    let second = write_temp_file("riteed-v8-recent-second.txt", b"second");
+    let first = write_temp_file(TempFileFixture::V8_RECENT_FIRST, b"first");
+    let second = write_temp_file(TempFileFixture::V8_RECENT_SECOND, b"second");
     let first_uri = gio::File::for_path(&first).uri().to_string();
     let second_uri = gio::File::for_path(&second).uri().to_string();
     settings.set_recent_files(&[first_uri, second_uri]);

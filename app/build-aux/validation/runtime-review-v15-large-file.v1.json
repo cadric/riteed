@@ -91,7 +91,7 @@
     },
     {
       "path": "src/large_file/reader.rs",
-      "line": 427,
+      "line": 445,
       "match": "result: &Rc<RefCell<Option<Result<ReadWindow, AppError>>>>,",
       "kind": "runtime-shared-state",
       "ownership": "The reader unit test owns one local callback result cell for one temporary Gio read.",
@@ -99,7 +99,7 @@
     },
     {
       "path": "src/large_file/search.rs",
-      "line": 284,
+      "line": 304,
       "match": "result: &Rc<RefCell<Option<Result<SearchOutcome, AppError>>>>,",
       "kind": "runtime-shared-state",
       "ownership": "The search unit test owns one local callback result cell for one temporary streaming search.",

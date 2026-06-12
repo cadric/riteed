@@ -6,15 +6,15 @@ use libadwaita as adw;
 use crate::dialogs::{self, ExternalReloadResponse, StaleSaveResponse};
 use crate::editor_monitor::ExternalFileEvent;
 use crate::gtk_tests::{
-    atomic_replace_file, build_window, build_window_with_settings, drain_events, spin_until,
-    write_temp_file,
+    TempFileFixture, atomic_replace_file, build_window, build_window_with_settings, drain_events,
+    spin_until, write_temp_file,
 };
 use crate::settings::AppSettings;
 use crate::window::Window;
 use crate::workspace::OpenSource;
 
 fn exercise_external_banner(test_app: &adw::Application) {
-    let banner_path = write_temp_file("riteed-v4-banner.rs", b"fn main() {}\n");
+    let banner_path = write_temp_file(TempFileFixture::V4_BANNER, b"fn main() {}\n");
     let banner_uri = gio::File::for_path(&banner_path).uri().to_string();
     let banner_window = build_window(test_app);
     assert!(banner_window.is_some());
@@ -81,7 +81,7 @@ pub(crate) fn exercise_v4_editor_features(test_app: &adw::Application) {
     };
     exercise_minimap_toggle(&rust_window);
 
-    let rust_path = write_temp_file("riteed-v4-syntax.rs", b"fn main() {}\n");
+    let rust_path = write_temp_file(TempFileFixture::V4_SYNTAX, b"fn main() {}\n");
     rust_window.request_open_files(vec![gio::File::for_path(&rust_path)], OpenSource::AppOpen);
     spin_until("rust syntax detected", || {
         rust_window.selected_language_id_for_tests().as_deref() == Some("rust")
@@ -89,8 +89,8 @@ pub(crate) fn exercise_v4_editor_features(test_app: &adw::Application) {
 
     exercise_external_banner(test_app);
 
-    let first_path = write_temp_file("riteed-v4-auto-a.txt", b"one");
-    let second_path = write_temp_file("riteed-v4-auto-b.txt", b"two");
+    let first_path = write_temp_file(TempFileFixture::V4_AUTO_A, b"one");
+    let second_path = write_temp_file(TempFileFixture::V4_AUTO_B, b"two");
     let first_uri = gio::File::for_path(&first_path).uri().to_string();
     let second_uri = gio::File::for_path(&second_path).uri().to_string();
     let auto_window = build_window(test_app);
@@ -120,7 +120,7 @@ pub(crate) fn exercise_v4_editor_features(test_app: &adw::Application) {
         auto_window.selected_text_for_tests() == "one updated"
     });
 
-    let stale_path = write_temp_file("riteed-v4-stale.txt", b"disk version");
+    let stale_path = write_temp_file(TempFileFixture::V4_STALE, b"disk version");
     let stale_uri = gio::File::for_path(&stale_path).uri().to_string();
     let stale_window = build_window(test_app);
     assert!(stale_window.is_some());

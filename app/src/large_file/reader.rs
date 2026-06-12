@@ -340,7 +340,7 @@ mod tests {
 
     #[test]
     fn read_window_reads_from_requested_offset() {
-        let (path, file) = temp_file("offset", b"alpha\nbeta");
+        let (path, file) = temp_file(ReaderTempFile::Offset, b"alpha\nbeta");
         let result = wait_for_read(&file, 6, 8);
 
         assert!(result.is_ok());
@@ -355,7 +355,7 @@ mod tests {
 
     #[test]
     fn read_window_reports_eof_after_forward_skip() {
-        let (path, file) = temp_file("eof", b"short");
+        let (path, file) = temp_file(ReaderTempFile::Eof, b"short");
         let result = wait_for_read(&file, 512, 8);
 
         assert!(result.is_ok());
@@ -370,7 +370,7 @@ mod tests {
 
     #[test]
     fn read_window_maps_cancelled_reads() {
-        let (path, file) = temp_file("cancel", b"cancelled");
+        let (path, file) = temp_file(ReaderTempFile::Cancel, b"cancelled");
         let cancellable = gio::Cancellable::new();
         cancellable.cancel();
         let result = wait_for_read_with_cancellable(&file, 0, 8, Some(&cancellable));
@@ -379,10 +379,28 @@ mod tests {
         let _removed = fs::remove_file(path);
     }
 
-    fn temp_file(name: &str, contents: &[u8]) -> (PathBuf, gio::File) {
-        let path = std::env::temp_dir().join(format!(
-            "riteed-large-file-reader-{}-{name}.txt",
-            std::process::id()
+    #[derive(Clone, Copy)]
+    enum ReaderTempFile {
+        Offset,
+        Eof,
+        Cancel,
+    }
+
+    impl ReaderTempFile {
+        fn name(self) -> &'static str {
+            match self {
+                Self::Offset => "offset",
+                Self::Eof => "eof",
+                Self::Cancel => "cancel",
+            }
+        }
+    }
+
+    fn temp_file(fixture: ReaderTempFile, contents: &[u8]) -> (PathBuf, gio::File) {
+        let path = PathBuf::from("/tmp").join(format!(
+            "riteed-large-file-reader-{}-{}.txt",
+            std::process::id(),
+            fixture.name()
         ));
         assert!(fs::write(&path, contents).is_ok());
         let file = gio::File::for_path(&path);

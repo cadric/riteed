@@ -15,7 +15,7 @@ use crate::dialogs::encoding::{
 use crate::dialogs::{self, StaleSaveResponse};
 use crate::editor_format::LineEndingMode;
 use crate::editor_monitor::ExternalFileEvent;
-use crate::gtk_tests::{build_window, drain_events, spin_until, write_temp_file};
+use crate::gtk_tests::{TempFileFixture, build_window, drain_events, spin_until, write_temp_file};
 use crate::window::Window;
 use crate::workspace::OpenSource;
 
@@ -184,9 +184,9 @@ fn exercise_save_and_stale(window: &Rc<Window>, ascii_path: &Path, ascii_uri: &s
 }
 
 pub(crate) fn exercise_v5_format_io(test_app: &adw::Application) {
-    let latin1_path = write_temp_file("riteed-v5-latin1.txt", b"h\xe9j\n");
+    let latin1_path = write_temp_file(TempFileFixture::V5_LATIN1, b"h\xe9j\n");
     let latin1_uri = gio::File::for_path(&latin1_path).uri().to_string();
-    let ascii_path = write_temp_file("riteed-v5-ascii.txt", b"plain\n");
+    let ascii_path = write_temp_file(TempFileFixture::V5_ASCII, b"plain\n");
     let ascii_uri = gio::File::for_path(&ascii_path).uri().to_string();
 
     let window = build_window(test_app);

@@ -5,9 +5,12 @@ use gtk4::{gio, glib, prelude::*};
 use libadwaita as adw;
 
 use crate::editor_zoom::effective_scroll_past_end_padding;
-use crate::git_process::test_support::init_modified_fixture_repo_for_tests;
+use crate::git_process::test_support::{
+    FixtureRepoFile, FixtureRepoKind, init_modified_fixture_repo_for_tests,
+};
 use crate::gtk_tests::{
-    build_window, build_window_with_settings, drain_events, spin_until, write_temp_file,
+    TempFileFixture, build_window, build_window_with_settings, drain_events, spin_until,
+    write_temp_file,
 };
 use crate::settings::{AppSettings, CompareViewMode, SourceControlViewMode};
 use crate::workspace::OpenSource;
@@ -106,19 +109,19 @@ fn exercise_compare_minimap_stays_visible_with_sidebar(test_app: &adw::Applicati
     window.ensure_default_tab();
     window.set_minimap_for_tests(true);
 
-    let root = std::env::temp_dir().join(format!(
-        "riteed-v7-sidebar-minimap-repo-{}",
-        std::process::id()
-    ));
-    let tracked_name = "sidebar-minimap.rs";
+    let tracked_file = FixtureRepoFile::SIDEBAR_MINIMAP;
+    let tracked_name = tracked_file.name();
     let long_line = "pub fn compare_minimap_sidebar_width_regression() { let value = Some(\"this line is deliberately long enough to force horizontal scrolling in the unified diff surface while the project sidebar is open\"); println!(\"{value:?}\"); }\n";
-    if init_modified_fixture_repo_for_tests(&root, tracked_name, b"old\n", long_line.as_bytes())
-        .is_err()
-    {
+    let Ok(repo) = init_modified_fixture_repo_for_tests(
+        FixtureRepoKind::V7_SIDEBAR_MINIMAP,
+        tracked_file,
+        b"old\n",
+        long_line.as_bytes(),
+    ) else {
         return;
-    }
-    let editable_path = root.join(tracked_name);
-    window.handle_application_open(vec![gio::File::for_path(&root)]);
+    };
+    let editable_path = repo.file_path(tracked_file);
+    window.handle_application_open(vec![gio::File::for_path(repo.path())]);
     window.set_source_control_view_mode_for_tests(SourceControlViewMode::List);
     spin_until("v7 sidebar minimap source control row appears", || {
         window.project_sidebar_visible_for_tests()
@@ -145,8 +148,6 @@ fn exercise_compare_minimap_stays_visible_with_sidebar(test_app: &adw::Applicati
             .2,
         gtk4::PolicyType::Automatic
     );
-
-    let _removed = fs::remove_dir_all(root);
 }
 
 fn exercise_compare_with_disk_and_file(test_app: &adw::Application) {
@@ -156,7 +157,7 @@ fn exercise_compare_with_disk_and_file(test_app: &adw::Application) {
     window.ensure_default_tab();
     window.set_minimap_for_tests(true);
 
-    let editable_path = write_temp_file("riteed-v7-editable.txt", b"a\nb\nc\n");
+    let editable_path = write_temp_file(TempFileFixture::V7_EDITABLE, b"a\nb\nc\n");
     let editable_uri = gio::File::for_path(&editable_path).uri().to_string();
     window.request_open_files(
         vec![gio::File::for_path(&editable_path)],
@@ -228,7 +229,7 @@ fn exercise_compare_with_disk_and_file(test_app: &adw::Application) {
         window.selected_compare_diff_count_for_tests() == 1
     });
 
-    let reference_path = write_temp_file("riteed-v7-reference.txt", b"x\nchanged\nc\n");
+    let reference_path = write_temp_file(TempFileFixture::V7_REFERENCE, b"x\nchanged\nc\n");
     window.compare_with_file_for_tests(&gio::File::for_path(&reference_path));
     spin_until("v7 compare with file starts", || {
         window.selected_compare_active_for_tests()
@@ -251,11 +252,11 @@ fn exercise_compare_navigation(test_app: &adw::Application) {
         return;
     };
     let nav_path = write_temp_file(
-        "riteed-v7-nav.txt",
+        TempFileFixture::V7_NAV,
         b"0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n",
     );
     let nav_ref = write_temp_file(
-        "riteed-v7-nav-ref.txt",
+        TempFileFixture::V7_NAV_REF,
         b"x\n1\n2\n3\n4\n5\n6\n7\n8\n9\ny\n11\n",
     );
     window.request_open_files(vec![gio::File::for_path(&nav_path)], OpenSource::AppOpen);
@@ -299,8 +300,8 @@ fn exercise_compare_two_files(test_app: &adw::Application) {
     let Some(window) = build_window(test_app) else {
         return;
     };
-    let left = write_temp_file("riteed-v7-two-left.txt", b"left\nsame\n");
-    let right = write_temp_file("riteed-v7-two-right.txt", b"right\nsame\n");
+    let left = write_temp_file(TempFileFixture::V7_TWO_LEFT, b"left\nsame\n");
+    let right = write_temp_file(TempFileFixture::V7_TWO_RIGHT, b"right\nsame\n");
     window.compare_two_files_for_tests(&gio::File::for_path(&left), &gio::File::for_path(&right));
     spin_until("v7 compare two files opens current and reference", || {
         window
@@ -318,8 +319,8 @@ fn exercise_compare_exits_on_open(test_app: &adw::Application) {
     let Some(window) = build_window(test_app) else {
         return;
     };
-    let compare_path = write_temp_file("riteed-v7-exit-compare.txt", b"compare\n");
-    let reference_path = write_temp_file("riteed-v7-exit-reference.txt", b"reference\n");
+    let compare_path = write_temp_file(TempFileFixture::V7_EXIT_COMPARE, b"compare\n");
+    let reference_path = write_temp_file(TempFileFixture::V7_EXIT_REFERENCE, b"reference\n");
     window.request_open_files(
         vec![gio::File::for_path(&compare_path)],
         OpenSource::AppOpen,
@@ -334,7 +335,7 @@ fn exercise_compare_exits_on_open(test_app: &adw::Application) {
         window.selected_compare_active_for_tests()
     });
 
-    let replacement_path = write_temp_file("riteed-v7-replacement.txt", b"replacement");
+    let replacement_path = write_temp_file(TempFileFixture::V7_REPLACEMENT, b"replacement");
     window.request_open_files(
         vec![gio::File::for_path(&replacement_path)],
         OpenSource::AppOpen,
@@ -355,7 +356,7 @@ fn exercise_compare_tab_actions(test_app: &adw::Application) {
     let Some(window) = build_window(test_app) else {
         return;
     };
-    let compare_path = write_temp_file("riteed-v7-tab-actions.txt", b"before\n");
+    let compare_path = write_temp_file(TempFileFixture::V7_TAB_ACTIONS, b"before\n");
     let compare_uri = gio::File::for_path(&compare_path).uri().to_string();
     window.request_open_files(
         vec![gio::File::for_path(&compare_path)],
@@ -426,7 +427,7 @@ fn exercise_compare_tab_actions(test_app: &adw::Application) {
     });
     window.exit_compare_for_tests();
 
-    let reference_path = write_temp_file("riteed-v7-tab-action-ref.txt", b"reference\n");
+    let reference_path = write_temp_file(TempFileFixture::V7_TAB_ACTION_REFERENCE, b"reference\n");
     window.compare_with_file_for_tests(&gio::File::for_path(&reference_path));
     spin_until("v7 compare with file helper still starts", || {
         window.selected_compare_active_for_tests()

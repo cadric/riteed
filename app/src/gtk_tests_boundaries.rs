@@ -7,7 +7,8 @@ use std::{io::Write, time::Duration};
 // initialization failures from multiple independent Rust #[test] entry points.
 use crate::document_limits::{MIB, OPEN_FILE_LIMIT_BYTES, SEARCH_CHAR_LIMIT};
 use crate::gtk_tests::{
-    build_window, build_window_with_settings, drain_events, spin_until, write_temp_file,
+    TempFileFixture, build_window, build_window_with_settings, drain_events, spin_until,
+    write_temp_file,
 };
 use crate::settings::{AppSettings, LargeFileLimitValues};
 use crate::workspace::OpenSource;
@@ -42,7 +43,7 @@ fn exercise_medium_file_disables_minimap_after_load(test_app: &adw::Application)
     };
     let medium_len = usize::try_from(MIB.saturating_add(1024)).unwrap_or(0);
     let path = write_temp_file(
-        "riteed-medium-minimap.txt",
+        TempFileFixture::BOUNDARY_MEDIUM_MINIMAP,
         &repeat_seed(b"medium-minimap\n", medium_len),
     );
     let file = gio::File::for_path(&path);
@@ -79,7 +80,7 @@ fn exercise_large_file_threshold_preferences_reapply_open_tab(test_app: &adw::Ap
     };
     let medium_len = usize::try_from(2 * MIB).unwrap_or(0);
     let path = write_temp_file(
-        "riteed-threshold-reapply.rs",
+        TempFileFixture::BOUNDARY_THRESHOLD_REAPPLY,
         &repeat_seed(b"fn main() {}\n", medium_len),
     );
     let file = gio::File::for_path(&path);
@@ -124,7 +125,10 @@ fn exercise_open_file_at_cap(test_app: &adw::Application) {
         return;
     };
     let cap = usize::try_from(OPEN_FILE_LIMIT_BYTES).unwrap_or(0);
-    let path = write_temp_file("riteed-open-boundary-cap.txt", &repeat_seed(OPEN_SEED, cap));
+    let path = write_temp_file(
+        TempFileFixture::BOUNDARY_OPEN_CAP,
+        &repeat_seed(OPEN_SEED, cap),
+    );
     let file = gio::File::for_path(&path);
     let uri = file.uri().to_string();
 
@@ -173,7 +177,7 @@ fn exercise_chunked_apply_completes_with_full_content(test_app: &adw::Applicatio
     }
     let expected_text = String::from_utf8_lossy(&contents).into_owned();
     let expected_chars = i32::try_from(contents.len()).unwrap_or(i32::MAX);
-    let path = write_temp_file("riteed-chunked-full.txt", &contents);
+    let path = write_temp_file(TempFileFixture::BOUNDARY_CHUNKED_FULL, &contents);
 
     window.request_open_files(vec![gio::File::for_path(&path)], OpenSource::AppOpen);
     spin_until_next_event("chunked apply hides the minimap", || {
@@ -202,7 +206,7 @@ fn exercise_chunked_apply_close_during_apply(test_app: &adw::Application) {
     window.ensure_default_tab();
     window.set_selected_text_for_tests("keep this tab");
     let contents = repeat_seed(b"chunked-close line\n", 16 * 1024 * 1024);
-    let path = write_temp_file("riteed-chunked-close.txt", &contents);
+    let path = write_temp_file(TempFileFixture::BOUNDARY_CHUNKED_CLOSE, &contents);
 
     window.request_open_files(vec![gio::File::for_path(&path)], OpenSource::AppOpen);
     spin_until_next_event("chunked apply is in progress", || {
@@ -221,12 +225,12 @@ fn exercise_chunked_apply_close_during_apply(test_app: &adw::Application) {
 }
 
 fn exercise_session_restore_survives_close_during_apply(test_app: &adw::Application) {
-    let small = write_temp_file("riteed-restore-small.txt", b"small restore\n");
+    let small = write_temp_file(TempFileFixture::BOUNDARY_RESTORE_SMALL, b"small restore\n");
     let big = write_temp_file(
-        "riteed-restore-big.txt",
+        TempFileFixture::BOUNDARY_RESTORE_BIG,
         &repeat_seed(b"restore-close line\n", 8 * 1024 * 1024),
     );
-    let extra = write_temp_file("riteed-restore-extra.txt", b"extra restore\n");
+    let extra = write_temp_file(TempFileFixture::BOUNDARY_RESTORE_EXTRA, b"extra restore\n");
     let small_uri = gio::File::for_path(&small).uri().to_string();
     let big_uri = gio::File::for_path(&big).uri().to_string();
     let extra_uri = gio::File::for_path(&extra).uri().to_string();
@@ -269,7 +273,7 @@ fn exercise_long_line_file_routes_to_viewer(test_app: &adw::Application) {
     window.ensure_default_tab();
     let mut contents = vec![b'y'; 128 * 1024];
     contents.push(b'\n');
-    let path = write_temp_file("riteed-long-line.txt", &contents);
+    let path = write_temp_file(TempFileFixture::BOUNDARY_LONG_LINE, &contents);
 
     window.request_open_files(vec![gio::File::for_path(&path)], OpenSource::AppOpen);
     spin_until("long-line file opens in the viewer", || {
@@ -284,7 +288,7 @@ fn exercise_large_file_viewer_rendering(test_app: &adw::Application) {
         return;
     };
     let path = write_temp_file(
-        "riteed-large-viewer-open.txt",
+        TempFileFixture::BOUNDARY_LARGE_VIEWER_OPEN,
         &repeat_seed(b"viewer-start\nviewer-line\n", large_viewer_test_len()),
     );
     let file = gio::File::for_path(&path);
@@ -314,7 +318,7 @@ fn exercise_large_file_viewer_close_releases_tab(test_app: &adw::Application) {
         return;
     };
     let path = write_temp_file(
-        "riteed-large-viewer-close.txt",
+        TempFileFixture::BOUNDARY_LARGE_VIEWER_CLOSE,
         &repeat_seed(b"viewer-close\nviewer-line\n", large_viewer_test_len()),
     );
     let file = gio::File::for_path(&path);
@@ -344,7 +348,7 @@ fn exercise_large_file_edit_anyway_flow(test_app: &adw::Application) {
         return;
     };
     let path = write_temp_file(
-        "riteed-large-viewer-edit.txt",
+        TempFileFixture::BOUNDARY_LARGE_VIEWER_EDIT,
         &repeat_seed(b"edit-start\nedit-line\n", large_viewer_test_len()),
     );
     let file = gio::File::for_path(&path);
@@ -372,7 +376,7 @@ fn exercise_large_file_edit_failure_keeps_viewer(test_app: &adw::Application) {
         return;
     };
     let path = write_temp_file(
-        "riteed-large-viewer-edit-fail.txt",
+        TempFileFixture::BOUNDARY_LARGE_VIEWER_EDIT_FAIL,
         &repeat_seed(
             b"edit-fail-start\nedit-fail-line\n",
             large_viewer_test_len(),
@@ -409,7 +413,7 @@ fn exercise_large_file_viewer_refresh_updates_size(test_app: &adw::Application) 
     };
     let initial = repeat_seed(b"refresh-start\nrefresh-line\n", large_viewer_test_len());
     let initial_size = initial.len();
-    let path = write_temp_file("riteed-large-viewer-refresh.txt", &initial);
+    let path = write_temp_file(TempFileFixture::BOUNDARY_LARGE_VIEWER_REFRESH, &initial);
     let file = gio::File::for_path(&path);
 
     window.request_open_files(vec![file], OpenSource::AppOpen);
@@ -438,7 +442,7 @@ fn exercise_large_file_viewer_refresh_updates_size(test_app: &adw::Application) 
 
 fn exercise_large_file_restore_placeholder(test_app: &adw::Application) {
     let path = write_temp_file(
-        "riteed-large-viewer-restore.txt",
+        TempFileFixture::BOUNDARY_LARGE_VIEWER_RESTORE,
         &repeat_seed(b"restore-start\nrestore-line\n", large_viewer_test_len()),
     );
     let uri = gio::File::for_path(&path).uri().to_string();
@@ -466,7 +470,7 @@ fn exercise_large_file_restore_placeholder(test_app: &adw::Application) {
 
 fn exercise_large_file_restore_placeholder_remove_button(test_app: &adw::Application) {
     let path = write_temp_file(
-        "riteed-large-placeholder-remove.txt",
+        TempFileFixture::BOUNDARY_LARGE_PLACEHOLDER_REMOVE,
         &repeat_seed(b"placeholder-remove\n", large_viewer_test_len()),
     );
     let uri = gio::File::for_path(&path).uri().to_string();
@@ -495,7 +499,7 @@ fn exercise_large_file_restore_placeholder_remove_button(test_app: &adw::Applica
 
 fn exercise_large_file_placeholder_close_releases_tab(test_app: &adw::Application) {
     let path = write_temp_file(
-        "riteed-large-placeholder-close.txt",
+        TempFileFixture::BOUNDARY_LARGE_PLACEHOLDER_CLOSE,
         &repeat_seed(
             b"placeholder-close\nplaceholder-line\n",
             large_viewer_test_len(),

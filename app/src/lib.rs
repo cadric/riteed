@@ -95,6 +95,8 @@ pub mod fuzzing {
 }
 
 #[cfg(test)]
+mod gtk_test_fixtures;
+#[cfg(test)]
 mod gtk_tests;
 #[cfg(test)]
 mod gtk_tests_boundaries;

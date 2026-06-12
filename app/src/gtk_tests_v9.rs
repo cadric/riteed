@@ -1,15 +1,15 @@
 use std::cell::{Cell, RefCell};
 use std::fs;
-use std::path::PathBuf;
 use std::rc::Rc;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use gtk4::gio;
 use gtk4::prelude::*;
 use libadwaita as adw;
 
-use crate::git_process::test_support::init_modified_fixture_repo_for_tests;
-use crate::gtk_tests::{build_window, drain_events, spin_until};
+use crate::git_process::test_support::{
+    FixtureRepoFile, FixtureRepoKind, init_modified_fixture_repo_for_tests,
+};
+use crate::gtk_tests::{build_window, drain_events, spin_until, test_tmp_dir};
 use crate::settings::SourceControlViewMode;
 use crate::sidebar_host::SOURCE_CONTROL_ICON;
 use crate::workspace::OpenSource;
@@ -20,17 +20,16 @@ pub(crate) fn exercise_v9_source_control(test_app: &adw::Application) {
     exercise_tracked_source_control_compare_after_open(test_app);
     exercise_editor_source_control_minimap_bands(test_app);
 
-    let repo = unique_temp_repo("source-control-untracked");
-    let Some(_cleanup) = CleanupDir::create(repo.clone()) else {
+    let Ok(repo) = init_modified_fixture_repo_for_tests(
+        FixtureRepoKind::V9_SOURCE_CONTROL_UNTRACKED,
+        FixtureRepoFile::BASELINE,
+        b"baseline\n",
+        b"baseline\n",
+    ) else {
         return;
     };
-    if init_modified_fixture_repo_for_tests(&repo, "baseline.txt", b"baseline\n", b"baseline\n")
-        .is_err()
-    {
-        return;
-    }
-    let marker_name = "untracked.txt";
-    let marker = repo.join(marker_name);
+    let marker_name = FixtureRepoFile::UNTRACKED.name();
+    let marker = repo.file_path(FixtureRepoFile::UNTRACKED);
     assert!(fs::write(&marker, b"source control test").is_ok());
 
     let Some(window) = build_window(test_app) else {
@@ -40,8 +39,8 @@ pub(crate) fn exercise_v9_source_control(test_app: &adw::Application) {
         window.source_control_icon_for_tests().as_deref(),
         Some(SOURCE_CONTROL_ICON)
     );
-    window.handle_application_open(vec![gio::File::for_path(&repo)]);
-    let repo_uri = gio::File::for_path(&repo).uri().to_string();
+    window.handle_application_open(vec![gio::File::for_path(repo.path())]);
+    let repo_uri = gio::File::for_path(repo.path()).uri().to_string();
     spin_until("v9 project root opens", || {
         window.project_root_uri_for_tests().as_deref() == Some(repo_uri.as_str())
     });
@@ -98,27 +97,22 @@ fn exercise_portal_like_root_detect_starts_without_preflight(test_app: &adw::App
 }
 
 fn exercise_tracked_source_control_compare_after_open(test_app: &adw::Application) {
-    let repo = unique_temp_repo("source-control-tracked");
-    let Some(_cleanup) = CleanupDir::create(repo.clone()) else {
-        return;
-    };
-    let tracked_name = "tracked.txt";
-    let tracked_path = repo.join(tracked_name);
-    if init_modified_fixture_repo_for_tests(
-        &repo,
-        tracked_name,
+    let tracked_file = FixtureRepoFile::TRACKED;
+    let tracked_name = tracked_file.name();
+    let Ok(repo) = init_modified_fixture_repo_for_tests(
+        FixtureRepoKind::V9_SOURCE_CONTROL_TRACKED,
+        tracked_file,
         b"baseline\n",
         b"baseline\nchanged\n",
-    )
-    .is_err()
-    {
+    ) else {
         return;
-    }
+    };
+    let tracked_path = repo.file_path(tracked_file);
 
     let Some(window) = build_window(test_app) else {
         return;
     };
-    window.handle_application_open(vec![gio::File::for_path(&repo)]);
+    window.handle_application_open(vec![gio::File::for_path(repo.path())]);
     window.set_source_control_view_mode_for_tests(SourceControlViewMode::List);
     spin_until("v9 source control lists tracked modified file", || {
         window
@@ -136,28 +130,23 @@ fn exercise_tracked_source_control_compare_after_open(test_app: &adw::Applicatio
 }
 
 fn exercise_editor_source_control_minimap_bands(test_app: &adw::Application) {
-    let repo = unique_temp_repo("source-control-minimap");
-    let Some(_cleanup) = CleanupDir::create(repo.clone()) else {
-        return;
-    };
-    let tracked_name = "minimap.txt";
-    let tracked_path = repo.join(tracked_name);
+    let tracked_file = FixtureRepoFile::MINIMAP;
+    let tracked_name = tracked_file.name();
     let current_text = "same\nnew\nlast\nadded\n";
-    if init_modified_fixture_repo_for_tests(
-        &repo,
-        tracked_name,
+    let Ok(repo) = init_modified_fixture_repo_for_tests(
+        FixtureRepoKind::V9_SOURCE_CONTROL_MINIMAP,
+        tracked_file,
         b"same\nold\nlast\n",
         current_text.as_bytes(),
-    )
-    .is_err()
-    {
+    ) else {
         return;
-    }
+    };
+    let tracked_path = repo.file_path(tracked_file);
 
     let Some(window) = build_window(test_app) else {
         return;
     };
-    window.handle_application_open(vec![gio::File::for_path(&repo)]);
+    window.handle_application_open(vec![gio::File::for_path(repo.path())]);
     window.request_open_files(
         vec![gio::File::for_path(&tracked_path)],
         OpenSource::AppOpen,
@@ -202,7 +191,7 @@ fn exercise_editor_source_control_minimap_bands(test_app: &adw::Application) {
 }
 
 fn exercise_non_git_folder(test_app: &adw::Application) {
-    let folder = std::env::temp_dir().join("riteed-v9-non-git-folder");
+    let folder = test_tmp_dir().join("riteed-v9-non-git-folder");
     let _removed = fs::remove_dir_all(&folder);
     assert!(fs::create_dir_all(&folder).is_ok());
     let Some(window) = build_window(test_app) else {
@@ -219,29 +208,4 @@ fn exercise_non_git_folder(test_app: &adw::Application) {
     });
     assert_eq!(window.source_control_row_count_for_tests(), 0);
     let _removed = fs::remove_dir_all(folder);
-}
-
-struct CleanupDir(PathBuf);
-
-impl CleanupDir {
-    fn create(path: PathBuf) -> Option<Self> {
-        let _removed = fs::remove_dir_all(&path);
-        fs::create_dir_all(&path).ok()?;
-        Some(Self(path))
-    }
-}
-
-impl Drop for CleanupDir {
-    fn drop(&mut self) {
-        let _removed = fs::remove_dir_all(&self.0);
-    }
-}
-
-fn unique_temp_repo(label: &str) -> PathBuf {
-    let base =
-        std::env::var_os("CARGO_TARGET_TMPDIR").map_or_else(std::env::temp_dir, PathBuf::from);
-    let nanos = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map_or(0, |duration| duration.as_nanos());
-    base.join(format!("riteed-v9-{label}-{}-{nanos}", std::process::id()))
 }

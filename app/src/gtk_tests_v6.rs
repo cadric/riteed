@@ -4,7 +4,10 @@ use gtk4::gio;
 use gtk4::prelude::*;
 use libadwaita as adw;
 
-use crate::gtk_tests::{build_window, drain_events, spin_until, wait_millis, write_temp_file};
+use crate::gtk_tests::{
+    TempFileFixture, build_window, drain_events, spin_until, test_tmp_dir, wait_millis,
+    write_temp_file,
+};
 use crate::project_tree_model::ProjectTreeModel;
 use crate::settings::AppSettings;
 use crate::window::Window;
@@ -17,8 +20,8 @@ fn create_symlink(target: &std::path::Path, link: &std::path::Path) {
 }
 
 fn create_project_tree() -> (std::path::PathBuf, std::path::PathBuf, std::path::PathBuf) {
-    let root = std::env::temp_dir().join("riteed-v6-project");
-    let extra = std::env::temp_dir().join("riteed-v6-extra");
+    let root = test_tmp_dir().join("riteed-v6-project");
+    let extra = test_tmp_dir().join("riteed-v6-extra");
     let _removed = fs::remove_dir_all(&root);
     let _removed = fs::remove_dir_all(&extra);
     assert!(fs::create_dir_all(root.join("folder")).is_ok());
@@ -30,7 +33,7 @@ fn create_project_tree() -> (std::path::PathBuf, std::path::PathBuf, std::path::
     (
         root,
         extra,
-        write_temp_file("riteed-v6-open.txt", b"opened"),
+        write_temp_file(TempFileFixture::V6_OPEN, b"opened"),
     )
 }
 
@@ -165,8 +168,8 @@ fn exercise_back_to_back_application_opens(test_app: &adw::Application) {
         return;
     };
     window.ensure_default_tab();
-    let first_path = write_temp_file("riteed-v6-app-open-first.txt", b"first");
-    let second_path = write_temp_file("riteed-v6-app-open-second.txt", b"second");
+    let first_path = write_temp_file(TempFileFixture::V6_APP_OPEN_FIRST, b"first");
+    let second_path = write_temp_file(TempFileFixture::V6_APP_OPEN_SECOND, b"second");
     let first_file = gio::File::for_path(&first_path);
     let second_file = gio::File::for_path(&second_path);
     let first_uri = first_file.uri().to_string();
