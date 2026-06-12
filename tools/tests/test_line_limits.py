@@ -19,6 +19,7 @@ def _write_lines(path: Path, count: int) -> None:
 
 def _copy_policy(root: Path) -> None:
     shutil.copytree(REPO_ROOT / "policy", root / "policy")
+    _set_waivers(root, [])
 
 
 def _set_waivers(root: Path, waivers: list[dict[str, object]]) -> None:
@@ -48,10 +49,20 @@ class LineLimitTests(unittest.TestCase):
         self.assertEqual(thresholds["max_file_lines"], 600)
         self.assertEqual(thresholds["max_file_lines_test"], 800)
         self.assertEqual(thresholds["max_file_lines_waiver_cap"], 720)
-        self.assertEqual(policy["line_limit_waivers"], [])
         self.assertEqual(
             policy["line_limit_waiver_required_fields"],
             ["scope", "path", "max_total_lines", "reason", "finding_id", "last_reviewed"],
+        )
+        self.assertIn(
+            {
+                "scope": "app",
+                "path": "src/bin/riteed_stress.rs",
+                "max_total_lines": 620,
+                "reason": "CI stress runner keeps flow execution, action-state waits, and failure artifact trail together so native-test failures remain diagnosable without splitting one reviewed driver.",
+                "finding_id": "ci-native-tests-stress-save-action-race",
+                "last_reviewed": "2026-06-12",
+            },
+            policy["line_limit_waivers"],
         )
         self.assertIn("tests/**/*.rs", policy["test_file_globs"])
         self.assertIn("**/gtk_tests*.rs", policy["test_file_globs"])

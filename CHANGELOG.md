@@ -57,6 +57,9 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
   of the session.
 
 ### Fixed
+- Stabilized the native CI stress runner by waiting for the Save action to
+  become enabled before asserting the open/search/save round trip, and recorded
+  a narrow line-limit waiver for the stress driver.
 - Fixed end-of-document minimap scrolling in editor and Compare/Diff panes by
   using a viewport-relative 75% scroll-past-end buffer with the existing
   font-based padding as the minimum, while keeping native scrollbars available

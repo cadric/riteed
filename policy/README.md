@@ -12,7 +12,7 @@ This directory is the canonical contract for policy scope, validator behavior, a
 - `hard_fail_patterns[].exceptions` are narrow repo-relative globs applied before scanner regex matching; keep them path-scoped.
 - CSS review and resource scanning covers `data/**/*.css`, including CSS stored beside UI resources under `data/ui/`.
 - `po/*.po` and `po/*.pot` are exempt only from generic line-count enforcement; gettext extraction, `msgfmt`, untranslated-catalog checks, and i18n review artifacts still apply.
-- Generic line-count enforcement keeps production files at 600 lines by default, allows configured test files up to 800 lines, and permits production files up to the 720 waiver cap only through `line_limit_waivers` with scope-relative paths; the waiver list starts empty.
+- Generic line-count enforcement keeps production files at 600 lines by default, allows configured test files up to 800 lines, and permits production files up to the 720 waiver cap only through explicit `line_limit_waivers` with scope-relative paths and frozen per-file caps.
 
 ## Review Evidence
 

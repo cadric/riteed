@@ -370,8 +370,8 @@
     },
     {
       "file": "validation-tooling.policy.json",
-      "sha256": "9c46b0dcb469efdc4fd6495adb5d547ca3e199c7c1fb4eee864d4da605446828",
-      "bytes": 15571
+      "sha256": "ac09123f6615cd046a3b62714160d44aaea8ae43efcadebb2c4d4ad58952ca39",
+      "bytes": 15925
     }
   ]
 }
