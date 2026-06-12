@@ -37,6 +37,7 @@ jobs:
   native-tests:
     needs: dependency-preflight
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       - name: Validate app subtree
@@ -53,6 +54,7 @@ jobs:
             fedora:42 \
             bash -lc '
               set -euo pipefail
+              echo "::group::Install Fedora validation dependencies"
               dnf install -y \
                 appstream \
                 clang \
@@ -77,6 +79,8 @@ jobs:
                 python3 \
                 xorg-x11-server-Xvfb \
                 xz
+              echo "::endgroup::"
+              echo "::group::Install pinned Rust validation tools"
               rustup_version=1.28.2
               rustup_arch=x86_64-unknown-linux-gnu
               rustup_sha256=20a06e644b0d9bd2fbdbfd52d42540bdde820ea7df86e92e533c073da0cdd43c
@@ -91,14 +95,22 @@ jobs:
               . "$HOME/.cargo/env"
               cargo install cargo-llvm-cov --version 0.8.7 --locked
               cargo install xtr --version 0.1.11 --locked
+              echo "::endgroup::"
+              echo "::group::Start headless display"
               mkdir -p stress/artifacts
               Xvfb :99 -screen 0 1280x1024x24 >stress/artifacts/xvfb.log 2>&1 &
               xvfb_pid=$!
               trap "kill $xvfb_pid" EXIT
               export DISPLAY=:99
               export GDK_BACKEND=x11
-              dbus-run-session -- python3 -m tools.policy_check --root app --strict
-              dbus-run-session -- python3 -m tools.coverage_check --root app
+              echo "::endgroup::"
+              echo "::group::Run strict app policy gate"
+              timeout 45m dbus-run-session -- python3 -m tools.policy_check --root app --strict
+              echo "::endgroup::"
+              echo "::group::Run coverage gate"
+              timeout 30m dbus-run-session -- python3 -m tools.coverage_check --root app
+              echo "::endgroup::"
+              echo "::group::Run native stress smoke scripts"
               mkdir -p /tmp/riteed-schemas
               cp -R app/data/schemas/. /tmp/riteed-schemas/
               glib-compile-schemas --strict /tmp/riteed-schemas
@@ -106,13 +118,21 @@ jobs:
               python3 stress/make_corpus.py
               cd app
               cargo build --bin riteed-stress --features stress
-              dbus-run-session -- env RITEED_STRESS_SCRIPT=../stress/scripts/open-save-search.json ./target/debug/riteed-stress
-              if dbus-run-session -- env RITEED_STRESS_SCRIPT=../stress/scripts/intentional-failure.json ./target/debug/riteed-stress; then
+              timeout 5m dbus-run-session -- env RITEED_STRESS_SCRIPT=../stress/scripts/open-save-search.json ./target/debug/riteed-stress
+              set +e
+              timeout 5m dbus-run-session -- env RITEED_STRESS_SCRIPT=../stress/scripts/intentional-failure.json ./target/debug/riteed-stress
+              status=$?
+              set -e
+              if [ "$status" -eq 0 ]; then
                 exit 1
               fi
+              if [ "$status" -eq 124 ] || [ "$status" -eq 137 ]; then
+                exit "$status"
+              fi
+              echo "::endgroup::"
             '
       - name: Upload stress artifacts
-        if: failure()
+        if: failure() || cancelled()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: riteed-native-stress-artifacts
