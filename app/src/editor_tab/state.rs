@@ -264,6 +264,8 @@ pub(super) struct UiState {
     pub(super) visible_banner: VisibleBannerState,
     pub(super) markdown_preview: MarkdownPreviewAttachment,
     pub(super) minimap_diff: MinimapDiffAttachment,
+    // 0 means "not applied yet"; readers fall back to the settings font.
+    pub(super) scroll_past_end_floor: i32,
 }
 
 #[cfg(test)]

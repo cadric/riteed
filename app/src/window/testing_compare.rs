@@ -144,6 +144,31 @@ impl Window {
             })
     }
 
+    pub(crate) fn selected_compare_minimap_scrollbar_policies_for_tests(
+        &self,
+    ) -> (gtk4::PolicyType, gtk4::PolicyType, gtk4::PolicyType) {
+        self.workspace.selected_tab().map_or(
+            (
+                gtk4::PolicyType::Automatic,
+                gtk4::PolicyType::Automatic,
+                gtk4::PolicyType::Automatic,
+            ),
+            |tab| tab.compare_minimap_scrollbar_policies_for_tests(),
+        )
+    }
+
+    pub(crate) fn selected_compare_scroll_past_end_padding_for_tests(&self) -> (i32, i32, i32) {
+        self.workspace.selected_tab().map_or((0, 0, 0), |tab| {
+            tab.compare_scroll_past_end_padding_for_tests()
+        })
+    }
+
+    pub(crate) fn set_selected_compare_viewport_page_sizes_for_tests(&self, page_size: f64) {
+        if let Some(tab) = self.workspace.selected_tab() {
+            tab.set_compare_viewport_page_sizes_for_tests(page_size);
+        }
+    }
+
     pub(crate) fn selected_compare_views_editable_for_tests(&self) -> (bool, bool) {
         self.workspace
             .selected_tab()

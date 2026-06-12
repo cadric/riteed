@@ -903,6 +903,10 @@ msgctxt "search action"
 msgid "Next Match"
 msgstr ""
 
+msgctxt "print preview"
+msgid "Next Page"
+msgstr ""
+
 msgid "Next Tab"
 msgstr ""
 
@@ -1039,6 +1043,14 @@ msgstr ""
 msgid "Overwrite the Changed File?"
 msgstr ""
 
+msgctxt "print preview"
+msgid "Page %1$d of %2$d"
+msgstr ""
+
+msgctxt "print header"
+msgid "Page %N of %Q"
+msgstr ""
+
 msgid "Palette"
 msgstr ""
 
@@ -1091,6 +1103,10 @@ msgctxt "search action"
 msgid "Previous Match"
 msgstr ""
 
+msgctxt "print preview"
+msgid "Previous Page"
+msgstr ""
+
 msgid "Previous Tab"
 msgstr ""
 
@@ -1098,7 +1114,21 @@ msgctxt "menu item"
 msgid "Print"
 msgstr ""
 
+msgctxt "print preview"
+msgid "Print"
+msgstr ""
+
 msgid "Print Current Document"
+msgstr ""
+
+msgctxt "menu item"
+msgid "Print Preview"
+msgstr ""
+
+msgid "Print Preview"
+msgstr ""
+
+msgid "Print preview failed."
 msgstr ""
 
 msgid "Printing failed."
@@ -1572,6 +1602,10 @@ msgid "The opening frontmatter delimiter has no closing delimiter."
 msgstr ""
 
 msgid "The previous project folder could not be restored."
+msgstr ""
+
+msgctxt "print preview"
+msgid "Text Size"
 msgstr ""
 
 msgid "Theme Preference"

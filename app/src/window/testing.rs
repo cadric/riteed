@@ -416,12 +416,36 @@ impl Window {
         self.document_tools.set_print_runner_for_tests(runner);
     }
 
+    pub(crate) fn set_print_preview_runner_for_tests(
+        &self,
+        runner: crate::document_tools::PreviewRunner,
+    ) {
+        self.document_tools.set_preview_runner_for_tests(runner);
+    }
+
     pub(crate) fn document_tool_actions_enabled_for_tests(&self) -> (bool, bool) {
         self.document_tools.actions_enabled_for_tests()
     }
 
     pub(crate) fn activate_print_for_tests(&self) -> bool {
         gtk4::prelude::WidgetExt::activate_action(self.widget(), "win.print", None).is_ok()
+    }
+
+    pub(crate) fn activate_print_preview_for_tests(&self) -> bool {
+        gtk4::prelude::WidgetExt::activate_action(self.widget(), "win.print-preview", None).is_ok()
+    }
+
+    pub(crate) fn start_print_preview_engine_for_tests(
+        &self,
+    ) -> Option<Rc<crate::document_print_preview::PreviewEngine>> {
+        let tab = self.workspace.selected_tab()?;
+        let view = tab.text_view();
+        crate::document_print_preview::PreviewEngine::start(
+            &self.shell.window,
+            &view,
+            &tab.title(),
+            "Monospace 11",
+        )
     }
 
     pub(crate) fn source_control_row_count_for_tests(&self) -> usize {
@@ -526,6 +550,15 @@ impl Window {
 
     pub(crate) fn selected_scroll_past_end_padding_for_tests(&self) -> Option<(i32, i32)> {
         self.workspace.selected_scroll_past_end_padding_for_tests()
+    }
+
+    pub(crate) fn selected_scroll_past_end_floor_for_tests(&self) -> Option<i32> {
+        self.workspace.selected_scroll_past_end_floor_for_tests()
+    }
+
+    pub(crate) fn set_selected_viewport_page_size_for_tests(&self, page_size: f64) {
+        self.workspace
+            .set_selected_viewport_page_size_for_tests(page_size);
     }
 
     pub(crate) fn preferences_write_log_for_tests(&self) -> Vec<String> {

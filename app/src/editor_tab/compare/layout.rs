@@ -29,6 +29,7 @@ pub(super) struct UnifiedPane {
     pub(super) root: gtk4::Box,
     pub(super) buffer: sourceview5::Buffer,
     pub(super) view: sourceview5::View,
+    pub(super) scrolled: gtk4::ScrolledWindow,
     pub(super) minimap: CompareMinimap,
 }
 
@@ -227,6 +228,7 @@ fn build_unified_pane_with_title(tab: &EditorTab, title: &str) -> UnifiedPane {
         root,
         buffer,
         view,
+        scrolled,
         minimap,
     }
 }

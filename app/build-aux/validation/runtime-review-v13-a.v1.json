@@ -75,7 +75,7 @@
     },
     {
       "path": "src/editor_zoom.rs",
-      "line": 35,
+      "line": 36,
       "match": "base_font: RefCell<pango::FontDescription>,",
       "kind": "runtime-shared-state",
       "ownership": "The window-owned zoom controller owns the resolved base editor font description.",
@@ -83,7 +83,7 @@
     },
     {
       "path": "src/editor_zoom.rs",
-      "line": 36,
+      "line": 37,
       "match": "zoom_percent: Cell<i32>,",
       "kind": "runtime-shared-state",
       "ownership": "The window-owned zoom controller owns the current zoom percentage for the whole workspace window.",

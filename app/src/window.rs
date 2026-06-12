@@ -193,7 +193,7 @@ impl Window {
         );
         let preferences = WindowPreferencesController::new(&shell, &settings, &workspace, &zoom);
         let compare = WindowCompareController::new(&shell.window, &workspace);
-        let document_tools = DocumentToolsController::new(&shell.window, &workspace);
+        let document_tools = DocumentToolsController::new(&shell.window, &workspace, &settings);
         let project =
             WindowProjectController::new(&shell, &settings, &workspace, init.restore_project);
         let sidebar = sidebar_wiring::install(&shell, &settings, &workspace, &project);

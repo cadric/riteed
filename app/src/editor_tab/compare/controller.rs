@@ -12,11 +12,16 @@ use super::display::{CompareDisplayModel, CompareDisplayOptions, build_display_m
 use super::gutter::{CompareGutters, UnifiedGutter};
 use super::hatch::{CompareHatchEndpoint, CompareHatches};
 use super::layout::{
-    SPLIT_LAYOUT_NAME, UNIFIED_LAYOUT_NAME, build_compare_layout_root, build_compare_paned,
-    build_current_pane, build_reference_pane, build_unified_pane, connect_style_handlers,
+    CompareLayoutRoot, SPLIT_LAYOUT_NAME, UNIFIED_LAYOUT_NAME, build_compare_layout_root,
+    build_compare_paned, build_current_pane, build_reference_pane, build_unified_pane,
+    connect_style_handlers,
+};
+use super::minimap::{
+    CompareMinimap, apply_width_suppressed_visibility, install_width_suppression_breakpoint,
 };
 use super::model::DiffRowModel;
 use super::navigation::{target_hunk_for_navigation, top_visible_row};
+use super::padding::connect_compare_page_size_notifications;
 use super::presentation::DiffPresentation;
 use super::presentation_display::build_presentation_from_display;
 use super::render::{
@@ -34,6 +39,8 @@ use crate::editor_tab::EditorTab;
 use crate::editor_zoom::{clear_zoom_css_classes, restore_zoom_css_class};
 use crate::settings::{CompareReviewSettingsSnapshot, CompareViewMode};
 
+type CompareMinimapVisibilityCells = (Rc<Cell<bool>>, Rc<Cell<bool>>);
+
 impl CompareController {
     pub(super) fn new(tab: &Rc<EditorTab>, target: CompareTarget) -> Self {
         let row_model = Rc::new(RefCell::new(DiffRowModel::empty()));
@@ -43,20 +50,22 @@ impl CompareController {
         let left = build_reference_pane(tab, &presentation);
         let right = build_current_pane(tab, &presentation);
         let unified = build_unified_pane(tab);
+        let (left_vadjustment, right_vadjustment, unified_vadjustment) =
+            connect_compare_page_size_notifications(
+                tab,
+                &left.scrolled,
+                &right.scrolled,
+                &unified.scrolled,
+            );
         let gutters = CompareGutters::new(&left.view, &right.view, &presentation, &row_model);
         let unified_gutter = UnifiedGutter::new(&unified.view, &unified_presentation);
         let toolbar = compare_toolbar(&target.title);
         let status_label = toolbar.status_label.clone();
         let paned = build_compare_paned(&left.root, &right.root);
-        let view_mode = tab.settings.compare_view_mode();
-        let view_mode_cell = Rc::new(Cell::new(view_mode));
-        let layout = build_compare_layout_root(
-            &paned,
-            &unified.root,
-            &left.view,
-            &unified.view,
-            Rc::clone(&view_mode_cell),
-        );
+        let (layout, view_mode, view_mode_cell) =
+            build_controller_layout(tab, &paned, &unified.root, &left.view, &unified.view);
+        let (minimap_user_visible, minimap_width_suppressed) =
+            install_compare_minimap_width_suppression(&layout, &left, &right, &unified, tab);
         let scroll_sync = install_scroll_sync(
             CompareScrollEndpoint {
                 adjustment: &left.scrolled.vadjustment(),
@@ -103,6 +112,10 @@ impl CompareController {
             unified_view: unified.view,
             unified_buffer: unified.buffer.clone(),
             unified_minimap: unified.minimap,
+            left_vadjustment,
+            right_vadjustment,
+            unified_vadjustment,
+            scroll_past_end_floor: tab.scroll_past_end_floor(),
             tags: CompareTags::new(&left.buffer, &right.buffer),
             unified_tags: UnifiedTags::new(&unified.buffer),
             presentation,
@@ -118,25 +131,28 @@ impl CompareController {
             style_manager: style_handlers.manager,
             style_handler: Some(style_handlers.style_handler),
             high_contrast_handler: Some(style_handlers.high_contrast_handler),
-            diff_options: DiffOptions {
-                ignore_leading_trailing_whitespace: tab
-                    .settings
-                    .compare_ignore_leading_trailing_whitespace(),
-            },
+            diff_options: compare_diff_options(tab),
             review_settings: tab.settings.compare_review_settings_snapshot(),
             view_mode,
             view_mode_cell,
+            minimap_user_visible,
+            minimap_width_suppressed,
             revealed_rows: BTreeSet::new(),
             hidden_trim_whitespace_differences: false,
         };
-        super::clipboard::install_unified_clipboard(
-            &controller.unified_view,
-            &controller.unified_buffer,
-            &controller.unified_presentation,
-        );
-        controller.sync_layout();
-        controller.apply_minimap_visibility(tab.settings.show_minimap());
+        controller.finish_initialization(tab.settings.show_minimap());
         controller
+    }
+
+    fn finish_initialization(&mut self, show_minimap: bool) {
+        super::clipboard::install_unified_clipboard(
+            &self.unified_view,
+            &self.unified_buffer,
+            &self.unified_presentation,
+        );
+        self.sync_layout();
+        self.refresh_scroll_past_end_padding();
+        self.apply_minimap_visibility(show_minimap);
     }
 
     pub(super) fn set_loading(&mut self, cancellable: &gio::Cancellable) {
@@ -331,23 +347,20 @@ impl CompareController {
     }
 
     pub(crate) fn apply_minimap_visibility(&self, visible: bool) {
-        self.left_minimap.set_visible(visible);
-        self.right_minimap.set_visible(visible);
-        self.unified_minimap.set_visible(visible);
+        self.minimap_user_visible.set(visible);
+        apply_width_suppressed_visibility(
+            &self.left_minimap,
+            &self.right_minimap,
+            &self.unified_minimap,
+            visible,
+            self.minimap_width_suppressed.get(),
+        );
     }
 
     pub(crate) fn apply_minimap_font_desc(&self, font_desc: Option<&gtk4::pango::FontDescription>) {
         self.left_minimap.set_font_desc(font_desc);
         self.right_minimap.set_font_desc(font_desc);
         self.unified_minimap.set_font_desc(font_desc);
-    }
-
-    // The compare minimaps mirror their views' bottom margins through
-    // GtkSourceMap's own scaled property binding.
-    pub(crate) fn apply_scroll_past_end_padding(&self, bottom_margin: i32) {
-        self.left_view.set_bottom_margin(bottom_margin);
-        self.right_view.set_bottom_margin(bottom_margin);
-        self.unified_view.set_bottom_margin(bottom_margin);
     }
 
     pub(super) fn detach_visual_layers(&mut self) {
@@ -482,6 +495,73 @@ impl CompareController {
                 (hidden_start >= old_start && hidden_end <= old_end).then_some(line_index)
             })
     }
+}
+
+fn install_compare_minimap_width_suppression(
+    layout: &CompareLayoutRoot,
+    left: &super::layout::PresentationPane,
+    right: &super::layout::PresentationPane,
+    unified: &super::layout::UnifiedPane,
+    tab: &EditorTab,
+) -> CompareMinimapVisibilityCells {
+    install_minimap_width_suppression(
+        &layout.root,
+        &left.minimap,
+        &right.minimap,
+        &unified.minimap,
+        tab.settings.show_minimap(),
+    )
+}
+
+fn install_minimap_width_suppression(
+    root: &libadwaita::BreakpointBin,
+    left: &CompareMinimap,
+    right: &CompareMinimap,
+    unified: &CompareMinimap,
+    show_minimap: bool,
+) -> CompareMinimapVisibilityCells {
+    let minimap_user_visible = Rc::new(Cell::new(show_minimap));
+    let minimap_width_suppressed = Rc::new(Cell::new(false));
+    install_width_suppression_breakpoint(
+        root,
+        left,
+        right,
+        unified,
+        Rc::clone(&minimap_user_visible),
+        Rc::clone(&minimap_width_suppressed),
+    );
+    (minimap_user_visible, minimap_width_suppressed)
+}
+
+fn compare_diff_options(tab: &EditorTab) -> DiffOptions {
+    DiffOptions {
+        ignore_leading_trailing_whitespace: tab
+            .settings
+            .compare_ignore_leading_trailing_whitespace(),
+    }
+}
+
+fn build_controller_layout(
+    tab: &EditorTab,
+    paned: &gtk4::Paned,
+    unified_root: &gtk4::Box,
+    left_view: &sourceview5::View,
+    unified_view: &sourceview5::View,
+) -> (
+    CompareLayoutRoot,
+    CompareViewMode,
+    Rc<Cell<CompareViewMode>>,
+) {
+    let view_mode = tab.settings.compare_view_mode();
+    let view_mode_cell = Rc::new(Cell::new(view_mode));
+    let layout = build_compare_layout_root(
+        paned,
+        unified_root,
+        left_view,
+        unified_view,
+        Rc::clone(&view_mode_cell),
+    );
+    (layout, view_mode, view_mode_cell)
 }
 
 #[derive(Clone, Copy)]
