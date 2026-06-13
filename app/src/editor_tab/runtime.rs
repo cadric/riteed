@@ -284,6 +284,7 @@ impl EditorTab {
         }
         self.text_buffer.set_modified(false);
         self.state.borrow_mut().ui.suppress_changes = false;
+        self.apply_print_margin_guide();
         self.apply_minimap_visibility();
         self.sync_markdown_preview_availability();
         if !self.editor_heavy_features_enabled() {

@@ -9,6 +9,10 @@ use sourceview5::prelude::*;
 
 const PREVIEW_DPI: f64 = 96.0;
 const POINTS_PER_INCH: f64 = 72.0;
+// GtkSourcePrintCompositor draws in point space. The preview surface is
+// rasterized at 96 dpi, so scale cairo by 96/72 while reporting 72 dpi to
+// GtkPrintContext to keep paper geometry and font metrics aligned.
+const PREVIEW_SCALE: f64 = PREVIEW_DPI / POINTS_PER_INCH;
 
 /// Drives one `GtkPrintOperation` in custom-preview mode and renders pages to
 /// textures. Rendering is local cairo work, so it stays inside the Flatpak
@@ -53,7 +57,7 @@ impl PreviewEngine {
             if let Ok(placeholder) = cairo::ImageSurface::create(cairo::Format::ARgb32, 1, 1)
                 && let Ok(cr) = cairo::Context::new(&placeholder)
             {
-                context.set_cairo_context(&cr, PREVIEW_DPI, PREVIEW_DPI);
+                context.set_cairo_context(&cr, POINTS_PER_INCH, POINTS_PER_INCH);
             }
 
             let engine_for_size = Rc::clone(&engine_for_preview);
@@ -69,7 +73,8 @@ impl PreviewEngine {
                 };
                 cr.set_source_rgb(1.0, 1.0, 1.0);
                 let _ = cr.paint();
-                context.set_cairo_context(&cr, PREVIEW_DPI, PREVIEW_DPI);
+                cr.scale(PREVIEW_SCALE, PREVIEW_SCALE);
+                context.set_cairo_context(&cr, POINTS_PER_INCH, POINTS_PER_INCH);
                 engine_for_size.surface.replace(Some(surface));
             });
 

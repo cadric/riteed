@@ -171,7 +171,7 @@
     },
     {
       "path": "src/document_print_preview.rs",
-      "line": 18,
+      "line": 22,
       "match": "operation: RefCell<Option<gtk4::PrintOperation>>,",
       "kind": "runtime-shared-state",
       "ownership": "The print preview engine owns the in-flight preview operation state.",
@@ -179,7 +179,7 @@
     },
     {
       "path": "src/document_print_preview.rs",
-      "line": 19,
+      "line": 23,
       "match": "preview: RefCell<Option<gtk4::PrintOperationPreview>>,",
       "kind": "runtime-shared-state",
       "ownership": "The print preview engine owns the in-flight preview operation state.",
@@ -187,7 +187,7 @@
     },
     {
       "path": "src/document_print_preview.rs",
-      "line": 20,
+      "line": 24,
       "match": "surface: RefCell<Option<cairo::ImageSurface>>,",
       "kind": "runtime-shared-state",
       "ownership": "The print preview engine owns the in-flight preview operation state.",
@@ -195,7 +195,7 @@
     },
     {
       "path": "src/document_print_preview.rs",
-      "line": 21,
+      "line": 25,
       "match": "n_pages: Cell<i32>,",
       "kind": "runtime-shared-state",
       "ownership": "The print preview engine owns the in-flight preview operation state.",
@@ -203,7 +203,7 @@
     },
     {
       "path": "src/document_print_preview.rs",
-      "line": 22,
+      "line": 26,
       "match": "ready: Cell<bool>,",
       "kind": "runtime-shared-state",
       "ownership": "The print preview engine owns the in-flight preview operation state.",
@@ -211,7 +211,7 @@
     },
     {
       "path": "src/document_print_preview.rs",
-      "line": 23,
+      "line": 27,
       "match": "on_ready: RefCell<Option<Box<dyn Fn()>>>,",
       "kind": "runtime-shared-state",
       "ownership": "The print preview engine owns the in-flight preview operation state.",
@@ -219,7 +219,7 @@
     },
     {
       "path": "src/document_print_preview.rs",
-      "line": 138,
+      "line": 143,
       "match": "engine: RefCell<Option<Rc<PreviewEngine>>>,",
       "kind": "runtime-shared-state",
       "ownership": "The print preview dialog owns its page navigation state and active engine.",
@@ -227,7 +227,7 @@
     },
     {
       "path": "src/document_print_preview.rs",
-      "line": 139,
+      "line": 144,
       "match": "current_page: Cell<i32>,",
       "kind": "runtime-shared-state",
       "ownership": "The print preview dialog owns its page navigation state and active engine.",

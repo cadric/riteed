@@ -14,6 +14,17 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 
 ## Unreleased
 
+### Added
+- Added a subtle editor right-margin guide at the column where printed lines
+  wrap, following the editor font and printed line-number gutter.
+
+### Fixed
+- Fixed print paper geometry so configured margins, line wrapping, page breaks,
+  and bottom/right clipping use GtkSourcePrintCompositor's point coordinate
+  space.
+- Fixed in-app print preview scaling so preview pages match printer paper
+  geometry.
+
 ## 0.3.7 - 2026-06-13
 
 ### Added
