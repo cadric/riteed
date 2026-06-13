@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 
 use gettextrs::{gettext, pgettext};
-use gtk4::{pango, prelude::*};
+use gtk4::prelude::*;
 use libadwaita as adw;
 use sourceview5::prelude::*;
 
@@ -125,13 +125,6 @@ fn configure_compositor(
 const HEADER_FONT: &str = "Sans 9";
 const LINE_NUMBERS_FONT_SIZE_PT: i32 = 8;
 const PRINT_MARGIN_MM: f64 = 12.7;
-const LINE_NUMBER_SEPARATION_MM: f64 = 5.0;
-const MM_PER_INCH: f64 = 25.4;
-const POINTS_PER_INCH: f64 = 72.0;
-const FALLBACK_GUIDE_COLUMNS: u32 = 80;
-const MIN_GUIDE_COLUMNS: u32 = 20;
-const MAX_GUIDE_COLUMNS: u32 = 240;
-
 /// Header format strings expand strftime codes plus %N/%Q, so a literal `%`
 /// in a document title must be doubled.
 fn header_title(title: &str) -> String {
@@ -155,110 +148,9 @@ fn line_number_interval(show_line_numbers: bool) -> u32 {
     u32::from(show_line_numbers)
 }
 
-/// Columns of the print body font that fit on one printed line. This lets the
-/// editor draw a right-margin guide where paper output wraps.
-pub(crate) fn print_right_margin_columns(
-    context: &pango::Context,
-    stored_font: &str,
-    show_line_numbers: bool,
-    line_count: i32,
-) -> u32 {
-    let body_font = print_body_font_name(stored_font);
-    let mut body_desc = pango::FontDescription::from_string(&body_font);
-    set_absolute_point_size(&mut body_desc);
-    let body_metrics = context.metrics(Some(&body_desc), None);
-    let body_digit_width_pt = pango_units_to_points(body_metrics.approximate_digit_width());
-
-    let line_number_gutter_pt = if show_line_numbers {
-        let mut line_desc =
-            pango::FontDescription::from_string(&line_numbers_font_name(&body_font));
-        set_absolute_point_size(&mut line_desc);
-        let line_metrics = context.metrics(Some(&line_desc), None);
-        let line_digit_width_pt = pango_units_to_points(line_metrics.approximate_digit_width());
-        line_number_gutter_width_pt(line_digit_width_pt, true, line_count)
-    } else {
-        0.0
-    };
-
-    columns_for_print_width(
-        printable_line_width_pt(),
-        body_digit_width_pt,
-        line_number_gutter_pt,
-    )
-}
-
-fn set_absolute_point_size(desc: &mut pango::FontDescription) {
-    let size = desc.size().max(pango::SCALE);
-    desc.set_absolute_size(f64::from(size));
-}
-
-fn pango_units_to_points(value: i32) -> f64 {
-    f64::from(value) / f64::from(pango::SCALE)
-}
-
-fn printable_line_width_pt() -> f64 {
-    let margin_pt = PRINT_MARGIN_MM * POINTS_PER_INCH / MM_PER_INCH;
-    gtk4::PaperSize::new(None).width(gtk4::Unit::Points) - 2.0 * margin_pt
-}
-
-fn columns_for_print_width(
-    line_width_pt: f64,
-    digit_width_pt: f64,
-    line_number_gutter_pt: f64,
-) -> u32 {
-    if !line_width_pt.is_finite()
-        || line_width_pt <= 0.0
-        || !digit_width_pt.is_finite()
-        || digit_width_pt <= 0.0
-    {
-        return FALLBACK_GUIDE_COLUMNS;
-    }
-    let gutter = if line_number_gutter_pt.is_finite() {
-        line_number_gutter_pt.max(0.0)
-    } else {
-        0.0
-    };
-    let available_width = line_width_pt - gutter;
-    if available_width <= 0.0 {
-        return MIN_GUIDE_COLUMNS;
-    }
-    let mut columns = MIN_GUIDE_COLUMNS;
-    while columns < MAX_GUIDE_COLUMNS
-        && f64::from(columns.saturating_add(1)) * digit_width_pt <= available_width
-    {
-        columns += 1;
-    }
-    columns
-}
-
-fn line_number_gutter_width_pt(
-    digit_width_pt: f64,
-    show_line_numbers: bool,
-    line_count: i32,
-) -> f64 {
-    if !show_line_numbers || !digit_width_pt.is_finite() || digit_width_pt <= 0.0 {
-        return 0.0;
-    }
-    let separation_pt = LINE_NUMBER_SEPARATION_MM * POINTS_PER_INCH / MM_PER_INCH;
-    f64::from(print_line_number_digits(line_count)) * digit_width_pt + separation_pt
-}
-
-fn print_line_number_digits(line_count: i32) -> u32 {
-    let mut value = u32::try_from(line_count.max(1)).unwrap_or(1);
-    let mut digits = 1;
-    while value >= 10 {
-        value /= 10;
-        digits += 1;
-    }
-    digits
-}
-
 #[cfg(test)]
 mod tests {
-    use super::{
-        columns_for_print_width, header_title, line_number_gutter_width_pt, line_number_interval,
-        line_numbers_font_name, print_body_font_name, print_line_number_digits,
-    };
+    use super::{header_title, line_number_interval, line_numbers_font_name, print_body_font_name};
 
     #[test]
     fn line_numbers_follow_editor_view_state() {
@@ -296,33 +188,5 @@ mod tests {
             "JetBrains Mono 8"
         );
         assert_eq!(line_numbers_font_name("Monospace 11"), "Monospace 8");
-    }
-
-    #[test]
-    fn guide_columns_divide_printable_width() {
-        assert_eq!(columns_for_print_width(523.3, 6.62, 0.0), 79);
-        assert_eq!(columns_for_print_width(523.3, 6.62, 31.0), 74);
-    }
-
-    #[test]
-    fn guide_columns_clamp_and_guard_degenerate_input() {
-        assert_eq!(columns_for_print_width(523.3, 0.0, 0.0), 80);
-        assert_eq!(columns_for_print_width(523.3, -1.0, 0.0), 80);
-        assert_eq!(columns_for_print_width(523.3, f64::NAN, 0.0), 80);
-        assert_eq!(columns_for_print_width(f64::INFINITY, 6.6, 0.0), 80);
-        assert_eq!(columns_for_print_width(-100.0, 6.6, 0.0), 80);
-        assert_eq!(columns_for_print_width(10.0, 6.6, 0.0), 20);
-        assert_eq!(columns_for_print_width(100_000.0, 6.6, 0.0), 240);
-    }
-
-    #[test]
-    fn line_number_gutter_tracks_digit_count() {
-        assert_eq!(print_line_number_digits(1), 1);
-        assert_eq!(print_line_number_digits(9), 1);
-        assert_eq!(print_line_number_digits(10), 2);
-        assert_eq!(print_line_number_digits(200), 3);
-        assert_eq!(print_line_number_digits(-1), 1);
-        assert!(line_number_gutter_width_pt(4.0, false, 200).abs() < f64::EPSILON);
-        assert!(line_number_gutter_width_pt(4.0, true, 200) > 25.0);
     }
 }

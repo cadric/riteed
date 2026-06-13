@@ -265,12 +265,6 @@ impl Workspace {
         }
     }
 
-    pub fn apply_print_margin_guide_to_tabs(&self) {
-        for tab in &self.state.borrow().tabs {
-            tab.apply_print_margin_guide();
-        }
-    }
-
     pub fn apply_minimap_to_tabs(&self) {
         for tab in &self.state.borrow().tabs {
             tab.apply_minimap_visibility();

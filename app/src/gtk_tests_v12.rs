@@ -15,7 +15,7 @@ pub(crate) fn exercise_v12_power_tools(test_app: &adw::Application) {
     print_operation_keeps_point_units();
     exercise_print_pagination_matches_paper(test_app);
     exercise_print_preview_margins_blank(test_app);
-    exercise_print_margin_guide();
+    exercise_editor_hides_print_margin_guide();
 }
 
 fn empty_source_buffer_line_count_follows_gtk() {
@@ -175,32 +175,11 @@ fn assert_margin_bands_blank(texture: &gtk4::gdk::Texture) {
     }
 }
 
-fn exercise_print_margin_guide() {
+fn exercise_editor_hides_print_margin_guide() {
     let settings = crate::settings::AppSettings::new_for_tests();
     let view = crate::editor_view::EditorView::new(&settings);
     assert!(
-        view.text_view.shows_right_margin(),
-        "editor must show the print-width guide"
-    );
-    let columns = view.text_view.right_margin_position();
-    assert!(
-        (70..=90).contains(&columns),
-        "Monospace 11 on A4 should give roughly 80 print columns, got {columns}"
-    );
-
-    let context = view.text_view.pango_context();
-    let normal =
-        crate::document_print::print_right_margin_columns(&context, "Monospace 11", false, 1);
-    let large =
-        crate::document_print::print_right_margin_columns(&context, "Monospace 22", false, 1);
-    assert!(
-        large < normal,
-        "a larger print font must move the guide left ({large} >= {normal})"
-    );
-    let with_line_numbers =
-        crate::document_print::print_right_margin_columns(&context, "Monospace 11", true, 200);
-    assert!(
-        with_line_numbers < normal,
-        "printed line numbers must narrow the guide ({with_line_numbers} >= {normal})"
+        !view.text_view.shows_right_margin(),
+        "editor must not show a print-width guide"
     );
 }

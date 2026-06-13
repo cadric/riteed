@@ -14,9 +14,9 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 
 ## Unreleased
 
-### Added
-- Added a subtle editor right-margin guide at the column where printed lines
-  wrap, following the editor font and printed line-number gutter.
+### Changed
+- Removed the in-editor print-width guide so paper geometry stays confined to
+  print and print preview surfaces.
 
 ### Fixed
 - Fixed Compare/Diff minimap lifecycle handling so GtkSourceMap views detach

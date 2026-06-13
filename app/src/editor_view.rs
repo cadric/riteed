@@ -37,13 +37,6 @@ impl EditorView {
         text_view.set_right_margin(12);
         text_view.set_highlight_current_line(settings.highlight_current_line());
         text_view.set_show_line_numbers(settings.show_line_numbers());
-        text_view.set_show_right_margin(true);
-        text_view.set_right_margin_position(crate::document_print::print_right_margin_columns(
-            &text_view.pango_context(),
-            &settings.editor_font(),
-            settings.show_line_numbers(),
-            text_buffer.line_count(),
-        ));
         text_view.set_top_margin(12);
         text_view.set_vexpand(true);
         text_view.add_css_class(EDITOR_VIEW_CSS_CLASS);

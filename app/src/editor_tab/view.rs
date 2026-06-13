@@ -38,19 +38,6 @@ impl EditorTab {
     pub fn apply_line_numbers(&self) {
         self.text_view
             .set_show_line_numbers(self.settings.show_line_numbers());
-        self.apply_print_margin_guide();
-    }
-
-    pub fn apply_print_margin_guide(&self) {
-        self.text_view.set_show_right_margin(true);
-        self.text_view.set_right_margin_position(
-            crate::document_print::print_right_margin_columns(
-                &self.text_view.pango_context(),
-                &self.settings.editor_font(),
-                self.text_view.shows_line_numbers(),
-                self.text_buffer.line_count(),
-            ),
-        );
     }
 
     pub fn apply_minimap_visibility(&self) {

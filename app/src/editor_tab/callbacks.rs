@@ -13,9 +13,6 @@ impl EditorTab {
                 && !tab.state.borrow().ui.suppress_changes
             {
                 tab.state.borrow_mut().mark_dirty_generation();
-                if tab.text_view.shows_line_numbers() {
-                    tab.apply_print_margin_guide();
-                }
                 tab.sync_presentation();
                 tab.schedule_markdown_preview_update();
                 tab.schedule_source_control_minimap_stale_check();

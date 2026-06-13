@@ -37,7 +37,7 @@ impl WindowPreferencesController {
         initialize_rows(shell, settings, &state);
         install_toggle_preferences(shell, settings, workspace, &state);
         install_spin_preferences(shell, settings, workspace, &state);
-        install_font_preference(shell, settings, workspace, zoom);
+        install_font_preference(shell, settings, zoom);
         install_language_preference(shell, settings, &state);
         install_git_identity_preference(shell, settings);
         crate::window_preferences_large_file::install(shell, settings, workspace);
@@ -287,14 +287,12 @@ fn commit_spin_row(
 fn install_font_preference(
     shell: &WindowShell,
     settings: &AppSettings,
-    workspace: &Rc<Workspace>,
     zoom: &Rc<EditorZoomController>,
 ) {
     let window = shell.window.downgrade();
     let dialog = shell.preferences_dialog.downgrade();
     let row = shell.editor_font_row.downgrade();
     let settings = settings.clone();
-    let workspace = Rc::downgrade(workspace);
     let zoom = Rc::downgrade(zoom);
     shell.editor_font_row.connect_activated(move |_| {
         let Some(window) = window.upgrade() else {
@@ -313,7 +311,6 @@ fn install_font_preference(
         let settings = settings.clone();
         let dialog = dialog.clone();
         let row = row.clone();
-        let workspace = workspace.clone();
         let zoom = zoom.clone();
         let validation_window = window.clone();
         let validation_font_map = dialog_font_map.clone();
@@ -345,9 +342,6 @@ fn install_font_preference(
                 }
                 if let Some(zoom) = zoom.upgrade() {
                     zoom.set_editor_font(&stored);
-                }
-                if let Some(workspace) = workspace.upgrade() {
-                    workspace.apply_print_margin_guide_to_tabs();
                 }
             },
         );
