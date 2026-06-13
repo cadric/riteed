@@ -43,6 +43,12 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release version="0.3.7" type="development" date="2026-06-13">
+      <description translate="no">
+        <p>Adds local Flatpak build guardrails, print preview, V15 large-file viewer handling, document format controls, and expanded preferences organization.</p>
+        <p>Fixes native CI GTK smoke diagnostics, large-file routing and viewer edge cases, minimap scrolling, printing, async loading, and release/dependency validation follow-ups.</p>
+      </description>
+    </release>
     <release version="0.3.6" type="development" date="2026-05-30">
       <description translate="no">
         <p>Adds hardened release, stress, and dependency policy gates, including live ruleset governance, exact-commit publish preflight, rollback safeguards, and coordinated GTK-stack dependency validation.</p>

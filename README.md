@@ -3,7 +3,7 @@
 ![Riteed editing a Python project from the beta Flatpak build](docs/screenshots/4.png)
 
 Riteed is a small native GNOME text editor written in Rust. The current source
-version is `0.3.6`, an early public beta. It is useful for daily local editing
+version is `0.3.7`, an early public beta. It is useful for daily local editing
 and compare work, but it is not feature complete.
 
 The application lives under `app/`. The repository root also contains the
@@ -13,7 +13,7 @@ and Flatpak-first.
 ## Status
 
 - Early beta: expect rough edges and missing features.
-- Released as source through `v0.3.6`; no stable `1.0` yet and no Flathub
+- Released as source through `v0.3.7`; no stable `1.0` yet and no Flathub
   submission.
 - A self-updating beta Flatpak channel is published directly from this
   repository through GitHub Pages.
