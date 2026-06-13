@@ -1,6 +1,6 @@
-use std::fs;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
+use std::{fs, io::Write};
 
 use gtk4 as gtk;
 use gtk4::glib::variant::ToVariant;
@@ -562,15 +562,34 @@ fn exercise_search_and_status(test_app: &adw::Application) {
     assert!(line_window.selected_line_numbers_visible_for_tests());
 }
 
+fn write_gtk_flow_marker(message: &str) {
+    let mut stderr = std::io::stderr().lock();
+    let _written = stderr.write_all(message.as_bytes());
+    let _newline = stderr.write_all(b"\n");
+    let _flushed = stderr.flush();
+}
+
+fn run_gtk_flow(label: &str, run: impl FnOnce()) {
+    write_gtk_flow_marker(&format!("gtk-flow-start={label}"));
+    let started = std::time::Instant::now();
+    run();
+    let elapsed_ms = started.elapsed().as_millis();
+    write_gtk_flow_marker(&format!("gtk-flow-end={label} elapsed_ms={elapsed_ms}"));
+}
+
 #[test]
 fn gtk_surfaces_and_editor_flow_work() {
     let _guard = crate::test_support::init_gtk_for_tests();
     if gtk::gdk::Display::default().is_none() {
         return;
     }
-    assert_settings_apply();
-    assert_app_actions_exist();
-    crate::source_control::tree_model::exercise_state_restore_for_tests();
+
+    run_gtk_flow("core-surfaces-actions", || {
+        assert_settings_apply();
+        assert_app_actions_exist();
+        crate::source_control::tree_model::exercise_state_restore_for_tests();
+        crate::markdown::render_tests::exercise_markdown_renderer();
+    });
 
     let test_app = adw::Application::builder()
         .application_id("io.github.cadric.Riteed.WindowTabTests")
@@ -578,32 +597,75 @@ fn gtk_surfaces_and_editor_flow_work() {
         .build();
     let _registered = test_app.register(None::<&gio::Cancellable>);
 
-    crate::markdown::render_tests::exercise_markdown_renderer();
-    exercise_window_tab_flow(&test_app);
-    crate::gtk_tests_dialog_lifecycle::exercise_dialog_lifecycle(&test_app);
-    exercise_restore_and_recent_pruning(&test_app);
-    exercise_close_flows(&test_app);
-    exercise_app_open_actions();
-    exercise_app_actions_more();
-    exercise_search_and_status(&test_app);
-    crate::gtk_tests_tabs::exercise_tab_context_actions();
-    crate::gtk_tests_v4::exercise_v4_editor_features(&test_app);
-    crate::gtk_tests_v5::exercise_v5_format_io(&test_app);
-    crate::gtk_tests_v5b::exercise_v5b_editor_controls(&test_app);
-    crate::gtk_tests_v6::exercise_v6_project_navigation(&test_app);
-    crate::gtk_tests_v6::exercise_v6_project_restore(&test_app);
-    crate::gtk_tests_v7::exercise_v7_compare(&test_app);
-    crate::gtk_tests_v8::exercise_v8_polish_and_safety(&test_app);
-    crate::gtk_tests_v9::exercise_v9_source_control(&test_app);
-    crate::gtk_tests_v10::exercise_chrome_palette(&test_app);
-    crate::gtk_tests_v11::exercise_v11_diff_surface(&test_app);
-    crate::gtk_tests_v11_git::exercise_v11_git_compare_renderer_path(&test_app);
-    crate::gtk_tests_v12::exercise_v12_power_tools(&test_app);
-    crate::gtk_tests_v13::exercise_v13_review_change_list(&test_app);
-    crate::gtk_tests_v13::exercise_v13_status_bar_label_reuse(&test_app);
-    crate::gtk_tests_v13::exercise_v13_status_refresh_coalescing(&test_app);
-    crate::gtk_tests_v13::exercise_v13_minimap_palette_cache(&test_app);
-    crate::gtk_tests_v13::exercise_v13_preview_search_active_tag_move(&test_app);
-    crate::gtk_tests_markdown::exercise_markdown_preview(&test_app);
-    crate::gtk_tests_boundaries::exercise_boundary_smokes(&test_app);
+    run_gtk_flow("window-tab-flow", || exercise_window_tab_flow(&test_app));
+    run_gtk_flow("dialog-lifecycle", || {
+        crate::gtk_tests_dialog_lifecycle::exercise_dialog_lifecycle(&test_app);
+    });
+    run_gtk_flow("restore-recent-pruning", || {
+        exercise_restore_and_recent_pruning(&test_app);
+    });
+    run_gtk_flow("close-flows", || exercise_close_flows(&test_app));
+    run_gtk_flow("app-open-actions", exercise_app_open_actions);
+    run_gtk_flow("app-actions-more", exercise_app_actions_more);
+    run_gtk_flow("search-status", || exercise_search_and_status(&test_app));
+    run_gtk_flow("tab-context-actions", || {
+        crate::gtk_tests_tabs::exercise_tab_context_actions();
+    });
+    run_gtk_flow("v4-editor-features", || {
+        crate::gtk_tests_v4::exercise_v4_editor_features(&test_app);
+    });
+    run_gtk_flow("v5-format-io", || {
+        crate::gtk_tests_v5::exercise_v5_format_io(&test_app);
+    });
+    run_gtk_flow("v5b-editor-controls", || {
+        crate::gtk_tests_v5b::exercise_v5b_editor_controls(&test_app);
+    });
+    run_gtk_flow("v6-project-navigation", || {
+        crate::gtk_tests_v6::exercise_v6_project_navigation(&test_app);
+    });
+    run_gtk_flow("v6-project-restore", || {
+        crate::gtk_tests_v6::exercise_v6_project_restore(&test_app);
+    });
+    run_gtk_flow("v7-compare", || {
+        crate::gtk_tests_v7::exercise_v7_compare(&test_app);
+    });
+    run_gtk_flow("v8-polish-safety", || {
+        crate::gtk_tests_v8::exercise_v8_polish_and_safety(&test_app);
+    });
+    run_gtk_flow("v9-source-control", || {
+        crate::gtk_tests_v9::exercise_v9_source_control(&test_app);
+    });
+    run_gtk_flow("v10-chrome-palette", || {
+        crate::gtk_tests_v10::exercise_chrome_palette(&test_app);
+    });
+    run_gtk_flow("v11-diff-surface", || {
+        crate::gtk_tests_v11::exercise_v11_diff_surface(&test_app);
+    });
+    run_gtk_flow("v11-git-compare-renderer", || {
+        crate::gtk_tests_v11_git::exercise_v11_git_compare_renderer_path(&test_app);
+    });
+    run_gtk_flow("v12-power-tools", || {
+        crate::gtk_tests_v12::exercise_v12_power_tools(&test_app);
+    });
+    run_gtk_flow("v13-review-change-list", || {
+        crate::gtk_tests_v13::exercise_v13_review_change_list(&test_app);
+    });
+    run_gtk_flow("v13-status-bar-label-reuse", || {
+        crate::gtk_tests_v13::exercise_v13_status_bar_label_reuse(&test_app);
+    });
+    run_gtk_flow("v13-status-refresh-coalescing", || {
+        crate::gtk_tests_v13::exercise_v13_status_refresh_coalescing(&test_app);
+    });
+    run_gtk_flow("v13-minimap-palette-cache", || {
+        crate::gtk_tests_v13::exercise_v13_minimap_palette_cache(&test_app);
+    });
+    run_gtk_flow("v13-preview-search-active-tag-move", || {
+        crate::gtk_tests_v13::exercise_v13_preview_search_active_tag_move(&test_app);
+    });
+    run_gtk_flow("markdown-preview", || {
+        crate::gtk_tests_markdown::exercise_markdown_preview(&test_app);
+    });
+    run_gtk_flow("boundary-smokes", || {
+        crate::gtk_tests_boundaries::exercise_boundary_smokes(&test_app);
+    });
 }

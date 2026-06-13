@@ -57,6 +57,9 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
   of the session.
 
 ### Fixed
+- Added per-flow progress markers to the native GTK integration smoke, so CI
+  timeouts now identify the last GTK flow reached while keeping gtk4-rs
+  initialization on one Rust test thread.
 - Added progress markers and bounded timeouts to the native GitHub Actions
   validation job, including image pull and dependency/tool installation phases,
   so cold-build failures produce actionable logs and artifacts instead of

@@ -63,10 +63,10 @@ evidence becomes available.
   "ordinary cargo test stays light" note and should be watched in full CI.
 - Full policy validation initially failed because a second independent GTK
   `#[test]` may run on a different Rust test thread after GTK is initialized.
-  The real boundary GTK flow now runs inside the existing
-  `gtk_surfaces_and_editor_flow_work` test, while the boundary module keeps a
-  pure seed-size test so `cargo test gtk_tests_boundaries` remains a fast
-  module check.
+  The real boundary GTK flow now runs inside
+  `gtk_surfaces_and_editor_flow_work`, while the boundary module keeps a pure
+  seed-size test so `cargo test gtk_tests_boundaries` remains a fast module
+  check.
 - `cargo update --workspace --dry-run` showed default `proptest` features
   would add 50 packages. The dependency was narrowed to `default-features =
   false, features = ["std"]`, reducing the dry-run to 15 dev-only packages
@@ -167,14 +167,14 @@ evidence becomes available.
 - **GTK boundary smoke placement**: the plan asked for the real open-25-MiB and
   search-2M-char GTK smokes to live as independent tests in
   `gtk_tests_boundaries.rs`. That failed policy validation because GTK can be
-  initialized from a different Rust test thread. The real flow now lives in
+  initialized from a different Rust test thread. The real flow now runs inside
   `gtk_surfaces_and_editor_flow_work`, and `gtk_tests_boundaries.rs` keeps the
   helper plus a pure seed-size test. A module comment documents this.
-- **Heavy GTK duration accepted**: the integrated GTK boundary flow takes about
-  42-44 seconds locally. This breaks the original "ordinary cargo test stays
-  light" assumption. The plan now states the accepted tradeoff: pure cap and
-  proptest commands stay light, while the single GTK surface validation pays
-  for real end-to-end I/O.
+- **Heavy GTK duration accepted**: the GTK boundary flow takes about 42-44
+  seconds locally. This breaks the original "ordinary cargo test stays light"
+  assumption. The plan now states the accepted tradeoff: pure cap and proptest
+  commands stay light, while the single GTK surface validation pays for real
+  end-to-end I/O and emits per-flow progress markers for CI diagnosis.
 - **Cargo-fuzz separation is not zero-maintenance**: fuzzing required a
   non-default app `fuzzing` feature, a duplicated `sourceview5` patch in
   `app/fuzz/Cargo.toml`, and manual lockfile alignment after GTK crates resolved
@@ -223,7 +223,7 @@ evidence becomes available.
   passed, 1 pure module seed test, 0.00 seconds.
 - Current
   `cd app && G_DEBUG=fatal-criticals GTK_A11Y=none GSK_RENDERER=cairo cargo test gtk_surfaces_and_editor_flow_work -- --test-threads=1`:
-  passed with the real boundary GTK flow integrated, 1 test, 43.68 seconds.
+  exercises the real boundary GTK flow inside the single GTK integration smoke.
 - `cd app && cargo test _at_ -- --test-threads=1`: passed, 19 tests,
   0.11 seconds.
 - Temporary proof command
@@ -280,9 +280,9 @@ evidence becomes available.
 - `cd app && cargo test gtk_tests_boundaries -- --test-threads=1`: passed,
   1 pure module seed-size test.
 - `cd app && G_DEBUG=fatal-criticals GTK_A11Y=none GSK_RENDERER=cairo cargo
-  test gtk_surfaces_and_editor_flow_work -- --test-threads=1`: passed with
-  the integrated real 25 MiB open and 2,000,000-character search flow,
-  42.33 seconds.
+  test gtk_surfaces_and_editor_flow_work -- --test-threads=1`: exercises the
+  real 25 MiB open and 2,000,000-character search flow inside the single GTK
+  integration smoke.
 - `python3 stress/make_corpus.py --root /tmp/riteed-stress-corpus-final`:
   passed and generated the expected cap files.
 - `cd app && cargo build --bin riteed-stress --features stress`: passed.
