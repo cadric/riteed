@@ -40,6 +40,10 @@ pub(crate) enum TempFileFixture {
     V7Editable,
     V7ExitCompare,
     V7ExitReference,
+    V7MinimapLong,
+    V7MinimapLongRef,
+    V7MinimapShort,
+    V7MinimapShortRef,
     V7Nav,
     V7NavRef,
     V7Reference,
@@ -87,6 +91,10 @@ impl TempFileFixture {
     pub(crate) const V7_EDITABLE: Self = Self::V7Editable;
     pub(crate) const V7_EXIT_COMPARE: Self = Self::V7ExitCompare;
     pub(crate) const V7_EXIT_REFERENCE: Self = Self::V7ExitReference;
+    pub(crate) const V7_MINIMAP_LONG: Self = Self::V7MinimapLong;
+    pub(crate) const V7_MINIMAP_LONG_REF: Self = Self::V7MinimapLongRef;
+    pub(crate) const V7_MINIMAP_SHORT: Self = Self::V7MinimapShort;
+    pub(crate) const V7_MINIMAP_SHORT_REF: Self = Self::V7MinimapShortRef;
     pub(crate) const V7_NAV: Self = Self::V7Nav;
     pub(crate) const V7_NAV_REF: Self = Self::V7NavRef;
     pub(crate) const V7_REFERENCE: Self = Self::V7Reference;
@@ -171,6 +179,10 @@ impl TempFileFixture {
             Self::V7Editable => "riteed-v7-editable.txt",
             Self::V7ExitCompare => "riteed-v7-exit-compare.txt",
             Self::V7ExitReference => "riteed-v7-exit-reference.txt",
+            Self::V7MinimapLong => "riteed-v7-minimap-long.txt",
+            Self::V7MinimapLongRef => "riteed-v7-minimap-long-ref.txt",
+            Self::V7MinimapShort => "riteed-v7-minimap-short.txt",
+            Self::V7MinimapShortRef => "riteed-v7-minimap-short-ref.txt",
             Self::V7Nav => "riteed-v7-nav.txt",
             Self::V7NavRef => "riteed-v7-nav-ref.txt",
             Self::V7Reference => "riteed-v7-reference.txt",

@@ -315,16 +315,14 @@ fn run_git(spec: GitSpec, cancellable: &gio::Cancellable, callback: GitCallback<
             Ok((stdout, stderr)) => {
                 let stdout = stdout.map_or_else(Vec::new, |bytes| bytes.as_ref().to_vec());
                 let stderr = stderr.map_or_else(Vec::new, |bytes| bytes.as_ref().to_vec());
-                if stdout.len() > spec.stdout_cap || stderr.len() > STDERR_CAP {
-                    callback_for_result(Err(GitProcessError::OutputTooLarge));
-                    return;
-                }
-                let status = subprocess_for_result.exit_status();
-                if !spec.allow_failure && !subprocess_for_result.is_successful() {
-                    callback_for_result(Err(GitProcessError::CommandFailed(stderr_text(&stderr))));
-                    return;
-                }
-                callback_for_result(Ok(GitRunOutput { status, stdout }));
+                finish_git_run_after_wait(
+                    &subprocess_for_result,
+                    stdout,
+                    stderr,
+                    spec.stdout_cap,
+                    spec.allow_failure,
+                    callback_for_result,
+                );
             }
             Err(error) => {
                 if error.matches(gio::IOErrorEnum::Cancelled) {
@@ -342,6 +340,36 @@ fn run_git(spec: GitSpec, cancellable: &gio::Cancellable, callback: GitCallback<
                 }
             }
         }
+    });
+}
+
+fn finish_git_run_after_wait(
+    subprocess: &gio::Subprocess,
+    stdout: Vec<u8>,
+    stderr: Vec<u8>,
+    stdout_cap: usize,
+    allow_failure: bool,
+    callback: GitCallback<GitRunOutput>,
+) {
+    let output_too_large = stdout.len() > stdout_cap || stderr.len() > STDERR_CAP;
+    let subprocess_for_wait = subprocess.clone();
+    subprocess.wait_async(None::<&gio::Cancellable>, move |result| {
+        if let Err(error) = result {
+            callback(Err(GitProcessError::CommandFailed(
+                error.message().to_string(),
+            )));
+            return;
+        }
+        if output_too_large {
+            callback(Err(GitProcessError::OutputTooLarge));
+            return;
+        }
+        let status = subprocess_for_wait.exit_status();
+        if !allow_failure && !subprocess_for_wait.is_successful() {
+            callback(Err(GitProcessError::CommandFailed(stderr_text(&stderr))));
+            return;
+        }
+        callback(Ok(GitRunOutput { status, stdout }));
     });
 }
 

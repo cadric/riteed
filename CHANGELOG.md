@@ -19,6 +19,11 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
   wrap, following the editor font and printed line-number gutter.
 
 ### Fixed
+- Fixed Compare/Diff minimap lifecycle handling so GtkSourceMap views detach
+  while their holders are hidden or unmapped, avoiding GTK adjustment criticals
+  during native GTK smoke tests.
+- Fixed Git subprocess completion handling so Source Control waits for process
+  exit before reading status, avoiding GLib-GIO criticals in fatal smoke runs.
 - Fixed print paper geometry so configured margins, line wrapping, page breaks,
   and bottom/right clipping use GtkSourcePrintCompositor's point coordinate
   space.

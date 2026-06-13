@@ -2,6 +2,13 @@ use gtk4::prelude::*;
 
 use super::EditorTab;
 
+type CompareViewportRangeForTests = (f64, f64);
+type CompareViewportRangesForTests = (
+    CompareViewportRangeForTests,
+    CompareViewportRangeForTests,
+    CompareViewportRangeForTests,
+);
+
 impl EditorTab {
     pub(crate) fn compare_minimaps_visible_for_tests(&self) -> (bool, bool, bool) {
         self.state
@@ -39,6 +46,65 @@ impl EditorTab {
                 gtk4::PolicyType::Automatic,
                 gtk4::PolicyType::Automatic,
             ))
+    }
+
+    pub(crate) fn compare_minimaps_attached_for_tests(&self) -> (bool, bool, bool) {
+        self.state
+            .try_borrow()
+            .ok()
+            .and_then(|state| {
+                state.compare.active.as_ref().map(|compare| {
+                    (
+                        compare.left_minimap.map_attached_for_tests(),
+                        compare.right_minimap.map_attached_for_tests(),
+                        compare.unified_minimap.map_attached_for_tests(),
+                    )
+                })
+            })
+            .unwrap_or_default()
+    }
+
+    pub(crate) fn compare_minimap_holders_mapped_for_tests(&self) -> (bool, bool, bool) {
+        self.state
+            .try_borrow()
+            .ok()
+            .and_then(|state| {
+                state.compare.active.as_ref().map(|compare| {
+                    (
+                        compare.left_minimap.holder_mapped_for_tests(),
+                        compare.right_minimap.holder_mapped_for_tests(),
+                        compare.unified_minimap.holder_mapped_for_tests(),
+                    )
+                })
+            })
+            .unwrap_or_default()
+    }
+
+    pub(crate) fn compare_minimap_viewport_ranges_for_tests(
+        &self,
+    ) -> CompareViewportRangesForTests {
+        self.state
+            .try_borrow()
+            .ok()
+            .and_then(|state| {
+                state.compare.active.as_ref().map(|compare| {
+                    (
+                        compare.left_minimap.viewport_range_for_tests(),
+                        compare.right_minimap.viewport_range_for_tests(),
+                        compare.unified_minimap.viewport_range_for_tests(),
+                    )
+                })
+            })
+            .unwrap_or_default()
+    }
+
+    pub(crate) fn set_compare_minimap_width_suppressed_for_tests(&self, width_suppressed: bool) {
+        if let Ok(state) = self.state.try_borrow()
+            && let Some(compare) = state.compare.active.as_ref()
+        {
+            compare.minimap_width_suppressed.set(width_suppressed);
+            compare.apply_minimap_visibility(compare.minimap_user_visible.get());
+        }
     }
 
     pub(crate) fn compare_scroll_past_end_padding_for_tests(&self) -> (i32, i32, i32) {

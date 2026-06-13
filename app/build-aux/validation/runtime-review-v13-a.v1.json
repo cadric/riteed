@@ -259,7 +259,15 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 349,
+      "line": 347,
+      "match": "subprocess: &gio::Subprocess,",
+      "kind": "runtime-git-subprocess",
+      "ownership": "The typed Git process boundary owns post-communication subprocess completion.",
+      "justification": "Git stdout/stderr capture now waits for the reviewed /app/bin/git subprocess to exit before reading status, avoiding GLib status precondition criticals while preserving bounded output handling."
+    },
+    {
+      "path": "src/git_process.rs",
+      "line": 377,
       "match": "subprocess: &gio::Subprocess,",
       "kind": "runtime-git-subprocess",
       "ownership": "The typed Git process boundary owns timeout supervision for one Gio subprocess.",
@@ -267,7 +275,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 351,
+      "line": 379,
       "match": "finished: Rc<Cell<bool>>,",
       "kind": "runtime-shared-state",
       "ownership": "The typed Git process boundary owns one completion flag shared by the communicate callback and timeout grace callback.",
@@ -275,7 +283,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 352,
+      "line": 380,
       "match": "timed_out: Rc<Cell<bool>>,",
       "kind": "runtime-shared-state",
       "ownership": "The typed Git process boundary owns one timeout flag shared by the communicate callback and timeout callback.",
@@ -283,7 +291,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 380,
+      "line": 408,
       "match": "fn kill_unfinished_git(subprocess: &gio::Subprocess) {",
       "kind": "runtime-git-subprocess",
       "ownership": "The typed Git process boundary owns forced termination of timed-out or cancelled Git subprocesses.",
