@@ -1,6 +1,6 @@
 ---
 created: 2026-04-19
-updated: 2026-06-12
+updated: 2026-06-13
 status: current
 priority: high
 type: changelog
@@ -13,6 +13,8 @@ All notable changes to this repository are documented in this file.
 The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries describe public beta snapshots.
 
 ## Unreleased
+
+## 0.3.7 - 2026-06-13
 
 ### Added
 - Added local Flatpak build guardrails: `scripts/integration-preflight` reports

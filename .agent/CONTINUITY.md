@@ -1,6 +1,12 @@
 # Continuity
 
 ## OUTCOMES
+- 2026-06-13 0.3.7 beta release preparation is in progress on
+  `release/v0.3.7`: version metadata is being bumped after PR #21 stabilized
+  the native GTK smoke and Dependabot PR #19 updated `libfuzzer-sys` to
+  0.4.13. The intended release path is a signed release PR into `main`,
+  required main validation on the release commit, tag `v0.3.7`, then the
+  protected `Publish Flatpak` workflow for the beta Pages remote.
 - 2026-06-01 V15 large-file viewer follow-up is in progress locally: valid
   UTF-8 page seams are decoded without boundary-induced replacement glyphs,
   viewer search and line-jump use retained async streams for sequential scans,
