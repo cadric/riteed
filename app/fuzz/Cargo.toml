@@ -10,7 +10,7 @@ publish = false
 cargo-fuzz = true
 
 [dependencies]
-libfuzzer-sys = "=0.4.12"
+libfuzzer-sys = "=0.4.13"
 riteed = { path = "..", features = ["fuzzing"] }
 
 [patch.crates-io]
