@@ -562,14 +562,14 @@ fn exercise_search_and_status(test_app: &adw::Application) {
     assert!(line_window.selected_line_numbers_visible_for_tests());
 }
 
-fn write_gtk_flow_marker(message: &str) {
+pub(crate) fn write_gtk_flow_marker(message: &str) {
     let mut stderr = std::io::stderr().lock();
     let _written = stderr.write_all(message.as_bytes());
     let _newline = stderr.write_all(b"\n");
     let _flushed = stderr.flush();
 }
 
-fn run_gtk_flow(label: &str, run: impl FnOnce()) {
+pub(crate) fn run_gtk_flow(label: &str, run: impl FnOnce()) {
     write_gtk_flow_marker(&format!("gtk-flow-start={label}"));
     let started = std::time::Instant::now();
     run();

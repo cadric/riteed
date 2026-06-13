@@ -175,6 +175,12 @@ evidence becomes available.
   assumption. The plan now states the accepted tradeoff: pure cap and proptest
   commands stay light, while the single GTK surface validation pays for real
   end-to-end I/O and emits per-flow progress markers for CI diagnosis.
+- **Headless fullscreen transitions kept out of the GTK smoke**: GitHub Actions
+  native validation on PR #21 timed out after `gtk-flow-start=v8-polish-safety`
+  and before any V8 completion marker. The V8 smoke now adds sub-flow markers,
+  presents the preferences parent before dialog checks, and keeps the window-size
+  persistence assertion without exercising a real fullscreen/unfullscreen
+  transition under unmanaged Xvfb.
 - **Cargo-fuzz separation is not zero-maintenance**: fuzzing required a
   non-default app `fuzzing` feature, a duplicated `sourceview5` patch in
   `app/fuzz/Cargo.toml`, and manual lockfile alignment after GTK crates resolved
