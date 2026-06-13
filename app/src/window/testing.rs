@@ -300,10 +300,6 @@ impl Window {
         crate::app_chrome::chrome_css_for_settings(&self.settings)
     }
 
-    pub(crate) fn set_fullscreen_for_tests(&self, fullscreen: bool) {
-        self.set_fullscreen(fullscreen);
-    }
-
     pub(crate) fn persist_window_size_for_tests(&self) {
         self.persist_window_size();
     }

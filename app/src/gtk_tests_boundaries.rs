@@ -2,9 +2,9 @@ use gtk4::{gio, glib, prelude::*};
 use libadwaita as adw;
 use std::{io::Write, time::Duration};
 
-// The real GTK boundary smoke is called from gtk_surfaces_and_editor_flow_work.
-// Keeping it in the single GTK integration test avoids cross-thread GTK
-// initialization failures from multiple independent Rust #[test] entry points.
+// GTK boundary smoke runs inside the single GTK integration test; that keeps
+// gtk4-rs initialization on one Rust test thread while preserving per-flow CI
+// visibility through progress markers.
 use crate::document_limits::{MIB, OPEN_FILE_LIMIT_BYTES, SEARCH_CHAR_LIMIT};
 use crate::gtk_tests::{
     TempFileFixture, build_window, build_window_with_settings, drain_events, spin_until,

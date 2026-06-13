@@ -5,15 +5,22 @@ use libadwaita as adw;
 
 use crate::editor_tab::Writability;
 use crate::gtk_tests::{
-    TempFileFixture, build_window_with_settings, drain_events, spin_until, write_temp_file,
+    TempFileFixture, build_window_with_settings, drain_events, run_gtk_flow, spin_until,
+    write_temp_file,
 };
 use crate::settings::{AppSettings, EditorPalette, ThemePreference};
 use crate::workspace::OpenSource;
 
 pub(crate) fn exercise_v8_polish_and_safety(test_app: &adw::Application) {
-    exercise_presentation_preferences(test_app);
-    exercise_recent_files_dialog(test_app);
-    exercise_autosave_is_silent_and_gsettings_clean(test_app);
+    run_gtk_flow("v8-presentation-preferences", || {
+        exercise_presentation_preferences(test_app);
+    });
+    run_gtk_flow("v8-recent-files-dialog", || {
+        exercise_recent_files_dialog(test_app);
+    });
+    run_gtk_flow("v8-autosave-silent", || {
+        exercise_autosave_is_silent_and_gsettings_clean(test_app);
+    });
 }
 
 fn collect_buttons(root: &gtk4::Widget, label: &str) -> Vec<gtk4::Button> {
@@ -60,6 +67,8 @@ fn exercise_presentation_preferences(test_app: &adw::Application) {
         return;
     };
     window.ensure_default_tab();
+    window.present();
+    drain_events(16);
     assert_eq!(window.preferences_page_count_for_tests(), 4);
     assert_eq!(
         window.preferences_page_titles_for_tests(),
@@ -89,8 +98,6 @@ fn exercise_presentation_preferences(test_app: &adw::Application) {
     window.select_editor_palette_for_tests(2);
     window.set_current_line_highlight_for_tests(false);
     window.set_autosave_for_tests(true);
-    window.set_fullscreen_for_tests(true);
-    window.set_fullscreen_for_tests(false);
     window.persist_window_size_for_tests();
 
     let writes = window.preferences_write_log_for_tests();
