@@ -271,13 +271,23 @@ fn case_sensitive_ranges(line: &str, query: &str) -> Vec<(i32, i32)> {
 
 fn folded_ranges(line: &str, query: &[char]) -> Vec<(i32, i32)> {
     let mut ranges = Vec::new();
-    for (char_start, (byte_start, _)) in line.char_indices().enumerate() {
-        if let Some(byte_end) = folded_match_end(&line[byte_start..], query) {
+    let mut byte_start = 0_usize;
+    let mut char_start = 0_usize;
+    while byte_start < line.len() {
+        if let Some(byte_len) = folded_match_end(&line[byte_start..], query) {
+            let matched = &line[byte_start..byte_start + byte_len];
             let start = i32::try_from(char_start).map_or(i32::MAX, |value| value);
-            let end =
-                start.saturating_add(char_count_i32(&line[byte_start..byte_start + byte_end]));
+            let end = start.saturating_add(char_count_i32(matched));
             ranges.push((start, end));
+            char_start = char_start.saturating_add(matched.chars().count());
+            byte_start += byte_len;
+            continue;
         }
+        let Some(character) = line[byte_start..].chars().next() else {
+            break;
+        };
+        byte_start += character.len_utf8();
+        char_start = char_start.saturating_add(1);
     }
     ranges
 }
@@ -410,6 +420,14 @@ mod tests {
         assert_eq!(
             folded_ranges("Alpha alpha", &folded_chars("alpha")),
             vec![(0, 5), (6, 11)]
+        );
+    }
+
+    #[test]
+    fn folded_ranges_do_not_overlap() {
+        assert_eq!(
+            folded_ranges("aaaa", &folded_chars("aa")),
+            vec![(0, 2), (2, 4)]
         );
     }
 
