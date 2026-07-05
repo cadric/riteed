@@ -7,6 +7,7 @@ pub(crate) mod page_text;
 pub(crate) mod reader;
 pub(crate) mod search;
 pub(crate) mod viewer;
+pub(crate) mod viewer_status;
 
 #[cfg(test)]
 mod viewer_tests;

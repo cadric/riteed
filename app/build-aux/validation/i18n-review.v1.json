@@ -164,35 +164,35 @@
     },
     {
       "path": "src/large_file/viewer.rs",
-      "line": 67,
+      "line": 71,
       "match": "let status_label = gtk4::Label::new(Some(&gettext(\"Loading file page...\")));",
       "resolution": "This compact loading text appears inside the dedicated large-file viewer toolbar while a bounded page window is being read.",
       "kind": "i18n-short-string"
     },
     {
       "path": "src/large_file/viewer.rs",
-      "line": 200,
+      "line": 210,
       "match": "self.status_label.set_text(&gettext(\"Loading file page...\"));",
       "resolution": "This compact loading text appears inside the dedicated large-file viewer toolbar while a bounded page window is being read.",
       "kind": "i18n-short-string"
     },
     {
       "path": "src/large_file/viewer.rs",
-      "line": 306,
+      "line": 315,
       "match": "self.status_label.set_text(&gettext(\"Searching file...\"));",
       "resolution": "This compact status appears in the large-file viewer next to the find field after the user starts a streaming search.",
       "kind": "i18n-short-string"
     },
     {
       "path": "src/large_file/viewer.rs",
-      "line": 332,
+      "line": 341,
       "match": "self.status_label.set_text(&gettext(\"No matches found.\"));",
       "resolution": "This compact search result appears in the large-file viewer status area immediately after a find operation completes.",
       "kind": "i18n-short-string"
     },
     {
       "path": "src/large_file/viewer.rs",
-      "line": 377,
+      "line": 385,
       "match": "self.status_label.set_text(&gettext(\"Finding line...\"));",
       "resolution": "This compact status appears in the large-file viewer next to the line field while a lazy line jump scans toward the requested line.",
       "kind": "i18n-short-string"
