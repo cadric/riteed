@@ -1,6 +1,6 @@
 ---
 created: 2026-04-19
-updated: 2026-06-13
+updated: 2026-07-05
 status: current
 priority: high
 type: changelog
@@ -19,13 +19,26 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
   print and print preview surfaces.
 - Made the Source Control recent commits section collapsible while keeping it
   refreshed when expanded.
+- Printing from Markdown preview now asks before printing the raw source.
+- Source Control highlights the file belonging to the active tab, and the
+  Files sidebar shows a dot on entries with unsaved changes.
 
 ### Fixed
 - Fixed Compare/Diff minimap lifecycle handling so GtkSourceMap views detach
   while their holders are hidden or unmapped, avoiding GTK adjustment criticals
   during native GTK smoke tests.
+- Commit subjects and recent file names render as plain text instead of being
+  parsed as Pango markup.
+- Find in Files no longer skips regular files named like build directories and
+  reports non-overlapping case-insensitive matches.
 - Fixed Git subprocess completion handling so Source Control waits for process
   exit before reading status, avoiding GLib-GIO criticals in fatal smoke runs.
+- The large-file viewer keeps the search match count visible after jumping to
+  the first match.
+- Cancelled Git refreshes no longer force-kill in-flight mutating Git
+  processes, and a stale index.lock can no longer wedge Source Control.
+- Overlapping opens of the same file from Files or Source Control compare no
+  longer create duplicate tabs.
 - Fixed print paper geometry so configured margins, line wrapping, page breaks,
   and bottom/right clipping use GtkSourcePrintCompositor's point coordinate
   space.

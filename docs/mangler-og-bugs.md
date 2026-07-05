@@ -16,6 +16,9 @@ Det er en praktisk huskeliste, ikke en implementeringsplan.
   preference-callbacks, så der er én klar kilde til editor-font og én ensartet
   apply-path for editor og compare. Minimap kan stadig bruge samme font-family
   med fast minimap-size.
+- **Status (2026-07-05):** Kunne ikke reproduceres; dækket af regressionstest i
+  batch bug & UX-planen
+  (`docs/superpowers/plans/2026-07-05-batch-bug-and-ux.md`).
 
 ## Markdown preview og print
 
@@ -26,6 +29,10 @@ Det er en praktisk huskeliste, ikke en implementeringsplan.
   valg mellem "rå kilde" og "formateret preview".
 - **Mulig retning:** Afklar printmodellen for Markdown: enten route print
   gennem preview-renderingen, eller tilføj en eksplicit print-mode for Markdown.
+- **Status (2026-07-05):** Delvist adresseret i batch bug & UX-planen
+  (`docs/superpowers/plans/2026-07-05-batch-bug-and-ux.md`) med en eksplicit
+  valg-dialog før rå Markdown-kilde printes fra preview; formateret print er
+  stadig åben.
 
 ## Source Control compare åbner duplikeret dokument
 
@@ -38,6 +45,9 @@ Det er en praktisk huskeliste, ikke en implementeringsplan.
   Source Control åbner compare, eller marker compare som en mode på den samme
   fane fremfor en separat duplikat. Hvis en separat fane bevares, skal UI'en
   gøre relationen tydelig.
+- **Status (2026-07-05):** Adresseret i batch bug & UX-planen
+  (`docs/superpowers/plans/2026-07-05-batch-bug-and-ux.md`) via
+  pending-open-registry, så overlappende åbninger dedupes før load-completion.
 
 ## Source Control aktiv fil-markering
 
@@ -47,6 +57,8 @@ Det er en praktisk huskeliste, ikke en implementeringsplan.
   aktive editor-/compare-fane.
 - **Mulig retning:** Genbrug eller spejl den eksisterende selected/current
   file-markering fra Files, så navigationskonteksten er konsistent.
+- **Status (2026-07-05):** Implementeret i batch bug & UX-planen
+  (`docs/superpowers/plans/2026-07-05-batch-bug-and-ux.md`).
 
 ## Ikke-gemte filer i Files
 
@@ -56,3 +68,5 @@ Det er en praktisk huskeliste, ikke en implementeringsplan.
   ved filer der aktuelt har usaved changes.
 - **Mulig retning:** Bind Files-rækken til dokumentets dirty-state og vis en
   lille Adwaita-venlig statusindikator uden at gøre file tree'et visuelt tungt.
+- **Status (2026-07-05):** Implementeret i batch bug & UX-planen
+  (`docs/superpowers/plans/2026-07-05-batch-bug-and-ux.md`).
