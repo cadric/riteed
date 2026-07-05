@@ -1,6 +1,24 @@
 # Continuity
 
 ## OUTCOMES
+- 2026-07-05 Batch Bug & UX Fix plan
+  `docs/superpowers/plans/2026-07-05-batch-bug-and-ux.md` is complete on
+  `main`: after the precondition commit `6b0798e`, task commits `ad213f8`
+  through `681924a` landed markup-safe Recent Commits/Recent Files rows,
+  history-toggle borrow cleanup, Find in Files directory-skip and
+  case-insensitive match fixes, large-file viewer search-count retention,
+  mutating-Git cancel behavior that avoids SIGKILL, stale `index.lock`
+  deadline/status handling, compare-font regression coverage for the
+  unreproduced UX report, Markdown-preview raw-source print confirmation,
+  overlapping-open dedupe, Source Control active-file highlighting,
+  Files-sidebar dirty markers, and the matching `CHANGELOG.md` plus
+  `docs/mangler-og-bugs.md` updates. Per-task Gate runs passed; final
+  verification passed the cargo fmt/check/clippy/test Gate, policy-check
+  (`python3 -m tools.policy_check --root app --strict`), and coverage
+  (`python3 -m tools.coverage_check --root app`) at 82.0% line coverage. A
+  local Flatpak build from repo files passed via `scripts/local-flatpak-build`
+  and installed user Flatpak `io.github.cadric.Riteed` 0.3.7 at commit
+  `56cea8dbdf7cb24a8987a10db67aac3d08cbea93af35e8ef2692bf0c4d9a985a`.
 - 2026-06-13 0.3.7 beta release preparation is in progress on
   `release/v0.3.7`: version metadata is being bumped after PR #21 stabilized
   the native GTK smoke and Dependabot PR #19 updated `libfuzzer-sys` to
