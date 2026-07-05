@@ -19,6 +19,7 @@ pub(crate) fn exercise_v9_source_control(test_app: &adw::Application) {
     exercise_portal_like_root_detect_starts_without_preflight(test_app);
     exercise_source_control_history_expands_after_collapsed_open(test_app);
     exercise_tracked_source_control_compare_after_open(test_app);
+    exercise_overlapping_opens_do_not_duplicate_tabs(test_app);
     exercise_editor_source_control_minimap_bands(test_app);
 
     let Ok(repo) = init_modified_fixture_repo_for_tests(
@@ -187,6 +188,42 @@ fn exercise_tracked_source_control_compare_after_open(test_app: &adw::Applicatio
     window.apply_editor_font_for_tests("Monospace 19");
     drain_events(16);
     assert!(window.compare_fonts_match_editor_for_tests());
+}
+
+fn exercise_overlapping_opens_do_not_duplicate_tabs(test_app: &adw::Application) {
+    let file_kind = FixtureRepoFile::BASELINE;
+    let file_name = file_kind.name();
+    let Ok(repo) = init_modified_fixture_repo_for_tests(
+        FixtureRepoKind::V9_SOURCE_CONTROL_UNTRACKED,
+        file_kind,
+        b"baseline\n",
+        b"baseline changed\n",
+    ) else {
+        return;
+    };
+    let file_path = repo.file_path(file_kind);
+
+    let Some(window) = build_window(test_app) else {
+        return;
+    };
+    window.ensure_default_tab();
+    window.set_selected_text_for_tests("keep this tab");
+    window.handle_application_open(vec![gio::File::for_path(repo.path())]);
+    spin_until("v9 dedupe lists changed files", || {
+        window.source_control_row_count_for_tests() > 0
+    });
+
+    let file = gio::File::for_path(&file_path);
+    window.request_open_files(vec![file.clone()], OpenSource::AppOpen);
+    window.request_open_files(vec![file], OpenSource::AppOpen);
+    spin_until("v9 dedupe overlapping opens settle", || {
+        window.selected_char_count_for_tests() > 0
+    });
+    assert_eq!(window.tab_count_for_tests(), 2);
+
+    assert!(window.source_control_activate_path_for_tests(file_name));
+    drain_events(12);
+    assert_eq!(window.tab_count_for_tests(), 2);
 }
 
 fn exercise_editor_source_control_minimap_bands(test_app: &adw::Application) {

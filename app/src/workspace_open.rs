@@ -104,6 +104,7 @@ pub(crate) fn request_open_file_then(
         return;
     }
     let (tab, remove_on_failure) = acquire_open_target(workspace);
+    register_pending_open(workspace, file, &tab);
     if let Some(page) = tab.page() {
         workspace.tab_view.set_selected_page(&page);
     }
@@ -118,6 +119,7 @@ pub(crate) fn request_open_file_then(
         source,
         Rc::new(move |result| {
             if let Some(workspace) = weak.upgrade() {
+                clear_pending_open(&workspace, &opened_file);
                 if !open_target_is_current(&workspace, &tab_for_result, expected_page.as_ref()) {
                     callback(Err(AppError::Cancelled));
                     return;
@@ -194,6 +196,7 @@ fn process_open_request(workspace: &Rc<Workspace>, request: Rc<RefCell<OpenReque
     }
 
     let (tab, remove_on_failure) = acquire_open_target(workspace);
+    register_pending_open(workspace, &file, &tab);
     if let Some(page) = tab.page() {
         workspace.tab_view.set_selected_page(&page);
     }
@@ -209,6 +212,7 @@ fn process_open_request(workspace: &Rc<Workspace>, request: Rc<RefCell<OpenReque
         source,
         Rc::new(move |result| {
             if let Some(workspace) = weak.upgrade() {
+                clear_pending_open(&workspace, &opened_file);
                 if !open_target_is_current(&workspace, &tab_for_result, expected_page.as_ref()) {
                     request.borrow_mut().failures += 1;
                     process_open_request(&workspace, request.clone());
@@ -439,6 +443,23 @@ fn acquire_open_target(workspace: &Rc<Workspace>) -> (Rc<crate::editor_tab::Edit
     (workspace.add_empty_tab(true), true)
 }
 
+fn register_pending_open(workspace: &Workspace, file: &gio::File, tab: &Rc<EditorTab>) {
+    workspace
+        .state
+        .borrow_mut()
+        .pending_open_targets
+        .push((file.uri().to_string(), Rc::downgrade(tab)));
+}
+
+fn clear_pending_open(workspace: &Workspace, file: &gio::File) {
+    let uri = file.uri().to_string();
+    workspace
+        .state
+        .borrow_mut()
+        .pending_open_targets
+        .retain(|(pending, tab)| pending != &uri && tab.upgrade().is_some());
+}
+
 fn handle_open_failure(
     workspace: &Rc<Workspace>,
     source: OpenSource,
@@ -486,9 +507,8 @@ fn find_tab_by_file(
     workspace: &Workspace,
     file: &gio::File,
 ) -> Option<Rc<crate::editor_tab::EditorTab>> {
-    workspace
-        .state
-        .borrow()
+    let state = workspace.state.borrow();
+    state
         .tabs
         .iter()
         .find(|tab| {
@@ -497,6 +517,13 @@ fn find_tab_by_file(
                 .is_some_and(|uri| file.equal(&gio::File::for_uri(uri)))
         })
         .cloned()
+        .or_else(|| {
+            state
+                .pending_open_targets
+                .iter()
+                .filter(|(uri, _)| file.equal(&gio::File::for_uri(uri)))
+                .find_map(|(_, tab)| tab.upgrade())
+        })
 }
 
 fn apply_text_filters(dialog: &gtk4::FileDialog) {

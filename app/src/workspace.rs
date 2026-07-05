@@ -1,5 +1,5 @@
 use std::cell::{Cell, OnceCell, RefCell};
-use std::rc::Rc;
+use std::rc::{Rc, Weak};
 
 use gettextrs::{gettext, pgettext};
 use gtk4::{gdk, gio, glib, prelude::*};
@@ -41,6 +41,7 @@ pub enum OpenSource {
 
 pub(crate) struct WorkspaceState {
     pub(crate) tabs: Vec<Rc<EditorTab>>,
+    pub(crate) pending_open_targets: Vec<(String, Weak<EditorTab>)>,
     pub(crate) recent_files: Vec<String>,
     pub(crate) stored_session_files: Vec<String>,
     pub(crate) stored_selected_file: String,
@@ -136,6 +137,7 @@ impl Workspace {
             save_notification_handler: OnceCell::new(),
             state: RefCell::new(WorkspaceState {
                 tabs: Vec::new(),
+                pending_open_targets: Vec::new(),
                 recent_files: parts.settings.recent_files(),
                 stored_session_files: parts.settings.session_files(),
                 stored_selected_file: parts.settings.session_selected_file(),

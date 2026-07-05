@@ -261,7 +261,7 @@ fn compare_with_text(
     let Some(tab) = workspace
         .ordered_tabs()
         .into_iter()
-        .find(|tab| tab.document_uri().as_deref() == Some(uri.as_str()))
+        .find(|tab| tab.session_uri().as_deref() == Some(uri.as_str()))
     else {
         let weak = Rc::downgrade(state);
         let entry = entry.clone();
