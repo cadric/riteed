@@ -303,6 +303,7 @@ fn commit_row(commit: &GitCommitSummary) -> adw::ActionRow {
         .title(&commit.subject)
         .subtitle(&subtitle)
         .tooltip_text(&commit.full_hash)
+        .use_markup(false)
         .build();
     row.set_activatable(false);
     row
@@ -319,6 +320,14 @@ fn should_refresh_history(
 #[cfg(test)]
 mod tests {
     use super::should_refresh_history;
+
+    #[test]
+    fn commit_rows_disable_pango_markup() {
+        // Concat so the test's own literal cannot satisfy the assertion.
+        let source = include_str!("history.rs");
+        let marker = [".use_markup", "(false)"].concat();
+        assert!(source.contains(&marker));
+    }
 
     #[test]
     fn history_skips_index_only_refreshes_for_same_head() {
