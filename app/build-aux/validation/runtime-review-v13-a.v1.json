@@ -171,7 +171,7 @@
     },
     {
       "path": "src/find_in_files/scanner.rs",
-      "line": 205,
+      "line": 206,
       "match": "fn read_file(state: Rc<RefCell<ScanState>>, candidate: FileCandidate) {",
       "kind": "runtime-shared-state",
       "ownership": "The Find in Files controller and scanner own one workspace scan generation, cancellable, and result set.",
@@ -179,7 +179,7 @@
     },
     {
       "path": "src/find_in_files/scanner.rs",
-      "line": 224,
+      "line": 225,
       "match": "fn collect_matches(state: &Rc<RefCell<ScanState>>, candidate: &FileCandidate, text: &str) {",
       "kind": "runtime-shared-state",
       "ownership": "The Find in Files controller and scanner own one workspace scan generation, cancellable, and result set.",
@@ -187,7 +187,7 @@
     },
     {
       "path": "src/find_in_files/scanner.rs",
-      "line": 321,
+      "line": 322,
       "match": "fn should_finish(state: &Rc<RefCell<ScanState>>) -> bool {",
       "kind": "runtime-shared-state",
       "ownership": "The Find in Files controller and scanner own one workspace scan generation, cancellable, and result set.",
@@ -195,7 +195,7 @@
     },
     {
       "path": "src/find_in_files/scanner.rs",
-      "line": 328,
+      "line": 329,
       "match": "fn finish_scan(state: &Rc<RefCell<ScanState>>) {",
       "kind": "runtime-shared-state",
       "ownership": "The Find in Files controller and scanner own one workspace scan generation, cancellable, and result set.",
@@ -203,7 +203,7 @@
     },
     {
       "path": "src/find_in_files/scanner.rs",
-      "line": 336,
+      "line": 337,
       "match": "fn stale_or_cancelled(state: &Rc<RefCell<ScanState>>) -> bool {",
       "kind": "runtime-shared-state",
       "ownership": "The Find in Files controller and scanner own one workspace scan generation, cancellable, and result set.",

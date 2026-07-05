@@ -165,7 +165,8 @@ fn queue_directory_entries(
         }
         state.summary.visited += 1;
         let name = info.name().to_string_lossy().to_string();
-        if should_skip_name(&name, state.show_hidden()) {
+        let is_directory = info.file_type() == gio::FileType::Directory;
+        if should_skip_entry(&name, is_directory, state.show_hidden()) {
             state.summary.skipped += 1;
             continue;
         }
@@ -337,8 +338,8 @@ fn stale_or_cancelled(state: &Rc<RefCell<ScanState>>) -> bool {
     state.borrow().request.cancellable.is_cancelled()
 }
 
-fn should_skip_name(name: &str, show_hidden: bool) -> bool {
-    always_skipped_dir(name) || (!show_hidden && name.starts_with('.'))
+fn should_skip_entry(name: &str, is_directory: bool, show_hidden: bool) -> bool {
+    (is_directory && always_skipped_dir(name)) || (!show_hidden && name.starts_with('.'))
 }
 
 fn always_skipped_dir(name: &str) -> bool {
@@ -389,7 +390,7 @@ impl ScanState {
 #[cfg(test)]
 mod tests {
     use super::{
-        buffer_line_advance, case_sensitive_ranges, folded_chars, folded_ranges, should_skip_name,
+        buffer_line_advance, case_sensitive_ranges, folded_chars, folded_ranges, should_skip_entry,
     };
 
     #[test]
@@ -422,10 +423,12 @@ mod tests {
     }
 
     #[test]
-    fn hidden_toggle_never_scans_expensive_build_dirs() {
-        assert!(should_skip_name(".git", true));
-        assert!(should_skip_name("target", true));
-        assert!(should_skip_name(".secret", false));
-        assert!(!should_skip_name(".secret", true));
+    fn skip_list_applies_to_directories_only() {
+        assert!(should_skip_entry(".git", true, true));
+        assert!(should_skip_entry("target", true, true));
+        assert!(!should_skip_entry("target", false, true));
+        assert!(!should_skip_entry("build", false, true));
+        assert!(should_skip_entry(".secret", false, false));
+        assert!(!should_skip_entry(".secret", false, true));
     }
 }
