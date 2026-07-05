@@ -93,37 +93,50 @@ pub(super) fn toggle(state: &SourceStateRef) -> bool {
     set_expanded(state, !expanded)
 }
 
+enum HistorySplitAction {
+    Restore(i32),
+    Collapse,
+}
+
 fn set_expanded(state: &SourceStateRef, expanded: bool) -> bool {
-    let head_oid = {
+    let (header_button, chevron, content, split, split_action, head_oid) = {
         let state = state.borrow();
         let history = &state.history;
         if history.is_expanded() == expanded {
             return false;
         }
         history.expanded.set(expanded);
-        history.content.set_reveal_child(expanded);
-        history
-            .header_button
-            .update_state(&[accessible::State::Expanded(Some(expanded))]);
-        history.chevron.set_icon_name(Some(if expanded {
-            HISTORY_EXPANDED_ICON
+        let split_action = if expanded {
+            HistorySplitAction::Restore(history.last_expanded_position.get())
         } else {
-            HISTORY_COLLAPSED_ICON
-        }));
-        if expanded {
-            state
-                .history_split
-                .set_position(history.last_expanded_position.get());
-            Some(state.snapshot.head_oid.clone())
-        } else {
-            let position = state.history_split.position();
-            if position > 0 {
-                history.last_expanded_position.set(position);
-            }
-            state.history_split.set_position(i32::MAX);
-            None
-        }
+            HistorySplitAction::Collapse
+        };
+        (
+            history.header_button.clone(),
+            history.chevron.clone(),
+            history.content.clone(),
+            state.history_split.clone(),
+            split_action,
+            expanded.then(|| state.snapshot.head_oid.clone()),
+        )
     };
+    content.set_reveal_child(expanded);
+    header_button.update_state(&[accessible::State::Expanded(Some(expanded))]);
+    chevron.set_icon_name(Some(if expanded {
+        HISTORY_EXPANDED_ICON
+    } else {
+        HISTORY_COLLAPSED_ICON
+    }));
+    match split_action {
+        HistorySplitAction::Restore(position) => split.set_position(position),
+        HistorySplitAction::Collapse => {
+            let position = split.position();
+            if position > 0 {
+                state.borrow().history.last_expanded_position.set(position);
+            }
+            split.set_position(i32::MAX);
+        }
+    }
     if let Some(head_oid) = head_oid {
         refresh(state, head_oid.as_deref());
     }

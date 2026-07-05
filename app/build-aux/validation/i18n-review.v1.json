@@ -241,7 +241,7 @@
     },
     {
       "path": "src/source_control/history.rs",
-      "line": 266,
+      "line": 279,
       "match": "self.status.set_label(&gettext(\"No commits yet.\"));",
       "resolution": "This short Source Control string appears inside the Git sidebar where the changed-file, history, or action context is visible.",
       "kind": "i18n-short-string"
