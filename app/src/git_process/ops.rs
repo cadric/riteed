@@ -15,6 +15,10 @@ use super::{GitCallback, GitIdentity, GitProcess, GitProcessError};
 const STATUS_CAP: usize = 4 * 1024 * 1024;
 const ATTR_CAP: usize = 2 * 1024 * 1024;
 const BLOB_CAP: usize = 1_000_001;
+/// Mutating git children must not be `SIGKILL`ed on user cancellation; a killed
+/// index writer strands .git/index.lock.
+const MUTATING_KILL_ON_CANCEL: bool = false;
+const READ_ONLY_KILL_ON_CANCEL: bool = true;
 
 impl GitProcess {
     pub(crate) fn status(
@@ -34,6 +38,7 @@ impl GitProcess {
             None,
             STATUS_CAP,
             false,
+            READ_ONLY_KILL_ON_CANCEL,
             cancellable,
             Rc::new(move |result| {
                 callback(result.map(|output| parse_status(&output.stdout)));
@@ -123,6 +128,7 @@ impl GitProcess {
             Some(stdin),
             ATTR_CAP,
             false,
+            READ_ONLY_KILL_ON_CANCEL,
             cancellable,
             Rc::new(move |result| {
                 callback(result.and_then(|output| {
@@ -143,6 +149,7 @@ impl GitProcess {
             None,
             BLOB_CAP,
             false,
+            READ_ONLY_KILL_ON_CANCEL,
             cancellable,
             Rc::new(move |result| callback(result.map(|output| output.stdout))),
         );
@@ -199,6 +206,7 @@ impl GitProcess {
             Some(stdin),
             4096,
             false,
+            MUTATING_KILL_ON_CANCEL,
             cancellable,
             Rc::new(move |result| callback(result.map(|_output| ()))),
         );
@@ -219,6 +227,7 @@ impl GitProcess {
             None,
             4096,
             true,
+            READ_ONLY_KILL_ON_CANCEL,
             cancellable,
             Rc::new(move |result| {
                 callback(result.map(|output| {
@@ -282,6 +291,7 @@ impl GitProcess {
             None,
             4096,
             false,
+            MUTATING_KILL_ON_CANCEL,
             cancellable,
             Rc::new(move |result| callback(result.map(|_output| ()))),
         );
@@ -302,6 +312,7 @@ impl GitProcess {
             None,
             4096,
             false,
+            MUTATING_KILL_ON_CANCEL,
             cancellable,
             Rc::new(move |result| callback(result.map(|_output| ()))),
         );
@@ -360,6 +371,7 @@ impl GitProcess {
             None,
             4096,
             false,
+            MUTATING_KILL_ON_CANCEL,
             cancellable,
             Rc::new(move |result| callback(result.map(|_output| ()))),
         );

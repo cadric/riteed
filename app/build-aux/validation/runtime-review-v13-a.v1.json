@@ -227,7 +227,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 276,
+      "line": 286,
       "match": "let flags = gio::SubprocessFlags::STDIN_PIPE",
       "kind": "runtime-git-subprocess",
       "ownership": "The typed Git process boundary owns the Gio subprocess pipe flags.",
@@ -235,7 +235,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 277,
+      "line": 287,
       "match": "| gio::SubprocessFlags::STDOUT_PIPE",
       "kind": "runtime-git-subprocess",
       "ownership": "The typed Git process boundary owns stdout capture for sandbox Git.",
@@ -243,7 +243,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 278,
+      "line": 288,
       "match": "| gio::SubprocessFlags::STDERR_PIPE;",
       "kind": "runtime-git-subprocess",
       "ownership": "The typed Git process boundary owns stderr capture for sandbox Git.",
@@ -251,7 +251,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 279,
+      "line": 289,
       "match": "let launcher = gio::SubprocessLauncher::new(flags);",
       "kind": "runtime-git-subprocess",
       "ownership": "The typed Git process boundary owns subprocess creation.",
@@ -259,7 +259,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 347,
+      "line": 364,
       "match": "subprocess: &gio::Subprocess,",
       "kind": "runtime-git-subprocess",
       "ownership": "The typed Git process boundary owns post-communication subprocess completion.",
@@ -267,7 +267,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 377,
+      "line": 394,
       "match": "subprocess: &gio::Subprocess,",
       "kind": "runtime-git-subprocess",
       "ownership": "The typed Git process boundary owns timeout supervision for one Gio subprocess.",
@@ -275,7 +275,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 379,
+      "line": 396,
       "match": "finished: Rc<Cell<bool>>,",
       "kind": "runtime-shared-state",
       "ownership": "The typed Git process boundary owns one completion flag shared by the communicate callback and timeout grace callback.",
@@ -283,7 +283,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 380,
+      "line": 397,
       "match": "timed_out: Rc<Cell<bool>>,",
       "kind": "runtime-shared-state",
       "ownership": "The typed Git process boundary owns one timeout flag shared by the communicate callback and timeout callback.",
@@ -291,11 +291,11 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 408,
+      "line": 425,
       "match": "fn kill_unfinished_git(subprocess: &gio::Subprocess) {",
       "kind": "runtime-git-subprocess",
-      "ownership": "The typed Git process boundary owns forced termination of timed-out or cancelled Git subprocesses.",
-      "justification": "Only subprocesses spawned by this reviewed /app/bin/git boundary reach this helper, and the helper exits early for completed processes before calling Gio force_exit."
+      "ownership": "The typed Git process boundary owns forced termination of timed-out or kill-on-cancel Git subprocesses.",
+      "justification": "Only subprocesses spawned by this reviewed /app/bin/git boundary reach this helper, mutating user-cancel paths bypass it, and the helper exits early for completed processes before calling Gio force_exit."
     },
     {
       "path": "src/git_process/test_support.rs",
@@ -307,7 +307,7 @@
     },
     {
       "path": "src/git_process/tests.rs",
-      "line": 301,
+      "line": 313,
       "match": "let slot: Rc<RefCell<Option<Result<T, GitProcessError>>>> = Rc::new(RefCell::new(None));",
       "kind": "runtime-shared-state",
       "ownership": "Git process unit tests own this callback result slot.",
@@ -315,7 +315,7 @@
     },
     {
       "path": "src/git_process/tests.rs",
-      "line": 316,
+      "line": 328,
       "match": "let slot: Rc<RefCell<Option<Result<T, GitProcessError>>>> = Rc::new(RefCell::new(None));",
       "kind": "runtime-shared-state",
       "ownership": "Git process unit tests own this callback result slot.",

@@ -43,6 +43,18 @@ fn detect_repo_does_not_retry_cancel_or_timeout() {
 }
 
 #[test]
+fn detect_repo_spec_kills_on_cancel() {
+    let spec = super::detect_repo_spec("/tmp/repo", true);
+    assert!(spec.kill_on_cancel);
+}
+
+#[test]
+fn mutating_ops_opt_out_of_cancel_kill() {
+    let source = include_str!("ops.rs");
+    assert!(source.matches("MUTATING_KILL_ON_CANCEL").count() >= 5);
+}
+
+#[test]
 fn read_only_git_ops_work_against_current_repo() {
     let _guard = crate::test_support::lock_for_tests();
     let app_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -225,7 +237,7 @@ fn run_specs_use_resolved_git_env_without_joining_dot_git() {
         packed_refs_path: PathBuf::from("/tmp/common/packed-refs"),
     };
     let process = GitProcess::new(context);
-    let spec_result = process.spec(["status"], None, 4096, false);
+    let spec_result = process.spec(["status"], None, 4096, false, true);
     assert!(spec_result.is_ok());
     let Ok(spec) = spec_result else {
         return;
@@ -364,6 +376,7 @@ fn run_git_command<const N: usize>(
                 stdin: None,
                 stdout_cap: 256 * 1024,
                 allow_failure: false,
+                kill_on_cancel: true,
             },
             cancellable,
             Rc::new(move |result| callback(result.map(|_output| ()))),

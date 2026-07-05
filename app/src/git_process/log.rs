@@ -42,6 +42,7 @@ impl GitProcess {
             None,
             LOG_CAP,
             false,
+            true, // read-only log queries can be killed on cancellation
             cancellable,
             Rc::new(move |result| callback(parse_log_result(result))),
         );

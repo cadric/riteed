@@ -100,6 +100,7 @@ struct GitSpec {
     stdin: Option<Vec<u8>>,
     stdout_cap: usize,
     allow_failure: bool,
+    kill_on_cancel: bool,
 }
 
 impl GitProcess {
@@ -168,16 +169,21 @@ impl GitProcess {
         );
     }
 
+    #[allow(
+        clippy::too_many_arguments,
+        reason = "RIT-BATCH-2026-07-05-Task7 keeps this private runner signature explicit at call sites."
+    )]
     fn run<const N: usize>(
         &self,
         args: [&str; N],
         stdin: Option<Vec<u8>>,
         stdout_cap: usize,
         allow_failure: bool,
+        kill_on_cancel: bool,
         cancellable: &gio::Cancellable,
         callback: GitCallback<GitRunOutput>,
     ) {
-        match self.spec(args, stdin, stdout_cap, allow_failure) {
+        match self.spec(args, stdin, stdout_cap, allow_failure, kill_on_cancel) {
             Ok(spec) => run_git(spec, cancellable, callback),
             Err(error) => callback(Err(error)),
         }
@@ -189,6 +195,7 @@ impl GitProcess {
         stdin: Option<Vec<u8>>,
         stdout_cap: usize,
         allow_failure: bool,
+        kill_on_cancel: bool,
     ) -> Result<GitSpec, GitProcessError> {
         let git_dir = self
             .repo
@@ -214,6 +221,7 @@ impl GitProcess {
             stdin,
             stdout_cap,
             allow_failure,
+            kill_on_cancel,
         })
     }
 
@@ -229,6 +237,7 @@ impl GitProcess {
             None,
             4096,
             allow_failure,
+            true,
             cancellable,
             Rc::new(move |result| {
                 callback(result.and_then(|output| {
@@ -269,6 +278,7 @@ fn detect_repo_spec(folder: &str, path_format_absolute: bool) -> GitSpec {
         stdin: None,
         stdout_cap: 16 * 1024,
         allow_failure: false,
+        kill_on_cancel: true,
     }
 }
 
@@ -296,6 +306,9 @@ fn run_git(spec: GitSpec, cancellable: &gio::Cancellable, callback: GitCallback<
             return;
         }
     };
+    let stdout_cap = spec.stdout_cap;
+    let allow_failure = spec.allow_failure;
+    let kill_on_cancel = spec.kill_on_cancel;
     let stdin_bytes = glib::Bytes::from_owned(spec.stdin.unwrap_or_default());
     let callback_for_result = callback;
     let subprocess_for_result = subprocess.clone();
@@ -319,14 +332,18 @@ fn run_git(spec: GitSpec, cancellable: &gio::Cancellable, callback: GitCallback<
                     &subprocess_for_result,
                     stdout,
                     stderr,
-                    spec.stdout_cap,
-                    spec.allow_failure,
+                    stdout_cap,
+                    allow_failure,
                     callback_for_result,
                 );
             }
             Err(error) => {
                 if error.matches(gio::IOErrorEnum::Cancelled) {
-                    kill_unfinished_git(&subprocess_for_result);
+                    if kill_on_cancel || timed_out.get() {
+                        kill_unfinished_git(&subprocess_for_result);
+                    } else {
+                        subprocess_for_result.wait_async(None::<&gio::Cancellable>, |_result| {});
+                    }
                     let error = if timed_out.get() {
                         GitProcessError::TimedOut
                     } else {
