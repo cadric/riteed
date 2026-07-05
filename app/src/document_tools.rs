@@ -1,8 +1,10 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use gettextrs::{gettext, pgettext};
 use gtk4::{gio, prelude::*};
 use libadwaita as adw;
+use libadwaita::prelude::*;
 
 use crate::editor_tab::EditorTab;
 use crate::settings::AppSettings;
@@ -110,7 +112,34 @@ impl DocumentToolsController {
         crate::document_statistics::present(&self.parent, &tab);
     }
 
-    fn print_document(&self) {
+    fn print_document(self: &Rc<Self>) {
+        let Some(tab) = self.workspace.selected_tab() else {
+            return;
+        };
+        if print_needs_markdown_confirmation(tab.is_markdown_preview_active()) {
+            let dialog = adw::AlertDialog::new(
+                Some(&gettext("Print Markdown Source?")),
+                Some(&gettext(
+                    "Printing the formatted preview is not supported yet. The raw Markdown source will be printed.",
+                )),
+            );
+            dialog.add_response("cancel", &pgettext("dialog button", "Cancel"));
+            dialog.add_response("print", &pgettext("dialog button", "Print Source"));
+            dialog.set_default_response(Some("print"));
+            dialog.set_close_response("cancel");
+            let weak = Rc::downgrade(self);
+            dialog.connect_response(Some("print"), move |_, _| {
+                if let Some(controller) = weak.upgrade() {
+                    controller.start_print();
+                }
+            });
+            dialog.present(Some(&self.parent));
+            return;
+        }
+        self.start_print();
+    }
+
+    fn start_print(&self) {
         let body_font = crate::document_print::print_body_font_name(&self.settings.editor_font());
         self.print_document_with_font(&body_font);
     }
@@ -171,6 +200,10 @@ fn default_print_runner() -> PrintRunner {
     Rc::new(crate::document_print::run_print)
 }
 
+fn print_needs_markdown_confirmation(preview_active: bool) -> bool {
+    preview_active
+}
+
 fn default_preview_runner(controller: std::rc::Weak<DocumentToolsController>) -> PreviewRunner {
     Rc::new(move |parent, view, title, body_font| {
         let controller = controller.clone();
@@ -186,4 +219,13 @@ fn default_preview_runner(controller: std::rc::Weak<DocumentToolsController>) ->
             }),
         );
     })
+}
+
+#[cfg(test)]
+mod print_confirmation_tests {
+    #[test]
+    fn preview_mode_requires_confirmation() {
+        assert!(super::print_needs_markdown_confirmation(true));
+        assert!(!super::print_needs_markdown_confirmation(false));
+    }
 }

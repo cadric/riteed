@@ -235,7 +235,7 @@
     },
     {
       "path": "src/document_tools.rs",
-      "line": 22,
+      "line": 24,
       "match": "print_runner: RefCell<PrintRunner>,",
       "kind": "runtime-shared-state",
       "ownership": "The document tools controller owns the mutable print runner injection point.",
@@ -243,7 +243,7 @@
     },
     {
       "path": "src/document_tools.rs",
-      "line": 23,
+      "line": 25,
       "match": "preview_runner: RefCell<PreviewRunner>,",
       "kind": "runtime-shared-state",
       "ownership": "The document tools controller owns the mutable print preview runner injection point.",

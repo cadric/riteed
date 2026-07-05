@@ -1121,6 +1121,9 @@ msgstr ""
 msgid "Print Current Document"
 msgstr ""
 
+msgid "Print Markdown Source?"
+msgstr ""
+
 msgctxt "menu item"
 msgid "Print Preview"
 msgstr ""
@@ -1128,7 +1131,14 @@ msgstr ""
 msgid "Print Preview"
 msgstr ""
 
+msgctxt "dialog button"
+msgid "Print Source"
+msgstr ""
+
 msgid "Print preview failed."
+msgstr ""
+
+msgid "Printing the formatted preview is not supported yet. The raw Markdown source will be printed."
 msgstr ""
 
 msgid "Printing failed."
