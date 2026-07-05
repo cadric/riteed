@@ -24,6 +24,7 @@ pub(crate) mod actions;
 mod history;
 mod list_view;
 mod live;
+mod live_scheduler;
 mod minimap;
 mod path_target;
 mod refresh;

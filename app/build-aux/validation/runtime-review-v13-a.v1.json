@@ -435,7 +435,7 @@
     },
     {
       "path": "src/source_control.rs",
-      "line": 50,
+      "line": 51,
       "match": "pub(super) type SourceStateRef = Rc<RefCell<SourceControlState>>;",
       "kind": "runtime-shared-state",
       "ownership": "The Source Control controller owns the sidebar state behind one Rc<RefCell>.",
@@ -514,8 +514,8 @@
       "justification": "The flat ListView factory is created before controller Rc wiring and must dispatch row actions against the current snapshot without retaining the window."
     },
     {
-      "path": "src/source_control/live.rs",
-      "line": 219,
+      "path": "src/source_control/live_scheduler.rs",
+      "line": 32,
       "match": "pending: Rc<Cell<bool>>,",
       "kind": "runtime-shared-state",
       "ownership": "The Source Control live-refresh scheduler owns debounce and last-refresh state.",

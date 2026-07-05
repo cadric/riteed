@@ -1,7 +1,6 @@
-use std::cell::{Cell, RefCell};
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use gtk4::{gio, glib, prelude::*};
 
@@ -9,10 +8,9 @@ use crate::git_process::GitRepoContext;
 use crate::git_status::GitStatusSnapshot;
 use crate::source_control::{SourceControlState, SourceStateRef};
 
-use super::refresh::refresh_status;
+use super::live_scheduler::{LiveScheduler, ScheduledRefresh};
+use super::refresh::{RefreshOrigin, refresh_status, refresh_status_with_origin};
 
-const DEBOUNCE: Duration = Duration::from_millis(250);
-const MIN_INTERVAL: Duration = Duration::from_secs(1);
 const PORTAL_POLL: Duration = Duration::from_secs(4);
 
 pub(crate) struct SourceControlLiveRefresh {
@@ -27,7 +25,7 @@ pub(crate) struct SourceControlLiveRefresh {
 }
 
 impl SourceControlLiveRefresh {
-    pub(super) fn new(context: GitRepoContext, on_refresh: Rc<dyn Fn()>) -> Self {
+    pub(super) fn new(context: GitRepoContext, on_refresh: Rc<dyn Fn(ScheduledRefresh)>) -> Self {
         let use_polling = use_polling(&context);
         let scheduler =
             LiveScheduler::new(context.index_lock_path.clone(), !use_polling, on_refresh);
@@ -119,9 +117,15 @@ pub(super) fn install(state: &SourceStateRef) {
     let weak = Rc::downgrade(state);
     let live = SourceControlLiveRefresh::new(
         context,
-        Rc::new(move || {
-            if let Some(state) = weak.upgrade() {
-                refresh_status(&state);
+        Rc::new(move |kind| {
+            let Some(state) = weak.upgrade() else {
+                return;
+            };
+            match kind {
+                ScheduledRefresh::Normal => refresh_status(&state),
+                ScheduledRefresh::LockWaitExpired => {
+                    refresh_status_with_origin(&state, RefreshOrigin::LockWaitExpired);
+                }
             }
         }),
     );
@@ -209,91 +213,6 @@ pub(super) fn saved_file_in_repo(state: &SourceControlState, file: &gio::File) -
 impl Drop for SourceControlLiveRefresh {
     fn drop(&mut self) {
         self.cancel();
-    }
-}
-
-#[derive(Clone)]
-struct LiveScheduler {
-    index_lock_path: PathBuf,
-    check_index_lock: bool,
-    pending: Rc<Cell<bool>>,
-    cancelled: Rc<Cell<bool>>,
-    last_refresh: Rc<RefCell<Option<Instant>>>,
-    lock_probe: Rc<dyn Fn(&Path) -> bool>,
-    on_refresh: Rc<dyn Fn()>,
-}
-
-impl LiveScheduler {
-    fn new(index_lock_path: PathBuf, check_index_lock: bool, on_refresh: Rc<dyn Fn()>) -> Self {
-        Self::new_with_lock_probe(
-            index_lock_path,
-            check_index_lock,
-            Rc::new(Path::exists),
-            on_refresh,
-        )
-    }
-
-    fn new_with_lock_probe(
-        index_lock_path: PathBuf,
-        check_index_lock: bool,
-        lock_probe: Rc<dyn Fn(&Path) -> bool>,
-        on_refresh: Rc<dyn Fn()>,
-    ) -> Self {
-        Self {
-            index_lock_path,
-            check_index_lock,
-            pending: Rc::new(Cell::new(false)),
-            cancelled: Rc::new(Cell::new(false)),
-            last_refresh: Rc::new(RefCell::new(None)),
-            lock_probe,
-            on_refresh,
-        }
-    }
-
-    fn schedule(&self) {
-        if self.cancelled.get() {
-            return;
-        }
-        if self.pending.replace(true) {
-            return;
-        }
-        let delay = self.delay();
-        let scheduler = self.clone();
-        glib::timeout_add_local_once(delay, move || scheduler.fire());
-    }
-
-    fn fire(&self) {
-        self.pending.set(false);
-        if self.cancelled.get() {
-            return;
-        }
-        if self.index_lock_exists() {
-            self.schedule();
-            return;
-        }
-        *self.last_refresh.borrow_mut() = Some(Instant::now());
-        (self.on_refresh)();
-    }
-
-    fn cancel(&self) {
-        self.cancelled.set(true);
-        self.pending.set(false);
-    }
-
-    fn index_lock_exists(&self) -> bool {
-        self.check_index_lock && !self.cancelled.get() && (self.lock_probe)(&self.index_lock_path)
-    }
-
-    fn delay(&self) -> Duration {
-        let Some(last) = *self.last_refresh.borrow() else {
-            return DEBOUNCE;
-        };
-        let elapsed = last.elapsed();
-        if elapsed >= MIN_INTERVAL {
-            DEBOUNCE
-        } else {
-            MIN_INTERVAL.saturating_sub(elapsed).max(DEBOUNCE)
-        }
     }
 }
 
@@ -426,17 +345,14 @@ fn refresh_event(event: gio::FileMonitorEvent) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use std::cell::Cell;
     use std::fs;
     use std::path::{Path, PathBuf};
-    use std::rc::Rc;
-    use std::time::Instant;
 
     use gtk4::gio;
 
     use super::{
-        DEBOUNCE, LiveScheduler, MonitorKind, document_portal_path, metadata_targets,
-        monitor_target_for_path, path_requires_polling, refresh_event, use_polling,
+        MonitorKind, document_portal_path, metadata_targets, monitor_target_for_path,
+        path_requires_polling, refresh_event, use_polling,
     };
     use crate::git_process::GitRepoContext;
 
@@ -456,58 +372,6 @@ mod tests {
             "/run/user/1000/doc/abc"
         )));
         assert!(!document_portal_path(std::path::Path::new("/tmp/repo")));
-    }
-
-    #[test]
-    fn live_scheduler_delay_uses_debounce_and_minimum_interval() {
-        let scheduler = LiveScheduler::new(
-            std::path::PathBuf::from("/tmp/repo/.git/index.lock"),
-            true,
-            Rc::new(|| {}),
-        );
-        assert_eq!(scheduler.delay(), DEBOUNCE);
-
-        *scheduler.last_refresh.borrow_mut() = Some(Instant::now());
-        assert!(scheduler.delay() >= DEBOUNCE);
-    }
-
-    #[test]
-    fn live_scheduler_cancel_and_polling_skip_lock_probes() {
-        let (scheduler, probes, refreshes) = counted_scheduler(true);
-        scheduler.pending.set(true);
-        scheduler.cancel();
-        scheduler.fire();
-        assert_eq!(probes.get(), 0);
-        assert_eq!(refreshes.get(), 0);
-
-        let (scheduler, probes, refreshes) = counted_scheduler(false);
-        scheduler.fire();
-        assert_eq!(probes.get(), 0);
-        assert_eq!(refreshes.get(), 1);
-    }
-
-    fn counted_scheduler(check_index_lock: bool) -> (LiveScheduler, Rc<Cell<i32>>, Rc<Cell<i32>>) {
-        let probes = Rc::new(Cell::new(0));
-        let refreshes = Rc::new(Cell::new(0));
-        let probes_for_scheduler = probes.clone();
-        let refreshes_for_scheduler = refreshes.clone();
-        let path = if check_index_lock {
-            "/tmp/repo/.git/index.lock"
-        } else {
-            "/run/user/1000/doc/repo/.git/index.lock"
-        };
-        let scheduler = LiveScheduler::new_with_lock_probe(
-            PathBuf::from(path),
-            check_index_lock,
-            Rc::new(move |_path| {
-                probes_for_scheduler.set(probes_for_scheduler.get() + 1);
-                true
-            }),
-            Rc::new(move || {
-                refreshes_for_scheduler.set(refreshes_for_scheduler.get() + 1);
-            }),
-        );
-        (scheduler, probes, refreshes)
     }
 
     #[test]

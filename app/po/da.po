@@ -1921,6 +1921,9 @@ msgstr "Brug dette antal kolonner til automatisk indrykning"
 msgid "View"
 msgstr "Visning"
 
+msgid "Waiting for another Git operation to finish"
+msgstr "Venter på at en anden Git-handling bliver færdig"
+
 msgid "Window Height"
 msgstr "Vindueshøjde"
 

@@ -1793,6 +1793,9 @@ msgstr ""
 msgid "View"
 msgstr ""
 
+msgid "Waiting for another Git operation to finish"
+msgstr ""
+
 msgid "Window Height"
 msgstr ""
 

@@ -234,7 +234,7 @@
     },
     {
       "path": "src/source_control.rs",
-      "line": 117,
+      "line": 118,
       "match": "let title = adw::WindowTitle::new(&gettext(\"Source Control\"), \"\");",
       "resolution": "This short title labels the Source Control sidebar header above the changed-file tree and commit controls.",
       "kind": "i18n-short-string"
@@ -248,14 +248,14 @@
     },
     {
       "path": "src/source_control/refresh.rs",
-      "line": 267,
+      "line": 280,
       "match": "gettext(\"No changes.\")",
       "resolution": "This compact status appears in the Source Control panel when the repository has no changed files.",
       "kind": "i18n-short-string"
     },
     {
       "path": "src/source_control/refresh.rs",
-      "line": 269,
+      "line": 282,
       "match": "gettext(\"Changed files\")",
       "resolution": "This short Source Control string appears inside the Git sidebar where the changed-file, history, or action context is visible.",
       "kind": "i18n-short-string"
