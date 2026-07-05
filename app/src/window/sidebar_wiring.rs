@@ -53,6 +53,13 @@ pub(super) fn install(
     source_control.set_status_handler(project.git_status_handler());
     workspace.set_save_notification_handler(source_control.save_notification_handler());
     workspace.set_review_refresh_handler(source_control.review_refresh_handler());
+    let project_dirty = project.dirty_uris_handler();
+    let workspace_for_dirty = Rc::downgrade(workspace);
+    workspace.set_dirty_state_handler(Rc::new(move || {
+        if let Some(workspace) = workspace_for_dirty.upgrade() {
+            project_dirty(workspace.dirty_session_uris());
+        }
+    }));
 
     let project_for_search = project.clone();
     search_coordinator::install(

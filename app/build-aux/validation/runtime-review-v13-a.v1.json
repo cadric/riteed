@@ -323,7 +323,7 @@
     },
     {
       "path": "src/project_tree_model.rs",
-      "line": 44,
+      "line": 48,
       "match": "state: Rc<RefCell<ModelState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The project tree model owns one shared model state for lazy directory rows and selection/reveal updates.",
@@ -331,7 +331,7 @@
     },
     {
       "path": "src/project_tree_model.rs",
-      "line": 293,
+      "line": 335,
       "match": "state: Rc<RefCell<ModelState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The project tree model owns one shared model state for lazy directory rows and selection/reveal updates.",
@@ -339,7 +339,7 @@
     },
     {
       "path": "src/project_tree_model.rs",
-      "line": 303,
+      "line": 345,
       "match": "state: &Rc<RefCell<ModelState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The project tree model owns one shared model state for lazy directory rows and selection/reveal updates.",
@@ -347,7 +347,7 @@
     },
     {
       "path": "src/project_tree_model.rs",
-      "line": 491,
+      "line": 506,
       "match": "state: &Rc<RefCell<ModelState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The project tree model owns one shared model state for lazy directory rows and selection/reveal updates.",
@@ -355,7 +355,7 @@
     },
     {
       "path": "src/project_tree_model.rs",
-      "line": 517,
+      "line": 532,
       "match": "fn remove_active_cancellable(state: &Rc<RefCell<ModelState>>, cancellable: &gio::Cancellable) {",
       "kind": "runtime-shared-state",
       "ownership": "The project tree model owns cleanup of completed async directory-load cancellables.",

@@ -703,6 +703,10 @@ impl Window {
         self.project.selected_tree_uri_for_tests()
     }
 
+    pub(crate) fn project_tree_dirty_marker_for_tests(&self, name: &str) -> bool {
+        self.project.dirty_marker_for_tests(name)
+    }
+
     pub(crate) fn project_reveal_pending_for_tests(&self) -> bool {
         self.project.reveal_pending_for_tests()
     }

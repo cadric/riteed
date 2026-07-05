@@ -287,6 +287,15 @@ pub(crate) fn exercise_v6_project_navigation(test_app: &adw::Application) {
         window.selected_text_for_tests() == "alpha"
     });
     assert_eq!(window.selected_saved_uri_for_tests(), project_uri);
+    window.set_selected_text_for_tests("alpha dirty");
+    drain_events(4);
+    assert!(window.project_tree_dirty_marker_for_tests("A.txt"));
+    let Some(tab) = window.workspace().selected_tab() else {
+        return;
+    };
+    tab.text_buffer().set_modified(false);
+    drain_events(4);
+    assert!(!window.project_tree_dirty_marker_for_tests("A.txt"));
     window.refresh_project_for_tests();
     spin_until("project reveal after refresh selects opened file", || {
         window.selected_project_tree_uri_for_tests().as_deref() == Some(project_uri.as_str())

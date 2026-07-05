@@ -339,7 +339,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 68,
+      "line": 69,
       "match": "sidebar_position_guard: Rc<Cell<bool>>,",
       "kind": "runtime-shared-state",
       "ownership": "The project sidebar owns a shared programmatic-position guard.",
@@ -347,7 +347,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 84,
+      "line": 85,
       "match": "state: Rc<RefCell<ProjectState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The window project controller owns shared project sidebar state.",
@@ -355,7 +355,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 110,
+      "line": 111,
       "match": "let tree_activation_handler: Rc<RefCell<Option<TreeActivationHandler>>> =",
       "kind": "runtime-shared-state",
       "ownership": "Tree activation wiring stores one late-bound handler closure.",

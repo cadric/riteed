@@ -26,6 +26,7 @@ type FormatPreferencesHandler = Rc<dyn Fn(Option<Rc<EditorTab>>)>;
 type CompareActionSyncHandler = Rc<dyn Fn(Option<Rc<EditorTab>>)>;
 type DocumentToolsSyncHandler = Rc<dyn Fn(Option<Rc<EditorTab>>)>;
 type GitActionSyncHandler = Rc<dyn Fn(Option<Rc<EditorTab>>)>;
+type DirtyStateHandler = Rc<dyn Fn()>;
 type ReviewRefreshHandler = Rc<dyn Fn(Rc<EditorTab>)>;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -71,6 +72,7 @@ pub struct Workspace {
     compare_action_sync_handler: OnceCell<CompareActionSyncHandler>,
     document_tools_sync_handler: OnceCell<DocumentToolsSyncHandler>,
     git_action_sync_handler: OnceCell<GitActionSyncHandler>,
+    dirty_state_handler: OnceCell<DirtyStateHandler>,
     review_refresh_handler: OnceCell<ReviewRefreshHandler>,
     save_notification_handler: OnceCell<Rc<dyn Fn(gio::File)>>,
     pub(crate) state: RefCell<WorkspaceState>,
@@ -133,6 +135,7 @@ impl Workspace {
             compare_action_sync_handler: OnceCell::new(),
             document_tools_sync_handler: OnceCell::new(),
             git_action_sync_handler: OnceCell::new(),
+            dirty_state_handler: OnceCell::new(),
             review_refresh_handler: OnceCell::new(),
             save_notification_handler: OnceCell::new(),
             state: RefCell::new(WorkspaceState {
@@ -439,6 +442,24 @@ impl Workspace {
 
     pub(crate) fn set_git_action_sync_handler(&self, callback: GitActionSyncHandler) {
         let _set_callback = self.git_action_sync_handler.set(callback);
+    }
+
+    pub(crate) fn dirty_session_uris(&self) -> Vec<String> {
+        self.ordered_tabs()
+            .into_iter()
+            .filter(|tab| tab.is_dirty())
+            .filter_map(|tab| tab.session_uri())
+            .collect()
+    }
+
+    pub(crate) fn set_dirty_state_handler(&self, callback: DirtyStateHandler) {
+        let _set_callback = self.dirty_state_handler.set(callback);
+    }
+
+    pub(crate) fn notify_dirty_state_changed(&self) {
+        if let Some(handler) = self.dirty_state_handler.get() {
+            handler();
+        }
     }
 
     pub(crate) fn set_review_refresh_handler(&self, callback: ReviewRefreshHandler) {

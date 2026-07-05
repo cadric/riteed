@@ -203,7 +203,7 @@
     },
     {
       "path": "src/workspace.rs",
-      "line": 69,
+      "line": 70,
       "match": "selected_state_refresh_queued: Cell<bool>,",
       "kind": "runtime-shared-state",
       "ownership": "The workspace owns the selected-state refresh coalescing flag.",
@@ -211,7 +211,7 @@
     },
     {
       "path": "src/workspace.rs",
-      "line": 76,
+      "line": 78,
       "match": "pub(crate) state: RefCell<WorkspaceState>,",
       "kind": "runtime-shared-state",
       "ownership": "The workspace owns tab collection, pending open targets, recent/session caches, restore gating, and active close flow.",

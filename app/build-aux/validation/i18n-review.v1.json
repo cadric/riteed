@@ -227,7 +227,7 @@
     },
     {
       "path": "src/project_tree.rs",
-      "line": 164,
+      "line": 180,
       "match": "label.set_label(&ellipsis_label(gettext(\"Loading\")));",
       "resolution": "This short inline row label is shown beside a spinner while the project tree enumerates a directory.",
       "kind": "i18n-short-string"
