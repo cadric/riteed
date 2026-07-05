@@ -569,6 +569,11 @@ impl Window {
         self.workspace.selected_zoom_css_classes_for_tests()
     }
 
+    pub(crate) fn apply_editor_font_for_tests(&self, font: &str) {
+        self.settings.set_editor_font(font);
+        self.zoom.set_editor_font(font);
+    }
+
     pub(crate) fn selected_scroll_past_end_padding_for_tests(&self) -> Option<(i32, i32)> {
         self.workspace.selected_scroll_past_end_padding_for_tests()
     }

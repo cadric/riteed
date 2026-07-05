@@ -262,6 +262,12 @@ impl Window {
             .map(|tab| tab.compare_wrap_modes_for_tests())
     }
 
+    pub(crate) fn compare_fonts_match_editor_for_tests(&self) -> bool {
+        self.workspace
+            .selected_tab()
+            .is_some_and(|tab| tab.compare_fonts_match_editor_for_tests())
+    }
+
     pub(crate) fn selected_compare_top_visible_rows_for_tests(&self) -> (usize, usize) {
         self.workspace
             .selected_tab()

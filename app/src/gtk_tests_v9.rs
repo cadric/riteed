@@ -183,7 +183,10 @@ fn exercise_tracked_source_control_compare_after_open(test_app: &adw::Applicatio
         window.selected_saved_uri_for_tests() == tracked_uri
             && window.selected_compare_active_for_tests()
     });
+    assert!(window.compare_fonts_match_editor_for_tests());
+    window.apply_editor_font_for_tests("Monospace 19");
     drain_events(16);
+    assert!(window.compare_fonts_match_editor_for_tests());
 }
 
 fn exercise_editor_source_control_minimap_bands(test_app: &adw::Application) {
