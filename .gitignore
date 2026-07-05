@@ -46,6 +46,7 @@
 !/.agent/design-spikes/
 !/.agent/design-spikes/**
 /AUDIT*.md
+/docs/superpowers/**
 
 # Coverage and temporary files
 /coverage/

@@ -435,7 +435,7 @@
     },
     {
       "path": "src/source_control.rs",
-      "line": 48,
+      "line": 50,
       "match": "pub(super) type SourceStateRef = Rc<RefCell<SourceControlState>>;",
       "kind": "runtime-shared-state",
       "ownership": "The Source Control controller owns the sidebar state behind one Rc<RefCell>.",
@@ -443,7 +443,7 @@
     },
     {
       "path": "src/source_control/history.rs",
-      "line": 17,
+      "line": 22,
       "match": "loaded_head_oid: RefCell<Option<String>>,",
       "kind": "runtime-shared-state",
       "ownership": "The Source Control history widget owns the last successfully loaded HEAD.",
@@ -451,11 +451,27 @@
     },
     {
       "path": "src/source_control/history.rs",
-      "line": 18,
+      "line": 23,
       "match": "needs_refresh: Cell<bool>,",
       "kind": "runtime-shared-state",
       "ownership": "The Source Control history widget owns its transient retry flag.",
       "justification": "A failed recent-commits read must self-heal on the next successful status refresh without refetching on every index-only update."
+    },
+    {
+      "path": "src/source_control/history.rs",
+      "line": 24,
+      "match": "expanded: Cell<bool>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control history widget owns the session-only collapsed state for its recent-commits section.",
+      "justification": "The collapse toggle must be readable by refresh callbacks so collapsed history stays hidden while marking itself dirty for the next expand."
+    },
+    {
+      "path": "src/source_control/history.rs",
+      "line": 25,
+      "match": "last_expanded_position: Cell<i32>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control history widget owns the last expanded split position.",
+      "justification": "Collapse moves the history pane to its minimum height and expand restores the user's previous split position without persisting preference state."
     },
     {
       "path": "src/source_control/row_widgets.rs",

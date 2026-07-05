@@ -17,6 +17,7 @@ use crate::workspace::OpenSource;
 pub(crate) fn exercise_v9_source_control(test_app: &adw::Application) {
     exercise_non_git_folder(test_app);
     exercise_portal_like_root_detect_starts_without_preflight(test_app);
+    exercise_source_control_history_expands_after_collapsed_open(test_app);
     exercise_tracked_source_control_compare_after_open(test_app);
     exercise_editor_source_control_minimap_bands(test_app);
 
@@ -50,6 +51,24 @@ pub(crate) fn exercise_v9_source_control(test_app: &adw::Application) {
     });
     assert!(!window.source_control_commit_controls_visible_for_tests());
     assert!(window.source_control_history_split_resizable_for_tests());
+    assert!(window.source_control_history_expanded_for_tests());
+    assert!(window.source_control_history_content_revealed_for_tests());
+    window.set_source_control_history_split_position_for_tests(420);
+    assert_eq!(
+        window.source_control_history_split_position_for_tests(),
+        420
+    );
+    assert!(window.toggle_source_control_history_for_tests());
+    assert!(!window.source_control_history_expanded_for_tests());
+    assert!(!window.source_control_history_content_revealed_for_tests());
+    assert!(window.source_control_history_split_position_for_tests() >= 420);
+    assert!(window.toggle_source_control_history_for_tests());
+    assert!(window.source_control_history_expanded_for_tests());
+    assert!(window.source_control_history_content_revealed_for_tests());
+    assert_eq!(
+        window.source_control_history_split_position_for_tests(),
+        420
+    );
     assert_eq!(
         window.source_control_row_state_for_tests(marker_name),
         Some((String::from("U"), true, false))
@@ -69,6 +88,44 @@ pub(crate) fn exercise_v9_source_control(test_app: &adw::Application) {
             && window.selected_compare_active_for_tests()
     });
     drain_events(12);
+}
+
+fn exercise_source_control_history_expands_after_collapsed_open(test_app: &adw::Application) {
+    let Ok(repo) = init_modified_fixture_repo_for_tests(
+        FixtureRepoKind::V9_SOURCE_CONTROL_UNTRACKED,
+        FixtureRepoFile::BASELINE,
+        b"baseline\n",
+        b"baseline\n",
+    ) else {
+        return;
+    };
+    let marker = repo.file_path(FixtureRepoFile::UNTRACKED);
+    assert!(fs::write(&marker, b"source control collapsed history test").is_ok());
+
+    let Some(window) = build_window(test_app) else {
+        return;
+    };
+    assert!(window.toggle_source_control_history_for_tests());
+    assert!(!window.source_control_history_expanded_for_tests());
+
+    window.handle_application_open(vec![gio::File::for_path(repo.path())]);
+    let repo_uri = gio::File::for_path(repo.path()).uri().to_string();
+    spin_until("v9 collapsed-history project root opens", || {
+        window.project_root_uri_for_tests().as_deref() == Some(repo_uri.as_str())
+    });
+    spin_until("v9 collapsed-history lists changed files", || {
+        window.source_control_row_count_for_tests() > 0
+            && window.source_control_status_for_tests() == "Changed files"
+    });
+    assert!(window.source_control_history_root_visible_for_tests());
+    assert!(!window.source_control_history_content_revealed_for_tests());
+    assert_eq!(window.source_control_recent_commit_count_for_tests(), 0);
+
+    assert!(window.toggle_source_control_history_for_tests());
+    assert!(window.source_control_history_content_revealed_for_tests());
+    spin_until("v9 collapsed-history loads after expand", || {
+        window.source_control_recent_commit_count_for_tests() > 0
+    });
 }
 
 fn exercise_portal_like_root_detect_starts_without_preflight(test_app: &adw::Application) {

@@ -478,6 +478,31 @@ impl Window {
         self.source_control.history_split_resizable_for_tests()
     }
 
+    pub(crate) fn source_control_history_expanded_for_tests(&self) -> bool {
+        self.source_control.history_expanded_for_tests()
+    }
+
+    pub(crate) fn source_control_history_content_revealed_for_tests(&self) -> bool {
+        self.source_control.history_content_revealed_for_tests()
+    }
+
+    pub(crate) fn source_control_history_root_visible_for_tests(&self) -> bool {
+        self.source_control.history_root_visible_for_tests()
+    }
+
+    pub(crate) fn toggle_source_control_history_for_tests(&self) -> bool {
+        self.source_control.toggle_history_for_tests()
+    }
+
+    pub(crate) fn source_control_history_split_position_for_tests(&self) -> i32 {
+        self.source_control.history_split_position_for_tests()
+    }
+
+    pub(crate) fn set_source_control_history_split_position_for_tests(&self, position: i32) {
+        self.source_control
+            .set_history_split_position_for_tests(position);
+    }
+
     pub(crate) fn set_source_control_detect_repo_for_tests(
         &self,
         detect_repo: crate::source_control::DetectRepoForTests,

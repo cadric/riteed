@@ -2,20 +2,38 @@ use gettextrs::{gettext, pgettext};
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
-use gtk4::prelude::*;
+use gtk4::{accessible, prelude::*};
 use libadwaita as adw;
 
 use crate::git_process::{GitCommitSummary, GitLogState};
 use crate::source_control::{SourceStateRef, git_error_is_cancelled};
 
 const RECENT_COMMIT_LIMIT: usize = 25;
+const HISTORY_EXPANDED_ICON: &str = "go-down-symbolic";
+const HISTORY_COLLAPSED_ICON: &str = "go-next-symbolic";
 
 pub(super) struct SourceControlHistory {
     root: gtk4::Box,
+    header_button: gtk4::Button,
+    chevron: gtk4::Image,
+    content: gtk4::Revealer,
     list: gtk4::ListBox,
     status: gtk4::Label,
     loaded_head_oid: RefCell<Option<String>>,
     needs_refresh: Cell<bool>,
+    expanded: Cell<bool>,
+    last_expanded_position: Cell<i32>,
+}
+
+pub(super) fn connect_toggle(state: &SourceStateRef) {
+    let button = state.borrow().history.header_button.clone();
+    let weak = Rc::downgrade(state);
+    button.connect_clicked(move |_| {
+        let Some(state) = weak.upgrade() else {
+            return;
+        };
+        toggle(&state);
+    });
 }
 
 pub(super) fn refresh(state: &SourceStateRef, head_oid: Option<&str>) {
@@ -31,6 +49,13 @@ pub(super) fn refresh(state: &SourceStateRef, head_oid: Option<&str>) {
             return;
         };
         let should_refresh = state.history.should_refresh(head_oid);
+        if !state.history.is_expanded() {
+            state.history.root.set_visible(true);
+            if should_refresh {
+                state.history.needs_refresh.set(true);
+            }
+            return;
+        }
         if should_refresh {
             state.history.set_loading();
         }
@@ -63,6 +88,48 @@ pub(super) fn refresh(state: &SourceStateRef, head_oid: Option<&str>) {
     );
 }
 
+pub(super) fn toggle(state: &SourceStateRef) -> bool {
+    let expanded = state.borrow().history.is_expanded();
+    set_expanded(state, !expanded)
+}
+
+fn set_expanded(state: &SourceStateRef, expanded: bool) -> bool {
+    let head_oid = {
+        let state = state.borrow();
+        let history = &state.history;
+        if history.is_expanded() == expanded {
+            return false;
+        }
+        history.expanded.set(expanded);
+        history.content.set_reveal_child(expanded);
+        history
+            .header_button
+            .update_state(&[accessible::State::Expanded(Some(expanded))]);
+        history.chevron.set_icon_name(Some(if expanded {
+            HISTORY_EXPANDED_ICON
+        } else {
+            HISTORY_COLLAPSED_ICON
+        }));
+        if expanded {
+            state
+                .history_split
+                .set_position(history.last_expanded_position.get());
+            Some(state.snapshot.head_oid.clone())
+        } else {
+            let position = state.history_split.position();
+            if position > 0 {
+                history.last_expanded_position.set(position);
+            }
+            state.history_split.set_position(i32::MAX);
+            None
+        }
+    };
+    if let Some(head_oid) = head_oid {
+        refresh(state, head_oid.as_deref());
+    }
+    true
+}
+
 impl SourceControlHistory {
     fn should_refresh(&self, head_oid: Option<&str>) -> bool {
         should_refresh_history(
@@ -76,10 +143,18 @@ impl SourceControlHistory {
     pub(super) fn new() -> Self {
         let root = gtk4::Box::new(gtk4::Orientation::Vertical, 6);
         root.set_vexpand(true);
+        let header_box = gtk4::Box::new(gtk4::Orientation::Horizontal, 6);
+        let chevron = gtk4::Image::from_icon_name(HISTORY_EXPANDED_ICON);
+        header_box.append(&chevron);
         let title = gtk4::Label::new(Some(&pgettext("git history", "Recent Commits")));
         title.add_css_class("caption-heading");
+        title.set_hexpand(true);
         title.set_xalign(0.0);
-        root.append(&title);
+        header_box.append(&title);
+        let header_button = gtk4::Button::builder().child(&header_box).build();
+        header_button.add_css_class("flat");
+        header_button.update_state(&[accessible::State::Expanded(Some(true))]);
+        root.append(&header_button);
 
         let list = gtk4::ListBox::builder()
             .selection_mode(gtk4::SelectionMode::None)
@@ -91,20 +166,35 @@ impl SourceControlHistory {
             .vscrollbar_policy(gtk4::PolicyType::Automatic)
             .build();
         scroller.set_vexpand(true);
-        root.append(&scroller);
 
         let status = gtk4::Label::new(None);
         status.add_css_class("dim-label");
         status.set_xalign(0.0);
         status.set_wrap(true);
-        root.append(&status);
+        let content_box = gtk4::Box::new(gtk4::Orientation::Vertical, 6);
+        content_box.set_vexpand(true);
+        content_box.append(&scroller);
+        content_box.append(&status);
+        let content = gtk4::Revealer::builder()
+            .child(&content_box)
+            .reveal_child(true)
+            .transition_type(gtk4::RevealerTransitionType::SlideDown)
+            .build();
+        content.set_vexpand(true);
+        header_button.update_relation(&[accessible::Relation::Controls(&[content.upcast_ref()])]);
+        root.append(&content);
 
         let history = Self {
             root,
+            header_button,
+            chevron,
+            content,
             list,
             status,
             loaded_head_oid: RefCell::new(None),
             needs_refresh: Cell::new(true),
+            expanded: Cell::new(true),
+            last_expanded_position: Cell::new(super::ui::HISTORY_SPLIT_DEFAULT_POSITION),
         };
         history.clear();
         history
@@ -113,6 +203,10 @@ impl SourceControlHistory {
     #[must_use]
     pub(super) fn widget(&self) -> gtk4::Box {
         self.root.clone()
+    }
+
+    fn is_expanded(&self) -> bool {
+        self.expanded.get()
     }
 
     pub(super) fn clear(&self) {
@@ -177,6 +271,21 @@ impl SourceControlHistory {
         while let Some(child) = self.list.first_child() {
             self.list.remove(&child);
         }
+    }
+
+    #[cfg(test)]
+    pub(super) fn expanded_for_tests(&self) -> bool {
+        self.expanded.get()
+    }
+
+    #[cfg(test)]
+    pub(super) fn content_revealed_for_tests(&self) -> bool {
+        self.content.reveals_child()
+    }
+
+    #[cfg(test)]
+    pub(super) fn root_visible_for_tests(&self) -> bool {
+        self.root.get_visible()
     }
 }
 

@@ -17,6 +17,8 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 ### Changed
 - Removed the in-editor print-width guide so paper geometry stays confined to
   print and print preview surfaces.
+- Made the Source Control recent commits section collapsible while keeping it
+  refreshed when expanded.
 
 ### Fixed
 - Fixed Compare/Diff minimap lifecycle handling so GtkSourceMap views detach

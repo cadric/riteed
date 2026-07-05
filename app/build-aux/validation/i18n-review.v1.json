@@ -234,14 +234,14 @@
     },
     {
       "path": "src/source_control.rs",
-      "line": 116,
+      "line": 117,
       "match": "let title = adw::WindowTitle::new(&gettext(\"Source Control\"), \"\");",
       "resolution": "This short title labels the Source Control sidebar header above the changed-file tree and commit controls.",
       "kind": "i18n-short-string"
     },
     {
       "path": "src/source_control/history.rs",
-      "line": 172,
+      "line": 266,
       "match": "self.status.set_label(&gettext(\"No commits yet.\"));",
       "resolution": "This short Source Control string appears inside the Git sidebar where the changed-file, history, or action context is visible.",
       "kind": "i18n-short-string"
