@@ -435,11 +435,11 @@
     },
     {
       "path": "src/source_control.rs",
-      "line": 51,
+      "line": 52,
       "match": "pub(super) type SourceStateRef = Rc<RefCell<SourceControlState>>;",
       "kind": "runtime-shared-state",
-      "ownership": "The Source Control controller owns the sidebar state behind one Rc<RefCell>.",
-      "justification": "Refresh, commit, stage, unstage, and diff callbacks all complete asynchronously on the main loop and need one cancellable, generation-aware UI state owner."
+      "ownership": "The Source Control controller owns the sidebar state behind one Rc<RefCell>, including the selected-tab URI used for row highlighting.",
+      "justification": "Refresh, commit, stage, unstage, diff, and active-row callbacks all complete asynchronously on the main loop and need one cancellable, generation-aware UI state owner."
     },
     {
       "path": "src/source_control/history.rs",
@@ -499,7 +499,7 @@
     },
     {
       "path": "src/source_control/list_view.rs",
-      "line": 212,
+      "line": 221,
       "match": "fn action_runner(state_weak: &Rc<RefCell<Weak<RefCell<SourceControlState>>>>) -> RowActionRunner {",
       "kind": "runtime-shared-state",
       "ownership": "The Source Control list view owns recycled-row action state and a weak controller handle.",
@@ -507,7 +507,7 @@
     },
     {
       "path": "src/source_control/list_view.rs",
-      "line": 287,
+      "line": 296,
       "match": "weak: &Weak<RefCell<SourceControlState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The Source Control list view owns recycled-row action state and a weak controller handle.",

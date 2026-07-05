@@ -67,6 +67,7 @@ pub(super) fn install(
     let source_control_for_workspace = source_control.clone();
     workspace.set_git_action_sync_handler(Rc::new(move |tab| {
         git_actions_for_workspace.recompute_visibility();
+        source_control_for_workspace.set_active_uri(tab.as_ref().and_then(|tab| tab.session_uri()));
         source_control_for_workspace.refresh_editor_minimap_diff_for_tab(tab);
     }));
     let git_actions_for_source = Rc::clone(&git_actions);

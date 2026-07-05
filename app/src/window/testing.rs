@@ -459,6 +459,10 @@ impl Window {
         self.source_control.row_state_for_tests(path)
     }
 
+    pub(crate) fn source_control_active_row_path_for_tests(&self) -> Option<String> {
+        self.source_control.active_row_path_for_tests()
+    }
+
     pub(crate) fn set_source_control_view_mode_for_tests(
         &self,
         mode: crate::settings::SourceControlViewMode,

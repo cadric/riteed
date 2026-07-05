@@ -171,7 +171,7 @@
     },
     {
       "path": "src/source_control/tree_view.rs",
-      "line": 231,
+      "line": 240,
       "match": "fn action_runner(state_weak: &Rc<RefCell<Weak<RefCell<SourceControlState>>>>) -> RowActionRunner {",
       "kind": "runtime-shared-state",
       "ownership": "The Source Control tree factory shares the replaceable weak state handle with row setup and bind callbacks.",
@@ -179,7 +179,7 @@
     },
     {
       "path": "src/source_control/tree_view.rs",
-      "line": 377,
+      "line": 386,
       "match": "weak: &Weak<RefCell<SourceControlState>>,",
       "kind": "runtime-shared-state",
       "ownership": "Source Control activation dispatch borrows the controller weak state handle.",

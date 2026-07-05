@@ -21,6 +21,7 @@ use crate::workspace::Workspace;
 
 pub(crate) mod action_widgets;
 pub(crate) mod actions;
+mod active_row;
 mod history;
 mod list_view;
 mod live;
@@ -70,6 +71,7 @@ pub(super) struct SourceControlState {
     pub(super) title: adw::WindowTitle,
     pub(super) status_label: gtk4::Label,
     views: SourceControlViews,
+    pub(super) active_uri: Option<String>,
     history: SourceControlHistory,
     history_split: gtk4::Paned,
     pub(super) commit_revealer: gtk4::Revealer,
@@ -167,6 +169,7 @@ impl SourceControlController {
             title,
             status_label,
             views,
+            active_uri: None,
             history,
             history_split,
             commit_revealer,

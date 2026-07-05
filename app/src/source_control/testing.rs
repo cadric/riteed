@@ -1,6 +1,11 @@
 use super::{SourceControlController, history};
 
 impl SourceControlController {
+    pub(crate) fn active_row_path_for_tests(&self) -> Option<String> {
+        let raw = self.state.borrow().views.active_row_path_for_tests()?;
+        String::from_utf8(raw).ok()
+    }
+
     pub(crate) fn history_expanded_for_tests(&self) -> bool {
         self.state.borrow().history.expanded_for_tests()
     }

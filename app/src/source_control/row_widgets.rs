@@ -15,6 +15,8 @@ pub(super) struct BoundRow {
     pub(super) widget: glib::WeakRef<gtk4::Widget>,
 }
 
+pub(super) const ACTIVE_ROW_CSS_CLASS: &str = "riteed-source-control-active-row";
+
 pub(super) fn remember_bound_row(
     bound_rows: &BoundRows,
     entry: &GitStatusEntry,
@@ -36,6 +38,28 @@ pub(super) fn row_widget_for_entry(bound_rows: &BoundRows, path: &[u8]) -> Optio
         .rev()
         .find(|row| row.path == path)
         .and_then(|row| row.widget.upgrade())
+}
+
+pub(super) fn mark_active_row(bound_rows: &BoundRows, path: Option<&[u8]>) {
+    for bound in bound_rows.borrow().iter() {
+        let Some(widget) = bound.widget.upgrade() else {
+            continue;
+        };
+        widget.remove_css_class(ACTIVE_ROW_CSS_CLASS);
+        if path.is_some_and(|active| bound.path.as_slice() == active) {
+            widget.add_css_class(ACTIVE_ROW_CSS_CLASS);
+        }
+    }
+}
+
+#[cfg(test)]
+pub(super) fn active_row_path_for_tests(bound_rows: &BoundRows) -> Option<Vec<u8>> {
+    bound_rows.borrow().iter().find_map(|bound| {
+        let widget = bound.widget.upgrade()?;
+        widget
+            .has_css_class(ACTIVE_ROW_CSS_CLASS)
+            .then(|| bound.path.clone())
+    })
 }
 
 pub(super) fn add_context_shortcut(

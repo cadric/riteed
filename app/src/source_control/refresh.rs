@@ -110,6 +110,7 @@ pub(super) fn finish_error(state: &SourceStateRef, message: &str) {
 
 pub(super) fn rebuild_views(state: &SourceControlState) {
     state.views.rebuild(&state.snapshot.entries);
+    super::active_row::apply_active_row(state);
 }
 
 pub(super) fn emit_project_statuses(state: &SourceControlState) {

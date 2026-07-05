@@ -148,3 +148,8 @@
 .riteed-git-staged {
   color: var(--accent-color);
 }
+
+.riteed-source-control-active-row {
+  background: alpha(@accent_bg_color, 0.16);
+  border-radius: 6px;
+}

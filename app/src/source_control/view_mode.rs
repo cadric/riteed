@@ -85,12 +85,24 @@ impl SourceControlViews {
         self.list.rebuild(entries);
     }
 
+    pub(super) fn mark_active_row(&self, path: Option<&[u8]>) {
+        self.list.mark_active_row(path);
+        self.tree.mark_active_row(path);
+    }
+
     #[cfg(test)]
     pub(super) fn row_count_for_tests(&self) -> usize {
         match self.mode_for_tests() {
             SourceControlViewMode::Tree => self.tree.row_count_for_tests(),
             SourceControlViewMode::List => self.list.row_count_for_tests(),
         }
+    }
+
+    #[cfg(test)]
+    pub(super) fn active_row_path_for_tests(&self) -> Option<Vec<u8>> {
+        self.list
+            .active_row_path_for_tests()
+            .or_else(|| self.tree.active_row_path_for_tests())
     }
 
     #[cfg(test)]
