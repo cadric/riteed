@@ -10,6 +10,8 @@ Provenance: `https://www.kernel.org/signature.html` documents that `sha256sums.a
 
 The Flatpak module imports the vendored key with an isolated `GNUPGHOME`, verifies `sha256sums.asc`, then verifies the `git-2.54.0.tar.xz` checksum from that signed file before extraction. Kernel.org documents this as a mirror-integrity check, not a replacement for developer release signatures.
 
+`sha256sums.asc` is vendored in this directory rather than downloaded at build time: the upstream file at `https://www.kernel.org/pub/software/scm/git/sha256sums.asc` is rewritten on every Git release, so pinning its checksum in the manifest broke the build whenever Git shipped a new version. The GPG signature check still runs against the vendored copy. When bumping the bundled Git version, re-download the file, run `gpg --verify` against the vendored key, confirm the new tarball's checksum line, and commit the updated snapshot alongside the manifest change.
+
 The module builds Git for local plumbing only, disables debuginfo extraction for the Git module so Flatpak-builder does not try to rewrite hardlinked Git aliases in the read-only staging tree, and explicitly strips `/app/bin/git` before caching the module.
 
 Riteed may invoke only these Git operations through `src/git_process.rs`: `rev-parse`, `status`, `config --get`, `check-attr`, `cat-file blob`, `hash-object`, `update-index`, `ls-tree`, `commit`, `log`, and `restore --worktree`. This list is the source of truth for the Flatpak Git payload; adding another Git command must update this file and re-justify the bundled Git surface in the same change.
