@@ -18,8 +18,7 @@ pub(super) fn sync_actions_for_root(state: &Rc<RefCell<ProjectState>>) {
     state.refresh_action.set_enabled(has_root);
     state.close_action.set_enabled(has_root);
     if !has_root {
-        state.sidebar_visible_action.set_state(&false.to_variant());
-        set_sidebar_visibility(&mut state, false);
+        collapse_sidebar_without_persist(&mut state);
     }
 }
 
@@ -36,17 +35,24 @@ pub(super) fn set_sidebar_visibility(state: &mut ProjectState, visible: bool) {
         persist_sidebar_visible(state, true);
         state.sidebar_visible_action.set_state(&true.to_variant());
         animate_split_position(state, width);
-    } else {
-        let position = state.split_view.position();
-        if position >= MIN_PROJECT_SIDEBAR_WIDTH {
-            state.sidebar_width = clamp_visible_width(position);
+        if let Some(handler) = state.sidebar_visibility_handler.as_ref() {
+            handler(true);
         }
+    } else {
         persist_sidebar_visible(state, false);
-        state.sidebar_visible_action.set_state(&false.to_variant());
-        animate_split_position(state, 0);
+        collapse_sidebar_without_persist(state);
     }
+}
+
+fn collapse_sidebar_without_persist(state: &mut ProjectState) {
+    let position = state.split_view.position();
+    if position >= MIN_PROJECT_SIDEBAR_WIDTH {
+        state.sidebar_width = clamp_visible_width(position);
+    }
+    state.sidebar_visible_action.set_state(&false.to_variant());
+    animate_split_position(state, 0);
     if let Some(handler) = state.sidebar_visibility_handler.as_ref() {
-        handler(visible);
+        handler(false);
     }
 }
 

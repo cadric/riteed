@@ -611,6 +611,9 @@ fn gtk_surfaces_and_editor_flow_work() {
     run_gtk_flow("clean-close-window-size", || {
         crate::gtk_tests_lifecycle::exercise_clean_close_persists_window_size(&test_app);
     });
+    run_gtk_flow("sidebar-restore-preference", || {
+        crate::gtk_tests_lifecycle::exercise_sidebar_restore_preference(&test_app);
+    });
     run_gtk_flow("app-open-actions", exercise_app_open_actions);
     run_gtk_flow("app-actions-more", exercise_app_actions_more);
     run_gtk_flow("search-status", || exercise_search_and_status(&test_app));
