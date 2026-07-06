@@ -24,6 +24,13 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
   Files sidebar shows a dot on entries with unsaved changes.
 
 ### Fixed
+- The Flatpak Git module now verifies a vendored, GPG-checked snapshot of
+  kernel.org's `sha256sums.asc` instead of pinning the checksum of the
+  mutable upstream file, so scheduled validation builds no longer break
+  every time a new Git version is released.
+- CodeQL analysis moved from default setup to an in-repo workflow that
+  excludes test-only code, so temp-directory paths in `#[test]` helpers
+  stop raising false path-injection security alerts.
 - Bundled Git operations now treat filenames literally, so discarding
   changes to a file whose name contains glob characters (for example
   `pages/[id].tsx`) can no longer revert sibling files and destroy
