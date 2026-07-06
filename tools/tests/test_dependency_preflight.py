@@ -18,7 +18,7 @@ CHECKSUM_E = "e" * 64
 CHECKSUM_F = "f" * 64
 LEGACY_SOURCE = "registry+https://github.com/rust-lang/crates.io-index"
 SPARSE_SOURCE = "sparse+https://index.crates.io/"
-GTK4_TARGET = "0.11.3"
+GTK4_TARGET = "0.11.4"
 
 
 def _write(path: Path, text: str) -> None:
@@ -163,18 +163,18 @@ edition = "2024"
     def test_direct_binding_lock_must_match_policy_target(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             app = _fixture(tmpdir)
-            _write(app / "Cargo.lock", _lock("1.2.3", gtk4_version="0.11.4"))
+            _write(app / "Cargo.lock", _lock("1.2.3", gtk4_version="0.11.5"))
             errors: list[str] = []
             check_dependency_preflight(app, errors)
-        self.assertTrue(any("Cargo.lock gtk4 version '0.11.4'" in item for item in errors))
+        self.assertTrue(any("Cargo.lock gtk4 version '0.11.5'" in item for item in errors))
 
     def test_safe_sys_pairs_must_match_exact_patch_version(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             app = _fixture(tmpdir)
-            _write(app / "Cargo.lock", _lock("1.2.3", gtk4_version="0.11.4"))
+            _write(app / "Cargo.lock", _lock("1.2.3", gtk4_version="0.11.5"))
             errors: list[str] = []
             check_dependency_preflight(app, errors)
-        self.assertTrue(any("gtk4 '0.11.4' must exactly match gtk4-sys '0.11.3'" in item for item in errors))
+        self.assertTrue(any("gtk4 '0.11.5' must exactly match gtk4-sys '0.11.4'" in item for item in errors))
 
     def test_duplicate_safe_sys_packages_fail_closed(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -196,7 +196,7 @@ version = "1.2.3"
 edition = "2024"
 
 [dependencies]
-gtk4 = { version = "0.11.3" }
+gtk4 = { version = "0.11.4" }
 libadwaita = { version = "=0.9.1" }
 sourceview5 = { version = "0.11.0" }
 
