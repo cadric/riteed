@@ -605,6 +605,9 @@ fn gtk_surfaces_and_editor_flow_work() {
         exercise_restore_and_recent_pruning(&test_app);
     });
     run_gtk_flow("close-flows", || exercise_close_flows(&test_app));
+    run_gtk_flow("window-lifecycle-release", || {
+        crate::gtk_tests_lifecycle::exercise_window_lifecycle_release(&test_app);
+    });
     run_gtk_flow("app-open-actions", exercise_app_open_actions);
     run_gtk_flow("app-actions-more", exercise_app_actions_more);
     run_gtk_flow("search-status", || exercise_search_and_status(&test_app));

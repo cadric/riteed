@@ -21,6 +21,16 @@ impl Window {
         true
     }
 
+    pub(crate) fn workspace_weak_for_tests(&self) -> std::rc::Weak<crate::workspace::Workspace> {
+        std::rc::Rc::downgrade(&self.workspace)
+    }
+
+    pub(crate) fn source_control_state_weak_for_tests(
+        &self,
+    ) -> std::rc::Weak<std::cell::RefCell<crate::source_control::SourceControlState>> {
+        self.source_control.state_weak_for_tests()
+    }
+
     pub(crate) fn selected_char_count_for_tests(&self) -> i32 {
         self.workspace
             .selected_tab()

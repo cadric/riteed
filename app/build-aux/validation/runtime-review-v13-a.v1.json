@@ -435,11 +435,35 @@
     },
     {
       "path": "src/source_control.rs",
-      "line": 52,
+      "line": 53,
       "match": "pub(super) type SourceStateRef = Rc<RefCell<SourceControlState>>;",
       "kind": "runtime-shared-state",
       "ownership": "The Source Control controller owns the sidebar state behind one Rc<RefCell>, including the selected-tab URI used for row highlighting.",
       "justification": "Refresh, commit, stage, unstage, diff, and active-row callbacks all complete asynchronously on the main loop and need one cancellable, generation-aware UI state owner."
+    },
+    {
+      "path": "src/source_control/weak.rs",
+      "line": 7,
+      "match": "state: Weak<RefCell<SourceControlState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The weak Source Control wrapper owns only a non-retaining handle back to controller state.",
+      "justification": "Sidebar wiring callbacks upgrade this handle while the window graph is alive, avoiding a SourceControlState self-cycle after the window closes."
+    },
+    {
+      "path": "src/source_control/weak.rs",
+      "line": 18,
+      "match": "pub(crate) fn state_weak_for_tests(&self) -> Weak<RefCell<SourceControlState>> {",
+      "kind": "runtime-shared-state",
+      "ownership": "The GTK lifecycle regression borrows a weak Source Control state handle.",
+      "justification": "The test-only handle observes whether the closed window released SourceControlState without keeping that state alive."
+    },
+    {
+      "path": "src/window/testing.rs",
+      "line": 30,
+      "match": ") -> std::rc::Weak<std::cell::RefCell<crate::source_control::SourceControlState>> {",
+      "kind": "runtime-shared-state",
+      "ownership": "Window tests expose a weak Source Control state handle for lifecycle assertions.",
+      "justification": "The hook lets GTK lifecycle tests verify closed windows release SourceControlState while preserving production ownership boundaries."
     },
     {
       "path": "src/source_control/history.rs",

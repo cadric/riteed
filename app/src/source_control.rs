@@ -43,6 +43,7 @@ pub(crate) mod tree_model;
 mod tree_view;
 mod ui;
 mod view_mode;
+mod weak;
 
 use history::SourceControlHistory;
 use live::SourceControlLiveRefresh;

@@ -70,18 +70,30 @@ pub(super) fn install(
     );
 
     let git_actions = git_actions::install(shell, source_control.clone(), Rc::clone(workspace));
-    let git_actions_for_workspace = Rc::clone(&git_actions);
-    let source_control_for_workspace = source_control.clone();
+    let git_actions_for_workspace = Rc::downgrade(&git_actions);
+    let source_control_for_workspace = source_control.downgrade();
     workspace.set_git_action_sync_handler(Rc::new(move |tab| {
-        git_actions_for_workspace.recompute_visibility();
-        source_control_for_workspace.set_active_uri(tab.as_ref().and_then(|tab| tab.session_uri()));
-        source_control_for_workspace.refresh_editor_minimap_diff_for_tab(tab);
+        let (Some(git_actions), Some(source_control)) = (
+            git_actions_for_workspace.upgrade(),
+            source_control_for_workspace.upgrade(),
+        ) else {
+            return;
+        };
+        git_actions.recompute_visibility();
+        source_control.set_active_uri(tab.as_ref().and_then(|tab| tab.session_uri()));
+        source_control.refresh_editor_minimap_diff_for_tab(tab);
     }));
-    let git_actions_for_source = Rc::clone(&git_actions);
-    let source_control_for_source = source_control.clone();
+    let git_actions_for_source = Rc::downgrade(&git_actions);
+    let source_control_for_source = source_control.downgrade();
     source_control.set_state_change_handler(Rc::new(move || {
-        git_actions_for_source.recompute_visibility();
-        source_control_for_source.refresh_editor_minimap_diffs();
+        let (Some(git_actions), Some(source_control)) = (
+            git_actions_for_source.upgrade(),
+            source_control_for_source.upgrade(),
+        ) else {
+            return;
+        };
+        git_actions.recompute_visibility();
+        source_control.refresh_editor_minimap_diffs();
     }));
 
     WindowSidebarControllers {
