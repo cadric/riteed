@@ -1,6 +1,6 @@
 {
   "$id": "policy/gtk4_rs.v1.json",
-  "title": "gtk4-rs Policy (gtk4 0.11.3)",
+  "title": "gtk4-rs Policy (gtk4 0.11.4)",
   "package_id": "gnome_rust_app_policy_pack.v1",
   "machine_readable_for": [
     "llm_agent",
@@ -30,7 +30,7 @@
   "targets": {
     "crate": {
       "cargo_package": "gtk4",
-      "target_version": "0.11.3",
+      "target_version": "0.11.4",
       "preferred_crate_alias": "gtk"
     },
     "gtk": {
@@ -114,8 +114,8 @@
   ],
   "official_sources": [
     {
-      "name": "gtk4 crate 0.11.3",
-      "url": "https://crates.io/crates/gtk4/0.11.3",
+      "name": "gtk4 crate 0.11.4",
+      "url": "https://crates.io/crates/gtk4/0.11.4",
       "kind": "crate_release"
     },
     {
