@@ -1,6 +1,15 @@
 # Continuity
 
 ## OUTCOMES
+- 2026-07-06 0.3.8 beta release preparation is in progress on
+  `release/v0.3.8` after the audit P0/P1 remediation squash-merged as
+  PR #26, the scheduled Validate breakage was fixed by vendoring the
+  GPG-verified kernel.org `sha256sums.asc`, CodeQL moved to an in-repo
+  workflow that excludes test code, and Dependabot PRs #24 (actions) and
+  #25 (gtk-rs stack, completed manually to gtk4 0.11.4 per
+  `docs/dependency-updates.md`) merged. The release path is a signed
+  release PR into `main`, required validation on the release commit,
+  tag `v0.3.8`, then the protected `Publish Flatpak` workflow.
 - 2026-07-06 audit P0/P1 remediation pass is complete on
   `fix/audit-p0-p1`: RIT-GEN-001 `8a728ff`, RIT-GEN-002 `fa4f7ea`,
   RIT-GEN-003 `ab766f3`, RIT-GEN-004 `d91206c`, RIT-GEN-005 `eed5a3d`,

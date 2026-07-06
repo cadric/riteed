@@ -14,7 +14,13 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 
 ## Unreleased
 
+## 0.3.8 - 2026-07-06
+
 ### Changed
+- Updated the GTK 4 Rust binding stack to gtk4/gtk4-sys 0.11.4 with
+  glib-build-tools 0.22.8, moving the policy target and regenerating the
+  Flatpak cargo sources in the same coordinated step.
+- Bumped the grouped GitHub Actions workflow dependencies.
 - Removed the in-editor print-width guide so paper geometry stays confined to
   print and print preview surfaces.
 - Made the Source Control recent commits section collapsible while keeping it

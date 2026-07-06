@@ -43,6 +43,12 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release version="0.3.8" type="development" date="2026-07-06">
+      <description translate="no">
+        <p>Improves printing with true paper geometry and a matching print preview, makes recent commits collapsible, highlights the active file in Source Control, and updates the GTK 4 binding stack.</p>
+        <p>Fixes Git discards for glob-like filenames destroying sibling edits, reload prompts over unsaved changes, compare alignment for lone carriage returns, editor workspace release on window close, remembered window size, and the sidebar visibility preference.</p>
+      </description>
+    </release>
     <release version="0.3.7" type="development" date="2026-06-13">
       <description translate="no">
         <p>Adds local Flatpak build guardrails, print preview, V15 large-file viewer handling, document format controls, and expanded preferences organization.</p>
