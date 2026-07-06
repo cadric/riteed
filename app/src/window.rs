@@ -465,7 +465,11 @@ impl Window {
             self.persist_window_size();
             return glib::Propagation::Proceed;
         }
-        self.workspace.handle_window_close_request()
+        let propagation = self.workspace.handle_window_close_request();
+        if matches!(propagation, glib::Propagation::Proceed) {
+            self.persist_window_size();
+        }
+        propagation
     }
 
     fn persist_window_size(&self) {
