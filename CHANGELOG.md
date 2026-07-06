@@ -1,6 +1,6 @@
 ---
 created: 2026-04-19
-updated: 2026-07-05
+updated: 2026-07-06
 status: current
 priority: high
 type: changelog
@@ -24,6 +24,22 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
   Files sidebar shows a dot on entries with unsaved changes.
 
 ### Fixed
+- Bundled Git operations now treat filenames literally, so discarding
+  changes to a file whose name contains glob characters (for example
+  `pages/[id].tsx`) can no longer revert sibling files and destroy
+  their unsaved edits.
+- The "This File Changed on Disk" banner now asks for confirmation
+  before reloading over unsaved edits, and the banner leaves the screen
+  as soon as the document becomes dirty.
+- Compare and review views now split lines exactly like the diff model,
+  so files containing lone carriage returns show their real changed
+  lines instead of misaligned context rows.
+- Closing a window now releases its editor workspace; leaked Git file
+  monitors no longer keep running after the window is gone.
+- The window size is remembered again when closing a window with no
+  unsaved changes.
+- The project sidebar's visibility preference survives restarts instead
+  of being overwritten during startup.
 - Fixed Compare/Diff minimap lifecycle handling so GtkSourceMap views detach
   while their holders are hidden or unmapped, avoiding GTK adjustment criticals
   during native GTK smoke tests.
