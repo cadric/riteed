@@ -394,6 +394,12 @@ impl Window {
         self.workspace.trigger_selected_external_action_for_tests();
     }
 
+    pub(crate) fn force_selected_external_banner_for_tests(&self) {
+        if let Some(tab) = self.workspace.selected_tab() {
+            tab.force_external_banner_for_tests();
+        }
+    }
+
     pub(crate) fn request_selected_autosave_for_tests(&self) {
         self.workspace.request_selected_autosave_for_tests();
     }

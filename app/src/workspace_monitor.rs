@@ -59,30 +59,40 @@ fn sync_selected_tab(workspace: &Rc<Workspace>, tab: &Rc<EditorTab>) {
     let window_active = workspace.shell.is_active();
     tab.sync_external_banner(true, window_active);
     if window_active && tab.should_present_dirty_reload_prompt() {
-        tab.mark_external_prompt_active(true);
-        let weak_workspace = Rc::downgrade(workspace);
-        let weak_tab = Rc::downgrade(tab);
-        dialogs::confirm_external_reload(&workspace.shell, &tab.title(), move |response| {
-            if let (Some(workspace), Some(tab)) = (weak_workspace.upgrade(), weak_tab.upgrade()) {
-                tab.mark_external_prompt_active(false);
-                match response {
-                    ExternalReloadResponse::Compare => {
-                        request_compare_with_disk(&workspace, &tab);
-                    }
-                    ExternalReloadResponse::Reload => request_reload(&workspace, &tab, false),
-                    ExternalReloadResponse::KeepCurrent => {
-                        tab.acknowledge_pending_external();
-                        workspace.refresh_selected_state();
-                    }
+        present_dirty_reload_dialog(workspace, tab);
+    }
+}
+
+fn present_dirty_reload_dialog(workspace: &Rc<Workspace>, tab: &Rc<EditorTab>) {
+    tab.mark_external_prompt_active(true);
+    let weak_workspace = Rc::downgrade(workspace);
+    let weak_tab = Rc::downgrade(tab);
+    dialogs::confirm_external_reload(&workspace.shell, &tab.title(), move |response| {
+        if let (Some(workspace), Some(tab)) = (weak_workspace.upgrade(), weak_tab.upgrade()) {
+            tab.mark_external_prompt_active(false);
+            match response {
+                ExternalReloadResponse::Compare => {
+                    request_compare_with_disk(&workspace, &tab);
+                }
+                ExternalReloadResponse::Reload => request_reload(&workspace, &tab, false),
+                ExternalReloadResponse::KeepCurrent => {
+                    tab.acknowledge_pending_external();
+                    workspace.refresh_selected_state();
                 }
             }
-        });
-    }
+        }
+    });
 }
 
 fn on_banner_action(workspace: &Rc<Workspace>, tab: &Rc<EditorTab>) {
     match tab.banner_action_kind() {
-        Some(BannerActionKind::Reload) => request_reload(workspace, tab, false),
+        Some(BannerActionKind::Reload) => {
+            if tab.is_dirty() {
+                present_dirty_reload_dialog(workspace, tab);
+            } else {
+                request_reload(workspace, tab, false);
+            }
+        }
         Some(BannerActionKind::Save) => {
             let weak_workspace = Rc::downgrade(workspace);
             workspace.request_save_tab(

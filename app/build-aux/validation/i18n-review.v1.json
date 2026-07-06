@@ -102,7 +102,7 @@
     {
       "resolution": "This short banner title appears with the Refresh Review action on stale Git review tabs.",
       "path": "src/editor_tab/banner.rs",
-      "line": 145,
+      "line": 150,
       "match": "Some(gettext(\"Refresh Review\")),",
       "kind": "i18n-short-string"
     },

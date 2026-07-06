@@ -614,6 +614,9 @@ fn gtk_surfaces_and_editor_flow_work() {
     run_gtk_flow("v4-editor-features", || {
         crate::gtk_tests_v4::exercise_v4_editor_features(&test_app);
     });
+    run_gtk_flow("v4-banner-reload-dirty-guard", || {
+        crate::gtk_tests_v4::exercise_banner_reload_dirty_guard(&test_app);
+    });
     run_gtk_flow("v5-format-io", || {
         crate::gtk_tests_v5::exercise_v5_format_io(&test_app);
     });

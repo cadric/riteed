@@ -25,6 +25,9 @@ impl EditorTab {
                 && !tab.state.borrow().ui.suppress_changes
             {
                 tab.sync_presentation();
+                if !tab.pending_external_state().is_idle() {
+                    tab.notify_external_state_change();
+                }
                 tab.schedule_source_control_minimap_stale_check();
             }
         });

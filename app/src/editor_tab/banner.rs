@@ -121,6 +121,11 @@ impl EditorTab {
             callback();
         }
     }
+
+    #[cfg(test)]
+    pub(crate) fn force_external_banner_for_tests(&self) {
+        self.state.borrow_mut().ui.visible_banner = VisibleBannerState::External;
+    }
 }
 
 fn visible_banner_state(

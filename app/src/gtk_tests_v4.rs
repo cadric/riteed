@@ -7,7 +7,7 @@ use crate::dialogs::{self, ExternalReloadResponse, StaleSaveResponse};
 use crate::editor_monitor::ExternalFileEvent;
 use crate::gtk_tests::{
     TempFileFixture, atomic_replace_file, build_window, build_window_with_settings, drain_events,
-    spin_until, write_temp_file,
+    spin_until, test_tmp_dir, write_temp_file,
 };
 use crate::settings::AppSettings;
 use crate::window::Window;
@@ -148,4 +148,54 @@ pub(crate) fn exercise_v4_editor_features(test_app: &adw::Application) {
     let _removed = fs::remove_file(first_path);
     let _removed = fs::remove_file(second_path);
     let _removed = fs::remove_file(stale_path);
+}
+
+pub(crate) fn exercise_banner_reload_dirty_guard(test_app: &adw::Application) {
+    let path = test_tmp_dir().join("riteed-banner-dirty-guard.txt");
+    let _removed = fs::remove_file(&path);
+    assert!(fs::write(&path, b"disk v1\n").is_ok());
+    let uri = gio::File::for_path(&path).uri().to_string();
+    let window = build_window(test_app);
+    assert!(window.is_some());
+    let Some(window) = window else {
+        return;
+    };
+    window.present();
+    window.request_open_files(vec![gio::File::for_path(&path)], OpenSource::AppOpen);
+    spin_until("banner-guard file opens", || {
+        window.selected_saved_uri_for_tests() == uri && !window.selected_loading_for_tests()
+    });
+
+    assert!(fs::write(&path, b"disk v2\n").is_ok());
+    window.inject_external_event_for_tests(&uri, ExternalFileEvent::ContentPossiblyChanged);
+    window.sync_selected_banner_for_tests(true);
+    assert!(
+        window.selected_banner_visible_for_tests(),
+        "forced banner sync must reveal the reload banner on a clean tab"
+    );
+    dialogs::queue_external_reload_responses_for_tests(&[
+        ExternalReloadResponse::KeepCurrent,
+        ExternalReloadResponse::KeepCurrent,
+    ]);
+    window.set_selected_text_for_tests("local edits after banner\n");
+    spin_until("banner hides once the tab is dirty", || {
+        !window.selected_banner_visible_for_tests()
+    });
+    spin_until("in-flight automatic reload settles as deferred", || {
+        !window.selected_loading_for_tests()
+    });
+    window.force_selected_external_banner_for_tests();
+    window.trigger_selected_external_action_for_tests();
+    spin_until("banner action settles", || {
+        !window.selected_loading_for_tests()
+    });
+    assert_eq!(
+        window.selected_text_for_tests(),
+        "local edits after banner\n",
+        "banner action must not discard typed edits"
+    );
+    dialogs::queue_external_reload_responses_for_tests(&[]);
+    window.widget().close();
+    drain_events(4);
+    let _removed = fs::remove_file(&path);
 }
