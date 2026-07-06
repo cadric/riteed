@@ -7,7 +7,7 @@ use gtk4::{gio, prelude::*};
 use libadwaita::prelude::*;
 use sourceview5::prelude::*;
 
-use super::diff::{DiffOptions, compute_diff_with_options};
+use super::diff::{DiffOptions, compute_diff_with_options, line_slices};
 use super::display::{CompareDisplayModel, CompareDisplayOptions, build_display_model};
 use super::gutter::{CompareGutters, UnifiedGutter};
 use super::hatch::{CompareHatchEndpoint, CompareHatches};
@@ -573,14 +573,6 @@ struct CollapsedMarker {
 fn ellipsis_label(mut label: String) -> String {
     label.push('…');
     label
-}
-
-fn line_slices(text: &str) -> Vec<&str> {
-    if text.is_empty() {
-        Vec::new()
-    } else {
-        text.split_inclusive('\n').collect()
-    }
 }
 
 impl Drop for CompareController {
