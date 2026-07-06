@@ -165,7 +165,8 @@ fn queue_directory_entries(
         }
         state.summary.visited += 1;
         let name = info.name().to_string_lossy().to_string();
-        if should_skip_name(&name, state.show_hidden()) {
+        let is_directory = info.file_type() == gio::FileType::Directory;
+        if should_skip_entry(&name, is_directory, state.show_hidden()) {
             state.summary.skipped += 1;
             continue;
         }
@@ -270,13 +271,23 @@ fn case_sensitive_ranges(line: &str, query: &str) -> Vec<(i32, i32)> {
 
 fn folded_ranges(line: &str, query: &[char]) -> Vec<(i32, i32)> {
     let mut ranges = Vec::new();
-    for (char_start, (byte_start, _)) in line.char_indices().enumerate() {
-        if let Some(byte_end) = folded_match_end(&line[byte_start..], query) {
+    let mut byte_start = 0_usize;
+    let mut char_start = 0_usize;
+    while byte_start < line.len() {
+        if let Some(byte_len) = folded_match_end(&line[byte_start..], query) {
+            let matched = &line[byte_start..byte_start + byte_len];
             let start = i32::try_from(char_start).map_or(i32::MAX, |value| value);
-            let end =
-                start.saturating_add(char_count_i32(&line[byte_start..byte_start + byte_end]));
+            let end = start.saturating_add(char_count_i32(matched));
             ranges.push((start, end));
+            char_start = char_start.saturating_add(matched.chars().count());
+            byte_start += byte_len;
+            continue;
         }
+        let Some(character) = line[byte_start..].chars().next() else {
+            break;
+        };
+        byte_start += character.len_utf8();
+        char_start = char_start.saturating_add(1);
     }
     ranges
 }
@@ -337,8 +348,8 @@ fn stale_or_cancelled(state: &Rc<RefCell<ScanState>>) -> bool {
     state.borrow().request.cancellable.is_cancelled()
 }
 
-fn should_skip_name(name: &str, show_hidden: bool) -> bool {
-    always_skipped_dir(name) || (!show_hidden && name.starts_with('.'))
+fn should_skip_entry(name: &str, is_directory: bool, show_hidden: bool) -> bool {
+    (is_directory && always_skipped_dir(name)) || (!show_hidden && name.starts_with('.'))
 }
 
 fn always_skipped_dir(name: &str) -> bool {
@@ -389,7 +400,7 @@ impl ScanState {
 #[cfg(test)]
 mod tests {
     use super::{
-        buffer_line_advance, case_sensitive_ranges, folded_chars, folded_ranges, should_skip_name,
+        buffer_line_advance, case_sensitive_ranges, folded_chars, folded_ranges, should_skip_entry,
     };
 
     #[test]
@@ -413,6 +424,14 @@ mod tests {
     }
 
     #[test]
+    fn folded_ranges_do_not_overlap() {
+        assert_eq!(
+            folded_ranges("aaaa", &folded_chars("aa")),
+            vec![(0, 2), (2, 4)]
+        );
+    }
+
+    #[test]
     fn folded_ranges_preserve_lowercase_expansion_behavior() {
         assert!(folded_ranges("\u{0130}", &folded_chars("i")).is_empty());
         assert_eq!(
@@ -422,10 +441,12 @@ mod tests {
     }
 
     #[test]
-    fn hidden_toggle_never_scans_expensive_build_dirs() {
-        assert!(should_skip_name(".git", true));
-        assert!(should_skip_name("target", true));
-        assert!(should_skip_name(".secret", false));
-        assert!(!should_skip_name(".secret", true));
+    fn skip_list_applies_to_directories_only() {
+        assert!(should_skip_entry(".git", true, true));
+        assert!(should_skip_entry("target", true, true));
+        assert!(!should_skip_entry("target", false, true));
+        assert!(!should_skip_entry("build", false, true));
+        assert!(should_skip_entry(".secret", false, false));
+        assert!(!should_skip_entry(".secret", false, true));
     }
 }

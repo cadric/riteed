@@ -1,6 +1,6 @@
 ---
 created: 2026-04-19
-updated: 2026-06-13
+updated: 2026-07-06
 status: current
 priority: high
 type: changelog
@@ -13,6 +13,60 @@ All notable changes to this repository are documented in this file.
 The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries describe public beta snapshots.
 
 ## Unreleased
+
+### Changed
+- Removed the in-editor print-width guide so paper geometry stays confined to
+  print and print preview surfaces.
+- Made the Source Control recent commits section collapsible while keeping it
+  refreshed when expanded.
+- Printing from Markdown preview now asks before printing the raw source.
+- Source Control highlights the file belonging to the active tab, and the
+  Files sidebar shows a dot on entries with unsaved changes.
+
+### Fixed
+- The Flatpak Git module now verifies a vendored, GPG-checked snapshot of
+  kernel.org's `sha256sums.asc` instead of pinning the checksum of the
+  mutable upstream file, so scheduled validation builds no longer break
+  every time a new Git version is released.
+- CodeQL analysis moved from default setup to an in-repo workflow that
+  excludes test-only code, so temp-directory paths in `#[test]` helpers
+  stop raising false path-injection security alerts.
+- Bundled Git operations now treat filenames literally, so discarding
+  changes to a file whose name contains glob characters (for example
+  `pages/[id].tsx`) can no longer revert sibling files and destroy
+  their unsaved edits.
+- The "This File Changed on Disk" banner now asks for confirmation
+  before reloading over unsaved edits, and the banner leaves the screen
+  as soon as the document becomes dirty.
+- Compare and review views now split lines exactly like the diff model,
+  so files containing lone carriage returns show their real changed
+  lines instead of misaligned context rows.
+- Closing a window now releases its editor workspace; leaked Git file
+  monitors no longer keep running after the window is gone.
+- The window size is remembered again when closing a window with no
+  unsaved changes.
+- The project sidebar's visibility preference survives restarts instead
+  of being overwritten during startup.
+- Fixed Compare/Diff minimap lifecycle handling so GtkSourceMap views detach
+  while their holders are hidden or unmapped, avoiding GTK adjustment criticals
+  during native GTK smoke tests.
+- Commit subjects and recent file names render as plain text instead of being
+  parsed as Pango markup.
+- Find in Files no longer skips regular files named like build directories and
+  reports non-overlapping case-insensitive matches.
+- Fixed Git subprocess completion handling so Source Control waits for process
+  exit before reading status, avoiding GLib-GIO criticals in fatal smoke runs.
+- The large-file viewer keeps the search match count visible after jumping to
+  the first match.
+- Cancelled Git refreshes no longer force-kill in-flight mutating Git
+  processes, and a stale index.lock can no longer wedge Source Control.
+- Overlapping opens of the same file from Files or Source Control compare no
+  longer create duplicate tabs.
+- Fixed print paper geometry so configured margins, line wrapping, page breaks,
+  and bottom/right clipping use GtkSourcePrintCompositor's point coordinate
+  space.
+- Fixed in-app print preview scaling so preview pages match printer paper
+  geometry.
 
 ## 0.3.7 - 2026-06-13
 

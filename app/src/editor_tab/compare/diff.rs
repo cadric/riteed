@@ -139,7 +139,7 @@ fn line_count(text: &str) -> usize {
     line_slices(text).len()
 }
 
-fn line_slices(text: &str) -> Vec<&str> {
+pub(super) fn line_slices(text: &str) -> Vec<&str> {
     text.tokenize_lines()
 }
 

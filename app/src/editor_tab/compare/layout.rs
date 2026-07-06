@@ -194,7 +194,7 @@ fn build_presentation_pane(
     scrolled.set_hexpand(true);
     scrolled.set_vexpand(true);
     scrolled.set_min_content_width(0);
-    let minimap = CompareMinimap::new(tab, &view).with_scrolled(&scrolled);
+    let minimap = CompareMinimap::new(tab, &view, &scrolled);
     let root = titled_pane_root(title, &scrolled, &minimap.holder);
     PresentationPane {
         root,
@@ -222,7 +222,7 @@ fn build_unified_pane_with_title(tab: &EditorTab, title: &str) -> UnifiedPane {
     scrolled.set_hexpand(true);
     scrolled.set_vexpand(true);
     scrolled.set_min_content_width(0);
-    let minimap = CompareMinimap::new(tab, &view).with_scrolled(&scrolled);
+    let minimap = CompareMinimap::new(tab, &view, &scrolled);
     let root = titled_pane_root(title, &scrolled, &minimap.holder);
     UnifiedPane {
         root,

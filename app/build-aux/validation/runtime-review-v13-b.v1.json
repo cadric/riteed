@@ -2,24 +2,32 @@
   "version": 1,
   "sites": [
     {
-      "path": "src/source_control/live.rs",
-      "line": 220,
+      "path": "src/source_control/live_scheduler.rs",
+      "line": 33,
       "match": "cancelled: Rc<Cell<bool>>,",
       "kind": "runtime-shared-state",
       "ownership": "The Source Control live-refresh scheduler owns timeout cancellation state.",
       "justification": "GLib timeout one-shots have no Gio cancellable, so stale scheduler clones share a small cancellation flag before probing Git metadata or refreshing UI."
     },
     {
-      "path": "src/source_control/live.rs",
-      "line": 221,
+      "path": "src/source_control/live_scheduler.rs",
+      "line": 34,
       "match": "last_refresh: Rc<RefCell<Option<Instant>>>,",
       "kind": "runtime-shared-state",
       "ownership": "The Source Control live-refresh scheduler owns debounce and last-refresh state.",
       "justification": "Git metadata monitor and polling callbacks need coalesced refresh timing and index-lock deferral without blocking the main loop."
     },
     {
-      "path": "src/source_control/live.rs",
-      "line": 231,
+      "path": "src/source_control/live_scheduler.rs",
+      "line": 35,
+      "match": "lock_blocked_since: Rc<Cell<Option<Instant>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control live-refresh scheduler owns the first lock-blocked refresh attempt.",
+      "justification": "A stale index.lock must stop deferring refreshes after LOCK_WAIT_LIMIT."
+    },
+    {
+      "path": "src/source_control/live_scheduler.rs",
+      "line": 49,
       "match": "Rc::new(Path::exists),",
       "kind": "runtime-sync-fs",
       "ownership": "Source Control native live refresh owns the Git index-lock probe.",
@@ -27,7 +35,7 @@
     },
     {
       "path": "src/source_control/live.rs",
-      "line": 325,
+      "line": 244,
       "match": "if path.exists() {",
       "kind": "runtime-sync-fs",
       "ownership": "Source Control native metadata monitoring owns target existence probing.",
@@ -35,7 +43,7 @@
     },
     {
       "path": "src/source_control/live.rs",
-      "line": 328,
+      "line": 247,
       "match": "kind: if path.is_dir() {",
       "kind": "runtime-sync-fs",
       "ownership": "Source Control native metadata monitoring owns target kind probing.",
@@ -43,15 +51,15 @@
     },
     {
       "path": "src/source_control/live.rs",
-      "line": 338,
+      "line": 257,
       "match": ".find(|ancestor| ancestor.exists())?;",
       "kind": "runtime-sync-fs",
       "ownership": "Source Control native metadata monitoring owns nearest-parent probing.",
       "justification": "Nearest existing parent discovery is only used for native Git metadata monitor installation and is skipped for portal/polling contexts."
     },
     {
-      "path": "src/source_control/live.rs",
-      "line": 489,
+      "path": "src/source_control/live_scheduler.rs",
+      "line": 200,
       "match": "fn counted_scheduler(check_index_lock: bool) -> (LiveScheduler, Rc<Cell<i32>>, Rc<Cell<i32>>) {",
       "kind": "runtime-shared-state",
       "ownership": "The Source Control live-refresh tests own counters for scheduler probe and refresh callbacks.",
@@ -163,7 +171,7 @@
     },
     {
       "path": "src/source_control/tree_view.rs",
-      "line": 231,
+      "line": 240,
       "match": "fn action_runner(state_weak: &Rc<RefCell<Weak<RefCell<SourceControlState>>>>) -> RowActionRunner {",
       "kind": "runtime-shared-state",
       "ownership": "The Source Control tree factory shares the replaceable weak state handle with row setup and bind callbacks.",
@@ -171,7 +179,7 @@
     },
     {
       "path": "src/source_control/tree_view.rs",
-      "line": 377,
+      "line": 386,
       "match": "weak: &Weak<RefCell<SourceControlState>>,",
       "kind": "runtime-shared-state",
       "ownership": "Source Control activation dispatch borrows the controller weak state handle.",
@@ -331,7 +339,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 68,
+      "line": 69,
       "match": "sidebar_position_guard: Rc<Cell<bool>>,",
       "kind": "runtime-shared-state",
       "ownership": "The project sidebar owns a shared programmatic-position guard.",
@@ -339,7 +347,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 84,
+      "line": 85,
       "match": "state: Rc<RefCell<ProjectState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The window project controller owns shared project sidebar state.",
@@ -347,7 +355,7 @@
     },
     {
       "path": "src/window_project.rs",
-      "line": 110,
+      "line": 111,
       "match": "let tree_activation_handler: Rc<RefCell<Option<TreeActivationHandler>>> =",
       "kind": "runtime-shared-state",
       "ownership": "Tree activation wiring stores one late-bound handler closure.",

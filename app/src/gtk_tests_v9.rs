@@ -17,7 +17,9 @@ use crate::workspace::OpenSource;
 pub(crate) fn exercise_v9_source_control(test_app: &adw::Application) {
     exercise_non_git_folder(test_app);
     exercise_portal_like_root_detect_starts_without_preflight(test_app);
+    exercise_source_control_history_expands_after_collapsed_open(test_app);
     exercise_tracked_source_control_compare_after_open(test_app);
+    exercise_overlapping_opens_do_not_duplicate_tabs(test_app);
     exercise_editor_source_control_minimap_bands(test_app);
 
     let Ok(repo) = init_modified_fixture_repo_for_tests(
@@ -50,6 +52,24 @@ pub(crate) fn exercise_v9_source_control(test_app: &adw::Application) {
     });
     assert!(!window.source_control_commit_controls_visible_for_tests());
     assert!(window.source_control_history_split_resizable_for_tests());
+    assert!(window.source_control_history_expanded_for_tests());
+    assert!(window.source_control_history_content_revealed_for_tests());
+    window.set_source_control_history_split_position_for_tests(420);
+    assert_eq!(
+        window.source_control_history_split_position_for_tests(),
+        420
+    );
+    assert!(window.toggle_source_control_history_for_tests());
+    assert!(!window.source_control_history_expanded_for_tests());
+    assert!(!window.source_control_history_content_revealed_for_tests());
+    assert!(window.source_control_history_split_position_for_tests() >= 420);
+    assert!(window.toggle_source_control_history_for_tests());
+    assert!(window.source_control_history_expanded_for_tests());
+    assert!(window.source_control_history_content_revealed_for_tests());
+    assert_eq!(
+        window.source_control_history_split_position_for_tests(),
+        420
+    );
     assert_eq!(
         window.source_control_row_state_for_tests(marker_name),
         Some((String::from("U"), true, false))
@@ -69,6 +89,44 @@ pub(crate) fn exercise_v9_source_control(test_app: &adw::Application) {
             && window.selected_compare_active_for_tests()
     });
     drain_events(12);
+}
+
+fn exercise_source_control_history_expands_after_collapsed_open(test_app: &adw::Application) {
+    let Ok(repo) = init_modified_fixture_repo_for_tests(
+        FixtureRepoKind::V9_SOURCE_CONTROL_UNTRACKED,
+        FixtureRepoFile::BASELINE,
+        b"baseline\n",
+        b"baseline\n",
+    ) else {
+        return;
+    };
+    let marker = repo.file_path(FixtureRepoFile::UNTRACKED);
+    assert!(fs::write(&marker, b"source control collapsed history test").is_ok());
+
+    let Some(window) = build_window(test_app) else {
+        return;
+    };
+    assert!(window.toggle_source_control_history_for_tests());
+    assert!(!window.source_control_history_expanded_for_tests());
+
+    window.handle_application_open(vec![gio::File::for_path(repo.path())]);
+    let repo_uri = gio::File::for_path(repo.path()).uri().to_string();
+    spin_until("v9 collapsed-history project root opens", || {
+        window.project_root_uri_for_tests().as_deref() == Some(repo_uri.as_str())
+    });
+    spin_until("v9 collapsed-history lists changed files", || {
+        window.source_control_row_count_for_tests() > 0
+            && window.source_control_status_for_tests() == "Changed files"
+    });
+    assert!(window.source_control_history_root_visible_for_tests());
+    assert!(!window.source_control_history_content_revealed_for_tests());
+    assert_eq!(window.source_control_recent_commit_count_for_tests(), 0);
+
+    assert!(window.toggle_source_control_history_for_tests());
+    assert!(window.source_control_history_content_revealed_for_tests());
+    spin_until("v9 collapsed-history loads after expand", || {
+        window.source_control_recent_commit_count_for_tests() > 0
+    });
 }
 
 fn exercise_portal_like_root_detect_starts_without_preflight(test_app: &adw::Application) {
@@ -126,7 +184,50 @@ fn exercise_tracked_source_control_compare_after_open(test_app: &adw::Applicatio
         window.selected_saved_uri_for_tests() == tracked_uri
             && window.selected_compare_active_for_tests()
     });
+    assert_eq!(
+        window.source_control_active_row_path_for_tests().as_deref(),
+        Some(tracked_name)
+    );
+    assert!(window.compare_fonts_match_editor_for_tests());
+    window.apply_editor_font_for_tests("Monospace 19");
     drain_events(16);
+    assert!(window.compare_fonts_match_editor_for_tests());
+}
+
+fn exercise_overlapping_opens_do_not_duplicate_tabs(test_app: &adw::Application) {
+    let file_kind = FixtureRepoFile::BASELINE;
+    let file_name = file_kind.name();
+    let Ok(repo) = init_modified_fixture_repo_for_tests(
+        FixtureRepoKind::V9_SOURCE_CONTROL_UNTRACKED,
+        file_kind,
+        b"baseline\n",
+        b"baseline changed\n",
+    ) else {
+        return;
+    };
+    let file_path = repo.file_path(file_kind);
+
+    let Some(window) = build_window(test_app) else {
+        return;
+    };
+    window.ensure_default_tab();
+    window.set_selected_text_for_tests("keep this tab");
+    window.handle_application_open(vec![gio::File::for_path(repo.path())]);
+    spin_until("v9 dedupe lists changed files", || {
+        window.source_control_row_count_for_tests() > 0
+    });
+
+    let file = gio::File::for_path(&file_path);
+    window.request_open_files(vec![file.clone()], OpenSource::AppOpen);
+    window.request_open_files(vec![file], OpenSource::AppOpen);
+    spin_until("v9 dedupe overlapping opens settle", || {
+        window.selected_char_count_for_tests() > 0
+    });
+    assert_eq!(window.tab_count_for_tests(), 2);
+
+    assert!(window.source_control_activate_path_for_tests(file_name));
+    drain_events(12);
+    assert_eq!(window.tab_count_for_tests(), 2);
 }
 
 fn exercise_editor_source_control_minimap_bands(test_app: &adw::Application) {

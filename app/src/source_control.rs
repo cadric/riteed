@@ -21,9 +21,11 @@ use crate::workspace::Workspace;
 
 pub(crate) mod action_widgets;
 pub(crate) mod actions;
+mod active_row;
 mod history;
 mod list_view;
 mod live;
+mod live_scheduler;
 mod minimap;
 mod path_target;
 mod refresh;
@@ -34,11 +36,14 @@ mod row_popover;
 mod row_widgets;
 mod status_style;
 #[cfg(test)]
+mod testing;
+#[cfg(test)]
 mod tests;
 pub(crate) mod tree_model;
 mod tree_view;
 mod ui;
 mod view_mode;
+mod weak;
 
 use history::SourceControlHistory;
 use live::SourceControlLiveRefresh;
@@ -67,8 +72,8 @@ pub(super) struct SourceControlState {
     pub(super) title: adw::WindowTitle,
     pub(super) status_label: gtk4::Label,
     views: SourceControlViews,
+    pub(super) active_uri: Option<String>,
     history: SourceControlHistory,
-    #[cfg(test)]
     history_split: gtk4::Paned,
     pub(super) commit_revealer: gtk4::Revealer,
     pub(super) commit_entry: gtk4::Entry,
@@ -157,8 +162,6 @@ impl SourceControlController {
 
         let history = SourceControlHistory::new();
         let history_split = ui::build_history_split(&changes_pane, &history);
-        #[cfg(test)]
-        let history_split_for_tests = history_split.clone();
         content.append(&history_split);
         root.set_content(Some(&content));
 
@@ -167,9 +170,9 @@ impl SourceControlController {
             title,
             status_label,
             views,
+            active_uri: None,
             history,
-            #[cfg(test)]
-            history_split: history_split_for_tests,
+            history_split,
             commit_revealer,
             commit_entry,
             commit_button,
@@ -200,6 +203,7 @@ impl SourceControlController {
             .borrow()
             .views
             .connect_activation(Rc::downgrade(&state));
+        history::connect_toggle(&state);
         review::install_actions(&state, window);
         install_callbacks(&state, &refresh);
 

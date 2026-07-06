@@ -17,6 +17,12 @@ type CompareHatchRegionsForTests = (
 type CompareHatchViewportForTests = (i32, i32, i32, i32);
 type CompareHatchViewportsForTests = (CompareHatchViewportForTests, CompareHatchViewportForTests);
 type ComparePlaceholderMarkersForTests = (Vec<(usize, usize)>, Vec<(usize, usize)>);
+type CompareViewportRangeForTests = (f64, f64);
+type CompareViewportRangesForTests = (
+    CompareViewportRangeForTests,
+    CompareViewportRangeForTests,
+    CompareViewportRangeForTests,
+);
 
 impl Window {
     pub(crate) fn compare_action_states_for_tests(&self) -> (bool, bool, bool, bool) {
@@ -144,6 +150,41 @@ impl Window {
             })
     }
 
+    pub(crate) fn selected_compare_minimaps_attached_for_tests(&self) -> (bool, bool, bool) {
+        self.workspace
+            .selected_tab()
+            .map_or_else(Default::default, |tab| {
+                tab.compare_minimaps_attached_for_tests()
+            })
+    }
+
+    pub(crate) fn selected_compare_minimap_holders_mapped_for_tests(&self) -> (bool, bool, bool) {
+        self.workspace
+            .selected_tab()
+            .map_or_else(Default::default, |tab| {
+                tab.compare_minimap_holders_mapped_for_tests()
+            })
+    }
+
+    pub(crate) fn selected_compare_minimap_viewport_ranges_for_tests(
+        &self,
+    ) -> CompareViewportRangesForTests {
+        self.workspace
+            .selected_tab()
+            .map_or_else(Default::default, |tab| {
+                tab.compare_minimap_viewport_ranges_for_tests()
+            })
+    }
+
+    pub(crate) fn set_selected_compare_minimap_width_suppressed_for_tests(
+        &self,
+        width_suppressed: bool,
+    ) {
+        if let Some(tab) = self.workspace.selected_tab() {
+            tab.set_compare_minimap_width_suppressed_for_tests(width_suppressed);
+        }
+    }
+
     pub(crate) fn selected_compare_minimap_scrollbar_policies_for_tests(
         &self,
     ) -> (gtk4::PolicyType, gtk4::PolicyType, gtk4::PolicyType) {
@@ -219,6 +260,12 @@ impl Window {
         self.workspace
             .selected_tab()
             .map(|tab| tab.compare_wrap_modes_for_tests())
+    }
+
+    pub(crate) fn compare_fonts_match_editor_for_tests(&self) -> bool {
+        self.workspace
+            .selected_tab()
+            .is_some_and(|tab| tab.compare_fonts_match_editor_for_tests())
     }
 
     pub(crate) fn selected_compare_top_visible_rows_for_tests(&self) -> (usize, usize) {

@@ -4,10 +4,8 @@ use gtk4::gio;
 use gtk4::prelude::CancellableExt;
 
 use super::usize_to_u64;
-use super::viewer::{
-    cancel_cancellable, count_newlines, format_page_status, locate_line_in_chunk,
-    search_match_message, viewer_memory_tooltip,
-};
+use super::viewer::{cancel_cancellable, count_newlines, locate_line_in_chunk};
+use super::viewer_status::{format_page_status, search_match_message, viewer_memory_tooltip};
 
 #[test]
 fn line_jump_finds_line_start_in_chunk() {
@@ -60,6 +58,23 @@ fn search_match_message_is_plural_sensitive() {
     assert_eq!(
         search_match_message(2, true),
         "Many matches found; showing the first match."
+    );
+}
+
+#[test]
+fn search_note_replaces_page_status_once() {
+    use crate::large_file::viewer_status::status_after_page_load;
+
+    assert_eq!(
+        status_after_page_load(
+            Some(String::from("2 matches found; showing the first match.")),
+            String::from("Viewing bytes 0-9 of 9."),
+        ),
+        "2 matches found; showing the first match."
+    );
+    assert_eq!(
+        status_after_page_load(None, String::from("Viewing bytes 0-9 of 9.")),
+        "Viewing bytes 0-9 of 9."
     );
 }
 

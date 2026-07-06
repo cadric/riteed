@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use gettextrs::{gettext, ngettext, pgettext};
 use gtk4::{gio, prelude::*};
 
-use super::diff::{DiffOptions, DiffSkipReason, compute_diff_with_options};
+use super::diff::{DiffOptions, DiffSkipReason, compute_diff_with_options, line_slices};
 use super::display::{
     CompareDisplayModel, CompareDisplayOptions, CompareDisplayRow, DisplayCollapsedRow,
     DisplayContentRow, DisplayFileBoundaryRow, DisplayRowId, DisplayRowIdKind,
@@ -570,13 +570,5 @@ fn skip_reason_text(reason: DiffSkipReason) -> String {
             gettext("Diff was skipped because the files are over the compare line limit.")
         }
         DiffSkipReason::Computation => gettext("Diff was too large to compute fully."),
-    }
-}
-
-fn line_slices(text: &str) -> Vec<&str> {
-    if text.is_empty() {
-        Vec::new()
-    } else {
-        text.split_inclusive('\n').collect()
     }
 }

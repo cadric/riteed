@@ -56,6 +56,10 @@ impl WindowProjectController {
         self.state.borrow().browser.tree().selected_uri_for_tests()
     }
 
+    pub(crate) fn dirty_marker_for_tests(&self, name: &str) -> bool {
+        self.state.borrow().browser.dirty_marker_for_tests(name)
+    }
+
     pub(crate) fn reveal_pending_for_tests(&self) -> bool {
         reveal::reveal_pending_for_tests(&self.state)
     }

@@ -3,7 +3,7 @@
   "sites": [
     {
       "path": "src/large_file/viewer.rs",
-      "line": 17,
+      "line": 20,
       "match": "file_size: Cell<u64>,",
       "kind": "runtime-shared-state",
       "ownership": "The large-file viewer owns the latest known file size for one viewer tab.",
@@ -11,7 +11,7 @@
     },
     {
       "path": "src/large_file/viewer.rs",
-      "line": 18,
+      "line": 21,
       "match": "generation: Cell<u64>,",
       "kind": "runtime-shared-state",
       "ownership": "The large-file viewer owns stale-callback generation for one viewer tab.",
@@ -19,7 +19,7 @@
     },
     {
       "path": "src/large_file/viewer.rs",
-      "line": 19,
+      "line": 22,
       "match": "page_offset: Cell<u64>,",
       "kind": "runtime-shared-state",
       "ownership": "The large-file viewer owns the current byte-window offset.",
@@ -27,7 +27,7 @@
     },
     {
       "path": "src/large_file/viewer.rs",
-      "line": 20,
+      "line": 23,
       "match": "next_page_offset: Cell<u64>,",
       "kind": "runtime-shared-state",
       "ownership": "The large-file viewer owns the next complete UTF-8 page boundary.",
@@ -35,7 +35,7 @@
     },
     {
       "path": "src/large_file/viewer.rs",
-      "line": 21,
+      "line": 24,
       "match": "current_cancellable: RefCell<Option<gio::Cancellable>>,",
       "kind": "runtime-shared-state",
       "ownership": "The large-file viewer owns the active page or line-jump cancellable.",
@@ -43,11 +43,19 @@
     },
     {
       "path": "src/large_file/viewer.rs",
-      "line": 22,
+      "line": 25,
       "match": "search_cancellable: RefCell<Option<gio::Cancellable>>,",
       "kind": "runtime-shared-state",
       "ownership": "The large-file viewer owns the active streaming-search cancellable.",
       "justification": "Search is a cancellable async Gio byte scan; the viewer stores only the current cancellable so a new search can stop the old one."
+    },
+    {
+      "path": "src/large_file/viewer.rs",
+      "line": 26,
+      "match": "search_note: RefCell<Option<String>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The large-file viewer owns the one-shot status note for the page load started by a completed search.",
+      "justification": "Every page load rewrites the note before async work starts, so stale search messages are cleared by normal navigation and consumed only by the matching page result."
     },
     {
       "path": "src/editor_tab/apply.rs",
@@ -83,7 +91,7 @@
     },
     {
       "path": "src/large_file/viewer.rs",
-      "line": 586,
+      "line": 569,
       "match": "pub(super) fn cancel_cancellable(cell: &RefCell<Option<gio::Cancellable>>) {",
       "kind": "runtime-shared-state",
       "ownership": "The large-file viewer owns short-lived cancellable slots for mutually exclusive viewer operations.",

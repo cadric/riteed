@@ -78,4 +78,13 @@ impl ProjectBrowser {
     pub(crate) fn set_git_statuses(&self, statuses: Vec<(String, String)>) {
         self.tree.set_git_statuses(statuses);
     }
+
+    pub(crate) fn set_dirty_uris(&self, uris: Vec<String>) {
+        self.tree.set_dirty_uris(uris);
+    }
+
+    #[cfg(test)]
+    pub(crate) fn dirty_marker_for_tests(&self, name: &str) -> bool {
+        self.tree.dirty_marker_for_tests(name)
+    }
 }

@@ -1,11 +1,13 @@
 use std::cell::RefCell;
 use std::cmp::Ordering;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
 use gtk4::{gio, glib, prelude::*};
 
 use crate::project_tree_monitor::{ProjectDirectoryMonitor, ProjectDirectorySnapshot};
+
+mod markers;
 
 const ENUMERATE_ATTRIBUTES: &str = "standard::name,standard::display-name,standard::type";
 const ENUMERATE_BATCH_SIZE: i32 = 200;
@@ -18,6 +20,7 @@ pub(crate) struct ProjectTreeEntry {
     pub(crate) display_name: String,
     pub(crate) file_type: gio::FileType,
     pub(crate) git_badge: Option<String>,
+    pub(crate) dirty: bool,
     sort_key: String,
 }
 
@@ -36,6 +39,7 @@ struct ModelState {
     active_cancellables: Vec<gio::Cancellable>,
     directory_monitors: HashMap<String, ProjectDirectoryMonitor>,
     git_statuses: HashMap<String, String>,
+    dirty_uris: HashSet<String>,
     on_structural_change: Option<Rc<dyn Fn()>>,
 }
 
@@ -57,6 +61,7 @@ impl ProjectTreeModel {
             active_cancellables: Vec::new(),
             directory_monitors: HashMap::new(),
             git_statuses: HashMap::new(),
+            dirty_uris: HashSet::new(),
             on_structural_change: None,
         }));
 
@@ -107,7 +112,19 @@ impl ProjectTreeModel {
             }
             state.git_statuses.clone_from(&next_statuses);
         }
-        update_visible_git_badges(&self.tree_model, &next_statuses);
+        markers::update_visible_git_badges(&self.tree_model, &next_statuses);
+    }
+
+    pub(crate) fn set_dirty_uris(&self, uris: Vec<String>) {
+        let next_uris = uris.into_iter().collect();
+        {
+            let mut state = self.state.borrow_mut();
+            if state.dirty_uris == next_uris {
+                return;
+            }
+            state.dirty_uris.clone_from(&next_uris);
+        }
+        markers::update_visible_dirty_markers(&self.tree_model, &next_uris);
     }
 
     pub(crate) fn set_show_hidden(&self, show_hidden: bool) {
@@ -280,6 +297,31 @@ impl ProjectTreeModel {
     pub(crate) fn generation_for_tests(&self) -> u64 {
         self.state.borrow().generation
     }
+
+    #[cfg(test)]
+    pub(crate) fn dirty_marker_for_tests(&self, name: &str) -> bool {
+        for position in 0..self.tree_model.n_items() {
+            let Some(row) = self.tree_model.row(position) else {
+                continue;
+            };
+            let Some(item) = row.item() else {
+                continue;
+            };
+            let Ok(boxed) = item.downcast::<glib::BoxedAnyObject>() else {
+                continue;
+            };
+            let Ok(borrowed) = boxed.try_borrow::<ProjectTreeItem>() else {
+                continue;
+            };
+            let ProjectTreeItem::Entry(entry) = &*borrowed else {
+                continue;
+            };
+            if entry.name == name {
+                return entry.dirty;
+            }
+        }
+        false
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -399,7 +441,10 @@ fn collect_enumerator_batch(load: &DirectoryLoad, mut collected: Vec<gio::FileIn
 
 fn finish_directory_load(load: &DirectoryLoad, infos: &[gio::FileInfo]) {
     let mut entries = Vec::new();
-    let git_statuses = load.state.borrow().git_statuses.clone();
+    let (git_statuses, dirty_uris) = {
+        let state = load.state.borrow();
+        (state.git_statuses.clone(), state.dirty_uris.clone())
+    };
     for info in infos {
         let file_type = info.file_type();
         if !matches!(
@@ -418,6 +463,7 @@ fn finish_directory_load(load: &DirectoryLoad, infos: &[gio::FileInfo]) {
         let uri = file.uri().to_string();
         let display_name = info.display_name().to_string();
         let git_badge = git_statuses.get(&uri).cloned();
+        let dirty = dirty_uris.contains(&uri);
         entries.push(ProjectTreeEntry {
             file,
             uri: uri.clone(),
@@ -425,6 +471,7 @@ fn finish_directory_load(load: &DirectoryLoad, infos: &[gio::FileInfo]) {
             display_name,
             file_type,
             git_badge,
+            dirty,
             sort_key: name.to_lowercase(),
         });
     }
@@ -439,38 +486,6 @@ fn finish_directory_load(load: &DirectoryLoad, infos: &[gio::FileInfo]) {
         load,
         &ProjectDirectorySnapshot::from_infos(infos, load.show_hidden),
     );
-}
-
-fn update_visible_git_badges(model: &gtk4::TreeListModel, statuses: &HashMap<String, String>) {
-    for position in 0..model.n_items() {
-        let Some(row) = model.row(position) else {
-            continue;
-        };
-        let Some(item) = row.item() else {
-            continue;
-        };
-        let Ok(mut boxed) = item.downcast::<glib::BoxedAnyObject>() else {
-            continue;
-        };
-        let changed = {
-            let Ok(mut borrowed) = boxed.try_borrow_mut::<ProjectTreeItem>() else {
-                continue;
-            };
-            let ProjectTreeItem::Entry(entry) = &mut *borrowed else {
-                continue;
-            };
-            let next = statuses.get(&entry.uri).cloned();
-            if entry.git_badge == next {
-                false
-            } else {
-                entry.git_badge = next;
-                true
-            }
-        };
-        if changed {
-            model.items_changed(position, 1, 1);
-        }
-    }
 }
 
 fn compare_entry(left: &ProjectTreeEntry, right: &ProjectTreeEntry) -> Ordering {

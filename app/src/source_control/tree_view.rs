@@ -98,9 +98,18 @@ impl SourceControlTree {
         restore_selected_node(&self.tree_model, &self.selection, selected);
     }
 
+    pub(super) fn mark_active_row(&self, path: Option<&[u8]>) {
+        crate::source_control::row_widgets::mark_active_row(&self.bound_rows, path);
+    }
+
     #[cfg(test)]
     pub(super) fn row_count_for_tests(&self) -> usize {
         self.tree_model.n_items() as usize
+    }
+
+    #[cfg(test)]
+    pub(super) fn active_row_path_for_tests(&self) -> Option<Vec<u8>> {
+        crate::source_control::row_widgets::active_row_path_for_tests(&self.bound_rows)
     }
 
     #[cfg(test)]

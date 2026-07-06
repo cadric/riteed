@@ -43,6 +43,18 @@ fn detect_repo_does_not_retry_cancel_or_timeout() {
 }
 
 #[test]
+fn detect_repo_spec_kills_on_cancel() {
+    let spec = super::detect_repo_spec("/tmp/repo", true);
+    assert!(spec.kill_on_cancel);
+}
+
+#[test]
+fn mutating_ops_opt_out_of_cancel_kill() {
+    let source = include_str!("ops.rs");
+    assert!(source.matches("MUTATING_KILL_ON_CANCEL").count() >= 5);
+}
+
+#[test]
 fn read_only_git_ops_work_against_current_repo() {
     let _guard = crate::test_support::lock_for_tests();
     let app_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -225,7 +237,7 @@ fn run_specs_use_resolved_git_env_without_joining_dot_git() {
         packed_refs_path: PathBuf::from("/tmp/common/packed-refs"),
     };
     let process = GitProcess::new(context);
-    let spec_result = process.spec(["status"], None, 4096, false);
+    let spec_result = process.spec(["status"], None, 4096, false, true);
     assert!(spec_result.is_ok());
     let Ok(spec) = spec_result else {
         return;
@@ -244,6 +256,10 @@ fn run_specs_use_resolved_git_env_without_joining_dot_git() {
             .env
             .iter()
             .any(|(_, value)| value == "/tmp/worktree/.git")
+    );
+    assert!(
+        spec.env
+            .contains(&(String::from("GIT_LITERAL_PATHSPECS"), String::from("1")))
     );
 }
 
@@ -293,6 +309,118 @@ fn linked_worktree_detection_uses_resolved_git_dir() {
 
     let _removed = run_git_command(&main, ["worktree", "remove", "--force", linked_arg]);
     let _removed = fs::remove_dir_all(&main);
+}
+
+#[test]
+fn unstage_treats_glob_filenames_literally() {
+    let _guard = crate::test_support::lock_for_tests();
+    let repo = temp_repo("riteed-git-process-literal-unstage");
+    assert!(run_git_command(&repo, ["init"]).is_ok());
+    assert!(fs::write(repo.join("[id].txt"), b"bracket v1\n").is_ok());
+    assert!(fs::write(repo.join("i.txt"), b"sibling v1\n").is_ok());
+    assert!(run_git_command(&repo, ["add", "--all"]).is_ok());
+    assert!(
+        run_git_command(
+            &repo,
+            [
+                "-c",
+                "user.name=Riteed",
+                "-c",
+                "user.email=riteed@example.test",
+                "commit",
+                "--no-gpg-sign",
+                "-m",
+                "initial",
+            ],
+        )
+        .is_ok()
+    );
+    assert!(fs::write(repo.join("[id].txt"), b"bracket v2\n").is_ok());
+    assert!(run_git_command(&repo, ["add", "--all"]).is_ok());
+
+    let detected = wait_git(|cancellable, callback| {
+        GitProcess::detect_repo(&repo, cancellable, callback);
+    });
+    let Ok(context) = detected else {
+        let _removed = fs::remove_dir_all(&repo);
+        return;
+    };
+    let process = GitProcess::new(context);
+    let path = GitPath::from_bytes(b"[id].txt");
+    let unstage = wait_git(|cancellable, callback| {
+        process.unstage_path(&path, cancellable, callback);
+    });
+    assert!(unstage.is_ok());
+
+    let staged = git_stdout(&repo, ["ls-files", "--stage"]);
+    let cached = git_stdout(&repo, ["diff", "--cached", "--name-only"]);
+    let sibling = fs::read(repo.join("i.txt"));
+    let _removed = fs::remove_dir_all(&repo);
+    assert!(
+        staged.contains("[id].txt"),
+        "unstage must keep the index entry for the literal filename"
+    );
+    assert!(
+        !cached.contains("[id].txt"),
+        "unstage must reset the index entry to HEAD, not delete it"
+    );
+    assert_eq!(sibling.ok(), Some(b"sibling v1\n".to_vec()));
+}
+
+#[test]
+fn restore_worktree_treats_glob_filenames_literally() {
+    let _guard = crate::test_support::lock_for_tests();
+    let repo = temp_repo("riteed-git-process-literal-restore");
+    assert!(run_git_command(&repo, ["init"]).is_ok());
+    assert!(fs::write(repo.join("[id].txt"), b"bracket v1\n").is_ok());
+    assert!(fs::write(repo.join("i.txt"), b"sibling v1\n").is_ok());
+    assert!(run_git_command(&repo, ["add", "--all"]).is_ok());
+    assert!(
+        run_git_command(
+            &repo,
+            [
+                "-c",
+                "user.name=Riteed",
+                "-c",
+                "user.email=riteed@example.test",
+                "commit",
+                "--no-gpg-sign",
+                "-m",
+                "initial",
+            ],
+        )
+        .is_ok()
+    );
+    assert!(fs::write(repo.join("[id].txt"), b"bracket v2\n").is_ok());
+    assert!(fs::write(repo.join("i.txt"), b"sibling v2\n").is_ok());
+
+    let detected = wait_git(|cancellable, callback| {
+        GitProcess::detect_repo(&repo, cancellable, callback);
+    });
+    let Ok(context) = detected else {
+        let _removed = fs::remove_dir_all(&repo);
+        return;
+    };
+    let process = GitProcess::new(context);
+    let path = GitPath::from_bytes(b"[id].txt");
+    let restore = wait_git(|cancellable, callback| {
+        process.restore_worktree_path(&path, cancellable, callback);
+    });
+    assert!(restore.is_ok());
+
+    let named = fs::read(repo.join("[id].txt"));
+    let sibling = fs::read(repo.join("i.txt"));
+    let _removed = fs::remove_dir_all(&repo);
+    assert_eq!(
+        named.ok(),
+        Some(b"bracket v1\n".to_vec()),
+        "discard must revert exactly the named file"
+    );
+    assert_eq!(
+        sibling.ok(),
+        Some(b"sibling v2\n".to_vec()),
+        "discard must not touch sibling files matched by glob"
+    );
 }
 
 fn immediate_result<T: 'static>(
@@ -364,11 +492,39 @@ fn run_git_command<const N: usize>(
                 stdin: None,
                 stdout_cap: 256 * 1024,
                 allow_failure: false,
+                kill_on_cancel: true,
             },
             cancellable,
             Rc::new(move |result| callback(result.map(|_output| ()))),
         );
     })
+}
+
+fn git_stdout<const N: usize>(directory: &Path, command_args: [&str; N]) -> String {
+    let Some(directory) = directory.to_str() else {
+        return String::new();
+    };
+    let mut git_argv = base_args();
+    git_argv.extend(["-C", directory].map(String::from));
+    git_argv.extend(command_args.map(String::from));
+    let output = wait_git(|cancellable, callback| {
+        run_git(
+            GitSpec {
+                argv: git_argv,
+                env: Vec::new(),
+                stdin: None,
+                stdout_cap: 256 * 1024,
+                allow_failure: false,
+                kill_on_cancel: true,
+            },
+            cancellable,
+            callback,
+        );
+    });
+    output.map_or_else(
+        |_error| String::new(),
+        |output| String::from_utf8_lossy(&output.stdout).into_owned(),
+    )
 }
 
 fn context_for(work_tree: &Path) -> GitRepoContext {

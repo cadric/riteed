@@ -41,6 +41,7 @@ impl Workspace {
         if let Some(callback) = self.git_action_sync_handler.get() {
             callback(selected.clone());
         }
+        self.notify_dirty_state_changed();
 
         if let Some(tab) = selected {
             self.title_widget.set_title(&tab.title());

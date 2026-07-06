@@ -171,7 +171,7 @@
     },
     {
       "path": "src/find_in_files/scanner.rs",
-      "line": 205,
+      "line": 206,
       "match": "fn read_file(state: Rc<RefCell<ScanState>>, candidate: FileCandidate) {",
       "kind": "runtime-shared-state",
       "ownership": "The Find in Files controller and scanner own one workspace scan generation, cancellable, and result set.",
@@ -179,7 +179,7 @@
     },
     {
       "path": "src/find_in_files/scanner.rs",
-      "line": 224,
+      "line": 225,
       "match": "fn collect_matches(state: &Rc<RefCell<ScanState>>, candidate: &FileCandidate, text: &str) {",
       "kind": "runtime-shared-state",
       "ownership": "The Find in Files controller and scanner own one workspace scan generation, cancellable, and result set.",
@@ -187,7 +187,7 @@
     },
     {
       "path": "src/find_in_files/scanner.rs",
-      "line": 321,
+      "line": 332,
       "match": "fn should_finish(state: &Rc<RefCell<ScanState>>) -> bool {",
       "kind": "runtime-shared-state",
       "ownership": "The Find in Files controller and scanner own one workspace scan generation, cancellable, and result set.",
@@ -195,7 +195,7 @@
     },
     {
       "path": "src/find_in_files/scanner.rs",
-      "line": 328,
+      "line": 339,
       "match": "fn finish_scan(state: &Rc<RefCell<ScanState>>) {",
       "kind": "runtime-shared-state",
       "ownership": "The Find in Files controller and scanner own one workspace scan generation, cancellable, and result set.",
@@ -203,7 +203,7 @@
     },
     {
       "path": "src/find_in_files/scanner.rs",
-      "line": 336,
+      "line": 347,
       "match": "fn stale_or_cancelled(state: &Rc<RefCell<ScanState>>) -> bool {",
       "kind": "runtime-shared-state",
       "ownership": "The Find in Files controller and scanner own one workspace scan generation, cancellable, and result set.",
@@ -227,7 +227,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 276,
+      "line": 291,
       "match": "let flags = gio::SubprocessFlags::STDIN_PIPE",
       "kind": "runtime-git-subprocess",
       "ownership": "The typed Git process boundary owns the Gio subprocess pipe flags.",
@@ -235,7 +235,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 277,
+      "line": 292,
       "match": "| gio::SubprocessFlags::STDOUT_PIPE",
       "kind": "runtime-git-subprocess",
       "ownership": "The typed Git process boundary owns stdout capture for sandbox Git.",
@@ -243,7 +243,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 278,
+      "line": 293,
       "match": "| gio::SubprocessFlags::STDERR_PIPE;",
       "kind": "runtime-git-subprocess",
       "ownership": "The typed Git process boundary owns stderr capture for sandbox Git.",
@@ -251,7 +251,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 279,
+      "line": 294,
       "match": "let launcher = gio::SubprocessLauncher::new(flags);",
       "kind": "runtime-git-subprocess",
       "ownership": "The typed Git process boundary owns subprocess creation.",
@@ -259,7 +259,15 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 349,
+      "line": 369,
+      "match": "subprocess: &gio::Subprocess,",
+      "kind": "runtime-git-subprocess",
+      "ownership": "The typed Git process boundary owns post-communication subprocess completion.",
+      "justification": "Git stdout/stderr capture now waits for the reviewed /app/bin/git subprocess to exit before reading status, avoiding GLib status precondition criticals while preserving bounded output handling."
+    },
+    {
+      "path": "src/git_process.rs",
+      "line": 399,
       "match": "subprocess: &gio::Subprocess,",
       "kind": "runtime-git-subprocess",
       "ownership": "The typed Git process boundary owns timeout supervision for one Gio subprocess.",
@@ -267,7 +275,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 351,
+      "line": 401,
       "match": "finished: Rc<Cell<bool>>,",
       "kind": "runtime-shared-state",
       "ownership": "The typed Git process boundary owns one completion flag shared by the communicate callback and timeout grace callback.",
@@ -275,7 +283,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 352,
+      "line": 402,
       "match": "timed_out: Rc<Cell<bool>>,",
       "kind": "runtime-shared-state",
       "ownership": "The typed Git process boundary owns one timeout flag shared by the communicate callback and timeout callback.",
@@ -283,11 +291,11 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 380,
+      "line": 430,
       "match": "fn kill_unfinished_git(subprocess: &gio::Subprocess) {",
       "kind": "runtime-git-subprocess",
-      "ownership": "The typed Git process boundary owns forced termination of timed-out or cancelled Git subprocesses.",
-      "justification": "Only subprocesses spawned by this reviewed /app/bin/git boundary reach this helper, and the helper exits early for completed processes before calling Gio force_exit."
+      "ownership": "The typed Git process boundary owns forced termination of timed-out or kill-on-cancel Git subprocesses.",
+      "justification": "Only subprocesses spawned by this reviewed /app/bin/git boundary reach this helper, mutating user-cancel paths bypass it, and the helper exits early for completed processes before calling Gio force_exit."
     },
     {
       "path": "src/git_process/test_support.rs",
@@ -299,7 +307,7 @@
     },
     {
       "path": "src/git_process/tests.rs",
-      "line": 301,
+      "line": 429,
       "match": "let slot: Rc<RefCell<Option<Result<T, GitProcessError>>>> = Rc::new(RefCell::new(None));",
       "kind": "runtime-shared-state",
       "ownership": "Git process unit tests own this callback result slot.",
@@ -307,7 +315,7 @@
     },
     {
       "path": "src/git_process/tests.rs",
-      "line": 316,
+      "line": 444,
       "match": "let slot: Rc<RefCell<Option<Result<T, GitProcessError>>>> = Rc::new(RefCell::new(None));",
       "kind": "runtime-shared-state",
       "ownership": "Git process unit tests own this callback result slot.",
@@ -315,7 +323,7 @@
     },
     {
       "path": "src/project_tree_model.rs",
-      "line": 44,
+      "line": 48,
       "match": "state: Rc<RefCell<ModelState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The project tree model owns one shared model state for lazy directory rows and selection/reveal updates.",
@@ -323,7 +331,7 @@
     },
     {
       "path": "src/project_tree_model.rs",
-      "line": 293,
+      "line": 335,
       "match": "state: Rc<RefCell<ModelState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The project tree model owns one shared model state for lazy directory rows and selection/reveal updates.",
@@ -331,7 +339,7 @@
     },
     {
       "path": "src/project_tree_model.rs",
-      "line": 303,
+      "line": 345,
       "match": "state: &Rc<RefCell<ModelState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The project tree model owns one shared model state for lazy directory rows and selection/reveal updates.",
@@ -339,7 +347,7 @@
     },
     {
       "path": "src/project_tree_model.rs",
-      "line": 491,
+      "line": 506,
       "match": "state: &Rc<RefCell<ModelState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The project tree model owns one shared model state for lazy directory rows and selection/reveal updates.",
@@ -347,7 +355,7 @@
     },
     {
       "path": "src/project_tree_model.rs",
-      "line": 517,
+      "line": 532,
       "match": "fn remove_active_cancellable(state: &Rc<RefCell<ModelState>>, cancellable: &gio::Cancellable) {",
       "kind": "runtime-shared-state",
       "ownership": "The project tree model owns cleanup of completed async directory-load cancellables.",
@@ -427,15 +435,39 @@
     },
     {
       "path": "src/source_control.rs",
-      "line": 48,
+      "line": 53,
       "match": "pub(super) type SourceStateRef = Rc<RefCell<SourceControlState>>;",
       "kind": "runtime-shared-state",
-      "ownership": "The Source Control controller owns the sidebar state behind one Rc<RefCell>.",
-      "justification": "Refresh, commit, stage, unstage, and diff callbacks all complete asynchronously on the main loop and need one cancellable, generation-aware UI state owner."
+      "ownership": "The Source Control controller owns the sidebar state behind one Rc<RefCell>, including the selected-tab URI used for row highlighting.",
+      "justification": "Refresh, commit, stage, unstage, diff, and active-row callbacks all complete asynchronously on the main loop and need one cancellable, generation-aware UI state owner."
+    },
+    {
+      "path": "src/source_control/weak.rs",
+      "line": 7,
+      "match": "state: Weak<RefCell<SourceControlState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The weak Source Control wrapper owns only a non-retaining handle back to controller state.",
+      "justification": "Sidebar wiring callbacks upgrade this handle while the window graph is alive, avoiding a SourceControlState self-cycle after the window closes."
+    },
+    {
+      "path": "src/source_control/weak.rs",
+      "line": 18,
+      "match": "pub(crate) fn state_weak_for_tests(&self) -> Weak<RefCell<SourceControlState>> {",
+      "kind": "runtime-shared-state",
+      "ownership": "The GTK lifecycle regression borrows a weak Source Control state handle.",
+      "justification": "The test-only handle observes whether the closed window released SourceControlState without keeping that state alive."
+    },
+    {
+      "path": "src/window/testing.rs",
+      "line": 30,
+      "match": ") -> std::rc::Weak<std::cell::RefCell<crate::source_control::SourceControlState>> {",
+      "kind": "runtime-shared-state",
+      "ownership": "Window tests expose a weak Source Control state handle for lifecycle assertions.",
+      "justification": "The hook lets GTK lifecycle tests verify closed windows release SourceControlState while preserving production ownership boundaries."
     },
     {
       "path": "src/source_control/history.rs",
-      "line": 17,
+      "line": 22,
       "match": "loaded_head_oid: RefCell<Option<String>>,",
       "kind": "runtime-shared-state",
       "ownership": "The Source Control history widget owns the last successfully loaded HEAD.",
@@ -443,11 +475,27 @@
     },
     {
       "path": "src/source_control/history.rs",
-      "line": 18,
+      "line": 23,
       "match": "needs_refresh: Cell<bool>,",
       "kind": "runtime-shared-state",
       "ownership": "The Source Control history widget owns its transient retry flag.",
       "justification": "A failed recent-commits read must self-heal on the next successful status refresh without refetching on every index-only update."
+    },
+    {
+      "path": "src/source_control/history.rs",
+      "line": 24,
+      "match": "expanded: Cell<bool>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control history widget owns the session-only collapsed state for its recent-commits section.",
+      "justification": "The collapse toggle must be readable by refresh callbacks so collapsed history stays hidden while marking itself dirty for the next expand."
+    },
+    {
+      "path": "src/source_control/history.rs",
+      "line": 25,
+      "match": "last_expanded_position: Cell<i32>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The Source Control history widget owns the last expanded split position.",
+      "justification": "Collapse moves the history pane to its minimum height and expand restores the user's previous split position without persisting preference state."
     },
     {
       "path": "src/source_control/row_widgets.rs",
@@ -475,7 +523,7 @@
     },
     {
       "path": "src/source_control/list_view.rs",
-      "line": 212,
+      "line": 221,
       "match": "fn action_runner(state_weak: &Rc<RefCell<Weak<RefCell<SourceControlState>>>>) -> RowActionRunner {",
       "kind": "runtime-shared-state",
       "ownership": "The Source Control list view owns recycled-row action state and a weak controller handle.",
@@ -483,15 +531,15 @@
     },
     {
       "path": "src/source_control/list_view.rs",
-      "line": 287,
+      "line": 296,
       "match": "weak: &Weak<RefCell<SourceControlState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The Source Control list view owns recycled-row action state and a weak controller handle.",
       "justification": "The flat ListView factory is created before controller Rc wiring and must dispatch row actions against the current snapshot without retaining the window."
     },
     {
-      "path": "src/source_control/live.rs",
-      "line": 219,
+      "path": "src/source_control/live_scheduler.rs",
+      "line": 32,
       "match": "pending: Rc<Cell<bool>>,",
       "kind": "runtime-shared-state",
       "ownership": "The Source Control live-refresh scheduler owns debounce and last-refresh state.",

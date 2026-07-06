@@ -45,6 +45,7 @@ enum RootChangeOrigin {
 type TreeActivationHandler = Rc<dyn Fn(ProjectTreeActivation)>;
 type RootChangeHandler = Rc<dyn Fn(Option<gio::File>)>;
 type GitStatusHandler = Rc<dyn Fn(Vec<(String, String)>)>;
+type DirtyUrisHandler = Rc<dyn Fn(Vec<String>)>;
 type FilterChangeHandler = Rc<dyn Fn(bool)>;
 type SidebarVisibilityHandler = Rc<dyn Fn(bool)>;
 
@@ -257,6 +258,18 @@ impl WindowProjectController {
             };
             if let Ok(state) = state.try_borrow() {
                 state.browser.set_git_statuses(statuses);
+            }
+        })
+    }
+
+    pub(crate) fn dirty_uris_handler(&self) -> DirtyUrisHandler {
+        let weak = Rc::downgrade(&self.state);
+        Rc::new(move |uris| {
+            let Some(state) = weak.upgrade() else {
+                return;
+            };
+            if let Ok(state) = state.try_borrow() {
+                state.browser.set_dirty_uris(uris);
             }
         })
     }

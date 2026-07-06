@@ -77,7 +77,6 @@ pub(crate) fn build_print_operation(
     let operation = gtk4::PrintOperation::new();
     operation.set_job_name(title);
     operation.set_embed_page_setup(true);
-    operation.set_unit(gtk4::Unit::Mm);
 
     let compositor = sourceview5::PrintCompositor::from_view(view);
     configure_compositor(&compositor, view, title, body_font);
@@ -125,7 +124,7 @@ fn configure_compositor(
 
 const HEADER_FONT: &str = "Sans 9";
 const LINE_NUMBERS_FONT_SIZE_PT: i32 = 8;
-
+const PRINT_MARGIN_MM: f64 = 12.7;
 /// Header format strings expand strftime codes plus %N/%Q, so a literal `%`
 /// in a document title must be doubled.
 fn header_title(title: &str) -> String {
@@ -139,10 +138,10 @@ fn line_numbers_font_name(body_font: &str) -> String {
 }
 
 fn set_margins(compositor: &sourceview5::PrintCompositor) {
-    compositor.set_top_margin(12.7, gtk4::Unit::Mm);
-    compositor.set_bottom_margin(12.7, gtk4::Unit::Mm);
-    compositor.set_left_margin(12.7, gtk4::Unit::Mm);
-    compositor.set_right_margin(12.7, gtk4::Unit::Mm);
+    compositor.set_top_margin(PRINT_MARGIN_MM, gtk4::Unit::Mm);
+    compositor.set_bottom_margin(PRINT_MARGIN_MM, gtk4::Unit::Mm);
+    compositor.set_left_margin(PRINT_MARGIN_MM, gtk4::Unit::Mm);
+    compositor.set_right_margin(PRINT_MARGIN_MM, gtk4::Unit::Mm);
 }
 
 fn line_number_interval(show_line_numbers: bool) -> u32 {

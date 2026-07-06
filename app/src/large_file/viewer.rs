@@ -1,11 +1,14 @@
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
-use gettextrs::{gettext, ngettext, pgettext};
+use gettextrs::{gettext, pgettext};
 use gtk4::{gio, glib, prelude::*};
 
 use crate::document_limits::VIEWER_PAGE_BYTES;
 use crate::error::AppError;
+use crate::large_file::viewer_status::{
+    format_page_status, search_match_message, status_after_page_load, viewer_memory_tooltip,
+};
 use crate::large_file::{page_text::decode_page_window, reader, search, usize_to_u64};
 
 type VoidCallback = Rc<dyn Fn()>;
@@ -20,6 +23,7 @@ pub(crate) struct LargeFileViewer {
     next_page_offset: Cell<u64>,
     current_cancellable: RefCell<Option<gio::Cancellable>>,
     search_cancellable: RefCell<Option<gio::Cancellable>>,
+    search_note: RefCell<Option<String>>,
     status_label: gtk4::Label,
     search_entry: gtk4::SearchEntry,
     line_entry: gtk4::Entry,
@@ -105,6 +109,7 @@ impl LargeFileViewer {
             next_page_offset: Cell::new(0),
             current_cancellable: RefCell::new(None),
             search_cancellable: RefCell::new(None),
+            search_note: RefCell::new(None),
             status_label,
             search_entry,
             line_entry,
@@ -195,7 +200,12 @@ impl LargeFileViewer {
     }
 
     fn load_page(self: &Rc<Self>, offset: u64) {
+        self.load_page_with_note(offset, None);
+    }
+
+    fn load_page_with_note(self: &Rc<Self>, offset: u64, note: Option<String>) {
         let generation = self.next_generation();
+        self.search_note.replace(note);
         let cancellable = self.replace_current_cancellable();
         self.status_label.set_text(&gettext("Loading file page..."));
         self.previous_button.set_sensitive(offset > 0);
@@ -274,11 +284,10 @@ impl LargeFileViewer {
                 self.next_page_offset.set(decoded.next_offset);
                 let file_size = self.file_size.get();
                 let end = decoded.visible_end.min(file_size);
-                self.status_label.set_text(&format_page_status(
-                    decoded.visible_start,
-                    end,
-                    file_size,
-                ));
+                let page_status = format_page_status(decoded.visible_start, end, file_size);
+                let note = self.search_note.borrow_mut().take();
+                self.status_label
+                    .set_text(&status_after_page_load(note, page_status));
                 self.previous_button
                     .set_sensitive(decoded.visible_start > 0);
                 self.next_button.set_sensitive(
@@ -333,8 +342,7 @@ impl LargeFileViewer {
             return;
         };
         let message = search_match_message(outcome.matches.len(), outcome.reached_cap);
-        self.status_label.set_text(&message);
-        self.load_page(first_match);
+        self.load_page_with_note(first_match, Some(message));
     }
 
     #[cfg(test)]
@@ -556,31 +564,6 @@ fn build_text_view(buffer: &gtk4::TextBuffer) -> gtk4::TextView {
     view.set_vexpand(true);
     view.set_wrap_mode(gtk4::WrapMode::None);
     view
-}
-
-pub(super) fn format_page_status(start: u64, end: u64, size: u64) -> String {
-    let template = gettext("Viewing bytes %1$s-%2$s of %3$s.");
-    template
-        .replace("%1$s", &start.to_string())
-        .replace("%2$s", &end.to_string())
-        .replace("%3$s", &size.to_string())
-}
-
-pub(super) fn viewer_memory_tooltip() -> String {
-    gettext("Viewer keeps only the current file page in memory.")
-}
-
-pub(super) fn search_match_message(match_count: usize, reached_cap: bool) -> String {
-    if reached_cap {
-        return gettext("Many matches found; showing the first match.");
-    }
-    let count = u32::try_from(match_count).map_or(u32::MAX, |value| value);
-    ngettext(
-        "%d match found; showing the first match.",
-        "%d matches found; showing the first match.",
-        count,
-    )
-    .replace("%d", &match_count.to_string())
 }
 
 pub(super) fn cancel_cancellable(cell: &RefCell<Option<gio::Cancellable>>) {

@@ -1,3 +1,4 @@
+use gtk4::pango;
 use gtk4::prelude::*;
 use sourceview5::prelude::BufferExt;
 
@@ -229,6 +230,27 @@ impl EditorTab {
                 })
             })
             .unwrap_or((self.text_view.wrap_mode(), self.text_view.wrap_mode()))
+    }
+
+    pub(crate) fn compare_fonts_match_editor_for_tests(&self) -> bool {
+        let Some(editor_font) = self.text_view.pango_context().font_description() else {
+            return false;
+        };
+        self.state
+            .try_borrow()
+            .ok()
+            .and_then(|state| {
+                state.compare.active.as_ref().map(|compare| {
+                    [
+                        &compare.left_view,
+                        &compare.right_view,
+                        &compare.unified_view,
+                    ]
+                    .into_iter()
+                    .all(|view| font_description_matches(view, &editor_font))
+                })
+            })
+            .unwrap_or(false)
     }
 
     pub(crate) fn compare_editable_highlight_count_for_tests(&self) -> usize {
@@ -575,6 +597,14 @@ fn placeholder_markers_for_tests(
                 .map(|marker| (row, marker.run_len))
         })
         .collect()
+}
+
+fn font_description_matches(view: &sourceview5::View, expected: &pango::FontDescription) -> bool {
+    view.pango_context()
+        .font_description()
+        .is_some_and(|actual| {
+            actual.family() == expected.family() && actual.size() == expected.size()
+        })
 }
 
 fn line_text_for_tests(buffer: &sourceview5::Buffer, row: usize) -> String {

@@ -605,6 +605,15 @@ fn gtk_surfaces_and_editor_flow_work() {
         exercise_restore_and_recent_pruning(&test_app);
     });
     run_gtk_flow("close-flows", || exercise_close_flows(&test_app));
+    run_gtk_flow("window-lifecycle-release", || {
+        crate::gtk_tests_lifecycle::exercise_window_lifecycle_release(&test_app);
+    });
+    run_gtk_flow("clean-close-window-size", || {
+        crate::gtk_tests_lifecycle::exercise_clean_close_persists_window_size(&test_app);
+    });
+    run_gtk_flow("sidebar-restore-preference", || {
+        crate::gtk_tests_lifecycle::exercise_sidebar_restore_preference(&test_app);
+    });
     run_gtk_flow("app-open-actions", exercise_app_open_actions);
     run_gtk_flow("app-actions-more", exercise_app_actions_more);
     run_gtk_flow("search-status", || exercise_search_and_status(&test_app));
@@ -613,6 +622,9 @@ fn gtk_surfaces_and_editor_flow_work() {
     });
     run_gtk_flow("v4-editor-features", || {
         crate::gtk_tests_v4::exercise_v4_editor_features(&test_app);
+    });
+    run_gtk_flow("v4-banner-reload-dirty-guard", || {
+        crate::gtk_tests_v4::exercise_banner_reload_dirty_guard(&test_app);
     });
     run_gtk_flow("v5-format-io", || {
         crate::gtk_tests_v5::exercise_v5_format_io(&test_app);

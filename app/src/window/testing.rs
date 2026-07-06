@@ -21,6 +21,16 @@ impl Window {
         true
     }
 
+    pub(crate) fn workspace_weak_for_tests(&self) -> std::rc::Weak<crate::workspace::Workspace> {
+        std::rc::Rc::downgrade(&self.workspace)
+    }
+
+    pub(crate) fn source_control_state_weak_for_tests(
+        &self,
+    ) -> std::rc::Weak<std::cell::RefCell<crate::source_control::SourceControlState>> {
+        self.source_control.state_weak_for_tests()
+    }
+
     pub(crate) fn selected_char_count_for_tests(&self) -> i32 {
         self.workspace
             .selected_tab()
@@ -394,6 +404,12 @@ impl Window {
         self.workspace.trigger_selected_external_action_for_tests();
     }
 
+    pub(crate) fn force_selected_external_banner_for_tests(&self) {
+        if let Some(tab) = self.workspace.selected_tab() {
+            tab.force_external_banner_for_tests();
+        }
+    }
+
     pub(crate) fn request_selected_autosave_for_tests(&self) {
         self.workspace.request_selected_autosave_for_tests();
     }
@@ -459,6 +475,10 @@ impl Window {
         self.source_control.row_state_for_tests(path)
     }
 
+    pub(crate) fn source_control_active_row_path_for_tests(&self) -> Option<String> {
+        self.source_control.active_row_path_for_tests()
+    }
+
     pub(crate) fn set_source_control_view_mode_for_tests(
         &self,
         mode: crate::settings::SourceControlViewMode,
@@ -476,6 +496,31 @@ impl Window {
 
     pub(crate) fn source_control_history_split_resizable_for_tests(&self) -> bool {
         self.source_control.history_split_resizable_for_tests()
+    }
+
+    pub(crate) fn source_control_history_expanded_for_tests(&self) -> bool {
+        self.source_control.history_expanded_for_tests()
+    }
+
+    pub(crate) fn source_control_history_content_revealed_for_tests(&self) -> bool {
+        self.source_control.history_content_revealed_for_tests()
+    }
+
+    pub(crate) fn source_control_history_root_visible_for_tests(&self) -> bool {
+        self.source_control.history_root_visible_for_tests()
+    }
+
+    pub(crate) fn toggle_source_control_history_for_tests(&self) -> bool {
+        self.source_control.toggle_history_for_tests()
+    }
+
+    pub(crate) fn source_control_history_split_position_for_tests(&self) -> i32 {
+        self.source_control.history_split_position_for_tests()
+    }
+
+    pub(crate) fn set_source_control_history_split_position_for_tests(&self, position: i32) {
+        self.source_control
+            .set_history_split_position_for_tests(position);
     }
 
     pub(crate) fn set_source_control_detect_repo_for_tests(
@@ -542,6 +587,11 @@ impl Window {
 
     pub(crate) fn selected_zoom_css_classes_for_tests(&self) -> Vec<String> {
         self.workspace.selected_zoom_css_classes_for_tests()
+    }
+
+    pub(crate) fn apply_editor_font_for_tests(&self, font: &str) {
+        self.settings.set_editor_font(font);
+        self.zoom.set_editor_font(font);
     }
 
     pub(crate) fn selected_scroll_past_end_padding_for_tests(&self) -> Option<(i32, i32)> {
@@ -667,6 +717,10 @@ impl Window {
 
     pub(crate) fn selected_project_tree_uri_for_tests(&self) -> Option<String> {
         self.project.selected_tree_uri_for_tests()
+    }
+
+    pub(crate) fn project_tree_dirty_marker_for_tests(&self, name: &str) -> bool {
+        self.project.dirty_marker_for_tests(name)
     }
 
     pub(crate) fn project_reveal_pending_for_tests(&self) -> bool {

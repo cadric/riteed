@@ -1198,6 +1198,9 @@ msgstr "Udskriv"
 msgid "Print Current Document"
 msgstr "Udskriv aktuelt dokument"
 
+msgid "Print Markdown Source?"
+msgstr "Udskriv Markdown-kilde?"
+
 msgctxt "menu item"
 msgid "Print Preview"
 msgstr "Vis udskrift"
@@ -1205,8 +1208,17 @@ msgstr "Vis udskrift"
 msgid "Print Preview"
 msgstr "Vis udskrift"
 
+msgctxt "dialog button"
+msgid "Print Source"
+msgstr "Udskriv kilde"
+
 msgid "Print preview failed."
 msgstr "Forhåndsvisning af udskrift mislykkedes."
+
+msgid ""
+"Printing the formatted preview is not supported yet. The raw Markdown source "
+"will be printed."
+msgstr "Udskrivning af det formaterede eksempel understøttes ikke endnu. Den rå Markdown-kilde bliver udskrevet."
 
 msgid "Printing failed."
 msgstr "Udskrivning mislykkedes."
@@ -1920,6 +1932,9 @@ msgstr "Brug dette antal kolonner til automatisk indrykning"
 
 msgid "View"
 msgstr "Visning"
+
+msgid "Waiting for another Git operation to finish"
+msgstr "Venter på at en anden Git-handling bliver færdig"
 
 msgid "Window Height"
 msgstr "Vindueshøjde"

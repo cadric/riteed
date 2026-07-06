@@ -10,18 +10,139 @@ use crate::git_process::test_support::{
 };
 use crate::gtk_tests::{
     TempFileFixture, build_window, build_window_with_settings, drain_events, spin_until,
-    write_temp_file,
+    wait_millis, write_temp_file,
 };
 use crate::settings::{AppSettings, CompareViewMode, SourceControlViewMode};
 use crate::workspace::OpenSource;
 
 pub(crate) fn exercise_v7_compare(test_app: &adw::Application) {
+    exercise_compare_minimap_wide_short_document_discriminant(test_app);
+    exercise_compare_minimap_wide_long_document_attaches(test_app);
     exercise_compare_with_disk_and_file(test_app);
     exercise_compare_minimap_stays_visible_with_sidebar(test_app);
     exercise_compare_navigation(test_app);
     exercise_compare_two_files(test_app);
     exercise_compare_tab_actions(test_app);
     exercise_compare_exits_on_open(test_app);
+}
+
+fn positive_fitting_range((upper, page_size): (f64, f64)) -> bool {
+    upper > 0.0 && page_size > 0.0 && (upper - page_size).abs() <= 0.5
+}
+
+fn scrollable_range((upper, page_size): (f64, f64)) -> bool {
+    upper > page_size + 0.5
+}
+
+fn long_minimap_text(prefix: &str) -> String {
+    let mut text = String::new();
+    for line in 0..260 {
+        text.push_str(prefix);
+        text.push_str(" line ");
+        text.push_str(&line.to_string());
+        text.push('\n');
+    }
+    text
+}
+
+fn exercise_compare_minimap_wide_short_document_discriminant(test_app: &adw::Application) {
+    let settings = AppSettings::new_for_tests();
+    settings.set_compare_view_mode(CompareViewMode::Unified);
+    let Some(window) = build_window_with_settings(test_app, settings) else {
+        return;
+    };
+    window.widget().set_default_size(1400, 1200);
+    window.present();
+    drain_events(20);
+    window.ensure_default_tab();
+    window.set_minimap_for_tests(true);
+
+    let editable_path = write_temp_file(TempFileFixture::V7_MINIMAP_SHORT, b"current\n");
+    let reference_path = write_temp_file(TempFileFixture::V7_MINIMAP_SHORT_REF, b"reference\n");
+    let editable_uri = gio::File::for_path(&editable_path).uri().to_string();
+    window.request_open_files(
+        vec![gio::File::for_path(&editable_path)],
+        OpenSource::AppOpen,
+    );
+    spin_until("v7 short minimap file opens", || {
+        window.selected_saved_uri_for_tests() == editable_uri
+    });
+    window.compare_with_file_for_tests(&gio::File::for_path(&reference_path));
+    spin_until("v7 wide short compare starts", || {
+        window.selected_compare_active_for_tests()
+            && window.selected_compare_diff_count_for_tests() == 1
+    });
+    spin_until("v7 wide short compare holder maps", || {
+        window.selected_compare_minimap_holders_mapped_for_tests().2
+    });
+    spin_until("v7 wide short compare has positive fitting range", || {
+        let (_, _, unified_range) = window.selected_compare_minimap_viewport_ranges_for_tests();
+        positive_fitting_range(unified_range)
+    });
+    let (_, _, unified_range) = window.selected_compare_minimap_viewport_ranges_for_tests();
+    assert!(positive_fitting_range(unified_range));
+    assert!(window.selected_compare_minimaps_attached_for_tests().2);
+    wait_millis("v7 wide short minimap tick probe", 120);
+
+    let _removed = fs::remove_file(editable_path);
+    let _removed = fs::remove_file(reference_path);
+}
+
+fn exercise_compare_minimap_wide_long_document_attaches(test_app: &adw::Application) {
+    let settings = AppSettings::new_for_tests();
+    settings.set_compare_view_mode(CompareViewMode::Unified);
+    let Some(window) = build_window_with_settings(test_app, settings) else {
+        return;
+    };
+    window.widget().set_default_size(1400, 900);
+    window.present();
+    drain_events(20);
+    window.ensure_default_tab();
+    window.set_minimap_for_tests(true);
+
+    let editable_text = long_minimap_text("current");
+    let reference_text = long_minimap_text("reference");
+    let editable_path = write_temp_file(TempFileFixture::V7_MINIMAP_LONG, editable_text.as_bytes());
+    let reference_path = write_temp_file(
+        TempFileFixture::V7_MINIMAP_LONG_REF,
+        reference_text.as_bytes(),
+    );
+    let editable_uri = gio::File::for_path(&editable_path).uri().to_string();
+    window.request_open_files(
+        vec![gio::File::for_path(&editable_path)],
+        OpenSource::AppOpen,
+    );
+    spin_until("v7 long minimap file opens", || {
+        window.selected_saved_uri_for_tests() == editable_uri
+    });
+    window.compare_with_file_for_tests(&gio::File::for_path(&reference_path));
+    spin_until("v7 wide long compare starts", || {
+        window.selected_compare_active_for_tests()
+            && window.selected_compare_diff_count_for_tests() > 0
+    });
+    spin_until("v7 wide long compare holder maps", || {
+        window.selected_compare_minimap_holders_mapped_for_tests().2
+    });
+    spin_until("v7 wide long compare has scroll range", || {
+        let (_, _, unified_range) = window.selected_compare_minimap_viewport_ranges_for_tests();
+        scrollable_range(unified_range)
+    });
+    assert!(window.selected_compare_minimaps_attached_for_tests().2);
+    wait_millis("v7 wide long minimap tick probe", 120);
+    window.set_minimap_for_tests(false);
+    spin_until("v7 wide long minimap detaches when hidden", || {
+        !window.selected_compare_minimaps_visible_for_tests().2
+            && !window.selected_compare_minimaps_attached_for_tests().2
+    });
+    window.set_minimap_for_tests(true);
+    spin_until("v7 wide long minimap reattaches when shown", || {
+        window.selected_compare_minimaps_visible_for_tests().2
+            && window.selected_compare_minimap_holders_mapped_for_tests().2
+            && window.selected_compare_minimaps_attached_for_tests().2
+    });
+
+    let _removed = fs::remove_file(editable_path);
+    let _removed = fs::remove_file(reference_path);
 }
 
 fn collect_buttons(root: &gtk4::Widget, label: &str) -> Vec<gtk4::Button> {
@@ -142,12 +263,19 @@ fn exercise_compare_minimap_stays_visible_with_sidebar(test_app: &adw::Applicati
     spin_until("v7 narrow compare suppresses minimap", || {
         !window.selected_compare_minimaps_visible_for_tests().2
     });
+    assert!(!window.selected_compare_minimaps_attached_for_tests().2);
     assert_eq!(
         window
             .selected_compare_minimap_scrollbar_policies_for_tests()
             .2,
         gtk4::PolicyType::Automatic
     );
+    window.set_selected_compare_minimap_width_suppressed_for_tests(false);
+    spin_until("v7 width unapply restores minimap attachment", || {
+        window.selected_compare_minimaps_visible_for_tests().2
+            && window.selected_compare_minimap_holders_mapped_for_tests().2
+            && window.selected_compare_minimaps_attached_for_tests().2
+    });
 }
 
 fn exercise_compare_with_disk_and_file(test_app: &adw::Application) {
@@ -185,6 +313,10 @@ fn exercise_compare_with_disk_and_file(test_app: &adw::Application) {
     assert_eq!(
         window.selected_compare_minimaps_visible_for_tests(),
         (true, true, true)
+    );
+    assert_eq!(
+        window.selected_compare_minimaps_attached_for_tests(),
+        (false, false, false)
     );
     assert_eq!(
         window.selected_compare_minimap_scrollbar_policies_for_tests(),
@@ -235,6 +367,10 @@ fn exercise_compare_with_disk_and_file(test_app: &adw::Application) {
         window.selected_compare_active_for_tests()
             && window.selected_compare_diff_count_for_tests() > 0
     });
+    assert_eq!(
+        window.selected_compare_minimaps_attached_for_tests(),
+        (false, false, false)
+    );
     assert_eq!(window.selected_compare_diff_count_for_tests(), 1);
     assert!(window.selected_compare_highlight_count_for_tests() > 0);
     window.exit_compare_for_tests();

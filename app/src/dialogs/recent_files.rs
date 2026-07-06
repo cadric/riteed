@@ -177,6 +177,7 @@ fn rebuild_recent_files(state: &Rc<RecentFilesDialogState>) {
             .title(&title)
             .subtitle(&subtitle)
             .activatable(true)
+            .use_markup(false)
             .build();
         let uri_for_row = uri.clone();
         let weak = Rc::downgrade(state);
@@ -216,6 +217,14 @@ mod tests {
     use gtk4::prelude::FileExt;
 
     use super::recent_labels;
+
+    #[test]
+    fn recent_file_rows_disable_pango_markup() {
+        // Concat so the test's own literal cannot satisfy the assertion.
+        let source = include_str!("recent_files.rs");
+        let marker = [".use_markup", "(false)"].concat();
+        assert!(source.contains(&marker));
+    }
 
     #[test]
     fn recent_labels_use_filename_and_parent_for_local_files() {

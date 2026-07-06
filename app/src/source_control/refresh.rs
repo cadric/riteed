@@ -16,6 +16,11 @@ pub(super) enum RefreshOrigin {
     Initial,
     Manual,
     Automatic,
+    LockWaitExpired,
+}
+
+const fn lock_gate_applies(origin: RefreshOrigin) -> bool {
+    !matches!(origin, RefreshOrigin::LockWaitExpired)
 }
 
 pub(super) fn refresh_status(state: &SourceStateRef) {
@@ -24,7 +29,15 @@ pub(super) fn refresh_status(state: &SourceStateRef) {
 
 pub(super) fn refresh_status_with_origin(state: &SourceStateRef, origin: RefreshOrigin) {
     super::cancel_refresh(state);
-    if live::index_lock_exists(state) {
+    if lock_gate_applies(origin) && live::index_lock_exists(state) {
+        if matches!(origin, RefreshOrigin::Manual | RefreshOrigin::Initial) {
+            state
+                .borrow()
+                .status_label
+                .set_label(&ellipsis_label(gettext(
+                    "Waiting for another Git operation to finish",
+                )));
+        }
         live::schedule(state);
         return;
     }
@@ -35,7 +48,7 @@ pub(super) fn refresh_status_with_origin(state: &SourceStateRef, origin: Refresh
     {
         let mut state = state.borrow_mut();
         state.cancellable = Some(cancellable.clone());
-        if origin != RefreshOrigin::Automatic {
+        if matches!(origin, RefreshOrigin::Manual | RefreshOrigin::Initial) {
             state.status_stale = true;
             state
                 .status_label
@@ -97,6 +110,7 @@ pub(super) fn finish_error(state: &SourceStateRef, message: &str) {
 
 pub(super) fn rebuild_views(state: &SourceControlState) {
     state.views.rebuild(&state.snapshot.entries);
+    super::active_row::apply_active_row(state);
 }
 
 pub(super) fn emit_project_statuses(state: &SourceControlState) {
@@ -298,5 +312,14 @@ mod tests {
             status_label_text(&GitStatusSnapshot::default(), &GitAttrState::Unavailable),
             "Unable to read Git attributes. Git actions are disabled."
         );
+    }
+
+    #[test]
+    fn lock_gate_skips_expired_lock_waits() {
+        use super::{RefreshOrigin, lock_gate_applies};
+        assert!(lock_gate_applies(RefreshOrigin::Manual));
+        assert!(lock_gate_applies(RefreshOrigin::Automatic));
+        assert!(lock_gate_applies(RefreshOrigin::Initial));
+        assert!(!lock_gate_applies(RefreshOrigin::LockWaitExpired));
     }
 }

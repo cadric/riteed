@@ -270,7 +270,7 @@ fn visible_rows(model: &DiffRowModel, options: &CompareDisplayOptions) -> Vec<bo
 fn line_text(lines: &[&str], line: Option<usize>) -> Option<String> {
     let line = line?;
     let text = lines.get(line).map_or("", |value| strip_line_ending(value));
-    Some(text.to_string())
+    Some(sanitize_display_line(text))
 }
 
 fn hidden_label(hidden_count: usize) -> String {
@@ -286,13 +286,33 @@ fn hidden_label(hidden_count: usize) -> String {
 fn strip_line_ending(line: &str) -> &str {
     line.strip_suffix("\r\n")
         .or_else(|| line.strip_suffix('\n'))
+        .or_else(|| line.strip_suffix('\r'))
         .unwrap_or(line)
+}
+
+// Presentation buffers must keep one display row per buffer line. GtkTextView
+// treats \r and U+2029 as paragraph breaks, so stray separators inside a row
+// are replaced with same-byte-width placeholders to keep inline byte ranges
+// and row indices aligned.
+fn sanitize_display_line(text: &str) -> String {
+    if !text.contains(['\r', '\u{2028}', '\u{2029}']) {
+        return text.to_string();
+    }
+    text.chars()
+        .map(|ch| match ch {
+            '\r' => ' ',
+            '\u{2028}' | '\u{2029}' => '\u{FFFD}',
+            _ => ch,
+        })
+        .collect()
 }
 
 #[cfg(test)]
 mod tests {
     use super::{CompareDisplayOptions, CompareDisplayRow, build_display_model, hidden_label};
     use crate::editor_tab::compare::diff::compute_diff;
+    use crate::editor_tab::compare::model::DiffRowKind;
+    use similar::DiffableStr;
 
     fn display(
         reference: &str,
@@ -309,6 +329,98 @@ mod tests {
             &current_lines,
             options,
         )
+    }
+
+    #[test]
+    fn tokenize_lines_matches_split_inclusive_for_newline_only_text() {
+        for text in [
+            "",
+            "a",
+            "a\n",
+            "alpha\nbravo\ncharlie\n",
+            "alpha\nbravo",
+            "\n\n",
+        ] {
+            assert_eq!(
+                text.split_inclusive('\n').collect::<Vec<_>>(),
+                text.tokenize_lines(),
+                "line slicing must be byte-for-byte identical for {text:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn lone_carriage_return_lines_render_the_changed_text() {
+        let reference = "a\rb\nX\n";
+        let current = "a\rb\nY\n";
+        let computation = compute_diff(reference, current);
+        let reference_lines = reference.tokenize_lines();
+        let current_lines = current.tokenize_lines();
+        let model = build_display_model(
+            None,
+            &computation.model,
+            &reference_lines,
+            &current_lines,
+            &CompareDisplayOptions::expanded(),
+        );
+        let modify = model.rows.iter().find_map(|row| match row {
+            CompareDisplayRow::Content(row) if row.kind == DiffRowKind::Modify => Some(row),
+            CompareDisplayRow::Content(_)
+            | CompareDisplayRow::FileBoundary(_)
+            | CompareDisplayRow::Collapsed(_)
+            | CompareDisplayRow::SkippedMarker(_) => None,
+        });
+        assert_eq!(
+            modify.and_then(|row| row.reference_text.as_deref()),
+            Some("X")
+        );
+        assert_eq!(
+            modify.and_then(|row| row.current_text.as_deref()),
+            Some("Y")
+        );
+    }
+
+    #[test]
+    fn display_row_texts_contain_no_paragraph_separator_characters() {
+        let reference = "a\rmid\u{2029}tail\nX\n";
+        let current = "a\rmid\u{2029}tail\nY\n";
+        let computation = compute_diff(reference, current);
+        let reference_lines = reference.tokenize_lines();
+        let current_lines = current.tokenize_lines();
+        let model = build_display_model(
+            None,
+            &computation.model,
+            &reference_lines,
+            &current_lines,
+            &CompareDisplayOptions::expanded(),
+        );
+        for row in &model.rows {
+            if let CompareDisplayRow::Content(row) = row {
+                for text in [&row.reference_text, &row.current_text]
+                    .into_iter()
+                    .flatten()
+                {
+                    assert!(
+                        !text.contains(['\r', '\u{2028}', '\u{2029}']),
+                        "display text must stay one buffer line: {text:?}"
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn compare_display_slicing_shares_the_model_tokenizer() {
+        let controller_src = include_str!("controller.rs");
+        let review_src = include_str!("review_session.rs");
+        assert!(
+            !controller_src.contains("split_inclusive('\\n')"),
+            "controller.rs must use compare::diff::line_slices"
+        );
+        assert!(
+            !review_src.contains("split_inclusive('\\n')"),
+            "review_session.rs must use compare::diff::line_slices"
+        );
     }
 
     #[test]

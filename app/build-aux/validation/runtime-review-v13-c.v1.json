@@ -187,7 +187,7 @@
     },
     {
       "path": "src/window_project/sidebar_state.rs",
-      "line": 26,
+      "line": 25,
       "match": "pub(super) fn set_sidebar_visible_for_root(state: &Rc<RefCell<ProjectState>>, visible: bool) {",
       "kind": "runtime-shared-state",
       "ownership": "Root-change sidebar visibility borrows shared project state after mutation is complete.",
@@ -203,7 +203,7 @@
     },
     {
       "path": "src/workspace.rs",
-      "line": 68,
+      "line": 70,
       "match": "selected_state_refresh_queued: Cell<bool>,",
       "kind": "runtime-shared-state",
       "ownership": "The workspace owns the selected-state refresh coalescing flag.",
@@ -211,11 +211,11 @@
     },
     {
       "path": "src/workspace.rs",
-      "line": 75,
+      "line": 78,
       "match": "pub(crate) state: RefCell<WorkspaceState>,",
       "kind": "runtime-shared-state",
-      "ownership": "The workspace owns tab collection, recent/session caches, restore gating, and active close flow.",
-      "justification": "Tabbed document coordination requires shared mutable state across menu rebuilds, session persistence, search/status rebinding, selection changes, and drag-and-drop."
+      "ownership": "The workspace owns tab collection, pending open targets, recent/session caches, restore gating, and active close flow.",
+      "justification": "Tabbed document coordination requires shared mutable state across menu rebuilds, session persistence, search/status rebinding, overlapping file opens, selection changes, and drag-and-drop."
     },
     {
       "path": "src/workspace/autosave.rs",
@@ -243,7 +243,7 @@
     },
     {
       "path": "src/workspace_open.rs",
-      "line": 149,
+      "line": 151,
       "match": "fn process_open_request(workspace: &Rc<Workspace>, request: Rc<RefCell<OpenRequest>>) {",
       "kind": "runtime-shared-state",
       "ownership": "The shared open-request state tracks a multi-file open batch.",
@@ -251,7 +251,7 @@
     },
     {
       "path": "src/workspace_open.rs",
-      "line": 375,
+      "line": 379,
       "match": "fn finish_open_request(workspace: &Rc<Workspace>, request: &Rc<RefCell<OpenRequest>>) {",
       "kind": "runtime-shared-state",
       "ownership": "The open-request finisher reads shared batch state.",

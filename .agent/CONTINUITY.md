@@ -1,6 +1,41 @@
 # Continuity
 
 ## OUTCOMES
+- 2026-07-06 audit P0/P1 remediation pass is complete on
+  `fix/audit-p0-p1`: RIT-GEN-001 `8a728ff`, RIT-GEN-002 `fa4f7ea`,
+  RIT-GEN-003 `ab766f3`, RIT-GEN-004 `d91206c`, RIT-GEN-005 `eed5a3d`,
+  and RIT-GEN-006 `3b3f0b7`. Regression evidence was RED before each fix:
+  restore glob discard and env-pin failed while unstage passed for
+  RIT-GEN-001; dirty external reload overwrote local edits for RIT-GEN-002;
+  compare/display tokenizer pin and lone-CR rendering failed for
+  RIT-GEN-003; closed windows retained Workspace/SourceControlState for
+  RIT-GEN-004; clean close skipped window-size writes for RIT-GEN-005; and
+  construction wrote `project-sidebar-visible=false` before restore for
+  RIT-GEN-006. Final validation passed `cargo fmt --all --check`,
+  `cargo check --workspace --all-targets --all-features`,
+  `cargo clippy --workspace --all-targets --all-features -- -D warnings`,
+  single-threaded `cargo test --workspace --all-targets --all-features` with
+  `GTK_A11Y=none GSK_RENDERER=cairo G_DEBUG=fatal-criticals`,
+  `python3 -m tools.policy_check --root app --strict`, and
+  `python3 -m tools.coverage_check --root app` at 82.2% line coverage.
+- 2026-07-05 Batch Bug & UX Fix plan
+  `docs/superpowers/plans/2026-07-05-batch-bug-and-ux.md` is complete on
+  `main`: after the precondition commit `6b0798e`, task commits `ad213f8`
+  through `681924a` landed markup-safe Recent Commits/Recent Files rows,
+  history-toggle borrow cleanup, Find in Files directory-skip and
+  case-insensitive match fixes, large-file viewer search-count retention,
+  mutating-Git cancel behavior that avoids SIGKILL, stale `index.lock`
+  deadline/status handling, compare-font regression coverage for the
+  unreproduced UX report, Markdown-preview raw-source print confirmation,
+  overlapping-open dedupe, Source Control active-file highlighting,
+  Files-sidebar dirty markers, and the matching `CHANGELOG.md` plus
+  `docs/mangler-og-bugs.md` updates. Per-task Gate runs passed; final
+  verification passed the cargo fmt/check/clippy/test Gate, policy-check
+  (`python3 -m tools.policy_check --root app --strict`), and coverage
+  (`python3 -m tools.coverage_check --root app`) at 82.0% line coverage. A
+  local Flatpak build from repo files passed via `scripts/local-flatpak-build`
+  and installed user Flatpak `io.github.cadric.Riteed` 0.3.7 at commit
+  `56cea8dbdf7cb24a8987a10db67aac3d08cbea93af35e8ef2692bf0c4d9a985a`.
 - 2026-06-13 0.3.7 beta release preparation is in progress on
   `release/v0.3.7`: version metadata is being bumped after PR #21 stabilized
   the native GTK smoke and Dependabot PR #19 updated `libfuzzer-sys` to

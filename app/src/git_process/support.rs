@@ -22,11 +22,12 @@ pub(super) fn base_args() -> Vec<String> {
     .collect()
 }
 
-pub(super) fn git_env() -> [(&'static str, &'static str); 9] {
+pub(super) fn git_env() -> [(&'static str, &'static str); 10] {
     [
         ("LC_ALL", "C"),
         ("GIT_TERMINAL_PROMPT", "0"),
         ("GIT_CONFIG_NOSYSTEM", "1"),
+        ("GIT_LITERAL_PATHSPECS", "1"),
         ("GIT_PAGER", "cat"),
         ("PAGER", "cat"),
         ("GIT_ASKPASS", FALSE_BIN),

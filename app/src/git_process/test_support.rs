@@ -183,6 +183,7 @@ fn run_git_fixture_command(directory: &Path, command_args: &[&str]) -> Result<()
                 stdin: None,
                 stdout_cap: 256 * 1024,
                 allow_failure: false,
+                kill_on_cancel: true,
             },
             cancellable,
             Rc::new(move |result| callback(result.map(|_output| ()))),

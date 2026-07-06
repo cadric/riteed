@@ -73,9 +73,18 @@ impl SourceControlList {
         restore_selected_path(&self.selection, &self.store, selected.as_deref());
     }
 
+    pub(super) fn mark_active_row(&self, path: Option<&[u8]>) {
+        crate::source_control::row_widgets::mark_active_row(&self.bound_rows, path);
+    }
+
     #[cfg(test)]
     pub(super) fn row_count_for_tests(&self) -> usize {
         usize::try_from(self.store.n_items()).map_or(0, |count| count)
+    }
+
+    #[cfg(test)]
+    pub(super) fn active_row_path_for_tests(&self) -> Option<Vec<u8>> {
+        crate::source_control::row_widgets::active_row_path_for_tests(&self.bound_rows)
     }
 
     #[cfg(test)]

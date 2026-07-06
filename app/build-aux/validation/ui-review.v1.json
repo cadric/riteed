@@ -48,8 +48,8 @@
       "path": "data/ui/appearance.css",
       "line": 1,
       "match": ".riteed-theme-selector {",
-      "reason": "Theme selector swatches and editor palette preview tiles need compact visual affordances not provided by default Adwaita rows.",
-      "scope": "Riteed-prefixed classes used by the Appearance popover and preferences palette grid only."
+      "reason": "Theme selector swatches, editor palette preview tiles, and the Source Control active-file highlight need compact visual affordances not provided by default Adwaita rows.",
+      "scope": "Riteed-prefixed classes used by the Appearance popover, the preferences palette grid, and the Source Control row matching the selected tab."
     },
     {
       "path": "data/ui/compare.css",

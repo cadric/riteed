@@ -10,9 +10,21 @@ Provenance: `https://www.kernel.org/signature.html` documents that `sha256sums.a
 
 The Flatpak module imports the vendored key with an isolated `GNUPGHOME`, verifies `sha256sums.asc`, then verifies the `git-2.54.0.tar.xz` checksum from that signed file before extraction. Kernel.org documents this as a mirror-integrity check, not a replacement for developer release signatures.
 
+`sha256sums.asc` is vendored in this directory rather than downloaded at build time: the upstream file at `https://www.kernel.org/pub/software/scm/git/sha256sums.asc` is rewritten on every Git release, so pinning its checksum in the manifest broke the build whenever Git shipped a new version. The GPG signature check still runs against the vendored copy. When bumping the bundled Git version, re-download the file, run `gpg --verify` against the vendored key, confirm the new tarball's checksum line, and commit the updated snapshot alongside the manifest change.
+
 The module builds Git for local plumbing only, disables debuginfo extraction for the Git module so Flatpak-builder does not try to rewrite hardlinked Git aliases in the read-only staging tree, and explicitly strips `/app/bin/git` before caching the module.
 
 Riteed may invoke only these Git operations through `src/git_process.rs`: `rev-parse`, `status`, `config --get`, `check-attr`, `cat-file blob`, `hash-object`, `update-index`, `ls-tree`, `commit`, `log`, and `restore --worktree`. This list is the source of truth for the Flatpak Git payload; adding another Git command must update this file and re-justify the bundled Git surface in the same change.
+
+## Pathspec handling
+
+Riteed exports `GIT_LITERAL_PATHSPECS=1` for every bundled-Git invocation
+(`src/git_process/support.rs::git_env`). All pathspec-taking operations
+(`ls-tree`, `restore`, `update-index`) receive exactly one literal filename;
+glob characters such as `[`, `*`, `?` and `:` pathspec magic are never
+interpreted. Regression coverage lives in
+`src/git_process/tests.rs::unstage_treats_glob_filenames_literally` and
+`::restore_worktree_treats_glob_filenames_literally`.
 
 The module intentionally disables curl, expat, Perl, Python, Tcl/Tk, and gettext support, then removes unused helper entrypoints from both `/app/bin` and `/app/libexec/git-core`. Helper cleanup uses `rm -f` and tolerates absent paths because Git build flags can suppress different aliases across releases. Re-enabling network, scripting, GUI, or remote-helper features leaves the local-plumbing-only contract and requires explicit review.
 

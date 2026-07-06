@@ -24,7 +24,7 @@
     },
     {
       "path": "src/document_print_preview.rs",
-      "line": 210,
+      "line": 215,
       "match": ".title(gettext(\"Print Preview\"))",
       "resolution": "This short dialog title appears at the top of the print preview dialog, whose toolbar and page image make the preview context explicit.",
       "kind": "i18n-short-string"
@@ -102,7 +102,7 @@
     {
       "resolution": "This short banner title appears with the Refresh Review action on stale Git review tabs.",
       "path": "src/editor_tab/banner.rs",
-      "line": 145,
+      "line": 150,
       "match": "Some(gettext(\"Refresh Review\")),",
       "kind": "i18n-short-string"
     },
@@ -164,35 +164,35 @@
     },
     {
       "path": "src/large_file/viewer.rs",
-      "line": 67,
+      "line": 71,
       "match": "let status_label = gtk4::Label::new(Some(&gettext(\"Loading file page...\")));",
       "resolution": "This compact loading text appears inside the dedicated large-file viewer toolbar while a bounded page window is being read.",
       "kind": "i18n-short-string"
     },
     {
       "path": "src/large_file/viewer.rs",
-      "line": 200,
+      "line": 210,
       "match": "self.status_label.set_text(&gettext(\"Loading file page...\"));",
       "resolution": "This compact loading text appears inside the dedicated large-file viewer toolbar while a bounded page window is being read.",
       "kind": "i18n-short-string"
     },
     {
       "path": "src/large_file/viewer.rs",
-      "line": 306,
+      "line": 315,
       "match": "self.status_label.set_text(&gettext(\"Searching file...\"));",
       "resolution": "This compact status appears in the large-file viewer next to the find field after the user starts a streaming search.",
       "kind": "i18n-short-string"
     },
     {
       "path": "src/large_file/viewer.rs",
-      "line": 332,
+      "line": 341,
       "match": "self.status_label.set_text(&gettext(\"No matches found.\"));",
       "resolution": "This compact search result appears in the large-file viewer status area immediately after a find operation completes.",
       "kind": "i18n-short-string"
     },
     {
       "path": "src/large_file/viewer.rs",
-      "line": 377,
+      "line": 385,
       "match": "self.status_label.set_text(&gettext(\"Finding line...\"));",
       "resolution": "This compact status appears in the large-file viewer next to the line field while a lazy line jump scans toward the requested line.",
       "kind": "i18n-short-string"
@@ -227,35 +227,35 @@
     },
     {
       "path": "src/project_tree.rs",
-      "line": 164,
+      "line": 180,
       "match": "label.set_label(&ellipsis_label(gettext(\"Loading\")));",
       "resolution": "This short inline row label is shown beside a spinner while the project tree enumerates a directory.",
       "kind": "i18n-short-string"
     },
     {
       "path": "src/source_control.rs",
-      "line": 116,
+      "line": 121,
       "match": "let title = adw::WindowTitle::new(&gettext(\"Source Control\"), \"\");",
       "resolution": "This short title labels the Source Control sidebar header above the changed-file tree and commit controls.",
       "kind": "i18n-short-string"
     },
     {
       "path": "src/source_control/history.rs",
-      "line": 172,
+      "line": 279,
       "match": "self.status.set_label(&gettext(\"No commits yet.\"));",
       "resolution": "This short Source Control string appears inside the Git sidebar where the changed-file, history, or action context is visible.",
       "kind": "i18n-short-string"
     },
     {
       "path": "src/source_control/refresh.rs",
-      "line": 267,
+      "line": 281,
       "match": "gettext(\"No changes.\")",
       "resolution": "This compact status appears in the Source Control panel when the repository has no changed files.",
       "kind": "i18n-short-string"
     },
     {
       "path": "src/source_control/refresh.rs",
-      "line": 269,
+      "line": 283,
       "match": "gettext(\"Changed files\")",
       "resolution": "This short Source Control string appears inside the Git sidebar where the changed-file, history, or action context is visible.",
       "kind": "i18n-short-string"
