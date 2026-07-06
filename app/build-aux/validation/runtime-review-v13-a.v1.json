@@ -227,7 +227,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 286,
+      "line": 291,
       "match": "let flags = gio::SubprocessFlags::STDIN_PIPE",
       "kind": "runtime-git-subprocess",
       "ownership": "The typed Git process boundary owns the Gio subprocess pipe flags.",
@@ -235,7 +235,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 287,
+      "line": 292,
       "match": "| gio::SubprocessFlags::STDOUT_PIPE",
       "kind": "runtime-git-subprocess",
       "ownership": "The typed Git process boundary owns stdout capture for sandbox Git.",
@@ -243,7 +243,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 288,
+      "line": 293,
       "match": "| gio::SubprocessFlags::STDERR_PIPE;",
       "kind": "runtime-git-subprocess",
       "ownership": "The typed Git process boundary owns stderr capture for sandbox Git.",
@@ -251,7 +251,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 289,
+      "line": 294,
       "match": "let launcher = gio::SubprocessLauncher::new(flags);",
       "kind": "runtime-git-subprocess",
       "ownership": "The typed Git process boundary owns subprocess creation.",
@@ -259,7 +259,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 364,
+      "line": 369,
       "match": "subprocess: &gio::Subprocess,",
       "kind": "runtime-git-subprocess",
       "ownership": "The typed Git process boundary owns post-communication subprocess completion.",
@@ -267,7 +267,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 394,
+      "line": 399,
       "match": "subprocess: &gio::Subprocess,",
       "kind": "runtime-git-subprocess",
       "ownership": "The typed Git process boundary owns timeout supervision for one Gio subprocess.",
@@ -275,7 +275,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 396,
+      "line": 401,
       "match": "finished: Rc<Cell<bool>>,",
       "kind": "runtime-shared-state",
       "ownership": "The typed Git process boundary owns one completion flag shared by the communicate callback and timeout grace callback.",
@@ -283,7 +283,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 397,
+      "line": 402,
       "match": "timed_out: Rc<Cell<bool>>,",
       "kind": "runtime-shared-state",
       "ownership": "The typed Git process boundary owns one timeout flag shared by the communicate callback and timeout callback.",
@@ -291,7 +291,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 425,
+      "line": 430,
       "match": "fn kill_unfinished_git(subprocess: &gio::Subprocess) {",
       "kind": "runtime-git-subprocess",
       "ownership": "The typed Git process boundary owns forced termination of timed-out or kill-on-cancel Git subprocesses.",
@@ -307,7 +307,7 @@
     },
     {
       "path": "src/git_process/tests.rs",
-      "line": 313,
+      "line": 429,
       "match": "let slot: Rc<RefCell<Option<Result<T, GitProcessError>>>> = Rc::new(RefCell::new(None));",
       "kind": "runtime-shared-state",
       "ownership": "Git process unit tests own this callback result slot.",
@@ -315,7 +315,7 @@
     },
     {
       "path": "src/git_process/tests.rs",
-      "line": 328,
+      "line": 444,
       "match": "let slot: Rc<RefCell<Option<Result<T, GitProcessError>>>> = Rc::new(RefCell::new(None));",
       "kind": "runtime-shared-state",
       "ownership": "Git process unit tests own this callback result slot.",

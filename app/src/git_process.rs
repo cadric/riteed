@@ -209,15 +209,20 @@ impl GitProcess {
             .to_str()
             .map(String::from)
             .ok_or(GitProcessError::InvalidPath)?;
+        let mut env: Vec<(String, String)> = git_env()
+            .into_iter()
+            .map(|(name, value)| (String::from(name), String::from(value)))
+            .collect();
+        env.extend([
+            (String::from("GIT_DIR"), git_dir),
+            (String::from("GIT_WORK_TREE"), work_tree),
+        ]);
         Ok(GitSpec {
             argv: base_args()
                 .into_iter()
                 .chain(args.into_iter().map(String::from))
                 .collect(),
-            env: vec![
-                (String::from("GIT_DIR"), git_dir),
-                (String::from("GIT_WORK_TREE"), work_tree),
-            ],
+            env,
             stdin,
             stdout_cap,
             allow_failure,

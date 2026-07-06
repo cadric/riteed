@@ -14,6 +14,16 @@ The module builds Git for local plumbing only, disables debuginfo extraction for
 
 Riteed may invoke only these Git operations through `src/git_process.rs`: `rev-parse`, `status`, `config --get`, `check-attr`, `cat-file blob`, `hash-object`, `update-index`, `ls-tree`, `commit`, `log`, and `restore --worktree`. This list is the source of truth for the Flatpak Git payload; adding another Git command must update this file and re-justify the bundled Git surface in the same change.
 
+## Pathspec handling
+
+Riteed exports `GIT_LITERAL_PATHSPECS=1` for every bundled-Git invocation
+(`src/git_process/support.rs::git_env`). All pathspec-taking operations
+(`ls-tree`, `restore`, `update-index`) receive exactly one literal filename;
+glob characters such as `[`, `*`, `?` and `:` pathspec magic are never
+interpreted. Regression coverage lives in
+`src/git_process/tests.rs::unstage_treats_glob_filenames_literally` and
+`::restore_worktree_treats_glob_filenames_literally`.
+
 The module intentionally disables curl, expat, Perl, Python, Tcl/Tk, and gettext support, then removes unused helper entrypoints from both `/app/bin` and `/app/libexec/git-core`. Helper cleanup uses `rm -f` and tolerates absent paths because Git build flags can suppress different aliases across releases. Re-enabling network, scripting, GUI, or remote-helper features leaves the local-plumbing-only contract and requires explicit review.
 
 The Flatpak build installs Git's top-level GPL-2.0-only license text plus the LGPL, BSD, and MIT-compatible license files for bundled Git subcomponents under `/app/share/licenses/io.github.cadric.Riteed/git/`.

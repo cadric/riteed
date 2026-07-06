@@ -30,7 +30,7 @@
       "category": "data-loss",
       "title": "Raw filenames sent as glob-interpreting Git pathspecs in stage/unstage/discard",
       "files": ["app/src/git_process/support.rs:25-37", "app/src/git_process/ops.rs:300-319", "app/src/source_control/actions.rs:187-207"],
-      "summary": "git_env() lacks GIT_LITERAL_PATHSPECS, so restore/ls-tree/update-index treat filenames with [, *, ?, : as glob/magic; discard reverts sibling files and unstage deletes the index entry for the named file.",
+      "summary": "git_env() lacks GIT_LITERAL_PATHSPECS, so restore/ls-tree/update-index treat filenames with [, *, ?, : as glob/magic; discard reverts sibling files and unstage deletes the index entry for the named file. Correction (2026-07-06, remediation, verified on git 2.54.0): the unstage sub-claim is refuted - ls-tree matches the literal filename and does not wildmatch, so unstage_path never reaches the force-remove branch and unstage is already correct; the discard claim is confirmed (restore --worktree reverts glob-matched siblings without the env var). Fix and Critical severity unchanged.",
       "reproduction": "Repo with tracked+modified+staged 'pages/[id].tsx' and a sibling 'pages/i.tsx' with unstaged edits; press Unstage or Discard in Source Control; git restore/update-index hit the wrong files.",
       "suggested_fix": "Add (\"GIT_LITERAL_PATHSPECS\", \"1\") to git_env() in support.rs; update build-aux/git/README.md contract note.",
       "suggested_test": "git_process/tests.rs temp repo with '[id].txt' + 'i.txt': assert unstage keeps '[id].txt' staged-modified (not deleted) and 'i.txt' untouched; assert restore_worktree_path('[id].txt') preserves 'i.txt' edits."
