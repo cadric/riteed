@@ -14,6 +14,10 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 
 ## Unreleased
 
+### Changed
+- Scheduled stress validation now runs monthly instead of daily while keeping
+  manual workflow dispatch available for release and high-risk change checks.
+
 ### Fixed
 - Scheduled Git status stress runs now recognize Riteed's intentional
   index-lock wait state instead of reporting a timing-dependent false failure.

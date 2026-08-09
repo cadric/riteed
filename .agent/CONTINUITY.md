@@ -1,6 +1,9 @@
 # Continuity
 
 ## OUTCOMES
+- 2026-08-10 scheduled Validate stress frequency changed from daily to monthly
+  at 02:37 UTC on the first day of each month. Manual `workflow_dispatch`
+  remains available for releases and high-risk changes.
 - 2026-08-10 recurring scheduled Validate stress failures are fixed on
   `fix/scheduled-stress-lock-wait`: the stress runner now recognizes the
   intentional index-lock wait state, and cancelled Git subprocesses use the
