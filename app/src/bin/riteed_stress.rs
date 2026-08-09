@@ -17,6 +17,9 @@ fn main() -> ExitCode {
     }
 }
 
+#[cfg(test)]
+mod tests;
+
 fn run() -> Result<(), StressError> {
     let script = StressScript::load_from_env()?;
     if script.expect_failure() {
@@ -389,13 +392,13 @@ fn visible_text_contains(root: &gtk4::Widget, needle: &str) -> bool {
     });
     found
 }
-
 const SOURCE_CONTROL_STATES: &[&str] = &[
     "Changed files",
     "Too many Git changes to display.",
     "No changes.",
     "Unable to read Git attributes. Git actions are disabled.",
     "This Git repository uses unsupported object or EOL settings.",
+    "Waiting for another Git operation to finish",
     "Refreshing Git status",
 ];
 

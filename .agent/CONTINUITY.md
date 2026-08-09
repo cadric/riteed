@@ -1,6 +1,15 @@
 # Continuity
 
 ## OUTCOMES
+- 2026-08-10 recurring scheduled Validate stress failures are fixed on
+  `fix/scheduled-stress-lock-wait`: the stress runner now recognizes the
+  intentional index-lock wait state, and cancelled Git subprocesses use the
+  documented GIO force-exit-then-wait sequence instead of querying exit status
+  before wait completion. A GTK widget regression was RED before the lock-wait
+  probe fix and GREEN afterwards; the full `git-status-stress` flow also passes
+  in Fedora 42 with `G_DEBUG=fatal-criticals`. Final validation passed format,
+  check, Clippy with `-D warnings`, all Fedora 42 tests, strict app policy, and
+  coverage at 82.2% line coverage.
 - 2026-07-06 0.3.8 beta release preparation is in progress on
   `release/v0.3.8` after the audit P0/P1 remediation squash-merged as
   PR #26, the scheduled Validate breakage was fixed by vendoring the

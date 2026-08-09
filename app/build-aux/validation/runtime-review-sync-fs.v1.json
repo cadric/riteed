@@ -3,7 +3,7 @@
   "sites": [
     {
       "path": "src/bin/riteed_stress.rs",
-      "line": 428,
+      "line": 431,
       "match": ".canonicalize()",
       "kind": "runtime-sync-fs",
       "ownership": "The stress runner owns canonicalization of its developer-supplied script path.",

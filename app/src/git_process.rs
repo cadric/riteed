@@ -428,9 +428,6 @@ fn install_git_timeout(
 }
 
 fn kill_unfinished_git(subprocess: &gio::Subprocess) {
-    if subprocess.has_exited() {
-        return;
-    }
     subprocess.force_exit();
     subprocess.wait_async(None::<&gio::Cancellable>, |_result| {});
 }

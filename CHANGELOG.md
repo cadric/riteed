@@ -1,6 +1,6 @@
 ---
 created: 2026-04-19
-updated: 2026-07-06
+updated: 2026-08-10
 status: current
 priority: high
 type: changelog
@@ -13,6 +13,13 @@ All notable changes to this repository are documented in this file.
 The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries describe public beta snapshots.
 
 ## Unreleased
+
+### Fixed
+- Scheduled Git status stress runs now recognize Riteed's intentional
+  index-lock wait state instead of reporting a timing-dependent false failure.
+- Cancelled Git subprocesses are force-terminated and reaped without querying
+  exit status before GIO has completed its wait, avoiding fatal GLib criticals
+  during rapid stress-runner repository switches.
 
 ## 0.3.8 - 2026-07-06
 
