@@ -19,6 +19,16 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
   manual workflow dispatch available for release and high-risk change checks.
 
 ### Fixed
+- Saving during window close no longer aborts the app. Close callbacks are
+  bound to their original document and close operation.
+- Save-and-close now keeps newer unsaved edits and their undo history, including
+  Save As and changes to tabs processed earlier during window close.
+- Opening, reloading, and reopening with another encoding now preserve edits
+  made during asynchronous reads and explain why the load was cancelled.
+- Interrupted automatic reloads keep an actionable banner, and failed saves
+  that replace a reload no longer block later reload attempts.
+- Pending file opens reserve their tabs and only clear their own registration,
+  so overlapping opens and close/reopen callbacks cannot hijack another request.
 - Policy validation now rejects skipped release/governance gates, uses a tested
   exact-commit release-check decision, and accounts for every Cargo source.
 - Policy scanners now handle multiline UI XML and Rust comment/async scopes,

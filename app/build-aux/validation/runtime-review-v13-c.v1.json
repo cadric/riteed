@@ -203,7 +203,7 @@
     },
     {
       "path": "src/workspace.rs",
-      "line": 70,
+      "line": 86,
       "match": "selected_state_refresh_queued: Cell<bool>,",
       "kind": "runtime-shared-state",
       "ownership": "The workspace owns the selected-state refresh coalescing flag.",
@@ -211,7 +211,7 @@
     },
     {
       "path": "src/workspace.rs",
-      "line": 78,
+      "line": 94,
       "match": "pub(crate) state: RefCell<WorkspaceState>,",
       "kind": "runtime-shared-state",
       "ownership": "The workspace owns tab collection, pending open targets, recent/session caches, restore gating, and active close flow.",
@@ -243,7 +243,7 @@
     },
     {
       "path": "src/workspace_open.rs",
-      "line": 151,
+      "line": 162,
       "match": "fn process_open_request(workspace: &Rc<Workspace>, request: Rc<RefCell<OpenRequest>>) {",
       "kind": "runtime-shared-state",
       "ownership": "The shared open-request state tracks a multi-file open batch.",
@@ -251,7 +251,7 @@
     },
     {
       "path": "src/workspace_open.rs",
-      "line": 379,
+      "line": 419,
       "match": "fn finish_open_request(workspace: &Rc<Workspace>, request: &Rc<RefCell<OpenRequest>>) {",
       "kind": "runtime-shared-state",
       "ownership": "The open-request finisher reads shared batch state.",

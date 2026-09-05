@@ -2219,3 +2219,16 @@ msgstr "Linje"
 msgctxt "viewer search"
 msgid "Find"
 msgstr "Find"
+
+msgid "Closing was cancelled because the document has newer unsaved changes."
+msgstr "Lukning blev afbrudt, fordi dokumentet har nyere ugemte ændringer."
+
+msgid "An earlier version was saved. Newer changes are still unsaved."
+msgstr "En tidligere version blev gemt. Nyere ændringer er stadig ugemte."
+
+msgctxt "error title"
+msgid "Load Cancelled"
+msgstr "Indlæsning afbrudt"
+
+msgid "The load was cancelled because the document changed. Your changes have been kept."
+msgstr "Indlæsningen blev afbrudt, fordi dokumentet blev ændret. Dine ændringer er bevaret."

@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "sites": [
+    {
+      "path": "src/gtk_tests_document_close.rs",
+      "line": 20,
+      "match": "static SAVE_CHOICES: RefCell<VecDeque<Result<gio::File, glib::Error>>>",
+      "kind": "runtime-shared-state",
+      "ownership": "The single GTK test thread owns queued Save As chooser selections; each fixture clears the queue during teardown.",
+      "justification": "Only the chooser result is injected. The production finish_save_dialog continuation performs path normalization, snapshot creation and asynchronous writing, so cancellation and newer-edit close regressions exercise actual save behavior without a host portal."
+    }
+  ]
+}

@@ -103,6 +103,10 @@ mod gtk_tests_boundaries;
 #[cfg(test)]
 mod gtk_tests_dialog_lifecycle;
 #[cfg(test)]
+mod gtk_tests_document_close;
+#[cfg(test)]
+mod gtk_tests_document_reads;
+#[cfg(test)]
 mod gtk_tests_lifecycle;
 #[cfg(test)]
 mod gtk_tests_markdown;

@@ -102,7 +102,7 @@
     {
       "resolution": "This short banner title appears with the Refresh Review action on stale Git review tabs.",
       "path": "src/editor_tab/banner.rs",
-      "line": 150,
+      "line": 156,
       "match": "Some(gettext(\"Refresh Review\")),",
       "kind": "i18n-short-string"
     },
@@ -129,35 +129,35 @@
     },
     {
       "path": "src/find_in_files/mod.rs",
-      "line": 421,
+      "line": 429,
       "match": "let mut label = gettext(\"Searching\");",
       "resolution": "This short V12 string appears inside the Find in Files sidebar, where the query field, result list, and scan summary provide the missing context.",
       "kind": "i18n-short-string"
     },
     {
       "path": "src/find_in_files/mod.rs",
-      "line": 428,
+      "line": 436,
       "match": "gettext(\"No matches\")",
       "resolution": "This short V12 string appears inside the Find in Files sidebar, where the query field, result list, and scan summary provide the missing context.",
       "kind": "i18n-short-string"
     },
     {
       "path": "src/find_in_files/mod.rs",
-      "line": 430,
+      "line": 438,
       "match": "let results = ngettext(\"%d result\", \"%d results\", summary.matches)",
       "resolution": "This short V12 string appears inside the Find in Files sidebar, where the query field, result list, and scan summary provide the missing context.",
       "kind": "i18n-short-string"
     },
     {
       "path": "src/find_in_files/mod.rs",
-      "line": 432,
+      "line": 440,
       "match": "let files = ngettext(\"in %d file\", \"in %d files\", summary.files_searched)",
       "resolution": "This short V12 string appears inside the Find in Files sidebar, where the query field, result list, and scan summary provide the missing context.",
       "kind": "i18n-short-string"
     },
     {
       "path": "src/find_in_files/mod.rs",
-      "line": 440,
+      "line": 448,
       "match": "let skipped = ngettext(\"%d file skipped.\", \"%d files skipped.\", summary.skipped)",
       "resolution": "This short V12 string appears inside the Find in Files sidebar, where the query field, result list, and scan summary provide the missing context.",
       "kind": "i18n-short-string"

@@ -117,6 +117,11 @@ impl EditorTab {
         parent: &adw::ApplicationWindow,
         callback: Rc<dyn Fn(SaveResult)>,
     ) {
+        #[cfg(test)]
+        if let Some(choice) = crate::gtk_tests_document_close::take_save_choice() {
+            self.finish_save_dialog(parent, choice, callback);
+            return;
+        }
         let dialog = gtk4::FileDialog::builder()
             .title(pgettext("file dialog title", "Save the Document"))
             .accept_label(pgettext("file dialog action", "Save"))
@@ -136,29 +141,38 @@ impl EditorTab {
             None::<&gio::Cancellable>,
             move |result| {
                 if let Some(tab) = weak.upgrade() {
-                    match result {
-                        Ok(file) => match editor_io::local_path(&file) {
-                            Ok(path) => {
-                                let normalized = DocumentState::normalized_save_path(&path);
-                                tab.save_to_path(
-                                    &save_parent,
-                                    &normalized,
-                                    sourceview5::FileSaverFlags::NONE,
-                                    true,
-                                    SaveKind::Manual,
-                                    callback.clone(),
-                                );
-                            }
-                            Err(error) => callback(SaveResult::Failed(error)),
-                        },
-                        Err(error) if error.matches(gtk4::DialogError::Dismissed) => {
-                            callback(SaveResult::CancelledByUser);
-                        }
-                        Err(error) => callback(SaveResult::Failed(AppError::from(error))),
-                    }
+                    tab.finish_save_dialog(&save_parent, result, callback.clone());
                 }
             },
         );
+    }
+
+    fn finish_save_dialog(
+        self: &Rc<Self>,
+        parent: &adw::ApplicationWindow,
+        result: Result<gio::File, gtk4::glib::Error>,
+        callback: Rc<dyn Fn(SaveResult)>,
+    ) {
+        match result {
+            Ok(file) => match editor_io::local_path(&file) {
+                Ok(path) => {
+                    let normalized = DocumentState::normalized_save_path(&path);
+                    self.save_to_path(
+                        parent,
+                        &normalized,
+                        sourceview5::FileSaverFlags::NONE,
+                        true,
+                        SaveKind::Manual,
+                        callback,
+                    );
+                }
+                Err(error) => callback(SaveResult::Failed(error)),
+            },
+            Err(error) if error.matches(gtk4::DialogError::Dismissed) => {
+                callback(SaveResult::CancelledByUser);
+            }
+            Err(error) => callback(SaveResult::Failed(AppError::from(error))),
+        }
     }
 
     fn save_to_path(

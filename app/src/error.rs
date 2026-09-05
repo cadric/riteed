@@ -6,6 +6,7 @@ use gtk4::glib;
 #[derive(Clone, Debug)]
 pub enum AppError {
     Cancelled,
+    DocumentChangedDuringRead,
     Internal(String),
     MissingSavePath,
     NonLocalFile,
@@ -24,6 +25,7 @@ impl AppError {
     pub fn title(&self) -> String {
         match self {
             Self::Cancelled => pgettext("error title", "Action Cancelled"),
+            Self::DocumentChangedDuringRead => pgettext("error title", "Load Cancelled"),
             Self::Internal(_) => gettext("Unable to Build the Window"),
             Self::MissingSavePath => gettext("No Save Location Is Available"),
             Self::NonLocalFile => gettext("Only Local Files Are Supported"),
@@ -41,6 +43,9 @@ impl AppError {
     pub fn body(&self) -> String {
         match self {
             Self::Cancelled => gettext("The Requested Action Was Cancelled."),
+            Self::DocumentChangedDuringRead => gettext(
+                "The load was cancelled because the document changed. Your changes have been kept.",
+            ),
             Self::Internal(message) | Self::HelpLaunchFailed(message) => message.clone(),
             Self::MissingSavePath => gettext("Choose a Save Location Before Saving This Document."),
             Self::NonLocalFile => {
@@ -93,6 +98,7 @@ mod tests {
     fn titles_and_bodies_are_non_empty() {
         let errors = [
             AppError::Cancelled,
+            AppError::DocumentChangedDuringRead,
             AppError::Internal(String::from("internal")),
             AppError::MissingSavePath,
             AppError::NonLocalFile,

@@ -164,6 +164,18 @@ fn request_reload(workspace: &Rc<Workspace>, tab: &Rc<EditorTab>, automatic: boo
                             workspace.refresh_selected_state();
                         }
                     }
+                    Err(crate::error::AppError::DocumentChangedDuringRead) => {
+                        let selected = is_selected_tab(&workspace, &tab);
+                        let window_active = workspace.shell.is_active();
+                        tab.sync_external_banner(selected, window_active);
+                        workspace.refresh_selected_state();
+                        workspace.persist_session_state_if_needed();
+                        if !automatic {
+                            workspace.show_toast(&gettext(
+                                "The load was cancelled because the document changed. Your changes have been kept.",
+                            ));
+                        }
+                    }
                     Err(crate::error::AppError::Cancelled) => {}
                     Err(error) => dialogs::present_error(&workspace.shell, &error),
                 }

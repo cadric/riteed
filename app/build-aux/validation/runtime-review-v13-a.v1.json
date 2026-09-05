@@ -69,7 +69,7 @@
       "ownership": "Each review tab owns the optional compare-side ReviewSession for its rendered Git review.",
       "justification": "The session must be shared by cursor actions, stale banners, change-list navigation, and renderer refreshes while staying private to the tab.",
       "path": "src/editor_tab/state.rs",
-      "line": 247,
+      "line": 249,
       "match": "pub(super) session: Option<Rc<RefCell<ReviewSession>>>,",
       "kind": "runtime-shared-state"
     },
@@ -91,7 +91,7 @@
     },
     {
       "path": "src/find_in_files/mod.rs",
-      "line": 27,
+      "line": 28,
       "match": "root_folder: RefCell<Option<gio::File>>,",
       "kind": "runtime-shared-state",
       "ownership": "The Find in Files controller and scanner own one workspace scan generation, cancellable, and result set.",
@@ -99,7 +99,7 @@
     },
     {
       "path": "src/find_in_files/mod.rs",
-      "line": 28,
+      "line": 29,
       "match": "current_query: RefCell<String>,",
       "kind": "runtime-shared-state",
       "ownership": "The Find in Files controller owns the sticky project-search query, root, cancellation, and generation state.",
@@ -107,7 +107,7 @@
     },
     {
       "path": "src/find_in_files/mod.rs",
-      "line": 29,
+      "line": 30,
       "match": "current_match_case: Cell<bool>,",
       "kind": "runtime-shared-state",
       "ownership": "The Find in Files controller owns the sticky project-search query, root, cancellation, and generation state.",
@@ -115,7 +115,7 @@
     },
     {
       "path": "src/find_in_files/mod.rs",
-      "line": 30,
+      "line": 31,
       "match": "show_hidden: Cell<bool>,",
       "kind": "runtime-shared-state",
       "ownership": "The Find in Files controller and scanner own one workspace scan generation, cancellable, and result set.",
@@ -123,7 +123,7 @@
     },
     {
       "path": "src/find_in_files/mod.rs",
-      "line": 32,
+      "line": 33,
       "match": "generation: Cell<u64>,",
       "kind": "runtime-shared-state",
       "ownership": "The Find in Files controller and scanner own one workspace scan generation, cancellable, and result set.",
@@ -131,7 +131,7 @@
     },
     {
       "path": "src/find_in_files/mod.rs",
-      "line": 33,
+      "line": 34,
       "match": "active_cancellable: RefCell<Option<gio::Cancellable>>,",
       "kind": "runtime-shared-state",
       "ownership": "The Find in Files controller and scanner own one workspace scan generation, cancellable, and result set.",

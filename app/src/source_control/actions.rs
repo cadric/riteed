@@ -6,6 +6,7 @@ use gtk4::{gio, glib, prelude::*};
 
 use crate::dialogs::{self, GitDiscardResponse};
 use crate::editor_tab::EditorTab;
+use crate::error::AppError;
 use crate::git_process::GitProcessError;
 use crate::git_status::{
     GitActionState, GitAttrState, GitFileStatus, GitStatusEntry, GitStatusSnapshot, GitWorktreeMode,
@@ -286,15 +287,31 @@ fn compare_with_text(
                         generation,
                         entry.clone(),
                     ),
-                    Err(_error) => {
+                    Err(error) if should_finish_open_with_error(&error) => {
                         finish_error(&state, &gettext("Unable to open file for compare."));
                     }
+                    Err(_) => finish_cancelled_open(&state, generation),
                 }
             }),
         );
         return;
     };
     queue_start_git_compare(&tab, text, state, generation, entry.clone());
+}
+
+fn finish_cancelled_open(state: &SourceStateRef, generation: u64) {
+    {
+        let mut state = state.borrow_mut();
+        if state.action_generation != generation {
+            return;
+        }
+        state.cancellable = None;
+    }
+    fire_state_change_handler(state);
+}
+
+fn should_finish_open_with_error(error: &AppError) -> bool {
+    !matches!(error, AppError::DocumentChangedDuringRead)
 }
 
 fn start_git_compare(tab: &Rc<EditorTab>, text: String, state: &SourceStateRef, generation: u64) {

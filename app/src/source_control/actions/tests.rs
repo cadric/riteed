@@ -5,13 +5,23 @@ use gtk4::prelude::FileExt;
 
 use super::{
     commit_sensitive, discard_state, entry_disabled_reason, reference_oid, reference_text,
-    should_stage_delete, stage_mode_for_entry, too_many_changes_text,
+    should_finish_open_with_error, should_stage_delete, stage_mode_for_entry,
+    too_many_changes_text,
 };
+use crate::error::AppError;
 use crate::git_process::GitProcessError;
 use crate::git_status::{
     GitActionState, GitAttrState, GitAttrs, GitFileStatus, GitPath, GitStatusEntry,
     GitStatusSnapshot, GitWorktreeMode,
 };
+
+#[test]
+fn document_read_notice_suppresses_source_control_open_error() {
+    assert!(!should_finish_open_with_error(
+        &AppError::DocumentChangedDuringRead
+    ));
+    assert!(should_finish_open_with_error(&AppError::Cancelled));
+}
 
 #[test]
 fn disabled_reasons_cover_unsupported_paths_and_modes() {

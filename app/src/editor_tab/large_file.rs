@@ -304,6 +304,7 @@ impl EditorTab {
             state.large_file.surface = surface;
             state.large_file.file_size = Some(size);
             state.io.loading = false;
+            state.external.reload_deferred_by_edit = false;
             state.autosave.paused_message = None;
         }
         self.text_buffer.set_text("");

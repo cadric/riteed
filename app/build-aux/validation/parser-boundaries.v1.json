@@ -75,17 +75,19 @@
     {
       "id": "document_file_load",
       "kind": "file-load",
-      "source_paths": ["app/src/editor_io.rs", "app/src/workspace_open.rs", "app/src/document_limits.rs"],
+      "source_paths": ["app/src/editor_io.rs", "app/src/workspace_open.rs", "app/src/workspace_open/pending.rs", "app/src/editor_tab/open.rs", "app/src/editor_tab/read_guard.rs", "app/src/document_limits.rs"],
       "entrypoints": ["Gio file open", "Workspace::open_files", "EditorTab::load_file"],
       "real_input_shape": "User-selected local, portal, or mounted document file bytes decoded with selected encoding, bounded by open-size policy, and routed away from editable SourceView when any decoded line exceeds the 64 KiB editor line gate.",
       "coverage": [
+        {"type": "integration", "path": "app/src/gtk_tests_document_reads.rs", "target": "exercise_document_read_integrity", "input_shape_asserted": "Actual metadata and file reads interleaved with GTK edits and undo; manual reload, encoding changes, decoding retry, request-owned overlapping opens and detached callbacks preserve current document state"},
+        {"type": "integration", "path": "app/src/gtk_tests_pending_open.rs", "target": "exercise_pending_open_ownership", "input_shape_asserted": "Actual pending registry cleanup invoked for old detached owner A after attached successor B is registered; old cleanup preserves B, same-tab request tokens remain distinct, and repeated opens deduplicate the attached target"},
         {"type": "integration", "path": "app/src/gtk_tests_boundaries.rs", "target": "exercise_open_file_at_cap", "input_shape_asserted": "Generated file at the open byte cap is opened through the real GTK flow"},
         {"type": "integration", "path": "app/src/gtk_tests_boundaries.rs", "target": "exercise_long_line_file_routes_to_viewer", "input_shape_asserted": "Generated file with a decoded line over 64 KiB opens through the real GTK flow and routes to the read-only viewer"},
         {"type": "stress", "path": "stress/scripts/open-save-search.json", "target": "open-save-search", "input_shape_asserted": "Stress runner opens a declared generated corpus file through GApplication open"}
       ],
       "gaps": [],
       "reviewed_exceptions": [],
-      "last_reviewed": "2026-06-10"
+      "last_reviewed": "2026-09-05"
     },
     {
       "id": "large_file_paged_reader",
@@ -160,16 +162,19 @@
     {
       "id": "save_search_ui",
       "kind": "save-reload",
-      "source_paths": ["app/src/editor_search/**/*.rs", "app/src/editor_tab/save.rs", "app/src/workspace.rs"],
-      "entrypoints": ["win.search", "win.find-next", "win.save"],
+      "source_paths": ["app/src/editor_search/**/*.rs", "app/src/editor_tab/save.rs", "app/src/workspace.rs", "app/src/workspace_close.rs", "app/src/close_flow.rs"],
+      "entrypoints": ["win.search", "win.find-next", "win.save", "workspace_close::handle_window_close_request", "workspace_close::on_close_page"],
       "real_input_shape": "Open document text searched through the document search bar and saved through the Gio-backed save boundary with dirty/clean state transitions.",
       "coverage": [
+        {"type": "integration", "path": "app/src/gtk_tests_document_close.rs", "target": "exercise_newer_edits", "input_shape_asserted": "Real Save-and-close writes snapshot A while interactive edit B remains dirty, attached and undoable in tab/window/other-tabs modes with autosave on and off; explicit retry then writes B"},
+        {"type": "integration", "path": "app/src/gtk_tests_document_close.rs", "target": "exercise_window_recheck", "input_shape_asserted": "Later edits to previously saved, discarded or initially clean tabs prevent the final window close; Save As cancellation and real write failure are exercised by the same GTK suite"},
+        {"type": "integration", "path": "app/src/gtk_tests_document_close_lifecycle.rs", "target": "exercise_stale_callbacks", "input_shape_asserted": "Late dialog and actual save completions cannot advance a replacement close coordinator; GTK transfer detaches current and future queued targets without leaving a close operation pending"},
         {"type": "integration", "path": "app/src/gtk_tests_boundaries.rs", "target": "exercise_search_at_cap", "input_shape_asserted": "GTK flow opens search at the configured character cap and asserts search result state"},
         {"type": "stress", "path": "stress/scripts/open-save-search.json", "target": "open-save-search", "input_shape_asserted": "Stress script declares generated open/search fixtures plus search, save, and document-state assertions"}
       ],
       "gaps": [],
       "reviewed_exceptions": [],
-      "last_reviewed": "2026-05-26"
+      "last_reviewed": "2026-09-05"
     },
     {
       "id": "git_path_display",

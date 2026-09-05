@@ -1,6 +1,25 @@
 # Continuity
 
 ## OUTCOMES
+- 2026-09-05 local Flatpak follow-up completed at the user's request after
+  F-01/F-04/F-06 validation: `scripts/local-flatpak-build` built/installed
+  Riteed 0.3.8 for the user on GNOME Platform 50. Flatpak commit
+  `a0521eaf5eb4da2e300baa50985e9e7598fba0effa97e1668039b0e709657448`;
+  installed binary matches the completed build and includes the new notices.
+  Locale extension updated too. Local unmerged branches have patch-equivalent
+  changes in main. The package was prepared before committing for the user's
+  desktop test; manual acceptance is separate from the automated checks.
+- 2026-09-05 document integrity fixes F-01/F-04/F-06 are implemented locally:
+  saving during window close avoids reentrant borrows; asynchronous reads
+  preserve newer edits/undo; save-and-close checks the current document and
+  rechecks all tabs before window close. Pending opens reserve their target
+  and use URI/tab/request ownership. Failed saves superseding reloads release
+  the old reload owner. Actual GTK/IO regressions were RED before the fixes.
+  Final isolated validation passed strict policy (413 tests), no-default
+  tests (412), coverage (82.8%) and the native release build. No dependencies,
+  lockfiles or policy limits changed. See `docs/document-integrity-remediation.md`
+  for tests, evidence and the directly overlapping P2 Task 3/P3 Task 2 scope;
+  the rest of P2/P3 remains separate. Existing local policy work is preserved.
 - 2026-09-05 policy-gate audit hardening is implemented locally: executable
   release checks, strict governance wiring, complete Cargo source inventory,
   lexical Rust and structural XML scanning, typed review evidence, explicit

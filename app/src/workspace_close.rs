@@ -1,10 +1,16 @@
 use std::rc::Rc;
 
+use gettextrs::gettext;
 use gtk4::prelude::*;
 
+use crate::close_flow::CloseCoordinator;
 use crate::dialogs::{self, UnsavedResponse};
-use crate::editor_tab::SaveResult;
+use crate::editor_tab::{EditorTab, SaveResult};
 use crate::workspace::Workspace;
+
+#[cfg(test)]
+#[path = "gtk_tests_document_close_lifecycle.rs"]
+pub(crate) mod tests;
 
 pub(crate) fn handle_window_close_request(workspace: &Rc<Workspace>) -> gtk4::glib::Propagation {
     if workspace.state.borrow().allow_window_close {
@@ -30,8 +36,10 @@ pub(crate) fn on_close_page(
     workspace: &Rc<Workspace>,
     page: &libadwaita::TabPage,
 ) -> gtk4::glib::Propagation {
-    if let Some(coordinator) = workspace.state.borrow().close_flow.clone() {
+    let coordinator = workspace.state.borrow().close_flow.clone();
+    if let Some(coordinator) = coordinator {
         if !coordinator.is_other_tabs_close() || !coordinator.matches_page(page) {
+            workspace.tab_view.close_page_finish(page, false);
             return gtk4::glib::Propagation::Stop;
         }
         return handle_expected_page_close(workspace, page);
@@ -96,6 +104,7 @@ fn handle_expected_page_close(
 
 pub(crate) fn on_page_detached(workspace: &Rc<Workspace>, page: &libadwaita::TabPage) {
     let should_continue_other_tabs;
+    let mut rejected_page = None;
     {
         let Ok(mut state) = workspace.state.try_borrow_mut() else {
             let weak = Rc::downgrade(workspace);
@@ -130,13 +139,21 @@ pub(crate) fn on_page_detached(workspace: &Rc<Workspace>, page: &libadwaita::Tab
                     state.close_flow = None;
                 }
             }
-        } else if state
-            .close_flow
-            .as_ref()
-            .is_some_and(|coordinator| coordinator.is_tab_close() && coordinator.matches_page(page))
-        {
+        } else if state.close_flow.as_ref().is_some_and(|coordinator| {
+            coordinator.contains_page(page)
+                || (coordinator.is_tab_close() && coordinator.matches_page(page))
+        }) {
+            rejected_page = state
+                .close_flow
+                .as_ref()
+                .and_then(|flow| flow.pending_page());
             state.close_flow = None;
         }
+    }
+    if let Some(page) = rejected_page
+        && workspace.find_tab_by_page(&page).is_some()
+    {
+        workspace.tab_view.close_page_finish(&page, false);
     }
     workspace.clear_transfer_guard(page);
     workspace.handle_selected_tab_changed();
@@ -161,41 +178,49 @@ fn present_close_dialog(workspace: &Rc<Workspace>) {
     };
 
     let weak = Rc::downgrade(workspace);
+    let weak_coordinator = Rc::downgrade(&coordinator);
+    let weak_tab = Rc::downgrade(&tab);
     dialogs::confirm_unsaved_changes(&workspace.shell, &tab.title(), move |response| {
-        if let Some(workspace) = weak.upgrade() {
-            handle_close_response(&workspace, response);
+        if let (Some(workspace), Some(coordinator), Some(tab)) = (
+            weak.upgrade(),
+            weak_coordinator.upgrade(),
+            weak_tab.upgrade(),
+        ) {
+            handle_close_response(&workspace, &coordinator, &tab, response);
         }
     });
 }
 
-fn handle_close_response(workspace: &Rc<Workspace>, response: UnsavedResponse) {
-    let coordinator = workspace.state.borrow().close_flow.clone();
-    let Some(coordinator) = coordinator else {
+fn handle_close_response(
+    workspace: &Rc<Workspace>,
+    coordinator: &Rc<CloseCoordinator>,
+    tab: &Rc<EditorTab>,
+    response: UnsavedResponse,
+) {
+    if !is_current_close_target(workspace, coordinator, tab) {
         return;
-    };
+    }
 
     match response {
-        UnsavedResponse::Cancel => {
-            if let Some(page) = coordinator.pending_page() {
-                workspace.tab_view.close_page_finish(&page, false);
-            }
-            workspace.state.borrow_mut().close_flow = None;
-            workspace.sync_tab_action_state();
+        UnsavedResponse::Cancel => cancel_close_flow(workspace, coordinator),
+        UnsavedResponse::Discard => {
+            coordinator.record_discard(tab);
+            advance_close_flow(workspace, coordinator);
         }
-        UnsavedResponse::Discard => advance_close_flow(workspace, &coordinator),
         UnsavedResponse::Save => {
-            let Some(tab) = coordinator.current_tab() else {
-                workspace.state.borrow_mut().close_flow = None;
-                workspace.sync_tab_action_state();
-                return;
-            };
             let weak = Rc::downgrade(workspace);
+            let weak_coordinator = Rc::downgrade(coordinator);
+            let weak_tab = Rc::downgrade(tab);
             workspace.request_save_tab(
-                &tab,
+                tab,
                 false,
                 Rc::new(move |result| {
-                    if let Some(workspace) = weak.upgrade() {
-                        handle_close_save_result(&workspace, &result);
+                    if let (Some(workspace), Some(coordinator), Some(tab)) = (
+                        weak.upgrade(),
+                        weak_coordinator.upgrade(),
+                        weak_tab.upgrade(),
+                    ) {
+                        handle_close_save_result(&workspace, &coordinator, &tab, &result);
                     }
                 }),
             );
@@ -203,23 +228,77 @@ fn handle_close_response(workspace: &Rc<Workspace>, response: UnsavedResponse) {
     }
 }
 
-fn handle_close_save_result(workspace: &Rc<Workspace>, result: &SaveResult) {
+fn handle_close_save_result(
+    workspace: &Rc<Workspace>,
+    coordinator: &Rc<CloseCoordinator>,
+    tab: &Rc<EditorTab>,
+    result: &SaveResult,
+) {
+    if !is_current_close_target(workspace, coordinator, tab) {
+        return;
+    }
     match result {
-        SaveResult::Saved(_) => {
-            if let Some(coordinator) = workspace.state.borrow().close_flow.clone() {
-                advance_close_flow(workspace, &coordinator);
+        SaveResult::Saved(outcome) => {
+            if tab.is_dirty() || tab.document_uri().as_deref() != Some(outcome.new_uri.as_str()) {
+                cancel_close_for_edits(workspace, coordinator);
+            } else {
+                advance_close_flow(workspace, coordinator);
             }
         }
         SaveResult::CancelledByUser | SaveResult::Failed(_) => {
-            if let Some(coordinator) = workspace.state.borrow().close_flow.clone()
-                && let Some(page) = coordinator.pending_page()
-            {
-                workspace.tab_view.close_page_finish(&page, false);
-            }
-            workspace.state.borrow_mut().close_flow = None;
-            workspace.sync_tab_action_state();
+            cancel_close_flow(workspace, coordinator);
         }
     }
+}
+
+fn is_current_close_target(
+    workspace: &Workspace,
+    coordinator: &Rc<CloseCoordinator>,
+    tab: &Rc<EditorTab>,
+) -> bool {
+    let current = workspace.state.borrow().close_flow.clone();
+    current.is_some_and(|current| Rc::ptr_eq(&current, coordinator))
+        && coordinator
+            .current_tab()
+            .is_some_and(|current| Rc::ptr_eq(&current, tab))
+        && tab
+            .page()
+            .and_then(|page| workspace.find_tab_by_page(&page))
+            .is_some_and(|current| Rc::ptr_eq(&current, tab))
+}
+
+pub(crate) fn is_close_target(workspace: &Workspace, tab: &Rc<EditorTab>) -> bool {
+    let coordinator = workspace.state.borrow().close_flow.clone();
+    coordinator
+        .and_then(|coordinator| coordinator.current_tab())
+        .is_some_and(|current| Rc::ptr_eq(&current, tab))
+}
+
+fn cancel_close_flow(workspace: &Workspace, coordinator: &Rc<CloseCoordinator>) {
+    let owns_flow = workspace
+        .state
+        .borrow()
+        .close_flow
+        .as_ref()
+        .is_some_and(|current| Rc::ptr_eq(current, coordinator));
+    if !owns_flow {
+        return;
+    }
+    let pending_page = coordinator.pending_page();
+    workspace.state.borrow_mut().close_flow = None;
+    if let Some(page) = pending_page
+        && workspace.find_tab_by_page(&page).is_some()
+    {
+        workspace.tab_view.close_page_finish(&page, false);
+    }
+    workspace.sync_tab_action_state();
+}
+
+fn cancel_close_for_edits(workspace: &Workspace, coordinator: &Rc<CloseCoordinator>) {
+    cancel_close_flow(workspace, coordinator);
+    workspace.show_toast(&gettext(
+        "Closing was cancelled because the document has newer unsaved changes.",
+    ));
 }
 
 fn advance_close_flow(
@@ -242,6 +321,14 @@ fn advance_close_flow(
 
     coordinator.advance();
     if coordinator.is_complete() {
+        if workspace
+            .ordered_tabs()
+            .iter()
+            .any(|tab| tab.is_dirty() && !coordinator.permits_discard(tab))
+        {
+            cancel_close_for_edits(workspace, coordinator);
+            return;
+        }
         workspace.state.borrow_mut().close_flow = None;
         workspace.sync_tab_action_state();
         finish_window_close(workspace);
