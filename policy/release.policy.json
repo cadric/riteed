@@ -101,6 +101,9 @@
     ],
     "hard_requirements": {
       "exact_commit_validation_gate": "Before importing signing secrets, publish must require a successful validation result for the exact tag commit or rerun the release-critical validation suite inside the publish workflow.",
+      "required_check_app_slug": "github-actions",
+      "required_validate_jobs_must_run": true,
+      "required_validate_checks_must_not_continue_on_error": true,
       "required_validate_check_contexts": [
         "dependency-preflight",
         "policy-pack",
@@ -165,6 +168,7 @@
       ]
     },
     "repository_governance": {
+      "validation_step_condition": "github.actor != 'dependabot[bot]' && (github.event_name != 'pull_request' || (github.event.pull_request.user.login != 'dependabot[bot]' && github.event.pull_request.head.repo.full_name == github.repository))",
       "main_branch_protection_or_ruleset_required": true,
       "version_tag_ruleset_required": true,
       "disabled_rulesets_are_not_mitigation": true,

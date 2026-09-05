@@ -86,6 +86,7 @@
     "policy/**/*.json",
     "scripts/**",
     "tools/**/*.py",
+    "build.rs",
     "src/**/*.rs",
     "crates/**/*.rs",
     "tests/**/*.rs",
@@ -109,6 +110,45 @@
   "test_file_globs": ["**/tests.rs", "**/*_tests.rs", "**/test_support.rs", "**/testing.rs", "**/testing_*.rs", "**/gtk_tests*.rs", "tests/**/*.rs", "tools/tests/test_*.py"],
   "line_limit_waivers": [{"scope": "app", "path": "src/bin/riteed_stress.rs", "max_total_lines": 620, "reason": "CI stress runner keeps flow execution, action-state waits, and failure artifact trail together so native-test failures remain diagnosable without splitting one reviewed driver.", "finding_id": "ci-native-tests-stress-save-action-race", "last_reviewed": "2026-06-12"}],
   "line_limit_waiver_required_fields": ["scope", "path", "max_total_lines", "reason", "finding_id", "last_reviewed"],
+  "source_scope": {
+    "categories": [
+      {"id": "application", "paths": ["src/**/*.rs", "crates/**/*.rs"], "checks": ["cargo-workspace", "source-patterns", "runtime-review", "line-limits", "coverage"]},
+      {"id": "integration", "paths": ["tests/**/*.rs", "benches/**/*.rs", "examples/**/*.rs"], "checks": ["cargo-workspace", "source-patterns", "line-limits", "coverage"]},
+      {"id": "build-script", "paths": ["build.rs"], "checks": ["cargo-workspace", "source-patterns", "line-limits"]},
+      {"id": "fuzz-targets", "paths": ["fuzz/fuzz_targets/**/*.rs"], "checks": ["stress-fuzz", "dependency-preflight"]},
+      {"id": "sourceview5-patch", "paths": ["build-aux/cargo-patches/sourceview5/**/*.rs"], "checks": ["release-local-patches", "dependency-preflight"]},
+      {"id": "pulldown-cmark-patch", "paths": ["build-aux/cargo-patches/pulldown-cmark/**/*.rs"], "checks": ["release-local-patches", "dependency-preflight"]}
+    ]
+  },
+  "cargo_source_inventory": {
+    "archive_fields": [
+      "type",
+      "archive-type",
+      "url",
+      "sha256",
+      "dest"
+    ],
+    "inline_fields": [
+      "type",
+      "contents",
+      "dest",
+      "dest-filename"
+    ],
+    "vendor_config": {
+      "dest": "cargo",
+      "dest-filename": "config",
+      "contents": {
+        "source": {
+          "vendored-sources": {
+            "directory": "cargo/vendor"
+          },
+          "crates-io": {
+            "replace-with": "vendored-sources"
+          }
+        }
+      }
+    }
+  },
   "dependency_policy": {
     "required_runtime_crates": [
       "gtk4",
@@ -181,6 +221,27 @@
       "mode": "flatpak-manifest"
     }
   ],
+  "review_artifact_version": 1,
+  "review_field_types": {
+    "path": "nonempty-string",
+    "line": "positive-integer",
+    "match": "nonempty-string",
+    "kind": "nonempty-string",
+    "smallest_width": "positive-integer",
+    "adaptive_pattern": "nonempty-string",
+    "collapse_behavior": "nonempty-string",
+    "copy_reviewed": "boolean",
+    "a11y_reviewed": "boolean",
+    "items": "positive-integer",
+    "standard_items": "string-list",
+    "reason": "nonempty-string",
+    "scope": "nonempty-string",
+    "resolution": "nonempty-string",
+    "key": "nonempty-string",
+    "trigger": "nonempty-string",
+    "ownership": "nonempty-string",
+    "justification": "nonempty-string"
+  },
   "review_artifacts": {
     "ui": {
       "globs": [
@@ -280,76 +341,37 @@
     {
       "message": "Rust source must not enable unstable language features.",
       "pattern": "#!\\s*\\[\\s*feature\\s*\\(",
-      "paths": [
-        "src/**/*.rs",
-        "crates/**/*.rs",
-        "tests/**/*.rs",
-        "benches/**/*.rs",
-        "examples/**/*.rs"
-      ]
+      "paths": ["src/**/*.rs", "crates/**/*.rs", "tests/**/*.rs", "benches/**/*.rs", "examples/**/*.rs", "build.rs"]
     },
     {
       "message": "Rust source must not use unsafe blocks, functions, impls, traits, or extern blocks.",
       "pattern": "\\bunsafe\\s*(\\{|fn\\b|impl\\b|trait\\b|extern\\b)",
-      "paths": [
-        "src/**/*.rs",
-        "crates/**/*.rs",
-        "tests/**/*.rs",
-        "benches/**/*.rs",
-        "examples/**/*.rs"
-      ]
+      "paths": ["src/**/*.rs", "crates/**/*.rs", "tests/**/*.rs", "benches/**/*.rs", "examples/**/*.rs", "build.rs"]
     },
     {
       "message": "Rust source must not declare C FFI.",
       "pattern": "\\bextern\\s+\\\"C\\\"(?:\\s|\\{|$)",
-      "paths": [
-        "src/**/*.rs",
-        "crates/**/*.rs",
-        "tests/**/*.rs",
-        "benches/**/*.rs",
-        "examples/**/*.rs"
-      ]
+      "paths": ["src/**/*.rs", "crates/**/*.rs", "tests/**/*.rs", "benches/**/*.rs", "examples/**/*.rs", "build.rs"]
     },
     {
       "message": "Rust source must not use unsafe attributes such as no_mangle/export_name/link_section.",
       "pattern": "#\\[\\s*unsafe\\((no_mangle|export_name|link_section)",
-      "paths": [
-        "src/**/*.rs",
-        "crates/**/*.rs",
-        "tests/**/*.rs",
-        "benches/**/*.rs",
-        "examples/**/*.rs"
-      ]
+      "paths": ["src/**/*.rs", "crates/**/*.rs", "tests/**/*.rs", "benches/**/*.rs", "examples/**/*.rs", "build.rs"]
     },
     {
       "message": "Rust source must not use static mut.",
       "pattern": "\\bstatic\\s+mut\\b",
-      "paths": [
-        "src/**/*.rs",
-        "crates/**/*.rs",
-        "tests/**/*.rs",
-        "benches/**/*.rs",
-        "examples/**/*.rs"
-      ]
+      "paths": ["src/**/*.rs", "crates/**/*.rs", "tests/**/*.rs", "benches/**/*.rs", "examples/**/*.rs", "build.rs"]
     },
     {
       "message": "Rust source must not use transmute.",
       "pattern": "\\btransmute\\b",
-      "paths": [
-        "src/**/*.rs",
-        "crates/**/*.rs",
-        "tests/**/*.rs",
-        "benches/**/*.rs",
-        "examples/**/*.rs"
-      ]
+      "paths": ["src/**/*.rs", "crates/**/*.rs", "tests/**/*.rs", "benches/**/*.rs", "examples/**/*.rs", "build.rs"]
     },
     {
       "message": "Runtime Rust source must not use unwrap().",
       "pattern": "\\bunwrap\\s*\\(",
-      "paths": [
-        "src/**/*.rs",
-        "crates/**/*.rs"
-      ],
+      "paths": ["src/**/*.rs", "crates/**/*.rs"],
       "exceptions": [
         "tests/**",
         "benches/**",
@@ -359,10 +381,7 @@
     {
       "message": "Runtime Rust source must not use expect().",
       "pattern": "\\bexpect\\s*\\(",
-      "paths": [
-        "src/**/*.rs",
-        "crates/**/*.rs"
-      ],
+      "paths": ["src/**/*.rs", "crates/**/*.rs"],
       "exceptions": [
         "tests/**",
         "benches/**",
@@ -372,10 +391,7 @@
     {
       "message": "Runtime Rust source must not use panic!().",
       "pattern": "\\bpanic!\\s*\\(",
-      "paths": [
-        "src/**/*.rs",
-        "crates/**/*.rs"
-      ],
+      "paths": ["src/**/*.rs", "crates/**/*.rs"],
       "exceptions": [
         "tests/**"
       ]
@@ -383,46 +399,22 @@
     {
       "message": "Runtime Rust source must not use todo!().",
       "pattern": "\\btodo!\\s*\\(",
-      "paths": [
-        "src/**/*.rs",
-        "crates/**/*.rs",
-        "tests/**/*.rs",
-        "benches/**/*.rs",
-        "examples/**/*.rs"
-      ]
+      "paths": ["src/**/*.rs", "crates/**/*.rs", "tests/**/*.rs", "benches/**/*.rs", "examples/**/*.rs", "build.rs"]
     },
     {
       "message": "Runtime Rust source must not use unimplemented!().",
       "pattern": "\\bunimplemented!\\s*\\(",
-      "paths": [
-        "src/**/*.rs",
-        "crates/**/*.rs",
-        "tests/**/*.rs",
-        "benches/**/*.rs",
-        "examples/**/*.rs"
-      ]
+      "paths": ["src/**/*.rs", "crates/**/*.rs", "tests/**/*.rs", "benches/**/*.rs", "examples/**/*.rs", "build.rs"]
     },
     {
       "message": "Runtime Rust source must not use dbg!().",
       "pattern": "\\bdbg!\\s*\\(",
-      "paths": [
-        "src/**/*.rs",
-        "crates/**/*.rs",
-        "tests/**/*.rs",
-        "benches/**/*.rs",
-        "examples/**/*.rs"
-      ]
+      "paths": ["src/**/*.rs", "crates/**/*.rs", "tests/**/*.rs", "benches/**/*.rs", "examples/**/*.rs", "build.rs"]
     },
     {
       "message": "Runtime Rust source must not spawn external commands.",
       "pattern": "\\bstd::process::Command\\b",
-      "paths": [
-        "src/**/*.rs",
-        "crates/**/*.rs",
-        "tests/**/*.rs",
-        "benches/**/*.rs",
-        "examples/**/*.rs"
-      ]
+      "paths": ["src/**/*.rs", "crates/**/*.rs", "tests/**/*.rs", "benches/**/*.rs", "examples/**/*.rs", "build.rs"]
     },
     {
       "message": "Runtime Rust source must not use Gio subprocess outside the reviewed Git process boundary.",
@@ -433,21 +425,12 @@
     {
       "message": "Runtime Rust source must not invoke flatpak-spawn.",
       "pattern": "flatpak-spawn",
-      "paths": [
-        "src/**/*.rs",
-        "crates/**/*.rs",
-        "tests/**/*.rs",
-        "benches/**/*.rs",
-        "examples/**/*.rs"
-      ]
+      "paths": ["src/**/*.rs", "crates/**/*.rs", "tests/**/*.rs", "benches/**/*.rs", "examples/**/*.rs", "build.rs"]
     },
     {
       "message": "GTK application code must not call gtk::init().",
       "pattern": "\\bgtk::init\\s*\\(",
-      "paths": [
-        "src/**/*.rs",
-        "crates/**/*.rs"
-      ],
+      "paths": ["src/**/*.rs", "crates/**/*.rs"],
       "exceptions": [
         "tests/**",
         "examples/**"
@@ -456,10 +439,7 @@
     {
       "message": "GTK application code must not call gtk::main().",
       "pattern": "\\bgtk::main\\s*\\(",
-      "paths": [
-        "src/**/*.rs",
-        "crates/**/*.rs"
-      ],
+      "paths": ["src/**/*.rs", "crates/**/*.rs"],
       "exceptions": [
         "tests/**",
         "examples/**"
@@ -468,45 +448,27 @@
     {
       "message": "GTK UI must not be created from inline Builder strings.",
       "pattern": "\\bBuilder::from_string\\s*\\(",
-      "paths": [
-        "src/**/*.rs",
-        "crates/**/*.rs"
-      ]
+      "paths": ["src/**/*.rs", "crates/**/*.rs"]
     },
     {
       "message": "GTK UI must not be loaded from Builder::from_file().",
       "pattern": "\\bBuilder::from_file\\s*\\(",
-      "paths": [
-        "src/**/*.rs",
-        "crates/**/*.rs"
-      ]
+      "paths": ["src/**/*.rs", "crates/**/*.rs"]
     },
     {
       "message": "GTK main-thread code must not sleep the thread.",
       "pattern": "\\bstd::thread::sleep\\s*\\(",
-      "paths": [
-        "src/**/*.rs",
-        "crates/**/*.rs",
-        "tests/**/*.rs",
-        "benches/**/*.rs",
-        "examples/**/*.rs"
-      ]
+      "paths": ["src/**/*.rs", "crates/**/*.rs", "tests/**/*.rs", "benches/**/*.rs", "examples/**/*.rs", "build.rs"]
     },
     {
       "message": "GTK styling must not depend on widget names.",
       "pattern": "\\bset_widget_name\\s*\\(",
-      "paths": [
-        "src/**/*.rs",
-        "crates/**/*.rs"
-      ]
+      "paths": ["src/**/*.rs", "crates/**/*.rs"]
     },
     {
       "message": "Packaged UI/CSS assets must not be loaded via Builder::from_file() or CssProvider::load_from_path().",
       "pattern": "\\b(Builder::from_file|CssProvider::load_from_path)\\s*\\(",
-      "paths": [
-        "src/**/*.rs",
-        "crates/**/*.rs"
-      ]
+      "paths": ["src/**/*.rs", "crates/**/*.rs"]
     },
     {
       "message": "Libadwaita apps must not force a custom color scheme.",
@@ -517,47 +479,29 @@
     {
       "message": "GTK/libadwaita CSS must not define a global reset selector.",
       "pattern": "^\\s*\\*\\s*\\{",
-      "paths": [
-        "data/**/*.css"
-      ]
+      "paths": ["data/**/*.css"]
     }
   ],
   "required_source_patterns": [
     {
       "message": "Crate roots must forbid unsafe code.",
       "pattern": "#!\\s*\\[\\s*forbid\\s*\\([^\\]]*\\bunsafe_code\\b[^\\]]*\\)\\s*\\]",
-      "paths": [
-        "src/main.rs",
-        "src/lib.rs",
-        "crates/**/src/main.rs",
-        "crates/**/src/lib.rs"
-      ]
+      "paths": ["src/main.rs", "src/lib.rs", "crates/**/src/main.rs", "crates/**/src/lib.rs"]
     },
     {
       "message": "Crate roots must deny unsafe operations inside unsafe fns.",
       "pattern": "#!\\s*\\[\\s*deny\\s*\\([^\\]]*\\bunsafe_op_in_unsafe_fn\\b[^\\]]*\\)\\s*\\]",
-      "paths": [
-        "src/main.rs",
-        "src/lib.rs",
-        "crates/**/src/main.rs",
-        "crates/**/src/lib.rs"
-      ]
+      "paths": ["src/main.rs", "src/lib.rs", "crates/**/src/main.rs", "crates/**/src/lib.rs"]
     },
     {
       "message": "The application must use libadwaita application APIs.",
       "pattern": "\\badw::Application\\b|\\blibadwaita::Application\\b",
-      "paths": [
-        "src/**/*.rs",
-        "crates/**/*.rs"
-      ]
+      "paths": ["src/**/*.rs", "crates/**/*.rs"]
     },
     {
       "message": "The application must contain gettext bootstrap code before building UI.",
       "pattern": "\\b(TextDomain::new|bindtextdomain|textdomain|bind_textdomain_codeset|setlocale)\\b",
-      "paths": [
-        "src/**/*.rs",
-        "crates/**/*.rs"
-      ]
+      "paths": ["src/**/*.rs", "crates/**/*.rs"]
     }
   ],
   "official_sources": [

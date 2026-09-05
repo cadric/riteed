@@ -1,6 +1,14 @@
 # Continuity
 
 ## OUTCOMES
+- 2026-09-05 policy-gate audit hardening is implemented locally: executable
+  release checks, strict governance wiring, complete Cargo source inventory,
+  lexical Rust and structural XML scanning, typed review evidence, explicit
+  target roots and Rust source ownership accounting. See
+  `docs/policy-validation.md` and the dedicated `tools/tests` regressions.
+  Independent release review also closed signing `always()`, folded YAML,
+  shell-only syntax checking and unguarded parallel signing job bypasses.
+  Strict app gate and coverage passed; app line coverage is 82.3%.
 - 2026-08-10 scheduled Validate stress frequency changed from daily to monthly
   at 02:37 UTC on the first day of each month. Manual `workflow_dispatch`
   remains available for releases and high-risk changes.

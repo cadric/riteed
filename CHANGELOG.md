@@ -1,6 +1,6 @@
 ---
 created: 2026-04-19
-updated: 2026-08-10
+updated: 2026-09-05
 status: current
 priority: high
 type: changelog
@@ -19,6 +19,12 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
   manual workflow dispatch available for release and high-risk change checks.
 
 ### Fixed
+- Policy validation now rejects skipped release/governance gates, uses a tested
+  exact-commit release-check decision, and accounts for every Cargo source.
+- Policy scanners now handle multiline UI XML and Rust comment/async scopes,
+  reject invalid review evidence and wrong explicit target roots, and read
+  toolchain requirements from policy. Rust source categories are inventoried
+  so new files cannot silently escape validation ownership.
 - Scheduled Git status stress runs now recognize Riteed's intentional
   index-lock wait state instead of reporting a timing-dependent false failure.
 - Cancelled Git subprocesses are force-terminated and reaped without querying

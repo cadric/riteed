@@ -62,6 +62,12 @@ Policy/tooling/contract-root gate when `AGENTS.md`, `policy/`, `tools/`, or
 `scripts/` changes:
 2. `python3 -m tools.policy_check --policy-pack-check --strict`
 
+Policy validation reports Rust source categories from `source_scope`; every
+source must have one declared validation owner set. This is scope accounting,
+not a test-coverage claim. See `docs/policy-validation.md` for automatic,
+delegated and human-review boundaries. Explicit `--root` never falls back to
+another target. Runtime review fields must satisfy the policy's typed schema.
+
 Coverage gate for the in-tree app:
 3. `python3 -m tools.coverage_check --root app`
 

@@ -14,6 +14,25 @@ This directory is the canonical contract for policy scope, validator behavior, a
 - `po/*.po` and `po/*.pot` are exempt only from generic line-count enforcement; gettext extraction, `msgfmt`, untranslated-catalog checks, and i18n review artifacts still apply.
 - Generic line-count enforcement keeps production files at 600 lines by default, allows configured test files up to 800 lines, and permits production files up to the 720 waiver cap only through explicit `line_limit_waivers` with scope-relative paths and frozen per-file caps.
 
+## Enforcement Boundaries
+
+See [the enforcement map](../docs/policy-validation.md) for what each gate
+executes and which architectural properties require human review. A green
+policy-pack self-check establishes bundle integrity and scoped line limits;
+CI runs validator unit tests separately.
+
+- `source_scope.categories` assigns all discovered Rust sources to exactly
+  one reviewed category with named checker owners; unknown files, overlapping
+  categories and owner claims outside the actual scanner scopes fail.
+- `cargo_source_inventory` owns the permitted generated archive/inline field
+  sets and the exact parsed vendor configuration. Unknown sources, extra
+  source options, orphaned checksums and non-lockfile archives fail.
+- `rust.targets.rust.target_rust_family` and `rust.toolchain.required_components`
+  drive toolchain checks directly; their values are not duplicated in Python.
+- UI XML uses structural parsing. Runtime review uses lexical comment/literal
+  masking and brace scopes; these checks do not perform Rust type inference,
+  macro expansion or prove human ownership arguments.
+
 ## Review Evidence
 
 The new `review_required` domains use machine-readable evidence only under `build-aux/validation/`.
@@ -40,6 +59,9 @@ The validator hard-fails when:
 - multiple review entries claim the same `(path, line, kind)`
 - the anchored line no longer exists
 - the anchored line no longer contains `match`
+- required fields violate `review_field_types` (including empty/whitespace
+  evidence, boolean line numbers, and non-string justifications)
+- `version` is not the integer `review_artifact_version`
 
 Scanners must emit at most one hit per `(path, line, kind)`. If multiple reviewable patterns occur on one physical line, the scanner must refine `kind` so the identities stay unique.
 
@@ -78,7 +100,20 @@ Review artifacts use fixed semantic tags where a field would otherwise be ambigu
 - `release_identity.repository_full_name` is the `owner/name` repository used for read-only GitHub ruleset API verification after repository-governance remediation entries clear.
 - `github_actions_release_safety.repository_governance.main_pull_request_policy` is the expected `Protect main` pull-request rule shape. The live governance job verifies that the branch ruleset requires pull requests, matches the reviewed approving-review count, requires review-thread resolution, and matches the reviewed last-push approval setting.
 - `github_actions_release_safety.repository_governance.reviewed_bypass_actors` is the exact allowlist for GitHub ruleset bypass identities; live branch bypass actors must match `(ruleset, actor_type, actor_id, bypass_mode)`, `bypass_mode` must be `pull_request`, and tag rulesets must have no bypass actors.
-- `signed_flatpak_publish.hard_requirements.required_validate_check_contexts` is the exact ordered check-run context list the publish workflow must require for the release tag commit before signing secrets are imported.
+- `signed_flatpak_publish.hard_requirements.required_validate_check_contexts`
+  and `required_check_app_slug` are consumed by `tools.release_check_runs`
+  before signing. The helper rejects incomplete pagination and requires the
+  newest matching check-run ID to be completed with conclusion `success`.
+- Required Validate jobs and gate steps cannot conditionally skip or continue
+  on error. The governance step alone uses the exact policy-owned
+  `repository_governance.validation_step_condition` for token-eligible events;
+  conditional artifact uploads are allowed only for failure/cancellation.
+- Every signing job must depend on the validated, unconditional success chain.
+  The helper and governance run in the repository root with normal Bash;
+  workflow/job/step shell overrides cannot turn execution into syntax checking.
+  The workflow parser rejects folded YAML scalars; executable blocks use `|`.
+- Offline release validation requires the dedicated check-runs invocation;
+  inline status logic or presence of success-related words is not evidence.
 - `workflow_dispatch` release publishes may target an explicit `release_ref`, but
   that ref must be a validated `v*` tag, the build job must checkout that tag,
   and legacy Pages metadata without source-ref/source-commit is accepted only

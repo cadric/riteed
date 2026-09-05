@@ -55,7 +55,7 @@ def check_release(root: Path, errors: list[str]) -> None:
     _check_key_governance(repo, policy, workflow, active, errors)
     _check_mutable_inputs({WORKFLOW: workflow, ".github/workflows/validate.yml": validation_workflow}, active, errors)
     _check_pages_artifact(workflow, errors)
-    release_workflow.check_ruleset_governance_wiring(validation_workflow_model, errors)
+    release_workflow.check_ruleset_governance_wiring(policy, validation_workflow_model, errors)
     _check_local_patch_manifest(repo, policy, active, errors)
 
 

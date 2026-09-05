@@ -204,7 +204,10 @@ class ReleaseStressPolicyTests(unittest.TestCase):
             _copy_release_context(root)
             workflow = root / ".github" / "workflows" / "publish-flatpak.yml"
             workflow.write_text(
-                workflow.read_text(encoding="utf-8").replace("gh api", "echo").replace("check-runs", "no-checks"),
+                workflow.read_text(encoding="utf-8").replace(
+                    "python3 -m tools.release_check_runs \\",
+                    "python3 -m tools.release_check_runs_decoy \\",
+                ),
                 encoding="utf-8",
             )
             errors: list[str] = []

@@ -30,6 +30,7 @@ from tools.checks import (
     line_limits,
     release,
     runtime,
+    source_scope,
     stress_fuzz,
 )
 from tools.validation_tooling import contract_root, repo_root
@@ -71,6 +72,9 @@ def main() -> int:
     errors: list[str] = []
     foundation.check_policy_stack(root, errors)
     foundation.check_repo_layout(root, errors)
+    inventory = source_scope.check_source_scope(root, errors)
+    for category, entry in inventory.items():
+        print(f"[policy-check] Rust scope {category}: {len(entry['files'])} files; checks: {', '.join(entry['checks'])}")
     dependency_preflight.check_dependency_preflight(root, errors)
     foundation.check_toolchain(root, errors)
     foundation.check_manifests(root, errors)
