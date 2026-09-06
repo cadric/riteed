@@ -1,7 +1,49 @@
 # Audit P3 cleanup evidence
 
-This pass starts from integrated local main `6aaffc3e`. Findings are closed
-only after their implementation and validation; the overall pass is ongoing.
+The pass began on integrated local main `6aaffc3e`, and its first implementation
+series merged as signed main commit
+`28d754729ae575e0078804e379bb29e1110785e0`. The editor cleanup series then
+continued from that exact commit through `050d8dd88b4b876684c39197c6dc262e56cf761e`.
+The implemented and characterized work is complete; two explicitly behavioral
+follow-ups remain deferred rather than being reported as fixes.
+
+## Finding and commit reconciliation
+
+- RIT-GEN-019 was absorbed by P2 commit
+  `9c880913d9cdbc63cc365fc77630995853d6aacf`.
+- RIT-GEN-020 is implemented by
+  `43a61c80b8e1111f35c11c7c85a278f908010db9`.
+- RIT-GEN-021 is implemented by
+  `06d41c4117b3acdff23f8097e4e6b280abb35ff0` and
+  `5fae365637a3e867d9247af7654523c7a7303e31`; the integrated versions are
+  included in `28d754729ae575e0078804e379bb29e1110785e0`.
+- RIT-GEN-022 is characterization commit
+  `ce26e22b63697c11dd2fdfe04b1f5cd9cd2a9b88`; the safe request ownership
+  already existed, so no crash repair is claimed.
+- RIT-GEN-023, RIT-GEN-025, RIT-GEN-026 and RIT-GEN-027 are implemented by
+  `868ca7842cedf18a911301079d3af99f00cbb5df`,
+  `9c4ad7ab57c4300605526672f3210f02ccfcc50e`,
+  `c2f2f2f8f8a5919b51c37723aa684b7b2e7d07b9` and
+  `4ae225c669727e604bcd235bc89eb78e6e07a9cb`, respectively.
+- RIT-GEN-028 is implemented by
+  `1c0976573a97370bfbceb8902a00ffe6e2a4f4a8` and included in merged main
+  `28d754729ae575e0078804e379bb29e1110785e0`.
+- RIT-GEN-029 is implemented by
+  `6b30525ae9dc074e10c621563c609a17b6d95e7e`; RIT-GEN-030 required no test-file
+  rename and therefore has no implementation commit of its own.
+- RIT-GEN-031 and RIT-GEN-036 are implemented together by
+  `050d8dd88b4b876684c39197c6dc262e56cf761e`.
+- RIT-GEN-032 is the README correction in the final documentation commit.
+- RIT-GEN-033, RIT-GEN-034 and the safe dead-surface part of RIT-GEN-037 are
+  implemented by `b0526b9d79c65901e81a618ecbcd9abf91402810`.
+- RIT-GEN-035 remains deferred because `ExternalFileEvent::Moved` is live and
+  needs a separate behavioral decision. RIT-GEN-037's optional maximized-state
+  enhancement is likewise deferred.
+- RIT-GEN-038 is implemented by
+  `fa9775f821b79181449dc704d8f8b7e0dbadd476` and
+  `5d7218c0963b1373e737f2595a1e964a8c0eebe4`, included in merged main
+  `28d754729ae575e0078804e379bb29e1110785e0`, and closed with remote evidence
+  in `cc16be013a52eddefaae7b01611dbe2294b2f5e7`.
 
 ## RIT-GEN-020: whitespace-ignore line identity (Task 1)
 
@@ -201,12 +243,12 @@ The remaining Task 8 text records the local implementation and pending remote
 state before activation. Its open-state statements are historical and are
 superseded by the closure evidence above.
 
-The old remote layout remains active, so `POLICY-RIT-GEN-038` stays typed and
-open. No environment, secret, ruleset, workflow run or other GitHub state was
-changed by this local implementation. On 2026-09-06 the repository owner
-approved the bounded activation, but the exact before/after/inverse context
-payload and post-merge main/PR evidence remain pending; see
-`docs/github-ruleset-governance.md`.
+The old remote layout remained active during the local implementation, so
+`POLICY-RIT-GEN-038` stayed typed and open at that checkpoint. No environment,
+secret, ruleset, workflow run or other GitHub state was changed by that local
+task. The exact before/after/inverse context payload and post-merge main/PR
+evidence were still pending then; the remote-closure section above supersedes
+that state.
 
 Final local validation passed 328 policy/tooling tests with one intentional
 live-token skip, 42 focused policy unit tests, strict policy-pack validation,
@@ -225,8 +267,8 @@ source is a policy identifier, not a PAT value, and no credential-value access
 was demonstrated. The follow-up nevertheless minimizes diagnostic data: both
 checks retain their decisions but report only the failing scope. A synthetic
 identifier regression was RED against the PR head and now proves the helper
-errors and actual CLI stdout do not repeat that identifier. Remote CodeQL rerun
-evidence remains pending.
+errors and actual CLI stdout do not repeat that identifier. The remote CodeQL
+rerun then passed as part of the closure evidence above.
 
 ## RIT-GEN-023: rootless project sidebar state (Task 13)
 
@@ -439,6 +481,29 @@ production write lines without changing keys, triggers or ownership.
 RIT-GEN-030 required no opportunistic rename in this pass. No version-named GTK
 test file was touched for RIT-GEN-029, and moving one would add unrelated churn;
 the earlier Task 3 decision to retain the focused v13 file remains unchanged.
+
+## RIT-GEN-032: README accuracy (Task 14)
+
+The README now names the four actual Preferences pages—General, Appearance,
+Editor and Source Control—and identifies V15 as the next roadmap milestone.
+This is documentation correction only; no UI, version, policy or validation
+tooling changed.
+
+## Final validation and remaining external work (Task 15)
+
+The final code strict gate is the terminal Task 11 run: 476 library tests, the
+stress-binary unit test and UI smoke passed, and the strict policy wrapper
+reported OK. It was intentionally not duplicated after documentation-only
+edits. The one final aggregate coverage run passed at 84.7% against the
+unchanged 80.0% minimum.
+
+Parent-run root checks also passed: strict policy-pack validation reported OK,
+and the 329-test tooling suite completed OK with one expected skip because the
+live GitHub token was not injected into the unit-test environment. Separate
+main and Dependabot governance CI supplied the live evidence. The final
+merge/main CI,
+force-clean local Flatpak rebuild/install and manual acceptance remain parent-
+owned follow-up work and are not claimed here.
 
 ## Validation environment
 

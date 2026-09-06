@@ -2,6 +2,29 @@
 
 ## OUTCOMES
 
+- 2026-09-06 audit P3 final documentation closure (Tasks 14, 4 and 15): README
+  now names the actual General, Appearance, Editor and Source Control
+  Preferences pages and V15 as the next milestone. RIT-GEN-024 is refuted:
+  `EditorZoomController::drop` already removed its CSS provider in pre-audit
+  commit `063944c8ce70efd32a13ea3ad6b775163a7f2815`, so no runtime change or
+  defect claim was made. The audit evidence now distinguishes the historical
+  `6aaffc3e` starting point, merged main
+  `28d754729ae575e0078804e379bb29e1110785e0`, the editor cleanup commits,
+  characterization-only RIT-GEN-022, and the still-deferred RIT-GEN-035 moved-
+  file decision plus optional RIT-GEN-037 maximized-state enhancement. Fresh
+  searches confirmed `set_saved` and `_keep_state_alive` remain absent while
+  `ExternalFileEvent::Moved` remains live. Task 11's terminal strict gate is
+  the final code-strict evidence (476 library tests plus stress/UI); it was not
+  duplicated after documentation-only edits. Final aggregate coverage passed
+  at 84.7% (minimum 80%). Parent-run strict policy-pack passed, and the
+  329-test tooling suite completed OK; its one skip requires a live GitHub
+  token, which was intentionally absent from the unit environment and is
+  covered by separate successful live governance evidence. Final merge/main
+  CI, the user-requested
+  force-clean Flatpak rebuild/install and manual acceptance remain pending and
+  are not claimed. No code, policy, dependency, version or remote state changed
+  in this documentation batch.
+
 - 2026-09-06 audit P3 Task 11 (RIT-GEN-031, RIT-GEN-036): accepted compares
   now allocate exactly one original `line_slices` vector per side after the
   unchanged byte cap, reuse their lengths for line/product limits, and pass

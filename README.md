@@ -31,8 +31,7 @@ and Flatpak-first.
 - Native Markdown preview for `.md` and `.markdown` files using CommonMark
   with YAML frontmatter, safe placeholders for images and raw HTML, and no
   browser engine.
-- Multi-page preferences for General, Editor, Appearance, Format, and Source
-  Control.
+- Multi-page preferences for General, Appearance, Editor, and Source Control.
 - English and Danish localization with an in-app language choice
   (System / English / Danish), applied on next restart.
 - Session restore, recent files, guarded reload prompts, autosave for writable
@@ -72,7 +71,7 @@ and Flatpak-first.
 - `scripts/` - thin wrappers around the root tooling plus small maintenance
   scripts.
 - `AGENTS.md` - repository-wide contract for app and policy work.
-- `ROADMAP.md` - milestone plan through V16; V14.5 is next.
+- `ROADMAP.md` - milestone plan through V16; V15 is next.
 - `VERSIONS.md` - versioning rules for this repository.
 - `CHANGELOG.md` - notable repository changes.
 - `THIRD_PARTY_LICENSES.md` - license notes for vendored and bundled

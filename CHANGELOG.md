@@ -15,6 +15,9 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 ## Unreleased
 
 ### Changed
+- Corrected the README's Preferences page list and next-milestone pointer, and
+  finalized the audit P3 evidence without treating characterized or deferred
+  findings as repaired defects.
 - Accepted compares now tokenize each original input once and reuse those line
   vectors for limit checks, whitespace-aware diffing and row mapping.
 - Removed unused internal document, editor, review and large-file outcome
