@@ -323,13 +323,18 @@ fn exercise_pending_different_files(test_app: &adw::Application) {
         workspace.state.borrow().pending_open_targets.is_empty()
             && workspace.ordered_tabs().iter().all(|tab| !tab.is_loading())
     });
-    let mut texts = workspace
+    let mut documents = workspace
         .ordered_tabs()
         .iter()
-        .map(|tab| tab.buffer_text())
+        .map(|tab| (tab.document_uri(), tab.buffer_text()))
         .collect::<Vec<_>>();
-    texts.sort();
-    assert_eq!(texts, [String::from("first"), String::from("second")]);
+    documents.sort();
+    let mut expected = vec![
+        (Some(first.uri()), String::from("first")),
+        (Some(second.uri()), String::from("second")),
+    ];
+    expected.sort();
+    assert_eq!(documents, expected);
     window.widget().destroy();
 }
 
