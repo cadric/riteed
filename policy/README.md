@@ -6,7 +6,7 @@ This directory is the canonical contract for policy scope, validator behavior, a
 
 - `gnome-rust-app.bundle.json` is the entrypoint bundle.
 - `validation-tooling.policy.json` owns shared thresholds, required tools, line limits, and review-artifact discovery.
-- `release.policy.json` owns signed Flatpak publishing, GitHub Actions release gates, GitHub repository ruleset governance, GPG/OSTree beta remote signing, GitHub Pages artifact safety, rollback behavior, signing-key governance, and local release-critical patch manifests.
+- `release.policy.json` owns signed Flatpak publishing, GitHub Actions release gates and container-image digest pins, GitHub repository ruleset governance, GPG/OSTree beta remote signing, GitHub Pages artifact safety, rollback behavior, signing-key governance, and local release-critical patch manifests.
 - `stress-fuzz.policy.json` owns parser-boundary registry requirements, fuzz seed fidelity, stress-script boundary fidelity, generated corpus/repo consumption, and stress/fuzz artifact preservation.
 - Domain policies own domain-specific hard-fail and `review_required` rules.
 - `hard_fail_patterns[].exceptions` are narrow repo-relative globs applied before scanner regex matching; keep them path-scoped.
@@ -101,6 +101,7 @@ Review artifacts use fixed semantic tags where a field would otherwise be ambigu
 - `release_identity.repository_full_name` is the `owner/name` repository used for read-only GitHub ruleset API verification after repository-governance remediation entries clear.
 - `github_actions_release_safety.repository_governance.main_pull_request_policy` is the expected `Protect main` pull-request rule shape. The live governance job verifies that the branch ruleset requires pull requests, matches the reviewed approving-review count, requires review-thread resolution, and matches the reviewed last-push approval setting.
 - `github_actions_release_safety.repository_governance.reviewed_bypass_actors` is the exact allowlist for GitHub ruleset bypass identities; live branch bypass actors must match `(ruleset, actor_type, actor_id, bypass_mode)`, `bypass_mode` must be `pull_request`, and tag rulesets must have no bypass actors.
+- `github_actions_release_safety.pinning.release_critical_container_images` requires exact lowercase 64-hex `@sha256:` digests for job `container.image` values and the image operands of supported literal `docker pull` and `docker run` commands. The checker consumes known option operands, ignores comments and non-executing echo/printf/heredoc data, and fails closed when a Docker image cannot be identified safely.
 - `signed_flatpak_publish.hard_requirements.required_validate_check_contexts`
   and `required_check_app_slug` are consumed by `tools.release_check_runs`
   before signing. The helper rejects incomplete pagination and requires the

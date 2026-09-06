@@ -8,7 +8,7 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-from tools.checks import foundation, release_workflow, remediation
+from tools.checks import foundation, release_workflow, remediation, workflow_images
 from tools.validation_tooling import contract_root, normalize_path, read_text
 
 
@@ -54,6 +54,7 @@ def check_release(root: Path, errors: list[str]) -> None:
     _check_rollback_environment_policy(policy, errors)
     _check_key_governance(repo, policy, workflow, active, errors)
     _check_mutable_inputs({WORKFLOW: workflow, ".github/workflows/validate.yml": validation_workflow}, active, errors)
+    workflow_images.check_workflow_images(policy, [workflow_model, validation_workflow_model], errors)
     _check_pages_artifact(workflow, errors)
     release_workflow.check_ruleset_governance_wiring(policy, validation_workflow_model, errors)
     _check_local_patch_manifest(repo, policy, active, errors)

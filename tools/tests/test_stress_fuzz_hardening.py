@@ -242,11 +242,15 @@ class StressFuzzHardeningTests(unittest.TestCase):
             stress_fuzz.check_stress_fuzz(root, baseline_errors)
             self.assertEqual(baseline_errors, [])
             workflow = root / ".github" / "workflows" / "validate.yml"
-            command = "            fedora:42 \\\n            bash -lc '"
+            image = (
+                "fedora:42@sha256:"
+                "99e203b80b1c3d8f7e161ec10a68fd02b081ef83a3963553e513c82846b97814"
+            )
+            command = f"            {image} \\\n            bash -lc '"
             text = workflow.read_text(encoding="utf-8")
             self.assertIn(command, text)
             workflow.write_text(
-                text.replace(command, "            fedora:42 \\\n            echo \\\n            bash -lc '"),
+                text.replace(command, f"            {image} \\\n            echo \\\n            bash -lc '"),
                 encoding="utf-8",
             )
             errors: list[str] = []

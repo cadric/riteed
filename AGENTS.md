@@ -144,6 +144,7 @@ The application ID is authoritative and must stay consistent across:
 - `gtk4`, `libadwaita`, and `gettext-rs` are required runtime crates for the primary app package.
 - GTK/GNOME binding updates must follow `docs/dependency-updates.md` so safe bindings, `*-sys` crates, fuzz lockfiles, and Flatpak cargo sources stay coordinated.
 - Release workflow, signing, rollback, Pages remote, GitHub ruleset governance, signing-key, and local release-critical patch changes must follow `policy/release.policy.json`.
+- Release-gating workflow job containers and supported literal `docker pull`/`docker run` image operands must use exact `@sha256:` digests; update them through the reviewed image procedure in `docs/dependency-updates.md`.
 - Manual release workflow dispatch may target an explicit `v*` release tag only
   when preflight validates that tag, verifies exact release-critical checks on
   its commit, and the build job checks out the target tag before signing.

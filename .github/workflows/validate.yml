@@ -47,7 +47,8 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Pull Fedora validation image
-        run: timeout 10m docker pull fedora:42
+        run: timeout 10m docker pull fedora:42@sha256:99e203b80b1c3d8f7e161ec10a68fd02b081ef83a3963553e513c82846b97814 # fedora:42
+      # Image tag: fedora:42
       - name: Validate app subtree
         run: |
           docker run --rm \
@@ -60,7 +61,7 @@ jobs:
             -e RUST_TEST_THREADS=1 \
             -v "$PWD:/workspace" \
             -w /workspace \
-            fedora:42 \
+            fedora:42@sha256:99e203b80b1c3d8f7e161ec10a68fd02b081ef83a3963553e513c82846b97814 \
             bash -lc '
               set -euo pipefail
               run_phase() {
@@ -183,7 +184,7 @@ jobs:
     needs: dependency-preflight
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-50
+      image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-50@sha256:1fb2df10a57276f90806e1f35454048e30bf1855b7b4ff4808c9ee55887bd852 # gnome-50
       options: --privileged
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -201,7 +202,7 @@ jobs:
     needs: dependency-preflight
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-50
+      image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-50@sha256:1fb2df10a57276f90806e1f35454048e30bf1855b7b4ff4808c9ee55887bd852 # gnome-50
       options: --privileged
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -224,6 +225,7 @@ jobs:
     needs: flatpak-tests
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # Image tag: fedora:42
       - name: Run scheduled stress suite
         run: |
           docker run --rm \
@@ -235,7 +237,7 @@ jobs:
             -e RUST_TEST_THREADS=1 \
             -v "$PWD:/workspace" \
             -w /workspace \
-            fedora:42 \
+            fedora:42@sha256:99e203b80b1c3d8f7e161ec10a68fd02b081ef83a3963553e513c82846b97814 \
             bash -lc '
               set -euo pipefail
               dnf install -y \

@@ -154,6 +154,7 @@
     "pinning": {
       "release_critical_actions": "pin_to_commit_sha_or_reviewed_exception",
       "release_critical_tool_installers": "pin_version_and_integrity_or_reviewed_exception",
+      "release_critical_container_images": "pin_to_sha256_digest",
       "major_version_action_tags": "forbidden_without_planned_remediation",
       "curl_pipe_shell_installers": "forbidden_without_version_integrity_and_review"
     },
