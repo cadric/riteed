@@ -179,16 +179,17 @@
     {
       "id": "git_path_display",
       "kind": "filename",
-      "source_paths": ["app/src/git_status.rs", "app/src/source_control/list_view.rs", "app/src/source_control/tree_model.rs", "app/src/source_control/tree_view.rs"],
-      "entrypoints": ["GitPath::from_bytes", "Source Control list rows", "Source Control tree rows"],
+      "source_paths": ["app/src/git_status.rs", "app/src/source_control/list_view.rs", "app/src/source_control/tree_model.rs", "app/src/source_control/tree_view.rs", "app/src/editor_tab/compare/review_session.rs"],
+      "entrypoints": ["GitPath::from_bytes", "Source Control list rows", "Source Control tree rows", "Git review file-boundary and Change List labels"],
       "real_input_shape": "Git path bytes from porcelain v2 -z output, including valid UTF-8 controls, Unicode bidi controls, and invalid UTF-8 bytes that must preserve raw Git identity while producing safe labels/tooltips.",
       "coverage": [
         {"type": "unit", "path": "app/src/git_status/tests.rs", "target": "git_path_display_escapes_controls_and_preserves_identity_bytes", "input_shape_asserted": "Valid UTF-8 control bytes preserve raw identity while display text is escaped"},
+        {"type": "unit", "path": "app/src/editor_tab/compare/review_session_tests.rs", "target": "review_path_newline_keeps_rendered_line_map_aligned", "input_shape_asserted": "Review filenames with newlines keep one rendered buffer line per logical review row while raw Git identity remains unchanged"},
         {"type": "stress", "path": "stress/scripts/git-status-stress.json", "target": "git-status-stress", "input_shape_asserted": "Generated non-UTF-8 and control-path Git repos are opened through Source Control stress"}
       ],
       "gaps": [],
       "reviewed_exceptions": [],
-      "last_reviewed": "2026-05-26"
+      "last_reviewed": "2026-09-05"
     }
   ]
 }

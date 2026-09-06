@@ -1,6 +1,6 @@
 ---
 created: 2026-04-19
-updated: 2026-09-05
+updated: 2026-09-06
 status: current
 priority: high
 type: changelog
@@ -52,6 +52,9 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 - Stage and Commit respect Git's existing index lock before starting work and
   never replay a denied action automatically. Serialization is per controller;
   Git's own locks remain authoritative across windows and external tools.
+- Git review tabs escape control and bidirectional filename characters so
+  rendered buffer lines stay aligned with review navigation while raw Git path
+  bytes remain unchanged for file identity and actions.
 
 ## 0.3.8 - 2026-07-06
 
