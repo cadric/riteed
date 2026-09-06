@@ -11,7 +11,6 @@ use crate::large_file::{reader, usize_to_u64};
 pub(crate) struct SearchOutcome {
     pub(crate) matches: Vec<u64>,
     pub(crate) reached_cap: bool,
-    pub(crate) scanned_bytes: u64,
 }
 
 pub(crate) type SearchCallback = Rc<dyn Fn(Result<SearchOutcome, AppError>)>;
@@ -39,7 +38,6 @@ pub(crate) fn search_file(
         callback(Ok(SearchOutcome {
             matches: Vec::new(),
             reached_cap: false,
-            scanned_bytes: 0,
         }));
         return;
     }
@@ -87,7 +85,7 @@ fn search_next(
         cancellable_for_read.as_ref(),
         Rc::new(move |result| match result {
             Ok(window) => {
-                let scanned_bytes = window
+                let next_offset = window
                     .offset
                     .saturating_add(usize_to_u64(window.bytes.len()));
                 let step = {
@@ -109,11 +107,10 @@ fn search_next(
                         SearchStep::Complete(SearchOutcome {
                             matches: std::mem::take(&mut state.matches),
                             reached_cap,
-                            scanned_bytes,
                         })
                     } else {
                         state.carry = suffix_for_cross_chunk_matches(&combined, needle.len());
-                        SearchStep::Continue(scanned_bytes)
+                        SearchStep::Continue(next_offset)
                     }
                 };
 
@@ -215,7 +212,6 @@ mod tests {
             SearchOutcome {
                 matches: Vec::new(),
                 reached_cap: false,
-                scanned_bytes: 0,
             }
         );
         let _removed = fs::remove_file(path);
@@ -232,7 +228,6 @@ mod tests {
         };
         assert_eq!(outcome.matches, vec![0, 8]);
         assert!(!outcome.reached_cap);
-        assert_eq!(outcome.scanned_bytes, 11);
         let _removed = fs::remove_file(path);
     }
 

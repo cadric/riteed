@@ -246,13 +246,6 @@ impl ReviewSession {
     }
 
     #[must_use]
-    pub(in crate::editor_tab) fn current_file_for_line(&self, line: usize) -> Option<ReviewFileId> {
-        self.rendered_lines
-            .get(line)
-            .map(|rendered| rendered.file_id.clone())
-    }
-
-    #[must_use]
     pub(in crate::editor_tab) fn open_target_for_line(&self, line: usize) -> Option<gio::File> {
         let rendered = self.rendered_lines.get(line)?;
         let file = self

@@ -324,14 +324,57 @@ next Gio read, so a reentrant completion cannot observe an active borrow.
 
 The exact 10,000-match cap and `reached_cap` result, cancellation checks,
 retained stream ownership, scanned-window offset and cross-chunk stitching are
-unchanged. `scanned_bytes` remains in `SearchOutcome` for Task 10. This was a
-characterization refactor rather than a defect repair: the same seven focused
+unchanged. Task 6 retained `scanned_bytes` for the Task 10 cleanup documented
+below. This was a characterization refactor rather than a defect repair: the
+same seven focused
 search tests passed before and after, including match-cap, cancellation,
 retained-stream, byte-offset and cross-chunk cases; no artificial RED was
 introduced. The existing parser-boundary mapping and test targets remain
 exact, and its review date plus the new shared-state runtime anchor were
 refreshed. The source shift also reanchors the existing test callback result
 cell without changing its ownership or justification.
+
+## RIT-GEN-033, RIT-GEN-034 and RIT-GEN-037: dead surfaces (Task 10)
+
+Fresh word-boundary searches immediately before deletion found only the
+definitions of `current_line_ending_mode`, `current_review_file`,
+`set_writability_for_tests` and `Document::set_saved`. Those four unused
+getters/wrappers were removed while preserving the live
+`set_current_line_ending_mode`, `set_saved_with_display_path`, writability
+accessor and review-open-target behavior. The audit's `is_acknowledged`
+classification was incorrect: the document-read GTK regression calls it, so it
+remains unchanged.
+
+The first compiler pass exposed two direct dependent dead surfaces. Removing
+the empty pre-run read left the private `RiteedApp.state` field unread. The
+owned `adw::Application` already owns startup, action, activate and open signal
+handlers with strong clones of the same state, so removing the field does not
+shorten state lifetime. Removing `current_review_file` likewise left
+`ReviewSession::current_file_for_line` with no caller. Fresh searches confirmed
+both facts before the field and helper were removed; no dead-code suppression
+was added.
+
+`SearchOutcome::scanned_bytes` was written by search completion but read only
+by one test assertion. The field, outcome initializers and assertion were
+removed; the scan still computes `next_offset` for the same retained-stream
+window progression. Match offsets, cap reporting, cancellation and cross-chunk
+behavior remain covered by the existing tests.
+
+The remaining safe RIT-GEN-037 cleanup removes the empty window-vector clone
+performed before `Application::run`, when activation cannot yet have created a
+window, and drops the only crate-wide reference to the unregistered
+`win.focus-project-sidebar` accelerator. The CSS file already uses modern
+custom properties throughout, so its lone `alpha(@accent_bg_color, 0.16)` use
+now reads `alpha(var(--accent-bg-color), 0.16)`. The optional maximized-state
+enhancement remains deferred because it is not a dead-code correction.
+
+RIT-GEN-035 remains deferred as approved. `ExternalFileEvent::Moved` has real
+runtime and test references, while deciding whether to wire production monitor
+events into that path or delete the behavior requires a separate behavioral
+decision. The batch-2-owned allow annotation was not touched. This task is
+deletion characterization, so no artificial RED was introduced. Exact runtime
+review anchors shifted by the deletions and were reanchored without changing
+their ownership or justification.
 
 ## RIT-GEN-029: test-only settings backend (Task 9)
 

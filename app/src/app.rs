@@ -36,7 +36,6 @@ struct WindowFactories {
 #[derive(Clone)]
 pub struct RiteedApp {
     app: adw::Application,
-    state: Rc<RefCell<AppState>>,
 }
 
 impl Default for RiteedApp {
@@ -78,12 +77,11 @@ impl RiteedApp {
             install_display_services(&display, &state_for_startup);
         });
 
-        Self { app, state }
+        Self { app }
     }
 
     #[must_use]
     pub fn run(&self) -> gtk4::glib::ExitCode {
-        let _keep_state_alive = self.state.borrow().windows.clone();
         self.app.run()
     }
 
@@ -506,7 +504,6 @@ mod tests {
         );
         assert_accels(app, "win.project-sidebar-visible", &["F9"]);
         assert!(accel_strings(app, "app.open-recent").is_empty());
-        assert!(accel_strings(app, "win.focus-project-sidebar").is_empty());
     }
 
     fn assert_accels(app: &adw::Application, action: &str, expected: &[&str]) {

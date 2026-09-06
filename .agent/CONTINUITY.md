@@ -2,6 +2,26 @@
 
 ## OUTCOMES
 
+- 2026-09-06 audit P3 Task 10 (RIT-GEN-033, RIT-GEN-034, RIT-GEN-037): fresh
+  word-boundary searches confirmed and removed the unused line-ending getter,
+  current-review-file getter, test writability setter and `Document::set_saved`
+  wrapper while preserving their live setters and
+  `set_saved_with_display_path`. `SearchOutcome::scanned_bytes` and its sole
+  assertion were removed; the internal next-window offset remains explicit.
+  Compiler validation exposed two dependent dead surfaces: `RiteedApp.state`
+  had no read after the empty clone disappeared, while app-owned startup,
+  action and lifecycle callbacks retain strong state handles; and
+  `current_file_for_line` had only served the removed review getter. Both were
+  removed without suppression.
+  The pre-run empty window clone and obsolete unregistered-accelerator assert
+  were deleted, and the lone legacy accent CSS use now matches the file's
+  existing `var(--accent-bg-color)` syntax. `is_acknowledged` remains because a
+  live document-read GTK flow calls it. RIT-GEN-035's moved-file behavior and
+  RIT-GEN-037's optional maximized-state enhancement remain deliberately
+  deferred; the batch-2-owned allow is unchanged. This was deletion
+  characterization with no artificial RED, user-visible copy, dependency,
+  policy, remote state or Flatpak installation change.
+
 - 2026-09-06 audit P3 Task 9 (RIT-GEN-029): the complete in-memory settings
   backend is now `cfg(test)`-only, including its structs, constructor, helper
   imports, 63 backend sites across 14 settings files, subscription noop and
@@ -21,8 +41,9 @@
   before either the terminal callback or the next read is dispatched, keeping
   reentrant callbacks safe. Match cap, reached-cap reporting, cross-chunk base
   and current-start math, cancellation, retained-stream lifetime and
-  `scanned_bytes` are unchanged. This was a characterization refactor: all
-  seven focused search tests passed before and after, with no artificial RED.
+  the `scanned_bytes` field were unchanged in Task 6; Task 10 then removed the
+  field. This was a characterization refactor: all seven focused search tests
+  passed before and after, with no artificial RED.
   Per-task coverage is explicitly deferred to the aggregate final gate; no
   dependency, policy, user-visible string, remote state or Flatpak installation
   changed.

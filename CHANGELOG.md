@@ -15,6 +15,9 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 ## Unreleased
 
 ### Changed
+- Removed unused internal document, editor, review and large-file outcome
+  surfaces, plus vestigial lifecycle/accelerator checks, and normalized the
+  remaining legacy accent CSS variable syntax.
 - Release builds no longer include the in-memory settings backend and helpers
   used only by unit and GTK tests; production settings remain GSettings-only.
 - Large-file search now reuses one bounded match-and-carry accumulator across

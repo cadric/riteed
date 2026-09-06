@@ -168,17 +168,6 @@ impl EditorTab {
     }
 
     #[must_use]
-    pub fn current_review_file(&self) -> Option<ReviewFileId> {
-        let line = self.current_buffer_line()?;
-        self.state
-            .borrow()
-            .review
-            .session
-            .as_ref()
-            .and_then(|session| session.borrow().current_file_for_line(line))
-    }
-
-    #[must_use]
     pub fn current_review_open_target(&self) -> Option<gio::File> {
         let line = self.current_buffer_line()?;
         self.state

@@ -3,15 +3,7 @@
   "sites": [
     {
       "path": "src/app.rs",
-      "line": 39,
-      "match": "state: Rc<RefCell<AppState>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The application controller owns shared multi-window lifecycle state.",
-      "justification": "App actions and lifecycle signals route to the last-focused editor window and maintain a window registry without global statics."
-    },
-    {
-      "path": "src/app.rs",
-      "line": 98,
+      "line": 96,
       "match": "pub(crate) fn install_for_tests(app: &adw::Application, state: &Rc<RefCell<AppState>>) {",
       "kind": "runtime-shared-state",
       "ownership": "GTK tests reuse the shared application-state container.",
@@ -19,7 +11,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 114,
+      "line": 112,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
@@ -27,7 +19,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 158,
+      "line": 156,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
@@ -35,7 +27,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 167,
+      "line": 165,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
@@ -43,7 +35,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 246,
+      "line": 244,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
@@ -51,7 +43,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 309,
+      "line": 307,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
@@ -59,7 +51,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 352,
+      "line": 350,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
@@ -67,7 +59,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 362,
+      "line": 360,
       "match": "fn resolve_window(state: &Rc<RefCell<AppState>>) -> Option<Rc<Window>> {",
       "kind": "runtime-shared-state",
       "ownership": "Active editor window resolution reads shared application state.",
@@ -75,7 +67,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 376,
+      "line": 374,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
@@ -83,7 +75,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 412,
+      "line": 410,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
@@ -91,7 +83,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 426,
+      "line": 424,
       "match": "fn register_window(state: &Rc<RefCell<AppState>>, window: &Rc<Window>) {",
       "kind": "runtime-shared-state",
       "ownership": "Window registration mutates shared application state.",
@@ -99,7 +91,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 465,
+      "line": 463,
       "match": "fn install_display_services(display: &gdk::Display, state: &Rc<RefCell<AppState>>) {",
       "kind": "runtime-shared-state",
       "ownership": "Startup display service installation mutates shared application state.",
@@ -538,7 +530,7 @@
     },
     {
       "path": "src/large_file/search.rs",
-      "line": 70,
+      "line": 68,
       "match": "state: Rc<RefCell<SearchState>>,",
       "kind": "runtime-shared-state",
       "ownership": "Each large-file search owns one accumulator shared only by its sequential async window callbacks.",
