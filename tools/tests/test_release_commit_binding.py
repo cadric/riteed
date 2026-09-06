@@ -144,8 +144,8 @@ class ReleaseCommitBindingTests(unittest.TestCase):
                 1,
             ),
             "check collector": lambda text: text.replace(
-                'CHECK_RUNS_JSON="$checks_json" TAG_COMMIT="$tag_commit" python3',
-                'CHECK_RUNS_JSON="$checks_json" TAG_COMMIT="$release_ref" python3',
+                '--head-sha "$tag_commit" --policy policy/release.policy.json',
+                '--head-sha "$release_ref" --policy policy/release.policy.json',
                 1,
             ),
             "rollback candidate": lambda text: text.replace(

@@ -2,6 +2,22 @@
 
 ## OUTCOMES
 
+- 2026-09-06 audit P3 Task 8 local implementation (RIT-GEN-038): Validate now
+  separates the unconditional tokenless `governance-static` PR context from
+  protected-main `governance-live`. Publish collection and decision require
+  complete bounded same-origin API pages, the newest exact-SHA check, exact
+  workflow/run/job/repository provenance and one successful decisive step.
+  The live checker validates the main-only environment plus repository-secret
+  absence and environment-secret presence. Offline fixtures cover skipped,
+  neutral, failed and wrong-producer evidence, strict IDs, incomplete/changing
+  pagination, foreign URLs, null responses and credential-safe errors. Final
+  tooling tests passed 328 tests with one intentional live-token skip; 42
+  policy tests, strict policy-pack, app strict (465 library tests plus stress/UI)
+  and 84.6% coverage passed. Independent review is clear. The repository owner
+  approved the bounded remote activation, but no remote state was changed by
+  this local task; `POLICY-RIT-GEN-038` remains open pending environment/secret/
+  context activation and real PR/main/publish evidence.
+
 - 2026-09-06 audit P3 Task 7 (RIT-GEN-028): manual release preflight now
   resolves one peeled 40-hex tag commit and reads Cargo/AppStream metadata
   from that object. Exact-check collection and rollback keep the same commit,

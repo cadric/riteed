@@ -110,10 +110,15 @@ Review artifacts use fixed semantic tags where a field would otherwise be ambigu
   and `required_check_app_slug` are consumed by `tools.release_check_runs`
   before signing. The helper rejects incomplete pagination and requires the
   newest matching check-run ID to be completed with conclusion `success`.
+  When `required_live_governance_check_for_publish` is true, the same evidence
+  must map the newest live check to the exact policy-owned Actions run and job,
+  exact commit/repository identity, and one completed-success decisive step.
 - Required Validate jobs and gate steps cannot conditionally skip or continue
-  on error. The governance step alone uses the exact policy-owned
-  `repository_governance.validation_step_condition` for token-eligible events;
-  conditional artifact uploads are allowed only for failure/cancellation.
+  on error. `repository_governance.truthful_checks` owns an unconditional,
+  tokenless static PR context and a separate protected-main live producer for
+  push, schedule, and manual events. Its environment branch policy, secret
+  metadata, checkout identity, dependency chains, and decisive command are
+  validated exactly; conditional artifact uploads remain failure-only.
 - Every signing job must depend on the validated, unconditional success chain.
   The helper and governance run in the repository root with normal Bash;
   workflow/job/step shell overrides cannot turn execution into syntax checking.

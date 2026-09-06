@@ -25,7 +25,8 @@ VERSION_COMMAND = (
     '\'s/^version = "\\(.*\\)"/\\1/p\' | head -n 1)"'
 )
 CHECK_COLLECTOR_COMMAND = (
-    'CHECK_RUNS_JSON="$checks_json" TAG_COMMIT="$tag_commit" python3 - <<\'PY\''
+    'python3 -m tools.release_evidence_fetch --repository "$GITHUB_REPOSITORY" '
+    '--head-sha "$tag_commit" --policy policy/release.policy.json --output "$checks_json"'
 )
 SHA_GUARD_BLOCK = (
     'if [[ ! "$tag_commit" =~ ^[0-9a-f]{40}$ ]]; then\n'
@@ -156,6 +157,13 @@ def _check_policy_requirements(policy: dict[str, Any], errors: list[str]) -> Non
             .get("checked_out_head_must_match_tag_commit_before_secrets"),
             "signed_flatpak_publish.hard_requirements."
             "checked_out_head_must_match_tag_commit_before_secrets",
+        ),
+        (
+            policy.get("signed_flatpak_publish", {})
+            .get("hard_requirements", {})
+            .get("required_live_governance_check_for_publish"),
+            "signed_flatpak_publish.hard_requirements."
+            "required_live_governance_check_for_publish",
         ),
         (
             policy.get("signing_key_governance", {})

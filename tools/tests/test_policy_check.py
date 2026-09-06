@@ -71,6 +71,54 @@ class PolicyCheckTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("not allowed", result.stderr)
 
+    def test_release_static_check_is_mutually_exclusive_and_requires_root(self) -> None:
+        missing = subprocess.run(
+            ["python3", "-m", "tools.policy_check", "--release-static-check"],
+            cwd=REPO_ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        conflict = subprocess.run(
+            [
+                "python3",
+                "-m",
+                "tools.policy_check",
+                "--release-static-check",
+                "--policy-pack-check",
+                "--root",
+                "app",
+            ],
+            cwd=REPO_ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(missing.returncode, 2)
+        self.assertIn("requires an explicit --root", missing.stdout)
+        self.assertNotEqual(conflict.returncode, 0)
+        self.assertIn("not allowed", conflict.stderr)
+
+    def test_release_static_check_does_not_run_app_required_commands(self) -> None:
+        result = subprocess.run(
+            [
+                "python3",
+                "-m",
+                "tools.policy_check",
+                "--release-static-check",
+                "--root",
+                "app",
+                "--strict",
+            ],
+            cwd=REPO_ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(result.stdout.strip(), "[policy-check] OK")
+        self.assertNotIn("required-command", result.stdout)
+
     def test_policy_pack_check_self_mode_does_not_require_app_layout(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

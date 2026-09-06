@@ -164,18 +164,52 @@ jobs:
             stress/git-repos/generated/
             app/fuzz/artifacts/
 
-  ruleset-governance:
+  governance-static:
     needs: dependency-preflight
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
+      - name: Verify candidate checkout
+        run: |
+          set -euo pipefail
+          actual_head="$(git rev-parse HEAD)"
+          test "$actual_head" = "$GITHUB_SHA"
+      - name: Validate release governance statically
+        run: python3 -m tools.policy_check --release-static-check --root app --strict
+
+  governance-live:
+    if: (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
+    needs: dependency-preflight
+    runs-on: ubuntu-latest
+    environment: ruleset-governance-live
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Verify trusted main checkout
+        run: |
+          set -euo pipefail
+          case "$GITHUB_EVENT_NAME" in
+            push|schedule|workflow_dispatch) ;;
+            *) exit 1 ;;
+          esac
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$GITHUB_REPOSITORY" = "cadric/riteed"
+          actual_head="$(git rev-parse HEAD)"
+          test "$actual_head" = "$GITHUB_SHA"
       - name: Verify GitHub ruleset governance
-        if: github.actor != 'dependabot[bot]' && (github.event_name != 'pull_request' || (github.event.pull_request.user.login != 'dependabot[bot]' && github.event.pull_request.head.repo.full_name == github.repository))
         env:
           GITHUB_TOKEN: ${{ secrets.RULESET_GOVERNANCE_TOKEN }}
         run: python3 -m tools.ruleset_governance_check

@@ -158,6 +158,10 @@ The application ID is authoritative and must stay consistent across:
   inside a mode 700 temporary `GNUPGHOME` whose agent and files are removed on
   exit.
 - Release governance must keep offline policy checks deterministic; live GitHub ruleset/environment checks belong only in the token-scoped governance job and must enforce the exact reviewed actors from release policy.
+- Pull-request governance uses an unconditional tokenless `governance-static`
+  context. Protected-main `governance-live` may run only for the policy-owned
+  push, schedule, and manual events, and publish evidence must bind its newest
+  check to the exact run, job, commit, repository, and successful decisive step.
 - Local release-critical crate patches must keep their patch manifest, upstream `.crate` anchor, allowed-file diff checksum, unsafe/FFI baseline, and binary artifact marker in sync.
 - Parser, untrusted-input, fuzz, and stress-boundary changes must follow `policy/stress-fuzz.policy.json` and keep parser-boundary evidence current.
 - Every policy-required fuzz target must have an exact Cargo bin registration, policy-declared semantic seeds, parser-boundary coverage, and an active scheduled/manual CI invocation.

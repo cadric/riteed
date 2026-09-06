@@ -43,6 +43,11 @@ def parse_args() -> argparse.Namespace:
     modes = parser.add_mutually_exclusive_group()
     modes.add_argument("--update-artifact-index", action="store_true", help="Regenerate the bundle artifact index in the policy-pack repo.")
     modes.add_argument("--policy-pack-check", action="store_true", help="Validate the policy-pack contract without running app checks.")
+    modes.add_argument(
+        "--release-static-check",
+        action="store_true",
+        help="Validate only the offline release/workflow contract for an explicit app root.",
+    )
     return parser.parse_args()
 
 
@@ -54,6 +59,17 @@ def _print_errors(errors: list[str]) -> int:
 
 def main() -> int:
     args = parse_args()
+    if args.release_static_check:
+        if not args.root:
+            print("[policy-check] --release-static-check requires an explicit --root")
+            return 2
+        root = repo_root(args.root)
+        errors: list[str] = []
+        release.check_release(root, errors)
+        if errors:
+            return _print_errors(errors)
+        print("[policy-check] OK")
+        return 0
     if args.policy_pack_check:
         target = repo_root(args.root, allow_policy_pack=True)
         root = contract_root(target)

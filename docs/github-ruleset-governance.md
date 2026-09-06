@@ -1,8 +1,266 @@
 # GitHub Ruleset Governance
 
-This file records the `RIT-AUD-017` GitHub ruleset remediation: preflight
-state, repository-owner approval boundary, applied API writes, after-state
-evidence, and rollback commands.
+This file records the completed `RIT-AUD-017` ruleset remediation and the
+current `RIT-GEN-038` transition design. The 2026-05 activation evidence is
+historical. Operators must use the dated P3 procedure below for the next
+change; its rollback changes only the captured required-check context and
+never disables either ruleset.
+
+## RIT-GEN-038 P3 design, 2026-09-06
+
+This section began as the mandatory Task 8A read-only design/evidence record.
+On 2026-09-06 the repository owner explicitly approved the bounded GitHub
+activation: publish the reviewed local commits through a PR/merge, create the
+main-only governance environment, move the governance credential to it, and
+replace exactly the old required context. That approval does not cover other
+rules, signing environments or releases. RIT-GEN-038 remains open under the
+typed remediation in `policy/release.policy.json` until Task 8B activation and
+real post-activation evidence are complete.
+
+### Observed remote state
+
+Read-only refresh on 2026-09-06 found remote `main` at
+`1c7b81c7bc462acf29ca92f8394b1ecff5603049`. Local integrated `main` is 15
+commits ahead, so a P2/P3 publication decision must account for those commits
+before any candidate PR or merge. `Protect main` ruleset `16713108` is active
+and requires exactly:
+
+```text
+dependency-preflight
+policy-pack
+native-tests
+ruleset-governance
+flatpak-tests
+flatpak
+```
+
+Its deletion, non-fast-forward, signed-commit and pull-request rules, newer
+pull-request parameters, strict required-check policy, and reviewed
+`User:964797:pull_request` bypass remain in force. `Protect version tags`
+ruleset `16713116` is active with no bypass actors. There is no governance
+environment. The only repository Actions secret name is
+`RULESET_GOVERNANCE_TOKEN`; no secret value was read or requested.
+
+The current check is not truthful for every event:
+
+| Validate evidence | Check/run `head_sha` | Actual code/policy checkout | Credential and decisive result | Conclusion |
+|---|---|---|---|---|
+| Ordinary same-repository PR run `31342646721`, job/check `93318869249`, 2026-08-09 | PR head `00067e7edc30061ba74628d5e90d822355fddf25` | Synthetic merge `7938353a6c2b966d5a3bf10a849b14a87cf3adbc` (head into base `0c143768f5a2825a455e5b60aabe85f4303a76e9`) | Repository PAT available; `Verify GitHub ruleset governance` succeeded | Live PR code executed with the repository credential; check SHA and checked-out SHA differ. |
+| Dependabot PR run `31343275411`, job/check `93320469610`, 2026-08-10 | PR head `b6776eb33fa20b7a55c46850279fd7eb1cf93b6b` | Synthetic merge `b411527969318d29c8d00ddeb1a7faa497e1e948` (head into base `4470eb7630e955755052f222f5c41eab4946722e`) | Decisive step skipped; enclosing job/check succeeded | Required `ruleset-governance` passed without governance verification. |
+| Main push run `31343760989`, job/check `93321778613`, 2026-08-10 | `1c7b81c7bc462acf29ca92f8394b1ecff5603049` | Same exact SHA, confirmed from checkout log | Decisive step succeeded | Representative truthful main execution for the old layout. |
+| Schedule run `33484656541`, attempt 1 job/check `99781849987`, attempt 2 job/check `101489287483` | Same recorded main SHA | Same exact SHA, confirmed from checkout log | Attempt 1 returned HTTP 401 from both live API reads; after the owner updated the token, attempt 2 completed and the decisive step succeeded at 2026-09-06 12:49:27–33Z | The 401 is historical and its cause remains unknown. Attempt 2 is the current old-layout baseline, not proof of the new environment boundary. |
+| Fork PR | No representative inspected run | Not available | Current condition is designed to skip the credentialed step | Missing remote evidence; must be verified after activation without exposing a credential. |
+
+For `pull_request`, GitHub documents `GITHUB_SHA` as the synthetic merge commit
+and `GITHUB_REF` as `refs/pull/<n>/merge`; `github.event.pull_request.head.sha`
+is the PR head. The observed checkout logs confirm why check/run `head_sha` and
+the code/policy checkout must be recorded separately. A custom environment
+branch rule is matched against `GITHUB_REF`, so a branch-only `main` rule does
+not admit `refs/pull/*/merge`. See GitHub's
+[event reference](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows),
+[deployment environment reference](https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments),
+and [deployment branch-policy API](https://docs.github.com/en/rest/deployments/branch-policies).
+
+### Selected workflow and check layout
+
+The local Task 8B candidate splits the overloaded check name into two meanings:
+
+1. `governance-static` is an unconditional Validate job on every current
+   event: ordinary PR, fork/Dependabot PR, push, schedule and manual dispatch.
+   It receives no governance environment, custom token, `GH_TOKEN` or
+   `GITHUB_TOKEN`. Its checkout must be the event commit and an explicit
+   `git rev-parse HEAD == GITHUB_SHA` assertion records the policy revision
+   actually tested. On a PR this is the proposed synthetic merge, not merely
+   the check-run head SHA. Its one policy step uses exactly:
+
+   ```text
+   python3 -m tools.policy_check --release-static-check --root app --strict
+   ```
+
+   The mutually exclusive CLI mode resolves the explicit app and contract
+   roots and runs `release.check_release` only. It does not run Cargo, GNOME,
+   Flatpak, required commands, network calls or token discovery. It is a
+   scoped release/workflow shape check, not the full app gate.
+   The standard checkout action's read-only event token is not a governance
+   credential; no signing secret is present anywhere in PR governance.
+
+2. `governance-live` exists only for integrated-main `push`, `schedule` and
+   `workflow_dispatch` runs. Its owning job condition must enumerate those
+   events and require `github.ref == 'refs/heads/main'`. It uses the dedicated
+   `ruleset-governance-live` environment, explicitly checks out
+   `${{ github.sha }}`, and asserts allowed event, exact main ref, repository
+   identity and `git rev-parse HEAD == GITHUB_SHA` before invoking the live
+   checker. No PR event can enter the environment. The uniquely named
+   `Verify GitHub ruleset governance` step must itself finish successfully;
+   an aggregate green job with that step missing, skipped, neutral, duplicated
+   or failed is not evidence.
+
+The static job validates proposed policy/workflow code. The live job executes
+only integrated code and validates repository state. Neither check is an alias
+for the other, and the old `ruleset-governance` name is not reused for a
+static-only success.
+
+A separate privileged `pull_request_target` or `workflow_run` workflow was
+considered but is not selected. It would add a second trusted-code and artifact
+provenance boundary without improving the chosen contract: candidate policy is
+already checked tokenlessly, and the protected integrated-main job can bind
+its own checkout, event and SHA directly. The existing `Validate` main-push
+producer is retained, but its live job is admitted only by the main-only
+environment and the exact event/ref assertions above.
+
+### Environment and credential boundary
+
+Create `ruleset-governance-live` with
+`protected_branches=false`, `custom_branch_policies=true`, and one custom
+deployment branch policy named `main` with type `branch`. The owner enters
+`RULESET_GOVERNANCE_TOKEN` directly as an environment secret outside chat.
+The canonical secret must not remain at repository scope.
+
+The expected fine-grained PAT permissions are repository
+`Administration: read`, `Environments: read`, `Secrets: read`, plus implicit
+`Metadata: read`. `Secrets: read` is needed to prove through every paginated
+page that the repository-level name is absent; `Environments: read` is needed
+to list environment secret metadata. Neither API returns secret values. See
+GitHub's [Actions secrets API](https://docs.github.com/en/rest/actions/secrets)
+and [deployment environments API](https://docs.github.com/en/rest/deployments/environments).
+
+Secret migration is intentionally not represented as fully reversible JSON:
+GitHub cannot return the old value. The proposed approval-gated order is to
+create/protect the environment, have the owner enter and permission-test the
+credential outside chat, verify environment and secret-name metadata, then
+delete the repository-level copy. Recovery after deletion requires owner-held
+credential re-entry. Do not automatically restore the unsafe repository scope
+or delete the protected environment copy.
+The first scheduled attempt's HTTP 401 is historical; do not infer expiry,
+revocation or a permission cause. The successful rerun proves the updated
+repository-scoped credential can execute the old live checker, but it does not
+prove the new `Secrets: read` metadata checks or protected environment path.
+Activation still requires the owner-side permission proof and admin metadata
+before deleting the old name; the actual protected environment job can prove
+the new path only after the authorized workflow merge.
+
+### Acceptance matrix
+
+| Evidence state | PR merge eligibility | Publish eligibility |
+|---|---|---|
+| Static success; no governance credential involved | May satisfy `governance-static` with the other five required PR contexts | Static evidence alone never qualifies publish. |
+| Static missing or failed | Blocks a normal PR through GitHub's required-check behavior | Rejected as an incomplete or failed candidate check set. |
+| Static skipped or neutral | GitHub can accept these conclusions for a required context; the offline workflow contract must therefore reject any condition, continuation or fallback wiring that permits them | The publish helper explicitly rejects every non-success conclusion. |
+| Live token missing or live checker fails | PR remains independent of live credentials | Rejected. |
+| Live job green but decisive step missing, skipped, neutral, duplicated or failed | Not a PR context | Rejected even if the aggregate job/check is success. |
+| Live success on wrong SHA, branch, event, repository, workflow, job or check producer | Not a PR context | Rejected. |
+| Live decisive step completed/success on exact candidate SHA from a policy-owned protected-main `Validate` producer event | Not a PR context | May satisfy `governance-live` after all static/build contexts also succeed. |
+
+The publish collector binds its selected completed/success check run
+to all of the following: exact candidate SHA; GitHub Actions app; exact check
+name and selected check-run ID; Actions job `check_run_url`; job `html_url`
+equal to the check's `details_url`; unique successful decisive step; Actions
+run repository and head repository `cadric/riteed`; workflow `Validate` at
+`.github/workflows/validate.yml`; event in the policy-owned set `push`,
+`schedule`, or `workflow_dispatch`; head branch `main`; and exact run
+`head_sha`. Selection keeps newest matching check-run semantics: a newer failed
+live check for the SHA cannot fall back to an older success, while a newer
+fully valid protected-main schedule or manual run may qualify publish. A real
+main-push run remains mandatory activation evidence even though it is not the
+only allowed later producer.
+
+### Required contexts before and after
+
+`Protect main` currently requires the six contexts listed above. After remote
+activation its exact PR list is:
+
+```text
+dependency-preflight
+policy-pack
+native-tests
+governance-static
+flatpak-tests
+flatpak
+```
+
+Only `ruleset-governance` is replaced. Publish eligibility requires those six
+successful contexts for the exact release commit plus the seventh,
+`governance-live`, with the provenance and decisive-step checks above.
+
+### Local Task 8B implementation status
+
+The local candidate implements the selected layout without changing remote
+state. `governance-static` is a required, tokenless job with exact event-SHA
+checkout, identity assertion and offline release check ordering.
+`governance-live` has the exact protected-main producer condition, main-only
+environment, checkout and identity assertions, and a single credentialed
+decisive step. Structural checks reject conditional or error-tolerant actions,
+dependency skips, extra mutating steps, secret exposure, producer drift and
+command/order substitutions.
+
+Publish preflight now uses `tools.release_evidence_fetch` to retrieve all
+check-run and job pages from policy-derived same-origin API URLs. Bounded
+responses, pagination loops/escapes, incomplete or changing totals, duplicate
+or non-integer IDs, foreign details URLs and malformed payloads fail closed.
+`tools.release_check_runs` then validates the complete stored evidence again,
+including newest-check selection and the exact run/job/decisive-step producer.
+The live governance checker also validates the exact environment branch policy,
+repository-secret absence and environment-secret presence across all pages.
+
+`POLICY-RIT-GEN-038` remains open. This local implementation has not created
+the environment or moved the secret or required context. The candidate PR is
+expected to remain blocked by the old required context until the recorded
+activation sequence below is executed.
+
+Final local evidence passed 328 policy/tooling tests with one intentional
+live-token skip, 42 focused policy unit tests, the strict policy-pack gate,
+the app strict gate with 465 library tests plus stress/UI checks, and 84.6%
+line coverage. Independent review found no remaining material issue after
+null API payloads and credential-bearing transport errors were made explicitly
+fail-closed. Logs use the `task8b-final-*` prefix under
+`/tmp/riteed-p3-validation-hGkt8u/`.
+
+The candidate PR intentionally emits no fake old context, so it remains blocked
+by the current ruleset until the approved context transition. Before applying
+that transition, capture a fresh complete `Protect main` response and
+derive three local payloads: untouched before, after with exactly one
+`ruleset-governance -> governance-static` replacement, and inverse with exactly
+the reverse replacement. Preserve every other writable field, rule parameter,
+bypass actor and condition. Assert the old/new context occurs exactly once in
+the appropriate payload and diff the JSON before any PUT.
+
+The activation order is: verify the candidate PR's six new checks; account for
+the 15 unpublished integrated commits; capture and review exact ruleset
+payloads; create/protect the environment; owner-enter and verify the environment
+secret; have the owner test the credential's required read permissions outside
+chat and capture admin metadata proving environment protection plus the secret
+name; delete the repository copy; obtain separate approval for the one-field
+ruleset PUT; and merge normally. The new environment job cannot execute trusted
+new code before that merge. Afterward, require the resulting main SHA's six
+static checks and seventh live main-push check, including repository-secret
+absence. The old main workflow may fail live governance between secret deletion
+and the authorized merge; that bounded bootstrap gap must be scheduled,
+observed and not disguised as success.
+
+Before the workflow merge, the captured inverse required-context PUT can
+restore the old layout because the old `ruleset-governance` job still exists;
+if its repository secret was already deleted, operational recovery additionally
+requires explicit owner credential re-entry. After the merge, that job no
+longer exists, so applying the inverse would intentionally block PRs rather
+than restore service. Treat it only as fail-closed containment while preparing
+a separately reviewed code/remote recovery, and prefer a reviewed roll-forward
+under the new static contexts. Every such action remains owner-approval-gated.
+No inverse may disable `Protect main`, touch `Protect version tags`, weaken
+signatures/PR/deletion/non-fast-forward rules, alter signing/rollback
+environments, create a fake old-context alias, or delete the protected
+environment secret. There is no automatic secret rollback.
+
+### Evidence still required for closure
+
+Local Task 8B fixtures cover every acceptance row plus structural negatives
+for conditions, fallbacks, credentials and producer binding. Payload fixtures
+also cover missing/disabled rulesets, an unreviewed bypass actor and a missing
+rollback reviewer. Under the recorded approval, record fresh environment,
+secret-name and exact before/after/inverse
+ruleset evidence; a representative ordinary PR; a fork or Dependabot PR; and
+the exact merged-main push's static and live terminal results. Publish
+eligibility must be tested against the same SHA. Until all of that exists,
+`RIT-GEN-038` remains open.
 
 ## Before Activation, 2026-05-26
 
@@ -238,10 +496,11 @@ PR #12 then merged normally without `--admin`, after its head commit was
 rewritten through GitHub's `createCommitOnBranch` API so the required-signatures
 rule could verify the commit.
 
-## Rollback Command
+## Historical 2026-05-26 rollback command — not the P3 procedure
 
-If activation breaks required maintenance flow, restore the captured disabled
-state with the same API endpoint:
+The following commands document the original 2026-05 activation rollback only.
+Do not use them for RIT-GEN-038: they disable both rulesets, which the P3
+procedure above explicitly forbids.
 
 ```bash
 jq '.enforcement = "disabled" |

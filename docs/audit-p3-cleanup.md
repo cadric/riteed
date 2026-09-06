@@ -119,6 +119,44 @@ checks were made location-bound. Logs use the `task7-final-*` prefix under
 `/tmp/riteed-p3-validation-hGkt8u/`. No live tag, release, secret or GitHub
 setting was changed.
 
+## RIT-GEN-038: truthful governance evidence (Task 8)
+
+The local workflow candidate separates the PR-required, tokenless
+`governance-static` check from protected-main `governance-live`. Static code
+checks out the exact event SHA, proves `HEAD`, and runs only the offline release
+contract. Live code is admitted only for main push, schedule and manual runs,
+uses the main-only governance environment, proves event/ref/repository/HEAD,
+and exposes its environment secret only to one decisive live-check step.
+
+Publish preflight collects complete check-run, workflow-run and job evidence
+from policy-derived same-origin GitHub API endpoints. The decision requires the
+newest matching live check, exact candidate and job SHA, exact repository/head
+repository, policy-owned workflow and event, exact check/job URL mapping, and
+one completed-success decisive step. Aggregate workflow failure does not erase
+a valid job result, while skipped/neutral/missing steps, wrong producers,
+newer failures, malformed IDs, incomplete pagination and foreign URLs fail
+closed. Live governance also checks the exact main-only environment policy and
+proves the credential name is absent at repository scope and present once at
+environment scope.
+
+The old remote layout remains active, so `POLICY-RIT-GEN-038` stays typed and
+open. No environment, secret, ruleset, workflow run or other GitHub state was
+changed by this local implementation. On 2026-09-06 the repository owner
+approved the bounded activation, but the exact before/after/inverse context
+payload and post-merge main/PR evidence remain pending; see
+`docs/github-ruleset-governance.md`.
+
+Final local validation passed 328 policy/tooling tests with one intentional
+live-token skip, 42 focused policy unit tests, strict policy-pack validation,
+and the app strict gate with 465 library tests plus the stress unit and UI
+smoke. Coverage was 84.6% against the unchanged 80% minimum. Independent
+review found no remaining material issue after JSON `null` and potentially
+credential-bearing transport errors were made explicit, redacted failures.
+Logs are under `/tmp/riteed-p3-validation-hGkt8u/` as
+`task8b-final-tools.log`, `task8b-final-policy-unittest.log`,
+`task8b-final-policy-pack.log`, `task8b-final-app-strict.log`, and
+`task8b-final-coverage.log`.
+
 ## Validation environment
 
 The existing Solarized chrome test assumes ordinary contrast. The desktop's

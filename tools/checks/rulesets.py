@@ -8,7 +8,7 @@ import urllib.parse
 import urllib.request
 from typing import Any
 
-from tools.checks import foundation
+from tools.checks import foundation, governance_environment
 
 
 POLICY_FILE = "policy/release.policy.json"
@@ -17,6 +17,7 @@ POLICY_FILE = "policy/release.policy.json"
 def check_remote_governance(policy: dict[str, Any], active: set[str], errors: list[str]) -> None:
     check_ruleset_governance(policy, active, errors)
     check_rollback_environment_governance(policy, active, errors)
+    governance_environment.check_remote(policy, errors)
 
 
 def check_ruleset_governance(

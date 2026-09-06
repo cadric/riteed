@@ -157,7 +157,7 @@ def check_required_validate_checks(
         foundation.add(errors, f"{WORKFLOW}: strict release-check-runs invocation is required before signing")
 
 
-def check_ruleset_governance_wiring(
+def check_required_validate_jobs(
     policy: dict[str, Any],
     workflow: Workflow | None,
     errors: list[str],
@@ -165,27 +165,6 @@ def check_ruleset_governance_wiring(
     if workflow is None:
         return
     _check_required_validate_jobs(policy, workflow, errors)
-    job = workflow.jobs.get("ruleset-governance")
-    if job is None:
-        foundation.add(errors, f"{VALIDATE_WORKFLOW}: ruleset-governance job is required")
-        return
-    governance_steps = [step for step in job.steps if _is_governance_step(step)]
-    if len(governance_steps) != 1:
-        foundation.add(errors, f"{VALIDATE_WORKFLOW}: ruleset-governance must run tools.ruleset_governance_check")
-    else:
-        expected = (
-            policy.get("github_actions_release_safety", {})
-            .get("repository_governance", {})
-            .get("validation_step_condition")
-        )
-        if not _supported_run_context(workflow, job, governance_steps[0], require_root=True):
-            foundation.add(errors, f"{VALIDATE_WORKFLOW}: governance must execute in the repository root with the supported shell")
-        actual = governance_steps[0].raw.get("if")
-        if not isinstance(expected, str) or not expected.strip() or actual != expected:
-            foundation.add(errors, f"{VALIDATE_WORKFLOW}: ruleset-governance must use the approved execution condition")
-    token_env = job.env | (governance_steps[0].env if len(governance_steps) == 1 else {})
-    if not any(token_env.get(key) == "${{ secrets.RULESET_GOVERNANCE_TOKEN }}" for key in ("GITHUB_TOKEN", "GH_TOKEN")):
-        foundation.add(errors, f"{VALIDATE_WORKFLOW}: ruleset-governance must use RULESET_GOVERNANCE_TOKEN")
     native = workflow.jobs.get("native-tests")
     if native and _job_mentions_token(native):
         foundation.add(errors, f"{VALIDATE_WORKFLOW}: native-tests must not pass GitHub tokens into the container")
@@ -527,18 +506,12 @@ def _check_required_validate_jobs(policy: dict[str, Any], workflow: Workflow, er
 
 
 def _allowed_conditional_step(job_id: str, step: Step) -> bool:
-    if job_id == "ruleset-governance" and _is_governance_step(step):
-        return True
     condition = str(step.raw.get("if", "")).strip()
     return step.uses.startswith("actions/upload-artifact@") and condition in {
         "failure()",
         "failure() || cancelled()",
         "cancelled() || failure()",
     }
-
-
-def _is_governance_step(step: Step) -> bool:
-    return _shell_commands(step.run) == [["python3", "-m", "tools.ruleset_governance_check"]]
 
 
 def _has_condition(value: Job | Step) -> bool:

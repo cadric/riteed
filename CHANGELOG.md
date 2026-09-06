@@ -26,6 +26,11 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
   active scheduled/manual CI execution.
 
 ### Fixed
+- Split GitHub governance into an unconditional tokenless static check and a
+  protected-main live check. Flatpak publish preflight now requires complete,
+  provenance-bound evidence that the newest live check's decisive step ran
+  successfully, and live validation verifies main-only environment/secret
+  metadata without exposing the credential to pull-request code.
 - Git reviews now read worktree versions through the same bounded per-file
   limit as Git blobs, rejecting incomplete or oversized text before display.
 - Git subprocess output now streams through concurrent bounded stdout and

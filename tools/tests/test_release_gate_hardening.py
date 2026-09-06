@@ -427,13 +427,13 @@ class ReleaseWorkflowGateTests(unittest.TestCase):
             path = root / ".github" / "workflows" / "validate.yml"
             lines = path.read_text(encoding="utf-8").splitlines()
             index = lines.index("      - name: Verify GitHub ruleset governance")
-            lines[index + 1] = "        if: ${{ false }}"
+            lines.insert(index + 1, "        if: ${{ false }}")
             path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
             errors: list[str] = []
             release.check_release(root, errors)
 
-        self.assertTrue(any("approved execution condition" in item for item in errors), errors)
+        self.assertTrue(any("governance-live" in item for item in errors), errors)
 
     def test_required_validate_job_cannot_be_conditionally_skipped(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

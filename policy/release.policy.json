@@ -107,11 +107,12 @@
       "required_check_app_slug": "github-actions",
       "required_validate_jobs_must_run": true,
       "required_validate_checks_must_not_continue_on_error": true,
+      "required_live_governance_check_for_publish": true,
       "required_validate_check_contexts": [
         "dependency-preflight",
         "policy-pack",
         "native-tests",
-        "ruleset-governance",
+        "governance-static",
         "flatpak-tests",
         "flatpak"
       ],
@@ -174,7 +175,31 @@
       ]
     },
     "repository_governance": {
-      "validation_step_condition": "github.actor != 'dependabot[bot]' && (github.event_name != 'pull_request' || (github.event.pull_request.user.login != 'dependabot[bot]' && github.event.pull_request.head.repo.full_name == github.repository))",
+      "truthful_checks": {
+        "static_context": "governance-static",
+        "static_command": "python3 -m tools.policy_check --release-static-check --root app --strict",
+        "live_context": "governance-live",
+        "live_environment": "ruleset-governance-live",
+        "live_secret": "RULESET_GOVERNANCE_TOKEN",
+        "live_allowed_events": [
+          "push",
+          "schedule",
+          "workflow_dispatch"
+        ],
+        "live_workflow_name": "Validate",
+        "live_workflow_path": ".github/workflows/validate.yml",
+        "live_job": "governance-live",
+        "live_decisive_step": "Verify GitHub ruleset governance",
+        "main_ref": "refs/heads/main",
+        "main_branch": "main",
+        "repository_secret_forbidden": true,
+        "environment_branch_policy": {
+          "protected_branches": false,
+          "custom_branch_policies": true,
+          "name": "main",
+          "type": "branch"
+        }
+      },
       "main_branch_protection_or_ruleset_required": true,
       "version_tag_ruleset_required": true,
       "disabled_rulesets_are_not_mitigation": true,
@@ -329,7 +354,18 @@
       }
     }
   },
-  "planned_remediation": [],
+  "planned_remediation": [
+    {
+      "finding_id": "POLICY-RIT-GEN-038",
+      "target_milestone": "Audit P3 Task 8B remote activation",
+      "review_artifact": "docs/github-ruleset-governance.md",
+      "created": "2026-09-06",
+      "max_age_days": 30,
+      "reason": "Remote protection still requires the old ruleset-governance context and the credential remains repository-scoped. The locally implemented tokenless static check, protected integrated-main live check, exact producer/SHA evidence and environment-only credential boundary are not activated remotely.",
+      "removal_condition": "Offline fixtures and structural enforcement pass; governance-static and protected governance-live are implemented; the environment-only secret and exact one-context ruleset transition are explicitly approved and verified; and ordinary PR, fork or Dependabot, exact main-push and publish-eligibility evidence is terminal and provenance-bound.",
+      "approval_required": "cadric repository owner"
+    }
+  ],
   "verifiers": {
     "workflow_static_checks": [
       "publish workflow tag/version consistency",
@@ -339,6 +375,9 @@
       "temporary GNUPGHOME mode and agent/removal cleanup before private-key import",
       "GitHub-hosted Ubuntu runner and preflight dependency for the signing build",
       "validation gate before signing secret access",
+      "unconditional tokenless governance-static checkout, identity and gate ordering",
+      "protected-main governance-live producer, environment, identity and decisive-step ordering",
+      "provenance-bound live check, run, job, repository, SHA and decisive-step evidence before publish",
       "signing environment scoping",
       "GPG public key pin against committed public key",
       "Pages artifact shape checks before upload",
@@ -347,6 +386,7 @@
     ],
     "artifact_checks": [
       "planned_remediation schema and max-age enforcement",
+      "governance environment branch-policy and repository/environment secret metadata pagination",
       "local patch manifest schema and drift checks",
       "key governance docs contain no release-blocking TBD markers"
     ]
