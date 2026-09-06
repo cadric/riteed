@@ -43,6 +43,12 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release version="0.3.9" type="development" date="2026-09-06">
+      <description translate="no">
+        <p>Fixes asynchronous open, reload, and save-and-close races, bounded Git output and cleanup, compare line preservation, Markdown CRLF handling, and Danish review counts.</p>
+        <p>Improves editing and large-file search efficiency, removes unused internals, and strengthens exact-commit release checks, protected governance, and parser regression coverage without expanding sandbox permissions.</p>
+      </description>
+    </release>
     <release version="0.3.8" type="development" date="2026-07-06">
       <description translate="no">
         <p>Improves printing with true paper geometry and a matching print preview, makes recent commits collapsible, highlights the active file in Source Control, and updates the GTK 4 binding stack.</p>

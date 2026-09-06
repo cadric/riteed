@@ -14,7 +14,11 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 
 ## Unreleased
 
+## 0.3.9 - 2026-09-06
+
 ### Changed
+- Refreshed the README's beta status, monthly stress schedule, and guarded
+  local Flatpak build instructions for the audit patch release.
 - Corrected the README's Preferences page list and next-milestone pointer, and
   finalized the audit P3 evidence without treating characterized or deferred
   findings as repaired defects.
