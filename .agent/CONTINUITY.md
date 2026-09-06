@@ -2,6 +2,25 @@
 
 ## OUTCOMES
 
+- 2026-09-06 audit P3 Task 11 (RIT-GEN-031, RIT-GEN-036): accepted compares
+  now allocate exactly one original `line_slices` vector per side after the
+  unchanged byte cap, reuse their lengths for line/product limits, and pass
+  the same vectors through whitespace normalization and row modelling. A
+  thread-local test counter characterized four original tokenization passes
+  before the refactor and guards two afterward; normal mode still uses one
+  `TextDiff::from_lines`, while byte, line, product and Task 1 mapping
+  boundaries remain unchanged. No artificial performance RED was claimed.
+  The existing review-file addition/removal count strings now appear at two
+  literal `ngettext` call sites, closing the real extraction gap without a new
+  keyword or wrapper. Plural selection saturates to `u32::MAX`, displayed
+  counts retain the full `usize`, and the POT plus Danish catalog contain
+  exactly the two existing pairs (`tilføjelse`/`tilføjelser` and
+  `fjernelse`/`fjernelser`) with `%d` preserved. The pre-fix extraction probe
+  found zero of two pairs; the same probe afterward found both. Parser,
+  runtime and i18n review evidence is synchronized. No dependency, policy,
+  remote state or Flatpak installation changed; aggregate coverage and final
+  installed-Flatpak/manual validation remain pending later integration work.
+
 - 2026-09-06 audit P3 Task 10 (RIT-GEN-033, RIT-GEN-034, RIT-GEN-037): fresh
   word-boundary searches confirmed and removed the unused line-ending getter,
   current-review-file getter, test writability setter and `Document::set_saved`
@@ -107,9 +126,9 @@
   and ignore=true mapping invariants, and its deterministic tail seed replayed
   successfully. Final strict validation passed 473 library tests plus the
   stress unit and UI smoke; coverage passed at 84.6%. Parser/runtime review
-  evidence, audit docs and CHANGELOG are synchronized. Task 11 token reuse was
-  intentionally not implemented; no dependency, lockfile, policy semantics,
-  user-visible strings, remote state or Flatpak installation changed.
+  evidence, audit docs and CHANGELOG are synchronized. Task 11 later completed
+  the planned token reuse; no dependency, lockfile, policy semantics,
+  user-visible strings, remote state or Flatpak installation changed in Task 1.
 
 - 2026-09-06 audit P3 Task 8 local implementation (RIT-GEN-038): Validate now
   separates the unconditional tokenless `governance-static` PR context from

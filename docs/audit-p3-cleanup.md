@@ -26,7 +26,8 @@ computations and asserts the same total/unique row-map invariant. Its committed
 midpoint-split seed contains an unterminated whitespace-only reference tail;
 explicit one-input replay executes that target path. The parser-boundary
 registry now records the fuzz assertion, deterministic corpus seed and property
-evidence. Task 11 remains responsible for later token-reuse cleanup.
+evidence. Task 11 subsequently completed the token-reuse cleanup documented
+below.
 
 Final strict validation passed 473 library tests plus the stress-binary unit
 test and UI smoke. Coverage passed at 84.6% against the unchanged 80% minimum.
@@ -333,6 +334,40 @@ introduced. The existing parser-boundary mapping and test targets remain
 exact, and its review date plus the new shared-state runtime anchor were
 refreshed. The source shift also reanchors the existing test callback result
 cell without changing its ownership or justification.
+
+## RIT-GEN-031 and RIT-GEN-036: review counts and diff token reuse (Task 11)
+
+The compare byte cap still runs before any original line-token vector is
+allocated. For accepted byte sizes, the reference and current texts are each
+tokenized exactly once through the existing `line_slices` helper. Their vector
+lengths drive the unchanged 20,000-line and 10,000,000-line-product limits,
+and the same vectors then feed whitespace normalization and `build_row_model`.
+Normal comparison still performs one `TextDiff::from_lines`; no second splitter
+or changed threshold was introduced.
+
+A thread-local test counter measured four original-tokenization calls for an
+accepted pair before the refactor and guards two afterward, while the existing
+line-diff counter continues to guard one expensive diff. Byte-limit rejection
+guards zero tokenization calls. Existing minus-one, exact and plus-one tests
+cover byte, line and product limits, and Task 1's deterministic/property tests
+retain original row identity for LF, CRLF, lone CR, blank, empty, trailing-line
+and Unicode-whitespace cases in both compare modes. This is a performance
+characterization refactor, so no artificial RED was introduced.
+
+The Source Control review boundary already rendered `%d addition` versus
+`%d additions` and `%d removal` versus `%d removals`, but the generic
+`count_text` parameters hid both pairs from extraction. The pre-fix focused
+extractor probe found zero of the two required pairs. Both literal pairs now
+remain at their `ngettext` call sites, while a formatting-only helper replaces
+`%d` after plural selection. Selection still saturates counts to `u32::MAX`,
+but substitution displays the complete `usize` value.
+
+The checked-in POT and Danish PO add exactly those two existing plural pairs.
+Danish uses `%d tilføjelse`/`%d tilføjelser` and
+`%d fjernelse`/`%d fjernelser`, preserving the placeholder. No gettext keyword,
+extractor wrapper or unrelated count idiom changed. The parser registry now
+records the tokenization guard, and runtime/i18n review artifacts own the new
+thread-local counter and two short plural call sites.
 
 ## RIT-GEN-033, RIT-GEN-034 and RIT-GEN-037: dead surfaces (Task 10)
 

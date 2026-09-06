@@ -14,6 +14,7 @@ const MAX_COMPARE_LINE_PRODUCT: usize = 10_000_000;
 #[cfg(test)]
 std::thread_local! {
     static LINE_DIFF_CALLS: Cell<usize> = const { Cell::new(0) };
+    static LINE_TOKENIZATION_CALLS: Cell<usize> = const { Cell::new(0) };
 }
 
 pub(super) struct DiffComputation {
@@ -49,7 +50,20 @@ pub(super) fn compute_diff_with_options(
     current_text: &str,
     options: DiffOptions,
 ) -> DiffComputation {
-    if let Some(skip_reason) = compare_skip_reason(reference_text, current_text) {
+    if reference_text.len().saturating_add(current_text.len()) > MAX_COMPARE_BYTES {
+        return DiffComputation {
+            model: DiffRowModel::too_large(),
+            #[cfg(test)]
+            presentation: DiffPresentation::empty(),
+            hidden_trim_whitespace_differences: false,
+            skip_reason: Some(DiffSkipReason::Bytes),
+        };
+    }
+
+    let reference_lines = original_line_slices(reference_text);
+    let current_lines = original_line_slices(current_text);
+    if let Some(skip_reason) = compare_line_skip_reason(reference_lines.len(), current_lines.len())
+    {
         return DiffComputation {
             model: DiffRowModel::too_large(),
             #[cfg(test)]
@@ -58,9 +72,6 @@ pub(super) fn compute_diff_with_options(
             skip_reason: Some(skip_reason),
         };
     }
-
-    let reference_lines = line_slices(reference_text);
-    let current_lines = line_slices(current_text);
     let ops = compute_line_ops(
         reference_text,
         current_text,
@@ -164,12 +175,10 @@ fn line_ops(ops: &[similar::DiffOp]) -> Vec<DiffLineOp> {
         .collect()
 }
 
-fn compare_skip_reason(reference_text: &str, current_text: &str) -> Option<DiffSkipReason> {
-    if reference_text.len().saturating_add(current_text.len()) > MAX_COMPARE_BYTES {
-        return Some(DiffSkipReason::Bytes);
-    }
-    let reference_lines = line_count(reference_text);
-    let current_lines = line_count(current_text);
+fn compare_line_skip_reason(
+    reference_lines: usize,
+    current_lines: usize,
+) -> Option<DiffSkipReason> {
     if reference_lines.saturating_add(current_lines) > MAX_COMPARE_LINES {
         return Some(DiffSkipReason::Lines);
     }
@@ -179,8 +188,10 @@ fn compare_skip_reason(reference_text: &str, current_text: &str) -> Option<DiffS
     None
 }
 
-fn line_count(text: &str) -> usize {
-    line_slices(text).len()
+fn original_line_slices(text: &str) -> Vec<&str> {
+    #[cfg(test)]
+    LINE_TOKENIZATION_CALLS.with(|calls| calls.set(calls.get() + 1));
+    line_slices(text)
 }
 
 pub(super) fn line_slices(text: &str) -> Vec<&str> {
@@ -208,8 +219,8 @@ fn split_line_ending(line: &str) -> (&str, &str) {
 #[cfg(test)]
 mod tests {
     use super::{
-        DiffOptions, DiffSkipReason, LINE_DIFF_CALLS, MAX_COMPARE_BYTES, MAX_COMPARE_LINE_PRODUCT,
-        MAX_COMPARE_LINES, compute_diff, compute_diff_with_options,
+        DiffOptions, DiffSkipReason, LINE_DIFF_CALLS, LINE_TOKENIZATION_CALLS, MAX_COMPARE_BYTES,
+        MAX_COMPARE_LINE_PRODUCT, MAX_COMPARE_LINES, compute_diff, compute_diff_with_options,
     };
     use proptest::prelude::*;
     use proptest::test_runner::FileFailurePersistence;
@@ -220,6 +231,14 @@ mod tests {
 
     fn line_diff_calls() -> usize {
         LINE_DIFF_CALLS.with(std::cell::Cell::get)
+    }
+
+    fn reset_line_tokenization_calls() {
+        LINE_TOKENIZATION_CALLS.with(|calls| calls.set(0));
+    }
+
+    fn line_tokenization_calls() -> usize {
+        LINE_TOKENIZATION_CALLS.with(std::cell::Cell::get)
     }
 
     fn bounded_proptest_config() -> ProptestConfig {
@@ -239,6 +258,7 @@ mod tests {
     #[test]
     fn performance_guard_skips_large_inputs() {
         reset_line_diff_calls();
+        reset_line_tokenization_calls();
 
         let large = "x".repeat(MAX_COMPARE_BYTES + 1);
         let computation = compute_diff(&large, "");
@@ -248,6 +268,7 @@ mod tests {
         assert_eq!(computation.skip_reason, Some(DiffSkipReason::Bytes));
         assert!(model.hunks.is_empty());
         assert_eq!(line_diff_calls(), 0);
+        assert_eq!(line_tokenization_calls(), 0);
     }
 
     #[test]
@@ -375,6 +396,16 @@ mod tests {
     }
 
     #[test]
+    fn accepted_compare_tokenizes_original_lines_once_per_side() {
+        reset_line_tokenization_calls();
+
+        let computation = compute_diff("same\nold\n", "same\nnew\ncurrent\n");
+
+        assert_eq!(computation.skip_reason, None);
+        assert_eq!(line_tokenization_calls(), 2);
+    }
+
+    #[test]
     fn equal_compare_uses_one_line_diff_without_placeholders() {
         reset_line_diff_calls();
 
@@ -457,7 +488,16 @@ mod tests {
                 &current,
                 DiffOptions::default(),
             );
-            let expected_skip = super::compare_skip_reason(&reference, &current);
+            let expected_skip = if reference.len().saturating_add(current.len())
+                > MAX_COMPARE_BYTES
+            {
+                Some(DiffSkipReason::Bytes)
+            } else {
+                super::compare_line_skip_reason(
+                    super::line_slices(&reference).len(),
+                    super::line_slices(&current).len(),
+                )
+            };
 
             prop_assert_eq!(computation.skip_reason, expected_skip);
             prop_assert_eq!(computation.model.too_large, expected_skip.is_some());

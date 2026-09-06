@@ -57,6 +57,7 @@
         {"type": "fuzz", "path": "app/fuzz/fuzz_targets/diff_compute.rs", "target": "diff_compute", "input_shape_asserted": "Raw bytes split into reference/current texts around NUL or midpoint; both default and whitespace-ignore computations assert total unique round-trip row mappings"},
         {"type": "corpus", "path": "app/fuzz/corpus/diff_compute/whitespace-only-tail.txt", "target": "diff_compute", "input_shape_asserted": "Midpoint-split line-oriented seed gives the reference side an unterminated whitespace-only tail for whitespace-ignore replay"},
         {"type": "unit", "path": "app/src/editor_tab/compare/diff.rs", "target": "proptest_compute_diff_respects_caps", "input_shape_asserted": "Bounded random text pairs and compare cap boundaries"},
+        {"type": "unit", "path": "app/src/editor_tab/compare/diff.rs", "target": "accepted_compare_tokenizes_original_lines_once_per_side", "input_shape_asserted": "An accepted compare builds exactly one original line-token vector per side while byte-cap rejection allocates neither vector and the normal path retains one full line diff"},
         {"type": "property", "path": "app/src/editor_tab/compare/diff_tests.rs", "target": "all_original_tokens_map_once_and_roundtrip", "input_shape_asserted": "LF, CRLF, lone CR, empty input, trailing newline, blank lines, Unicode whitespace, and both whitespace option states retain one round-trip mapping per original token"}
       ],
       "gaps": [],

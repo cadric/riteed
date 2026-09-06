@@ -12,6 +12,11 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+msgid "%d addition"
+msgid_plural "%d additions"
+msgstr[0] "%d tilføjelse"
+msgstr[1] "%d tilføjelser"
+
 msgid "%1$d changed line - %2$d/%3$d"
 msgid_plural "%1$d changed lines - %2$d/%3$d"
 msgstr[0] "%1$d ændret linje - %2$d/%3$d"
@@ -48,6 +53,11 @@ msgid "%d more file skipped (review limit reached)."
 msgid_plural "%d more files skipped (review limit reached)."
 msgstr[0] "%d yderligere fil sprunget over (gennemgangsgrænse nået)."
 msgstr[1] "%d yderligere filer sprunget over (gennemgangsgrænse nået)."
+
+msgid "%d removal"
+msgid_plural "%d removals"
+msgstr[0] "%d fjernelse"
+msgstr[1] "%d fjernelser"
 
 msgid "%d result"
 msgid_plural "%d results"

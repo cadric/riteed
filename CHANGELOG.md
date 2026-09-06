@@ -15,6 +15,8 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 ## Unreleased
 
 ### Changed
+- Accepted compares now tokenize each original input once and reuse those line
+  vectors for limit checks, whitespace-aware diffing and row mapping.
 - Removed unused internal document, editor, review and large-file outcome
   surfaces, plus vestigial lifecycle/accelerator checks, and normalized the
   remaining legacy accent CSS variable syntax.
@@ -37,6 +39,8 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
   active scheduled/manual CI execution.
 
 ### Fixed
+- Source Control review addition and removal counts are now extracted as
+  plural gettext messages, including Danish singular and plural forms.
 - The encoding chooser now has a visible native dialog header and accessible
   close control instead of exposing its title only to assistive metadata.
 - Editing an already-dirty document no longer rebuilds tab title presentation

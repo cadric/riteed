@@ -408,6 +408,14 @@
       "justification": "The Finding 5.1 regression test must prove each non-large compare path uses one full line diff while avoiding cross-test interference under parallel cargo test execution."
     },
     {
+      "path": "src/editor_tab/compare/diff.rs",
+      "line": 17,
+      "match": "static LINE_TOKENIZATION_CALLS: Cell<usize> = const { Cell::new(0) };",
+      "kind": "runtime-shared-state",
+      "ownership": "The compare diff unit tests own one thread-local original-line tokenization counter.",
+      "justification": "RIT-GEN-036 regression coverage proves accepted compares build exactly one original token vector per side without cross-test interference under parallel cargo test execution."
+    },
+    {
       "path": "src/editor_tab/compare/gutter.rs",
       "line": 37,
       "match": "presentation: Rc<RefCell<DiffPresentation>>,",
