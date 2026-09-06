@@ -15,6 +15,10 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 ## Unreleased
 
 ### Changed
+- Activated the split GitHub governance boundary: pull requests now require
+  the tokenless static context, while live governance and its environment-only
+  credential are restricted to protected main. Exact-main and Dependabot runs
+  verified the enforced context and publish-evidence provenance.
 - Characterized close/reopen ownership with held real open completions, so
   cancelled old requests cannot clear a successor's pending registration.
 - Expanded regression coverage for overlapping file opens and the complete

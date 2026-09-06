@@ -2,6 +2,21 @@
 
 ## OUTCOMES
 
+- 2026-09-06 audit P3 Task 8 remote closure (RIT-GEN-038): the approved
+  activation placed the governance credential only in the main-restricted
+  `ruleset-governance-live` environment, removed the repository copy, and
+  replaced exactly one required context in ruleset `16713108` with
+  `governance-static`; all other protections remained intact. PR #38 passed
+  six required contexts plus CodeQL and merged normally as signed main commit
+  `28d754729ae575e0078804e379bb29e1110785e0`. Its main Validate and CodeQL
+  runs, exact-SHA static/live checkouts, live decisive step and local release
+  evidence collector/checker all succeeded. Rebased Dependabot PR #39 also
+  passed six required contexts plus CodeQL, with its actual synthetic checkout
+  and identity assertion verified while live governance correctly skipped;
+  it remains unmerged. This terminal evidence closes the typed remediation,
+  with no release, tag, signing operation or dependency merge performed. The
+  earlier Task 8 entry below is retained as historical pre-activation state.
+
 - 2026-09-06 audit P3 Task 1 (RIT-GEN-020): whitespace-ignore compare now
   preserves one normalized slice per original `line_slices` token, including
   unterminated whitespace-only tails, while retaining original tokens for row

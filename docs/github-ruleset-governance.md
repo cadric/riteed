@@ -1,12 +1,57 @@
 # GitHub Ruleset Governance
 
 This file records the completed `RIT-AUD-017` ruleset remediation and the
-current `RIT-GEN-038` transition design. The 2026-05 activation evidence is
-historical. Operators must use the dated P3 procedure below for the next
-change; its rollback changes only the captured required-check context and
-never disables either ruleset.
+completed `RIT-GEN-038` transition. The 2026-05 activation evidence and the P3
+pre-activation design remain below as historical records; their open-state and
+pending-action statements no longer describe the remote repository.
 
-## RIT-GEN-038 P3 design, 2026-09-06
+## RIT-GEN-038 closure evidence, 2026-09-06
+
+The owner-approved activation completed with the governance credential present
+only as the `ruleset-governance-live` environment secret, updated at
+`2026-09-06T15:42:03Z`. Environment policy `59257399` admits exactly `main`.
+All eight owner-side read-permission probes passed before migration. The
+repository secret was deleted and read back with count zero; no secret value
+was read or recorded.
+
+Ruleset `16713108` changed exactly one required context,
+`ruleset-governance` to `governance-static`, using reviewed before, after and
+inverse payloads. The other five contexts, conditions, deletion,
+non-fast-forward, signed-commit and pull-request rules and reviewed bypass
+actor were preserved. Version-tag ruleset `16713116` remained active with no
+bypass actors.
+
+PR #38 head `5d7218c0963b1373e737f2595a1e964a8c0eebe4` passed all six
+required contexts and CodeQL, with live governance correctly skipped and
+static checkout
+`83de745620b064ca121e5a4fe063daec760649b5`. It merged normally at
+`2026-09-06T15:44:43Z` as signed commit
+`28d754729ae575e0078804e379bb29e1110785e0`; its tree matches the tested PR
+head. Main Validate run `34043264885` and CodeQL run `34043264871` completed
+successfully. Static job `101513732735` and live job `101513732729` both used
+that exact commit; the live job's identity assertion and unique decisive
+governance step succeeded.
+
+The release evidence collector and checker accepted the same exact main SHA.
+This proves publish-check eligibility only; no tag, release, signing operation
+or dependency merge occurred. Dependabot PR #39 independently exercised the
+PR boundary after rebasing onto that main commit: Validate `34043507117`,
+CodeQL `34043507114` and all six required contexts succeeded for head
+`a207805fca54738cfcab46ed072807cfa9daabe8`; live governance was deliberately
+skipped. Its actual synthetic-merge checkout
+`c236cd02300717b9c31d668e66358a585c79cd12` combined that head with exact main;
+its identity assertion and static gate succeeded. PR #39 remains open and
+unmerged.
+
+These terminal, provenance-bound ordinary-PR, protected-main, publish-check and
+Dependabot results satisfy the typed removal condition. Enforcement remains in
+place; only `POLICY-RIT-GEN-038` is removed from planned remediation.
+
+## Historical RIT-GEN-038 P3 pre-activation design, 2026-09-06
+
+The text through “Evidence still required for closure” is retained as the
+pre-activation plan and evidence snapshot. The closure record above supersedes
+its open-state and future-action language.
 
 This section began as the mandatory Task 8A read-only design/evidence record.
 On 2026-09-06 the repository owner explicitly approved the bounded GitHub

@@ -354,18 +354,7 @@
       }
     }
   },
-  "planned_remediation": [
-    {
-      "finding_id": "POLICY-RIT-GEN-038",
-      "target_milestone": "Audit P3 Task 8B remote activation",
-      "review_artifact": "docs/github-ruleset-governance.md",
-      "created": "2026-09-06",
-      "max_age_days": 30,
-      "reason": "Remote protection still requires the old ruleset-governance context and the credential remains repository-scoped. The locally implemented tokenless static check, protected integrated-main live check, exact producer/SHA evidence and environment-only credential boundary are not activated remotely.",
-      "removal_condition": "Offline fixtures and structural enforcement pass; governance-static and protected governance-live are implemented; the environment-only secret and exact one-context ruleset transition are explicitly approved and verified; and ordinary PR, fork or Dependabot, exact main-push and publish-eligibility evidence is terminal and provenance-bound.",
-      "approval_required": "cadric repository owner"
-    }
-  ],
+  "planned_remediation": [],
   "verifiers": {
     "workflow_static_checks": [
       "publish workflow tag/version consistency",

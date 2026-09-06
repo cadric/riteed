@@ -174,6 +174,32 @@ closed. Live governance also checks the exact main-only environment policy and
 proves the credential name is absent at repository scope and present once at
 environment scope.
 
+### Remote closure, 2026-09-06
+
+The owner-approved activation moved the credential to the main-only
+`ruleset-governance-live` environment, removed the repository copy, and changed
+exactly one required context in ruleset `16713108` from
+`ruleset-governance` to `governance-static`. Reviewed before, after and inverse
+payloads prove that all other protections and contexts were preserved. All
+eight owner-side read-permission probes passed before secret migration.
+
+PR #38 passed its six required contexts and CodeQL, then merged normally as
+signed main commit `28d754729ae575e0078804e379bb29e1110785e0`. Main Validate
+`34043264885`, CodeQL `34043264871`, exact-SHA static and live jobs, the live
+decisive step, and the release evidence collector/checker all succeeded.
+Dependabot PR #39 then passed all six required contexts and CodeQL on rebased
+head `a207805fca54738cfcab46ed072807cfa9daabe8`; its real synthetic checkout and
+static identity assertion succeeded while live governance correctly skipped.
+PR #39 remains unmerged. No release, tag, signing operation or dependency merge
+was performed. This evidence closes `RIT-GEN-038`; its typed remediation is
+removed while all governance enforcement remains unchanged.
+
+### Historical pre-activation status
+
+The remaining Task 8 text records the local implementation and pending remote
+state before activation. Its open-state statements are historical and are
+superseded by the closure evidence above.
+
 The old remote layout remains active, so `POLICY-RIT-GEN-038` stays typed and
 open. No environment, secret, ruleset, workflow run or other GitHub state was
 changed by this local implementation. On 2026-09-06 the repository owner
