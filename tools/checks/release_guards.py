@@ -1,22 +1,48 @@
 from __future__ import annotations
 
-import ast
 import re
 import shlex
 from dataclasses import dataclass
 from typing import Any
 
-from tools.checks import foundation, release_workflow
+from tools.checks import foundation, release_identity, release_workflow
 from tools.checks._workflow_parser import Job, Step, Workflow
 
 WORKFLOW = ".github/workflows/publish-flatpak.yml"
 POLICY_FILE = "policy/release.policy.json"
-APPSTREAM_PATH = "app/data/io.github.cadric.Riteed.metainfo.xml"
-APPSTREAM_COMMAND = 'VERSION="$version" python3 - <<\'PY\''
-ANCESTRY_COMMANDS = (
+APPSTREAM_COMMAND = (
+    'TAG_COMMIT="$tag_commit" VERSION="$version" python3 - <<\'PY\''
+)
+FETCH_COMMAND = (
     'git fetch origin "+refs/tags/$release_ref:refs/tags/$release_ref" '
-    "+refs/heads/main:refs/remotes/origin/main",
-    'tag_commit="$(git rev-list -n 1 "$release_ref")"',
+    "+refs/heads/main:refs/remotes/origin/main"
+)
+TAG_COMMIT_COMMAND = (
+    'tag_commit="$(git rev-parse --verify "refs/tags/$release_ref^{commit}")"'
+)
+VERSION_COMMAND = (
+    'version="$(git show "$tag_commit:app/Cargo.toml" | sed -n '
+    '\'s/^version = "\\(.*\\)"/\\1/p\' | head -n 1)"'
+)
+CHECK_COLLECTOR_COMMAND = (
+    'CHECK_RUNS_JSON="$checks_json" TAG_COMMIT="$tag_commit" python3 - <<\'PY\''
+)
+SHA_GUARD_BLOCK = (
+    'if [[ ! "$tag_commit" =~ ^[0-9a-f]{40}$ ]]; then\n'
+    '  echo "Release tag must resolve to one full commit SHA." >&2\n'
+    "  exit 1\n"
+    "fi"
+)
+RELEASE_REF_GUARD_BLOCK = (
+    'if [[ ! "$release_ref" =~ ^v[0-9]+[.][0-9]+[.][0-9]+'
+    '([-.+][A-Za-z0-9.-]+)?$ ]]; then\n'
+    '  echo "Flatpak publish target must be a SemVer version tag." >&2\n'
+    "  exit 1\n"
+    "fi"
+)
+ANCESTRY_COMMANDS = (
+    FETCH_COMMAND,
+    TAG_COMMIT_COMMAND,
     'git merge-base --is-ancestor "$tag_commit" origin/main',
 )
 PRIVATE_IMPORT = "printf '%s' \"$FLATPAK_GPG_PRIVATE_KEY\" | gpg --batch --import"
@@ -54,6 +80,7 @@ def check(policy: dict[str, Any], workflow: Workflow | None, errors: list[str]) 
         return
     context = _guard_context(workflow)
     _check_ancestry(workflow, context, errors)
+    _check_release_identity(workflow, context, errors)
     _check_appstream(workflow, context, errors)
     _check_signing_hygiene(workflow, context, errors)
     _check_hosted_runner(context, errors)
@@ -67,7 +94,7 @@ def ancestry_commands(workflow: Workflow) -> list[str]:
     commands = _top_level_lines(prefix)
     positions = _ordered_positions(commands, ANCESTRY_COMMANDS)
     version_assignment = next(
-        (line for line in commands if line.startswith('version="$(git show "$release_ref:')),
+        (line for line in commands if line.startswith('version="$(git show "$tag_commit:')),
         "",
     )
     stable = (
@@ -88,6 +115,16 @@ def appstream_python(workflow: Workflow) -> str | None:
     return matching[0] if len(matching) == 1 else None
 
 
+def release_identity_commands(workflow: Workflow) -> list[str]:
+    context = _guard_context(workflow)
+    if not _release_identity_is_guarded(workflow, context):
+        return []
+    return [
+        TAG_COMMIT_COMMAND,
+        VERSION_COMMAND,
+    ]
+
+
 def _check_policy_requirements(policy: dict[str, Any], errors: list[str]) -> None:
     requirements = (
         (
@@ -97,6 +134,28 @@ def _check_policy_requirements(policy: dict[str, Any], errors: list[str]) -> Non
         (
             policy.get("release_identity", {}).get("appstream_top_release_must_match_tag"),
             "release_identity.appstream_top_release_must_match_tag",
+        ),
+        (
+            policy.get("release_identity", {}).get("tag_commit_must_be_exact_sha"),
+            "release_identity.tag_commit_must_be_exact_sha",
+        ),
+        (
+            policy.get("release_identity", {}).get("release_content_must_use_tag_commit"),
+            "release_identity.release_content_must_use_tag_commit",
+        ),
+        (
+            policy.get("signed_flatpak_publish", {})
+            .get("hard_requirements", {})
+            .get("workflow_dispatch_build_must_checkout_tag_commit"),
+            "signed_flatpak_publish.hard_requirements."
+            "workflow_dispatch_build_must_checkout_tag_commit",
+        ),
+        (
+            policy.get("signed_flatpak_publish", {})
+            .get("hard_requirements", {})
+            .get("checked_out_head_must_match_tag_commit_before_secrets"),
+            "signed_flatpak_publish.hard_requirements."
+            "checked_out_head_must_match_tag_commit_before_secrets",
         ),
         (
             policy.get("signing_key_governance", {})
@@ -160,11 +219,73 @@ def _check_ancestry(
     )
 
 
+def _check_release_identity(
+    workflow: Workflow, context: GuardContext, errors: list[str]
+) -> None:
+    if _release_identity_is_guarded(workflow, context):
+        return
+    foundation.add(
+        errors,
+        f"{WORKFLOW}: release metadata, check collection and outputs must use one stable peeled tag commit SHA",
+    )
+
+
+def _release_identity_is_guarded(workflow: Workflow, context: GuardContext) -> bool:
+    if not _active_root_step(workflow, context.preflight, context.release_step):
+        return False
+    run = context.release_step.run
+    scanned = _scan_shell(run)
+    if scanned is None:
+        return False
+    top_level = [line.text for line in scanned if not line.controls and not line.substituted]
+    required = (
+        FETCH_COMMAND,
+        TAG_COMMIT_COMMAND,
+        VERSION_COMMAND,
+        ANCESTRY_COMMANDS[2],
+        CHECK_COLLECTOR_COMMAND,
+        APPSTREAM_COMMAND,
+        'CANDIDATE_COMMIT="$tag_commit" \\',
+        'echo "release_ref=$release_ref" >> "$GITHUB_OUTPUT"',
+        'echo "tag_commit=$tag_commit" >> "$GITHUB_OUTPUT"',
+    )
+    if not _ordered_positions(top_level, required):
+        return False
+    preflight = context.preflight
+    outputs = preflight.raw.get("outputs", {}) if preflight is not None else {}
+    expected_outputs = {
+        name: f"${{{{ steps.release.outputs.{name} }}}}"
+        for name in ("version", "release_ref", "tag_commit")
+    }
+    if not isinstance(outputs, dict) or any(
+        outputs.get(name) != value for name, value in expected_outputs.items()
+    ):
+        return False
+    ref_guard = release_identity.exact_guard_owner(scanned, RELEASE_REF_GUARD_BLOCK)
+    sha_guard = release_identity.exact_guard_owner(scanned, SHA_GUARD_BLOCK)
+    active_indexes = {
+        line.text: line.index
+        for line in scanned
+        if not line.controls and not line.substituted
+    }
+    return (
+        ref_guard is not None
+        and sha_guard is not None
+        and ref_guard < active_indexes[FETCH_COMMAND]
+        and active_indexes[TAG_COMMIT_COMMAND] < sha_guard
+        and sha_guard < active_indexes[VERSION_COMMAND]
+        and release_identity.identity_outputs_are_unique(scanned)
+        and _stable_after(run, "release_ref", RELEASE_REF_GUARD_BLOCK)
+        and _stable_after(run, "tag_commit", TAG_COMMIT_COMMAND)
+        and _stable_after(run, "version", VERSION_COMMAND)
+    )
+
+
 def _check_appstream(
     workflow: Workflow, context: GuardContext, errors: list[str]
 ) -> None:
     source = appstream_python(workflow)
-    if source is not None and _appstream_ast_is_guard(source):
+    if source is not None and release_identity.appstream_ast_is_guard(source):
         return
     foundation.add(
         errors,
@@ -456,142 +577,3 @@ def _strip_shell_comment(text: str) -> str:
         if char == "#" and not quote and (index == 0 or text[index - 1].isspace()):
             return text[:index]
     return text
-
-
-def _appstream_ast_is_guard(source: str) -> bool:
-    try:
-        tree = ast.parse(source)
-    except SyntaxError:
-        return False
-    expected_imports = {
-        ast.dump(ast.parse("import os").body[0]),
-        ast.dump(ast.parse("import sys").body[0]),
-        ast.dump(ast.parse("import xml.etree.ElementTree as ET").body[0]),
-    }
-    actual_imports = {ast.dump(node) for node in tree.body if isinstance(node, ast.Import)}
-    if not expected_imports.issubset(actual_imports):
-        return False
-    names = ("version", "root", "releases", "first_release", "release_version")
-    writes = {
-        name: [
-            node
-            for node in ast.walk(tree)
-            if isinstance(node, ast.Name)
-            and node.id == name
-            and isinstance(node.ctx, ast.Store)
-        ]
-        for name in names
-    }
-    if any(len(writes[name]) != 1 for name in names):
-        return False
-    if any(
-        isinstance(node, ast.Name)
-        and node.id in {"os", "sys", "ET"}
-        and isinstance(node.ctx, ast.Store)
-        for node in ast.walk(tree)
-    ):
-        return False
-    assignments = {
-        node.targets[0].id: (index, node.value)
-        for index, node in enumerate(tree.body)
-        if isinstance(node, ast.Assign)
-        and len(node.targets) == 1
-        and isinstance(node.targets[0], ast.Name)
-        and node.targets[0].id in names
-    }
-    if not (
-        len(assignments) == len(names)
-        and _is_env_version(assignments["version"][1])
-        and _is_appstream_root(assignments["root"][1])
-        and _is_method_call(assignments["releases"][1], "root", "find", "releases")
-        and _is_method_call(
-            assignments["first_release"][1], "releases", "find", "release"
-        )
-        and _is_method_call(
-            assignments["release_version"][1], "first_release", "get", "version"
-        )
-    ):
-        return False
-    assignment_positions = [assignments[name][0] for name in names]
-    if assignment_positions != sorted(assignment_positions):
-        return False
-    guards = [
-        (index, node)
-        for index, node in enumerate(tree.body)
-        if isinstance(node, ast.If) and _is_version_mismatch(node.test)
-    ]
-    return (
-        len(guards) == 1
-        and guards[0][0] > assignment_positions[-1]
-        and any(_is_exit_one(node) for node in guards[0][1].body)
-    )
-
-
-def _is_env_version(node: ast.expr | None) -> bool:
-    return (
-        isinstance(node, ast.Subscript)
-        and isinstance(node.value, ast.Attribute)
-        and isinstance(node.value.value, ast.Name)
-        and node.value.value.id == "os"
-        and node.value.attr == "environ"
-        and isinstance(node.slice, ast.Constant)
-        and node.slice.value == "VERSION"
-    )
-
-
-def _is_appstream_root(node: ast.expr | None) -> bool:
-    return (
-        isinstance(node, ast.Call)
-        and isinstance(node.func, ast.Attribute)
-        and node.func.attr == "getroot"
-        and isinstance(node.func.value, ast.Call)
-        and isinstance(node.func.value.func, ast.Attribute)
-        and isinstance(node.func.value.func.value, ast.Name)
-        and node.func.value.func.value.id == "ET"
-        and node.func.value.func.attr == "parse"
-        and len(node.func.value.args) == 1
-        and isinstance(node.func.value.args[0], ast.Constant)
-        and node.func.value.args[0].value == APPSTREAM_PATH
-    )
-
-
-def _is_method_call(
-    node: ast.expr | None, receiver: str, method: str, argument: str
-) -> bool:
-    return (
-        isinstance(node, ast.Call)
-        and isinstance(node.func, ast.Attribute)
-        and isinstance(node.func.value, ast.Name)
-        and node.func.value.id == receiver
-        and node.func.attr == method
-        and len(node.args) == 1
-        and isinstance(node.args[0], ast.Constant)
-        and node.args[0].value == argument
-    )
-
-
-def _is_version_mismatch(node: ast.expr) -> bool:
-    return (
-        isinstance(node, ast.Compare)
-        and isinstance(node.left, ast.Name)
-        and node.left.id == "release_version"
-        and len(node.ops) == 1
-        and isinstance(node.ops[0], ast.NotEq)
-        and len(node.comparators) == 1
-        and isinstance(node.comparators[0], ast.Name)
-        and node.comparators[0].id == "version"
-    )
-
-
-def _is_exit_one(node: ast.stmt) -> bool:
-    return (
-        isinstance(node, ast.Expr)
-        and isinstance(node.value, ast.Call)
-        and isinstance(node.value.func, ast.Attribute)
-        and isinstance(node.value.func.value, ast.Name)
-        and node.value.func.value.id == "sys"
-        and node.value.func.attr == "exit"
-        and len(node.value.args) == 1
-        and isinstance(node.value.args[0], ast.Constant)
-        and node.value.args[0].value == 1
-    )

@@ -37,8 +37,13 @@ def check_publish_triggers(workflow: Workflow | None, errors: list[str]) -> None
     if "workflow_dispatch" in workflow.triggers:
         if not _any_run_contains(workflow, "release_ref", "REQUESTED_RELEASE_REF", "GITHUB_EVENT_NAME", "workflow_dispatch"):
             foundation.add(errors, f"{WORKFLOW}: workflow_dispatch must validate an explicit release_ref version tag")
-        if not _build_checkout_targets_release_ref(workflow):
-            foundation.add(errors, f"{WORKFLOW}: build checkout must target needs.preflight.outputs.release_ref")
+        if not _build_checkout_targets_tag_commit(workflow):
+            foundation.add(errors, f"{WORKFLOW}: build checkout must target needs.preflight.outputs.tag_commit")
+        if not _build_verifies_tag_commit_before_secret(workflow):
+            foundation.add(
+                errors,
+                f"{WORKFLOW}: build must verify checked-out HEAD against tag_commit before signing secrets",
+            )
 
 
 def check_monotonic_candidate_ref(
@@ -290,15 +295,57 @@ def _any_run_contains(workflow: Workflow, *tokens: str) -> bool:
     return any(all(token in step.run for token in tokens) for job in workflow.jobs.values() for step in job.steps)
 
 
-def _build_checkout_targets_release_ref(workflow: Workflow) -> bool:
+def _build_checkout_targets_tag_commit(workflow: Workflow) -> bool:
     build = workflow.jobs.get("build")
     if build is None:
         return False
     checkouts = [step for step in build.steps if step.uses.startswith("actions/checkout@")]
     if len(checkouts) != 1:
         return False
+    if _has_condition(build) or _continues_on_error(build):
+        return False
+    if _has_condition(checkouts[0]) or _continues_on_error(checkouts[0]):
+        return False
     with_value = checkouts[0].raw.get("with")
-    return isinstance(with_value, dict) and with_value.get("ref") == "${{ needs.preflight.outputs.release_ref }}"
+    return isinstance(with_value, dict) and with_value.get("ref") == "${{ needs.preflight.outputs.tag_commit }}"
+
+
+def _build_verifies_tag_commit_before_secret(workflow: Workflow) -> bool:
+    build = workflow.jobs.get("build")
+    if build is None or _has_condition(build) or _continues_on_error(build):
+        return False
+    if _contains_signing_secret(workflow.raw.get("env", {})) or _contains_signing_secret(
+        build.raw.get("env", {})
+    ):
+        return False
+    checkout_indexes = [
+        index
+        for index, step in enumerate(build.steps)
+        if step.uses.startswith("actions/checkout@")
+    ]
+    secret_indexes = [
+        index for index, step in enumerate(build.steps) if _step_uses_signing_secret(step)
+    ]
+    if len(checkout_indexes) != 1 or not secret_indexes:
+        return False
+    expected = [
+        ["set", "-euo", "pipefail"],
+        ["actual_head=$(git rev-parse HEAD)"],
+        ["test", "$actual_head", "=", "$TAG_COMMIT"],
+    ]
+    verifiers = [
+        index
+        for index, step in enumerate(build.steps)
+        if step.env.get("TAG_COMMIT") == "${{ needs.preflight.outputs.tag_commit }}"
+        and not _has_condition(step)
+        and not _continues_on_error(step)
+        and _supported_run_context(workflow, build, step, require_root=True)
+        and _shell_commands(step.run) == expected
+    ]
+    return (
+        len(verifiers) == 1
+        and checkout_indexes[0] < verifiers[0] < min(secret_indexes)
+    )
 
 
 def _monotonic_candidate_uses_release_ref(workflow: Workflow) -> bool:
@@ -504,12 +551,22 @@ def _continues_on_error(value: Job | Step) -> bool:
 
 
 def _job_uses_secret(job: Any) -> bool:
-    values = [*job.env.keys(), *job.env.values()]
-    for step in job.steps:
-        values.extend(step.env.keys())
-        values.extend(step.env.values())
-        values.append(step.run)
-    return any(secret in str(value) for secret in SIGNING_SECRETS for value in values)
+    return _contains_signing_secret(job.raw)
+
+
+def _step_uses_signing_secret(step: Step) -> bool:
+    return _contains_signing_secret(step.raw)
+
+
+def _contains_signing_secret(value: Any) -> bool:
+    if isinstance(value, dict):
+        return any(
+            _contains_signing_secret(key) or _contains_signing_secret(item)
+            for key, item in value.items()
+        )
+    if isinstance(value, (list, tuple)):
+        return any(_contains_signing_secret(item) for item in value)
+    return any(secret in str(value) for secret in SIGNING_SECRETS)
 
 
 def _job_mentions_token(job: Any) -> bool:

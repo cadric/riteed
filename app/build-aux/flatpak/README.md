@@ -24,6 +24,10 @@ GitHub Actions imports the private key only inside the protected
 `flatpak-beta-signing` environment, signs both OSTree commits and repository
 summary metadata, verifies that the imported secret key matches the committed
 public key, and exports the committed binary public key into `GPGKey=` fields.
+Preflight peels the requested version tag to one full commit SHA and reads
+Cargo/AppStream metadata from that object. The build checks out and verifies
+the same SHA before the signing secrets are exposed; the tag name remains in
+published provenance and rollback review.
 
 ## Key Rotation And Recovery
 

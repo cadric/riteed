@@ -85,14 +85,18 @@ jobs:
           fi
 
           git fetch origin "+refs/tags/$release_ref:refs/tags/$release_ref" +refs/heads/main:refs/remotes/origin/main
-          version="$(git show "$release_ref:app/Cargo.toml" | sed -n 's/^version = "\(.*\)"/\1/p' | head -n 1)"
+          tag_commit="$(git rev-parse --verify "refs/tags/$release_ref^{commit}")"
+          if [[ ! "$tag_commit" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Release tag must resolve to one full commit SHA." >&2
+            exit 1
+          fi
+          version="$(git show "$tag_commit:app/Cargo.toml" | sed -n 's/^version = "\(.*\)"/\1/p' | head -n 1)"
           test -n "$version"
           if [[ "$release_ref" != "v$version" ]]; then
             echo "Tag $release_ref does not match app/Cargo.toml version $version." >&2
             exit 1
           fi
 
-          tag_commit="$(git rev-list -n 1 "$release_ref")"
           git merge-base --is-ancestor "$tag_commit" origin/main
 
           checks_json="$RUNNER_TEMP/release-check-runs.json"
@@ -147,15 +151,20 @@ jobs:
             fi
           fi
 
-          VERSION="$version" python3 - <<'PY'
+          TAG_COMMIT="$tag_commit" VERSION="$version" python3 - <<'PY'
           import datetime as dt
           import os
+          import subprocess
           import sys
           import xml.etree.ElementTree as ET
           from zoneinfo import ZoneInfo
 
           version = os.environ["VERSION"]
-          root = ET.parse("app/data/io.github.cadric.Riteed.metainfo.xml").getroot()
+          tag_commit = os.environ["TAG_COMMIT"]
+          metadata = subprocess.check_output(
+              ["git", "show", f"{tag_commit}:app/data/io.github.cadric.Riteed.metainfo.xml"]
+          )
+          root = ET.fromstring(metadata)
           releases = root.find("releases")
           if releases is None:
               print("AppStream metadata has no <releases> section.", file=sys.stderr)
@@ -313,20 +322,18 @@ jobs:
             echo "Published beta source: ${published_source_ref:-unknown}@${published_source_commit:-unknown}"
           fi
 
-          {
-            echo "version=$version"
-            echo "release_ref=$release_ref"
-            echo "tag_commit=$tag_commit"
-            if [[ "${EMERGENCY_ROLLBACK,,}" == "true" ]]; then
-              echo "emergency_rollback=true"
-              echo "rollback_ref=$ROLLBACK_REF"
-              echo "rollback_reason=$ROLLBACK_REASON"
-            else
-              echo "emergency_rollback=false"
-              echo "rollback_ref="
-              echo "rollback_reason="
-            fi
-          } >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "release_ref=$release_ref" >> "$GITHUB_OUTPUT"
+          echo "tag_commit=$tag_commit" >> "$GITHUB_OUTPUT"
+          if [[ "${EMERGENCY_ROLLBACK,,}" == "true" ]]; then
+            echo "emergency_rollback=true" >> "$GITHUB_OUTPUT"
+            echo "rollback_ref=$ROLLBACK_REF" >> "$GITHUB_OUTPUT"
+            echo "rollback_reason=$ROLLBACK_REASON" >> "$GITHUB_OUTPUT"
+          else
+            echo "emergency_rollback=false" >> "$GITHUB_OUTPUT"
+            echo "rollback_ref=" >> "$GITHUB_OUTPUT"
+            echo "rollback_reason=" >> "$GITHUB_OUTPUT"
+          fi
       - name: Require successful Validate checks for release commit
         env:
           CHECK_RUNS_JSON: ${{ runner.temp }}/release-check-runs.json
@@ -348,7 +355,14 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ needs.preflight.outputs.release_ref }}
+          ref: ${{ needs.preflight.outputs.tag_commit }}
+      - name: Verify checked-out release commit
+        env:
+          TAG_COMMIT: ${{ needs.preflight.outputs.tag_commit }}
+        run: |
+          set -euo pipefail
+          actual_head="$(git rev-parse HEAD)"
+          test "$actual_head" = "$TAG_COMMIT"
       - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6
       - name: Install Flatpak tooling
         run: |

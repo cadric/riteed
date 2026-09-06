@@ -91,7 +91,9 @@
     "public_key_fingerprint_required": true,
     "tag_format": "v{app/Cargo.toml.package.version}",
     "appstream_top_release_must_match_tag": true,
-    "tag_commit_must_be_ancestor_of_main": true
+    "tag_commit_must_be_ancestor_of_main": true,
+    "tag_commit_must_be_exact_sha": true,
+    "release_content_must_use_tag_commit": true
   },
   "signed_flatpak_publish": {
     "signing_environment": "flatpak-beta-signing",
@@ -124,7 +126,8 @@
       "pull_request_workflows_must_not_receive_signing_secrets": true,
       "tag_or_dispatch_publish_only": true,
       "workflow_dispatch_requires_validated_target_tag_ref": true,
-      "workflow_dispatch_build_must_checkout_target_tag": true,
+      "workflow_dispatch_build_must_checkout_tag_commit": true,
+      "checked_out_head_must_match_tag_commit_before_secrets": true,
       "manual_rerun_must_validate_same_commit": true,
       "ostree_commits_and_summary_must_be_signed": true,
       "generated_repo_must_contain_summary_and_summary_sig": true
@@ -326,22 +329,13 @@
       }
     }
   },
-  "planned_remediation": [
-    {
-      "finding_id": "POLICY-RIT-GEN-028",
-      "target_milestone": "P3 Task 7",
-      "review_artifact": "docs/policy-validation.md",
-      "created": "2026-09-06",
-      "max_age_days": 120,
-      "reason": "Release preflight reads AppStream metadata from the working checkout rather than the validated tag commit SHA, and the signing build checks out the validated tag ref rather than the validated tag commit SHA.",
-      "removal_condition": "Read AppStream metadata from the validated tag commit SHA, checkout the preflight tag_commit output before signing, and add passing regression fixtures that reject loss of either SHA binding."
-    }
-  ],
+  "planned_remediation": [],
   "verifiers": {
     "workflow_static_checks": [
       "publish workflow tag/version consistency",
-      "tag commit ancestry against the fetched origin/main ref in active preflight",
-      "AppStream top release comparison against the release tag in active preflight",
+      "peeled tag commit identity and ancestry against the fetched origin/main ref in active preflight",
+      "Cargo and AppStream content read from the stable validated tag commit SHA",
+      "build checkout and pre-secret HEAD verification against the validated tag commit SHA",
       "temporary GNUPGHOME mode and agent/removal cleanup before private-key import",
       "GitHub-hosted Ubuntu runner and preflight dependency for the signing build",
       "validation gate before signing secret access",

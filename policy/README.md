@@ -27,10 +27,10 @@ CI runs validator unit tests separately.
 - `cargo_source_inventory` owns the permitted generated archive/inline field
   sets and the exact parsed vendor configuration. Unknown sources, extra
   source options, orphaned checksums and non-lockfile archives fail.
-- Release guard validation owns the active preflight tag-ancestry and AppStream
-  comparison blocks plus the signing job's hosted runner and temporary GPG-home
-  cleanup. Typed remediation remains required for the separate validated-SHA
-  metadata and checkout bindings.
+- Release guard validation owns one stable peeled tag-commit SHA across Cargo
+  and AppStream object reads, ancestry, check collection, rollback provenance,
+  job outputs, build checkout and the pre-secret HEAD assertion. It also owns
+  the signing job's hosted runner and temporary GPG-home cleanup.
 - `rust.targets.rust.target_rust_family` and `rust.toolchain.required_components`
   drive toolchain checks directly; their values are not duplicated in Python.
 - UI XML uses structural parsing. Runtime review uses lexical comment/literal
@@ -121,8 +121,9 @@ Review artifacts use fixed semantic tags where a field would otherwise be ambigu
 - Offline release validation requires the dedicated check-runs invocation;
   inline status logic or presence of success-related words is not evidence.
 - `workflow_dispatch` release publishes may target an explicit `release_ref`, but
-  that ref must be a validated `v*` tag, the build job must checkout that tag,
-  the monotonic rollback comparison must use it as the candidate ref,
+  that ref must be a validated `v*` tag, the build job must checkout its peeled
+  commit SHA and verify HEAD before secret exposure, the monotonic rollback
+  comparison must retain the tag as its human-facing candidate ref,
   and legacy Pages metadata without source-ref/source-commit is accepted only
   when publishing a newer version than the current beta page.
 - `github_actions_release_safety.rollback_environment.reviewed_required_reviewers` is the exact allowlist for the emergency rollback environment's required reviewer identities; the live governance job must match `(actor_type, actor_id)` and missing or extra reviewers fail validation.

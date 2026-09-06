@@ -2,6 +2,22 @@
 
 ## OUTCOMES
 
+- 2026-09-06 audit P3 Task 7 (RIT-GEN-028): manual release preflight now
+  resolves one peeled 40-hex tag commit and reads Cargo/AppStream metadata
+  from that object. Exact-check collection and rollback keep the same commit,
+  while the build checks out the exported SHA and verifies `HEAD` before any
+  signing-secret exposure. Release tooling rejects rebinding, duplicate output
+  exports/mappings, misplaced or inert guards, conditional/fallback checkout
+  and verifier steps, and workflow/job/step secret exposure before the verifier.
+  Real temporary-repository tests cover divergent worktree metadata, annotated
+  and moved tags, and both matching and mismatching checked-out `HEAD` values.
+  The implementation and 287-test tooling suite passed with one intentional
+  live-token skip; 40 policy unit tests and the strict policy-pack gate passed.
+  Final app strict passed 465 library tests plus the stress unit and UI smoke,
+  and coverage was 84.7%. Independent review found no outstanding issue after
+  guard bodies were bound to their active owners. No GitHub write, release
+  dispatch or Flatpak build was performed.
+
 - 2026-09-06 audit P3 Task 12B (RIT-GEN-021): the shared Git runner now
   concurrently streams stdin/stdout/stderr with cap-plus-sentinel retention,
   fixed 64 KiB discard reads, uncancelled closes/wait, and terminal delivery

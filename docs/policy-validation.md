@@ -78,9 +78,9 @@ commit. Highest check-run ID selects the newest created run; queued/in-progress
 reruns invalidate earlier successes. If the result changes during pagination,
 validation fails and must be rerun.
 
-The P2 release guard checks prove that the active preflight and signing jobs
-retain their reviewed guard structure. `POLICY-RIT-GEN-028` records the
-remaining SHA-binding gap: AppStream metadata still comes from the working
-checkout, and the build checkout still resolves the validated tag ref. P3 Task
-7 must read metadata from the validated commit SHA, checkout that exact SHA,
-and add negative fixtures for both bindings before the debt entry is removed.
+Release guard checks prove that the active preflight peels the validated tag to
+one full commit SHA and keeps that value stable through Cargo/AppStream object
+reads, ancestry, check collection, rollback provenance and job outputs. The
+build checks out that exact SHA and asserts its actual HEAD before any signing
+secret is exposed. Local extracted fixtures cover divergent working-tree
+metadata and a force-moved annotated tag; they do not sign or publish.

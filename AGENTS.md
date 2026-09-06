@@ -148,11 +148,15 @@ The application ID is authoritative and must stay consistent across:
 - Manual release workflow dispatch may target an explicit `v*` release tag only
   when preflight validates that tag, verifies exact release-critical checks on
   its commit, the monotonic rollback gate uses that validated tag as its
-  candidate ref, and the build job checks out the target tag before signing.
-- Release preflight must keep the validated tag commit on fetched `origin/main`
-  and compare the top AppStream release with the tag. Private-key import must
-  run on the policy-approved hosted Ubuntu build after preflight, inside a mode
-  700 temporary `GNUPGHOME` whose agent and files are removed on exit.
+  candidate ref, and the build job checks out the preflight's immutable commit
+  SHA before signing.
+- Release preflight must peel the validated tag to one full commit SHA, keep
+  that commit on fetched `origin/main`, and read Cargo/AppStream content from
+  that object. Check-run selection, rollback provenance, build checkout and
+  the checked-out HEAD assertion must use the same SHA. Private-key import must
+  run only after that assertion on the policy-approved hosted Ubuntu build,
+  inside a mode 700 temporary `GNUPGHOME` whose agent and files are removed on
+  exit.
 - Release governance must keep offline policy checks deterministic; live GitHub ruleset/environment checks belong only in the token-scoped governance job and must enforce the exact reviewed actors from release policy.
 - Local release-critical crate patches must keep their patch manifest, upstream `.crate` anchor, allowed-file diff checksum, unsafe/FFI baseline, and binary artifact marker in sync.
 - Parser, untrusted-input, fuzz, and stress-boundary changes must follow `policy/stress-fuzz.policy.json` and keep parser-boundary evidence current.

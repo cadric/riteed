@@ -32,6 +32,10 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
   stderr pumps while stdin progresses independently. Oversized read-only
   commands terminate promptly; mutations retain their supervised grace and
   drain behavior without allocating the complete output.
+- Release preflight now binds Cargo metadata, AppStream metadata, exact check
+  collection, rollback provenance, build checkout, and the pre-secret HEAD
+  assertion to one peeled tag commit SHA. A moved tag cannot change the signed
+  build after preflight validation.
 - Bound the Flatpak rollback gate's candidate ref to the release tag validated
   by manual-dispatch preflight, preserving idempotent same-release republishes.
 - Release validation now requires exact SHA-256 digests for CI job containers

@@ -86,6 +86,39 @@ the descendant-fixture teardown was made fail-safe. Logs are under
 `task12b-final-git-status-stress-r3.log`, `task12b-final-strict-r4.log`, and
 `task12b-final-coverage-r2.log`.
 
+## RIT-GEN-028: one release commit identity (Task 7)
+
+Manual release preflight resolves the requested tag once as a peeled, exact
+40-character commit SHA. Cargo and AppStream metadata are read from that Git
+object, the required-check collector queries that SHA, and rollback records the
+same candidate commit while retaining the validated tag as human-readable
+provenance. The preflight exports exactly one version, release tag and commit;
+the build job consumes the commit output in its sole checkout and immediately
+checks actual `HEAD` equality before any step, job or workflow scope can expose
+the signing secret.
+
+The offline release checker owns this identity chain structurally. It rejects
+rebindings, duplicate or incorrect output exports and job mappings, worktree
+metadata reads, conditional or alternate checkouts, conditional/custom-shell
+or fallback HEAD checks, and signing-secret exposure through environment,
+commands or action inputs before the verifier. Exact SHA and SemVer guard bodies
+must belong to their active shell control blocks; copied text in heredocs,
+functions or substitutions cannot satisfy the guard.
+
+Tests execute the extracted workflow commands in temporary Git repositories.
+They prove bad tagged metadata cannot be masked by a good worktree, good tagged
+metadata is not rejected by a bad worktree, annotated tags are peeled, moving a
+tag after preflight cannot change the SHA checkout, and the extracted HEAD
+verifier accepts the selected commit but rejects a deliberate mismatch. The
+focused release matrix and final 287-test tooling suite passed with one
+intentional live-token skip. The 40 policy unit tests and strict policy-pack
+gate passed. Final app strict passed 465 library tests plus the stress unit and
+UI smoke; coverage passed at 84.7% against the unchanged 80% minimum.
+Independent rereview found no outstanding issue after the active-owner guard
+checks were made location-bound. Logs use the `task7-final-*` prefix under
+`/tmp/riteed-p3-validation-hGkt8u/`. No live tag, release, secret or GitHub
+setting was changed.
+
 ## Validation environment
 
 The existing Solarized chrome test assumes ordinary contrast. The desktop's
