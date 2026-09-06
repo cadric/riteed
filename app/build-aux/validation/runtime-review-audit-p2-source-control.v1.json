@@ -203,7 +203,7 @@
     },
     {
       "path": "src/source_control/review_loader.rs",
-      "line": 263,
+      "line": 285,
       "match": "fn load_is_current(load: &Rc<RefCell<ReviewLoad>>) -> bool {",
       "kind": "runtime-shared-state",
       "ownership": "A review load owns its private cancellation/generation and the captured source snapshot identity; controller and tab references remain weak.",
@@ -211,7 +211,7 @@
     },
     {
       "path": "src/source_control/review_loader.rs",
-      "line": 291,
+      "line": 313,
       "match": "fn review_tab_is_attached(source: &Weak<RefCell<SourceControlState>>, tab: &Rc<EditorTab>) -> bool {",
       "kind": "runtime-shared-state",
       "ownership": "A review load owns its private cancellation/generation and the captured source snapshot identity; controller and tab references remain weak.",

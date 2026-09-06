@@ -9,8 +9,10 @@ use gettextrs::{gettext, ngettext};
 use gtk4::{gio, prelude::*};
 
 use crate::editor_tab::{EditorTab, ReviewFileId, ReviewFileInput, ReviewKind, ReviewTabSpec};
-use crate::git_process::{GitProcess, GitProcessError};
+use crate::error::AppError;
+use crate::git_process::{GIT_BLOB_BYTE_LIMIT, GitProcess, GitProcessError};
 use crate::git_status::{GitFileStatus, GitStatusEntry, GitWorktreeMode};
+use crate::large_file::reader::{ReadWindow, read_window};
 use crate::source_control::slots::SnapshotId;
 use crate::source_control::{
     SourceControlState, SourceStateRef, git_error_text, operation_bridge,
@@ -92,11 +94,31 @@ fn pump(load: Rc<RefCell<ReviewLoad>>) {
         abort(&load);
         return;
     }
-    let Some(entry) = load.borrow_mut().queue.pop_front() else {
+    let next = {
+        let mut state = load.borrow_mut();
+        if state.loaded_bytes >= AGGREGATE_DECODED_BYTE_CAP {
+            let remaining = state.queue.len();
+            if remaining > 0 {
+                append_aggregate_skip_locked(&mut state, remaining);
+            }
+        }
+        let loaded_bytes = state.loaded_bytes;
+        pop_next_with_aggregate_budget(&mut state.queue, loaded_bytes)
+    };
+    let Some(entry) = next else {
         finish(&load);
         return;
     };
     load_reference(load, entry);
+}
+
+fn pop_next_with_aggregate_budget<T>(queue: &mut VecDeque<T>, loaded_bytes: usize) -> Option<T> {
+    if loaded_bytes >= AGGREGATE_DECODED_BYTE_CAP {
+        queue.clear();
+        None
+    } else {
+        queue.pop_front()
+    }
 }
 
 fn load_reference(load: Rc<RefCell<ReviewLoad>>, entry: GitStatusEntry) {
@@ -340,28 +362,118 @@ fn load_worktree_text(
 ) {
     let file = gio::File::for_path(path);
     let cancellable = load.borrow().cancellable.clone();
-    file.load_contents_async(Some(&cancellable), move |result| {
-        if !load_is_current(&load) {
-            abort(&load);
-            return;
-        }
-        match result {
-            Ok((bytes, _etag)) => match decode_text(bytes.to_vec()) {
+    load_bounded_worktree_text(
+        &file,
+        GIT_BLOB_BYTE_LIMIT,
+        Some(&cancellable),
+        Rc::new(move |result| {
+            if !load_is_current(&load) {
+                abort(&load);
+                return;
+            }
+            match result {
                 Ok(current) => {
                     record_file(Rc::clone(&load), &entry, reference.clone(), Some(current));
                 }
-                Err(error) => {
+                Err(WorktreeReadError::Cancelled) => abort(&load),
+                Err(WorktreeReadError::Git(error)) => {
                     append_skip(&load, &entry, &git_error_text(&error));
                     pump(Rc::clone(&load));
                 }
-            },
-            Err(error) if error.matches(gio::IOErrorEnum::Cancelled) => abort(&load),
-            Err(error) => {
-                append_skip(&load, &entry, error.message());
-                pump(Rc::clone(&load));
+                Err(WorktreeReadError::Read(message)) => {
+                    append_skip(&load, &entry, &message);
+                    pump(Rc::clone(&load));
+                }
             }
-        }
-    });
+        }),
+    );
+}
+
+#[derive(Debug)]
+enum WorktreeReadError {
+    Cancelled,
+    Git(GitProcessError),
+    Read(String),
+}
+
+type WorktreeReadCallback = Rc<dyn Fn(Result<String, WorktreeReadError>)>;
+
+fn load_bounded_worktree_text(
+    file: &gio::File,
+    limit: usize,
+    cancellable: Option<&gio::Cancellable>,
+    callback: WorktreeReadCallback,
+) {
+    let Some(read_budget) = limit.checked_add(1) else {
+        callback(Err(WorktreeReadError::Git(GitProcessError::OutputTooLarge)));
+        return;
+    };
+    read_window(
+        file,
+        0,
+        read_budget,
+        cancellable,
+        Rc::new(move |result| match result {
+            Ok(window) => callback(decode_complete_window(window, limit)),
+            Err(AppError::Cancelled) => callback(Err(WorktreeReadError::Cancelled)),
+            Err(AppError::ReadFailed(_path, message)) => {
+                callback(Err(WorktreeReadError::Read(message)));
+            }
+            Err(error) => callback(Err(WorktreeReadError::Read(error.body()))),
+        }),
+    );
+}
+
+fn decode_complete_window(window: ReadWindow, limit: usize) -> Result<String, WorktreeReadError> {
+    if !window.eof || window.bytes.len() > limit {
+        return Err(WorktreeReadError::Git(GitProcessError::OutputTooLarge));
+    }
+    decode_text(window.bytes).map_err(WorktreeReadError::Git)
+}
+
+#[cfg(test)]
+pub(super) type TestWorktreeReadCallback = Rc<dyn Fn(Result<String, String>)>;
+
+#[cfg(test)]
+pub(super) fn load_worktree_text_for_tests(
+    file: &gio::File,
+    limit: usize,
+    cancellable: Option<&gio::Cancellable>,
+    callback: TestWorktreeReadCallback,
+) {
+    load_bounded_worktree_text(
+        file,
+        limit,
+        cancellable,
+        Rc::new(move |result| {
+            callback(result.map_err(|error| match error {
+                WorktreeReadError::Cancelled => String::from("cancelled"),
+                WorktreeReadError::Git(error) => git_error_text(&error),
+                WorktreeReadError::Read(message) => message,
+            }));
+        }),
+    );
+}
+
+#[cfg(test)]
+pub(super) fn decode_worktree_window_for_tests(
+    bytes: Vec<u8>,
+    eof: bool,
+    limit: usize,
+) -> Result<String, String> {
+    decode_complete_window(
+        ReadWindow {
+            offset: 0,
+            bytes,
+            eof,
+        },
+        limit,
+    )
+    .map_err(|error| match error {
+        WorktreeReadError::Cancelled => String::from("cancelled"),
+        WorktreeReadError::Git(error) => git_error_text(&error),
+        WorktreeReadError::Read(message) => message,
+    })
 }
 
 fn decode_text(bytes: Vec<u8>) -> Result<String, GitProcessError> {
@@ -449,82 +561,5 @@ fn aggregate_byte_limit_text() -> String {
 }
 
 #[cfg(test)]
-mod tests {
-    use crate::editor_tab::ReviewKind;
-    use crate::git_process::GitProcessError;
-    use crate::git_status::{GitFileStatus, GitPath, GitStatusEntry, GitWorktreeMode};
-    use crate::source_control::review_loader::{
-        CurrentSource, aggregate_byte_limit_text, current_source, decode_text, reference_oid,
-    };
-
-    #[test]
-    fn staged_delete_uses_head_vs_empty() {
-        let mut entry = entry(GitFileStatus::Deleted);
-        entry.head_oid = Some(String::from("head"));
-        entry.index_oid = None;
-
-        assert_eq!(
-            reference_oid(ReviewKind::Staged, &entry).as_deref(),
-            Some("head")
-        );
-        assert!(matches!(
-            current_source(ReviewKind::Staged, &entry),
-            CurrentSource::Empty
-        ));
-    }
-
-    #[test]
-    fn staged_add_uses_empty_vs_index() {
-        let entry = entry(GitFileStatus::Added);
-
-        assert_eq!(reference_oid(ReviewKind::Staged, &entry), None);
-        assert!(matches!(
-            current_source(ReviewKind::Staged, &entry),
-            CurrentSource::Blob(_)
-        ));
-    }
-
-    #[test]
-    fn unstaged_delete_uses_index_vs_empty() {
-        let entry = entry(GitFileStatus::Deleted);
-
-        assert_eq!(
-            reference_oid(ReviewKind::Unstaged, &entry).as_deref(),
-            Some("index")
-        );
-        assert!(matches!(
-            current_source(ReviewKind::Unstaged, &entry),
-            CurrentSource::Empty
-        ));
-    }
-
-    #[test]
-    fn text_decoder_rejects_binary_and_invalid_utf8() {
-        assert_eq!(decode_text(b"hello".to_vec()).as_deref(), Ok("hello"));
-        assert_eq!(
-            decode_text(b"hello\0world".to_vec()),
-            Err(GitProcessError::BinaryContent)
-        );
-        assert_eq!(decode_text(vec![0xff]), Err(GitProcessError::ParseFailed));
-    }
-
-    #[test]
-    fn aggregate_byte_limit_reason_matches_diff_skip_copy() {
-        assert_eq!(
-            aggregate_byte_limit_text(),
-            "Diff was skipped because the files are over the compare byte limit."
-        );
-    }
-
-    fn entry(status: GitFileStatus) -> GitStatusEntry {
-        GitStatusEntry::with_worktree_mode(
-            GitPath::from_bytes(b"file.txt"),
-            status,
-            Some(String::from("head")),
-            Some(String::from("index")),
-            true,
-            true,
-            GitWorktreeMode::Regular("100644"),
-        )
-    }
-}
+#[path = "review_loader_tests.rs"]
+mod tests;

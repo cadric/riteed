@@ -748,4 +748,10 @@ impl Window {
         let _root = self.project.root_uri_for_tests();
         crate::window_project::WindowProjectController::reveal_scan_count_for_tests()
     }
+
+    pub(crate) fn selected_review_file_count_for_tests(&self) -> usize {
+        self.workspace
+            .selected_tab()
+            .map_or(0, |tab| tab.review_file_count())
+    }
 }

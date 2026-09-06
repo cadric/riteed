@@ -1,3 +1,5 @@
+#[cfg(test)]
+use std::cell::{Cell, RefCell};
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
@@ -6,6 +8,44 @@ use gtk4::{gio, glib, prelude::*};
 
 use crate::error::AppError;
 use crate::large_file::file_path_for_error;
+
+const READ_CHUNK_BYTE_LIMIT: usize = 64 * 1024;
+
+#[cfg(test)]
+type ReadObserver = Rc<dyn Fn(usize)>;
+#[cfg(test)]
+type CloseObserver = Rc<dyn Fn(bool)>;
+
+#[cfg(test)]
+thread_local! {
+    static TEST_READ_CHUNK_LIMIT: Cell<Option<usize>> = const { Cell::new(None) };
+    static TEST_READ_OBSERVER: RefCell<Option<ReadObserver>> = const { RefCell::new(None) };
+    static TEST_CLOSE_OBSERVER: RefCell<Option<CloseObserver>> = const { RefCell::new(None) };
+}
+
+#[cfg(test)]
+pub(crate) struct ReadTestHooks;
+
+#[cfg(test)]
+impl Drop for ReadTestHooks {
+    fn drop(&mut self) {
+        TEST_READ_CHUNK_LIMIT.with(|limit| limit.set(None));
+        TEST_READ_OBSERVER.with(|observer| *observer.borrow_mut() = None);
+        TEST_CLOSE_OBSERVER.with(|observer| *observer.borrow_mut() = None);
+    }
+}
+
+#[cfg(test)]
+pub(crate) fn install_read_test_hooks(
+    chunk_limit: Option<usize>,
+    read_observer: Option<ReadObserver>,
+    close_observer: Option<CloseObserver>,
+) -> ReadTestHooks {
+    TEST_READ_CHUNK_LIMIT.with(|limit| limit.set(chunk_limit));
+    TEST_READ_OBSERVER.with(|slot| *slot.borrow_mut() = read_observer);
+    TEST_CLOSE_OBSERVER.with(|slot| *slot.borrow_mut() = close_observer);
+    ReadTestHooks
+}
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct ReadWindow {
@@ -61,15 +101,55 @@ pub(crate) fn read_window(
         glib::Priority::DEFAULT,
         cancellable_for_open.as_ref(),
         move |result| match result {
-            Ok(stream) => skip_to_offset(
-                &stream,
-                display_path,
-                offset,
-                max_bytes,
-                cancellable.as_ref(),
-                callback.clone(),
-            ),
+            Ok(stream) => {
+                let stream_for_close = stream.clone();
+                let path_for_close = display_path.clone();
+                let callback_for_close = callback.clone();
+                skip_to_offset(
+                    &stream,
+                    display_path,
+                    offset,
+                    max_bytes,
+                    cancellable.as_ref(),
+                    Rc::new(move |read_result| {
+                        close_owned_stream(
+                            &stream_for_close,
+                            &path_for_close,
+                            read_result,
+                            callback_for_close.clone(),
+                        );
+                    }),
+                );
+            }
             Err(error) => callback(Err(map_read_error(&display_path, &error))),
+        },
+    );
+}
+
+fn close_owned_stream(
+    stream: &gio::FileInputStream,
+    display_path: &Path,
+    read_result: Result<ReadWindow, AppError>,
+    callback: ReadCallback,
+) {
+    #[cfg(test)]
+    let stream_for_callback = stream.clone();
+    let display_path = display_path.to_path_buf();
+    stream.close_async(
+        glib::Priority::DEFAULT,
+        None::<&gio::Cancellable>,
+        move |close_result| {
+            #[cfg(test)]
+            TEST_CLOSE_OBSERVER.with(|observer| {
+                if let Some(observer) = observer.borrow().as_ref() {
+                    observer(stream_for_callback.is_closed());
+                }
+            });
+            match (read_result, close_result) {
+                (Err(error), _) => callback(Err(error)),
+                (Ok(window), Ok(())) => callback(Ok(window)),
+                (Ok(_window), Err(error)) => callback(Err(map_read_error(&display_path, &error))),
+            }
         },
     );
 }
@@ -223,14 +303,21 @@ fn read_more_from_stream(
         return;
     }
     let remaining = max_bytes.saturating_sub(bytes.len());
+    let request_bytes = remaining.min(read_chunk_byte_limit());
     let stream_for_callback = stream.clone();
     let cancellable_for_read = cancellable.clone();
     stream.read_bytes_async(
-        remaining,
+        request_bytes,
         glib::Priority::DEFAULT,
         cancellable_for_read.as_ref(),
         move |result| match result {
             Ok(chunk) => {
+                #[cfg(test)]
+                TEST_READ_OBSERVER.with(|observer| {
+                    if let Some(observer) = observer.borrow().as_ref() {
+                        observer(chunk.len());
+                    }
+                });
                 let chunk = chunk.to_vec();
                 match append_read_chunk(&mut bytes, max_bytes, &chunk) {
                     ReadProgress::Continue => read_more_from_stream(
@@ -257,6 +344,14 @@ fn read_more_from_stream(
             Err(error) => callback(Err(map_read_error(&display_path, &error))),
         },
     );
+}
+
+fn read_chunk_byte_limit() -> usize {
+    #[cfg(test)]
+    if let Some(limit) = TEST_READ_CHUNK_LIMIT.with(Cell::get) {
+        return limit.max(1);
+    }
+    READ_CHUNK_BYTE_LIMIT
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -292,168 +387,5 @@ pub(crate) fn map_read_error(path: &Path, error: &glib::Error) -> AppError {
 }
 
 #[cfg(test)]
-mod tests {
-    use std::cell::RefCell;
-    use std::fs;
-    use std::path::PathBuf;
-    use std::rc::Rc;
-    use std::time::{Duration, Instant};
-
-    use gtk4::{gio, glib, prelude::*};
-
-    use super::{ReadProgress, ReadWindow, append_read_chunk, read_window};
-    use crate::error::AppError;
-
-    #[test]
-    fn read_window_records_offset_and_eof() {
-        let window = ReadWindow {
-            offset: 12,
-            bytes: b"abc".to_vec(),
-            eof: true,
-        };
-        assert_eq!(window.offset, 12);
-        assert!(window.eof);
-    }
-
-    #[test]
-    fn short_nonzero_read_requests_more_bytes() {
-        let mut bytes = Vec::new();
-
-        assert_eq!(
-            append_read_chunk(&mut bytes, 6, b"abc"),
-            ReadProgress::Continue
-        );
-        assert_eq!(
-            append_read_chunk(&mut bytes, 6, b"def"),
-            ReadProgress::Complete
-        );
-        assert_eq!(bytes, b"abcdef");
-    }
-
-    #[test]
-    fn zero_byte_read_reports_eof() {
-        let mut bytes = b"abc".to_vec();
-
-        assert_eq!(append_read_chunk(&mut bytes, 6, b""), ReadProgress::Eof);
-        assert_eq!(bytes, b"abc");
-    }
-
-    #[test]
-    fn read_window_reads_from_requested_offset() {
-        let (path, file) = temp_file(ReaderTempFile::Offset, b"alpha\nbeta");
-        let result = wait_for_read(&file, 6, 8);
-
-        assert!(result.is_ok());
-        let Ok(window) = result else {
-            return;
-        };
-        assert_eq!(window.offset, 6);
-        assert_eq!(window.bytes, b"beta");
-        assert!(window.eof);
-        let _removed = fs::remove_file(path);
-    }
-
-    #[test]
-    fn read_window_reports_eof_after_forward_skip() {
-        let (path, file) = temp_file(ReaderTempFile::Eof, b"short");
-        let result = wait_for_read(&file, 512, 8);
-
-        assert!(result.is_ok());
-        let Ok(window) = result else {
-            return;
-        };
-        assert_eq!(window.offset, 512);
-        assert!(window.bytes.is_empty());
-        assert!(window.eof);
-        let _removed = fs::remove_file(path);
-    }
-
-    #[test]
-    fn read_window_maps_cancelled_reads() {
-        let (path, file) = temp_file(ReaderTempFile::Cancel, b"cancelled");
-        let cancellable = gio::Cancellable::new();
-        cancellable.cancel();
-        let result = wait_for_read_with_cancellable(&file, 0, 8, Some(&cancellable));
-
-        assert!(matches!(result, Err(AppError::Cancelled)));
-        let _removed = fs::remove_file(path);
-    }
-
-    #[derive(Clone, Copy)]
-    enum ReaderTempFile {
-        Offset,
-        Eof,
-        Cancel,
-    }
-
-    impl ReaderTempFile {
-        fn name(self) -> &'static str {
-            match self {
-                Self::Offset => "offset",
-                Self::Eof => "eof",
-                Self::Cancel => "cancel",
-            }
-        }
-    }
-
-    fn temp_file(fixture: ReaderTempFile, contents: &[u8]) -> (PathBuf, gio::File) {
-        let path = PathBuf::from("/tmp").join(format!(
-            "riteed-large-file-reader-{}-{}.txt",
-            std::process::id(),
-            fixture.name()
-        ));
-        assert!(fs::write(&path, contents).is_ok());
-        let file = gio::File::for_path(&path);
-        (path, file)
-    }
-
-    fn wait_for_read(
-        file: &gio::File,
-        offset: u64,
-        max_bytes: usize,
-    ) -> Result<ReadWindow, AppError> {
-        wait_for_read_with_cancellable(file, offset, max_bytes, None)
-    }
-
-    fn wait_for_read_with_cancellable(
-        file: &gio::File,
-        offset: u64,
-        max_bytes: usize,
-        cancellable: Option<&gio::Cancellable>,
-    ) -> Result<ReadWindow, AppError> {
-        let context = glib::MainContext::new();
-        context
-            .with_thread_default(|| {
-                let result = Rc::new(RefCell::new(None));
-                let result_for_callback = Rc::clone(&result);
-                read_window(
-                    file,
-                    offset,
-                    max_bytes,
-                    cancellable,
-                    Rc::new(move |value| {
-                        *result_for_callback.borrow_mut() = Some(value);
-                    }),
-                );
-                spin_until_result(&context, &result)
-            })
-            .unwrap_or(Err(AppError::Cancelled))
-    }
-
-    fn spin_until_result(
-        context: &glib::MainContext,
-        result: &Rc<RefCell<Option<Result<ReadWindow, AppError>>>>,
-    ) -> Result<ReadWindow, AppError> {
-        let deadline = Instant::now() + Duration::from_secs(5);
-        while result.borrow().is_none() && Instant::now() < deadline {
-            while context.iteration(false) {}
-            if result.borrow().is_none() {
-                let _dispatched = context.iteration(true);
-            }
-        }
-        match result.borrow_mut().take() {
-            Some(value) => value,
-            None => Err(AppError::Cancelled),
-        }
-    }
-}
+#[path = "reader_tests.rs"]
+mod tests;

@@ -29,6 +29,7 @@ use repo::fallback_base;
 use support::{base_args, detect_repo_spec, git_env, identity_part_is_valid, stderr_text};
 
 const STDERR_CAP: usize = 64 * 1024;
+pub(crate) const GIT_BLOB_BYTE_LIMIT: usize = 1_000_001;
 const GIT_OPERATION_TIMEOUT: Duration = Duration::from_secs(30);
 const GIT_CANCEL_KILL_GRACE: Duration = Duration::from_secs(2);
 

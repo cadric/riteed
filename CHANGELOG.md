@@ -26,6 +26,8 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
   active scheduled/manual CI execution.
 
 ### Fixed
+- Git reviews now read worktree versions through the same bounded per-file
+  limit as Git blobs, rejecting incomplete or oversized text before display.
 - Bound the Flatpak rollback gate's candidate ref to the release tag validated
   by manual-dispatch preflight, preserving idempotent same-release republishes.
 - Release validation now requires exact SHA-256 digests for CI job containers

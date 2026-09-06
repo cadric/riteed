@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "sites": [
+    {
+      "path": "src/large_file/reader.rs",
+      "line": 21,
+      "match": "static TEST_READ_CHUNK_LIMIT: Cell<Option<usize>>",
+      "kind": "runtime-shared-state",
+      "ownership": "The reader unit-test thread owns one temporary chunk-size override.",
+      "justification": "Serial task tests force multiple real Gio reads so cancellation and short-read continuation are deterministic; the RAII hook clears the thread-local override after each test."
+    },
+    {
+      "path": "src/large_file/reader.rs",
+      "line": 22,
+      "match": "static TEST_READ_OBSERVER: RefCell<Option<ReadObserver>>",
+      "kind": "runtime-shared-state",
+      "ownership": "The reader unit-test thread owns one temporary byte-read observer.",
+      "justification": "The observer counts bytes returned by real Gio reads and proves an oversized worktree file stops at the checked sentinel; the RAII hook removes it after the callback settles."
+    },
+    {
+      "path": "src/large_file/reader.rs",
+      "line": 23,
+      "match": "static TEST_CLOSE_OBSERVER: RefCell<Option<CloseObserver>>",
+      "kind": "runtime-shared-state",
+      "ownership": "The reader unit-test thread owns one temporary stream-close observer.",
+      "justification": "The observer receives the real FileInputStream closed state after uncancelled close completion, proving success and cancellation release the owned stream exactly once."
+    },
+    {
+      "path": "src/source_control/review_loader_tests.rs",
+      "line": 292,
+      "match": "callbacks: Rc<Cell<usize>>",
+      "kind": "runtime-shared-state",
+      "ownership": "Each review-loader test owns its callback counter on one thread-default main context.",
+      "justification": "The counter verifies bounded success, overflow, cancellation and read errors each settle the loader continuation once before the test returns."
+    }
+  ]
+}

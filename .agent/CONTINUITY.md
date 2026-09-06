@@ -2,6 +2,16 @@
 
 ## OUTCOMES
 
+- 2026-09-06 audit P3 Task 12A (RIT-GEN-021): Git review worktree reads now
+  stop at shared 1,000,001-byte limit plus checked sentinel, require EOF,
+  and close owned Gio streams before terminal delivery even on cancellation.
+  Actual loader RED accepted six bytes under injected five-byte cap; final
+  byte-count and GTK A-close/B-reopen coverage pass. Strict gate: 456 tests;
+  coverage: 84.6%. Independent rereview cleared test setup/timeout findings.
+  See docs/audit-p3-cleanup.md for bounds, transient copies and evidence.
+  Git subprocess pipe buffering remains pending Task 12B; do not close the
+  full RIT-GEN-021 finding yet. No GitHub writes or Flatpak build performed.
+
 - 2026-09-06 audit P3 Task 2: existing RIT-GEN-022 URI/tab/request-token
   ownership is characterized with held real workspace-open completions. A's
   cancelled callback cannot clear B's pending registration; B finishes attached
