@@ -1,6 +1,6 @@
-use crate::settings::{
-    AppSettings, SettingsBackend, record_memory_write, with_memory, with_memory_mut,
-};
+use crate::settings::{AppSettings, SettingsBackend};
+#[cfg(test)]
+use crate::settings::{record_memory_write, with_memory, with_memory_mut};
 use gtk4::prelude::SettingsExt;
 
 const KEY_GIT_USER_NAME: &str = "git-user-name";
@@ -14,6 +14,7 @@ impl AppSettings {
                 settings.string(KEY_GIT_USER_NAME).to_string(),
                 settings.string(KEY_GIT_USER_EMAIL).to_string(),
             ),
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => with_memory(memory, |state| {
                 (state.git_user_name.clone(), state.git_user_email.clone())
             }),
@@ -26,6 +27,7 @@ impl AppSettings {
                 let _changed_name = settings.set_string(KEY_GIT_USER_NAME, name);
                 let _changed_email = settings.set_string(KEY_GIT_USER_EMAIL, email);
             }
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 with_memory_mut(memory, |state| {
                     state.git_user_name = String::from(name);

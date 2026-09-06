@@ -3,7 +3,9 @@ use gtk4::{gio, prelude::*};
 
 use crate::APP_ID;
 
-use super::{AppSettings, SettingsBackend, record_memory_write, with_memory, with_memory_mut};
+use super::{AppSettings, SettingsBackend};
+#[cfg(test)]
+use super::{record_memory_write, with_memory, with_memory_mut};
 
 pub(crate) const KEY_LANGUAGE: &str = "language";
 
@@ -69,6 +71,7 @@ impl AppSettings {
             SettingsBackend::GSettings(settings) => {
                 AppLanguage::from_enum_value(settings.enum_(KEY_LANGUAGE))
             }
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => with_memory(memory, |state| state.language),
         }
     }
@@ -78,6 +81,7 @@ impl AppSettings {
             SettingsBackend::GSettings(settings) => {
                 let _changed = settings.set_enum(KEY_LANGUAGE, language.enum_value());
             }
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 with_memory_mut(memory, |state| {
                     state.language = language;

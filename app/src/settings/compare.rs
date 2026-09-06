@@ -83,6 +83,7 @@ impl AppSettings {
             SettingsBackend::GSettings(settings) => {
                 CompareViewMode::from_enum_value(settings.enum_(KEY_COMPARE_VIEW_MODE))
             }
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 super::with_memory(memory, |state| state.compare.view_mode)
             }
@@ -94,6 +95,7 @@ impl AppSettings {
             SettingsBackend::GSettings(settings) => {
                 let _changed = settings.set_enum(KEY_COMPARE_VIEW_MODE, mode.enum_value());
             }
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 super::with_memory_mut(memory, |state| {
                     state.compare.view_mode = mode;
@@ -109,6 +111,7 @@ impl AppSettings {
             SettingsBackend::GSettings(settings) => {
                 settings.boolean(KEY_COMPARE_COLLAPSE_UNCHANGED)
             }
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 super::with_memory(memory, |state| state.compare.collapse_unchanged)
             }
@@ -120,6 +123,7 @@ impl AppSettings {
             SettingsBackend::GSettings(settings) => {
                 let _changed = settings.set_boolean(KEY_COMPARE_COLLAPSE_UNCHANGED, enabled);
             }
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 super::with_memory_mut(memory, |state| {
                     state.compare.collapse_unchanged = enabled;
@@ -133,6 +137,7 @@ impl AppSettings {
     pub fn compare_context_lines(&self) -> i32 {
         match &self.backend {
             SettingsBackend::GSettings(settings) => settings.int(KEY_COMPARE_CONTEXT_LINES),
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 super::with_memory(memory, |state| state.compare.context_lines)
             }
@@ -145,6 +150,7 @@ impl AppSettings {
             SettingsBackend::GSettings(settings) => {
                 let _changed = settings.set_int(KEY_COMPARE_CONTEXT_LINES, lines);
             }
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 super::with_memory_mut(memory, |state| {
                     state.compare.context_lines = lines;
@@ -158,6 +164,7 @@ impl AppSettings {
     pub fn compare_ignore_leading_trailing_whitespace(&self) -> bool {
         match &self.backend {
             SettingsBackend::GSettings(settings) => settings.boolean(KEY_COMPARE_IGNORE_WHITESPACE),
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => super::with_memory(memory, |state| {
                 state.compare.ignore_leading_trailing_whitespace
             }),
@@ -169,6 +176,7 @@ impl AppSettings {
             SettingsBackend::GSettings(settings) => {
                 let _changed = settings.set_boolean(KEY_COMPARE_IGNORE_WHITESPACE, enabled);
             }
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 super::with_memory_mut(memory, |state| {
                     state.compare.ignore_leading_trailing_whitespace = enabled;
@@ -182,6 +190,7 @@ impl AppSettings {
     pub fn compare_word_wrap(&self) -> bool {
         match &self.backend {
             SettingsBackend::GSettings(settings) => settings.boolean(KEY_COMPARE_WORD_WRAP),
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 super::with_memory(memory, |state| state.compare.word_wrap)
             }
@@ -193,6 +202,7 @@ impl AppSettings {
             SettingsBackend::GSettings(settings) => {
                 let _changed = settings.set_boolean(KEY_COMPARE_WORD_WRAP, enabled);
             }
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 super::with_memory_mut(memory, |state| {
                     state.compare.word_wrap = enabled;

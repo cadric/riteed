@@ -15,6 +15,8 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 ## Unreleased
 
 ### Changed
+- Release builds no longer include the in-memory settings backend and helpers
+  used only by unit and GTK tests; production settings remain GSettings-only.
 - Large-file search now reuses one bounded match-and-carry accumulator across
   streamed chunks instead of copying all collected offsets for every chunk.
 - Activated the split GitHub governance boundary: pull requests now require

@@ -1,7 +1,9 @@
 use gtk4::prelude::SettingsExt;
 use libadwaita as adw;
 
-use super::{AppSettings, SettingsBackend, record_memory_write, with_memory, with_memory_mut};
+use super::{AppSettings, SettingsBackend};
+#[cfg(test)]
+use super::{record_memory_write, with_memory, with_memory_mut};
 
 const KEY_THEME: &str = "theme";
 
@@ -60,6 +62,7 @@ impl AppSettings {
             SettingsBackend::GSettings(settings) => {
                 ThemePreference::from_enum_value(settings.enum_(KEY_THEME))
             }
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => with_memory(memory, |state| state.theme),
         }
     }
@@ -69,6 +72,7 @@ impl AppSettings {
             SettingsBackend::GSettings(settings) => {
                 let _changed = settings.set_enum(KEY_THEME, preference.enum_value());
             }
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 with_memory_mut(memory, |state| {
                     state.theme = preference;

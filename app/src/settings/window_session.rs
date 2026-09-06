@@ -1,9 +1,8 @@
 use gtk4::prelude::{SettingsExt, SettingsExtManual};
 
-use super::{
-    AppSettings, SettingsBackend, record_memory_write, sanitize_restored_dimension, with_memory,
-    with_memory_mut,
-};
+use super::{AppSettings, SettingsBackend, sanitize_restored_dimension};
+#[cfg(test)]
+use super::{record_memory_write, with_memory, with_memory_mut};
 
 const KEY_WINDOW_WIDTH: &str = "window-width";
 const KEY_WINDOW_HEIGHT: &str = "window-height";
@@ -34,6 +33,7 @@ impl AppSettings {
                     MAX_WINDOW_HEIGHT,
                 ),
             ),
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => with_memory(memory, |state| {
                 (
                     sanitize_restored_dimension(
@@ -71,6 +71,7 @@ impl AppSettings {
                 let _changed_width = settings.set_int(KEY_WINDOW_WIDTH, width);
                 let _changed_height = settings.set_int(KEY_WINDOW_HEIGHT, height);
             }
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 with_memory_mut(memory, |state| {
                     state.window_session.window_width = width;
@@ -90,6 +91,7 @@ impl AppSettings {
                 .iter()
                 .map(ToString::to_string)
                 .collect(),
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 with_memory(memory, |state| state.window_session.recent_files.clone())
             }
@@ -101,6 +103,7 @@ impl AppSettings {
             SettingsBackend::GSettings(settings) => {
                 let _changed = settings.set_strv(KEY_RECENT_FILES, files);
             }
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 with_memory_mut(memory, |state| {
                     state.window_session.recent_files = files.to_vec();
@@ -118,6 +121,7 @@ impl AppSettings {
                 .iter()
                 .map(ToString::to_string)
                 .collect(),
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 with_memory(memory, |state| state.window_session.session_files.clone())
             }
@@ -129,6 +133,7 @@ impl AppSettings {
             SettingsBackend::GSettings(settings) => {
                 let _changed = settings.set_strv(KEY_SESSION_FILES, files);
             }
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 with_memory_mut(memory, |state| {
                     state.window_session.session_files = files.to_vec();

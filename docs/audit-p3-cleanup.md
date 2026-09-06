@@ -333,6 +333,35 @@ exact, and its review date plus the new shared-state runtime anchor were
 refreshed. The source shift also reanchors the existing test callback result
 cell without changing its ownership or justification.
 
+## RIT-GEN-029: test-only settings backend (Task 9)
+
+Fresh source inspection found no non-test or stress caller of
+`AppSettings::new_for_tests`: direct callers live in `cfg(test)` GTK/settings
+modules or explicit test branches, and `src/bin` has no caller. The complete
+Memory family is therefore now gated with `cfg(test)` rather than broadening
+the predicate to stress.
+
+The gate covers the `Rc`/`Mutex` imports, Memory enum variant and structs,
+constructor, helper imports and functions, subscription noop, write logger and
+every backend site across the 14 settings files. There are 63
+`SettingsBackend::Memory` sites in total: one constructor and 62 match arms.
+The non-test `record_memory_write` noop was removed because its type and only
+possible callers are now test-only. Production has no fallback arm: GSettings
+is the only compiled backend.
+
+This is a pure compile-surface cleanup, not a behavior repair, so no artificial
+RED was introduced. Unit and GTK tests still compile the same Memory backend.
+The stress-feature and no-default-feature checks instead prove that release
+configurations compile without it. The `dialogs::lifecycle` module already has
+module-level `cfg(test)` in `dialogs.rs`; adding redundant annotations to its
+three functions would not narrow the binary further and was intentionally
+avoided. Existing GSettings review entries were reanchored to their shifted
+production write lines without changing keys, triggers or ownership.
+
+RIT-GEN-030 required no opportunistic rename in this pass. No version-named GTK
+test file was touched for RIT-GEN-029, and moving one would add unrelated churn;
+the earlier Task 3 decision to retain the focused v13 file remains unchanged.
+
 ## Validation environment
 
 The existing Solarized chrome test assumes ordinary contrast. The desktop's

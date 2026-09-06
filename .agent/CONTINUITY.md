@@ -2,6 +2,18 @@
 
 ## OUTCOMES
 
+- 2026-09-06 audit P3 Task 9 (RIT-GEN-029): the complete in-memory settings
+  backend is now `cfg(test)`-only, including its structs, constructor, helper
+  imports, 63 backend sites across 14 settings files, subscription noop and
+  write logger. The unusable non-test write-logger noop was removed; release,
+  stress and no-default-feature builds retain GSettings as their sole backend.
+  Fresh caller inspection found no production or stress consumer. The dialog
+  lifecycle helpers were already protected by their module-level `cfg(test)`
+  and were intentionally not annotated again. RIT-GEN-030 required no rename:
+  no version-named GTK file was otherwise touched, and Task 3's focused v13
+  decision remains valid. No user-visible string, dependency, policy, remote
+  state or Flatpak installation changed.
+
 - 2026-09-06 audit P3 Task 6 (RIT-GEN-027): large-file search now owns one
   `Rc<RefCell<SearchState>>` for its bounded cross-chunk carry and capped match
   offsets instead of cloning both vectors through every recursive async step.
