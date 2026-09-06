@@ -69,7 +69,7 @@
       "ownership": "The Source Control review loader owns the queued Git review load state for one review tab.",
       "justification": "Blob and worktree reads complete asynchronously and need one cancellable queue, byte counter, and output accumulator without blocking the GTK main loop.",
       "path": "src/source_control/review_loader.rs",
-      "line": 76,
+      "line": 78,
       "match": "source: Weak<RefCell<SourceControlState>>,",
       "kind": "runtime-shared-state"
     },
@@ -77,7 +77,7 @@
       "ownership": "The Source Control review loader owns the queued Git review load state for one review tab.",
       "justification": "Blob and worktree reads complete asynchronously and need one cancellable queue, byte counter, and output accumulator without blocking the GTK main loop.",
       "path": "src/source_control/review_loader.rs",
-      "line": 90,
+      "line": 92,
       "match": "fn pump(load: Rc<RefCell<ReviewLoad>>) {",
       "kind": "runtime-shared-state"
     },
@@ -85,7 +85,7 @@
       "ownership": "The Source Control review loader owns the queued Git review load state for one review tab.",
       "justification": "Blob and worktree reads complete asynchronously and need one cancellable queue, byte counter, and output accumulator without blocking the GTK main loop.",
       "path": "src/source_control/review_loader.rs",
-      "line": 102,
+      "line": 124,
       "match": "fn load_reference(load: Rc<RefCell<ReviewLoad>>, entry: GitStatusEntry) {",
       "kind": "runtime-shared-state"
     },
@@ -93,7 +93,7 @@
       "ownership": "The Source Control review loader owns the queued Git review load state for one review tab.",
       "justification": "Blob and worktree reads complete asynchronously and need one cancellable queue, byte counter, and output accumulator without blocking the GTK main loop.",
       "path": "src/source_control/review_loader.rs",
-      "line": 138,
+      "line": 160,
       "match": "fn load_current(load: Rc<RefCell<ReviewLoad>>, entry: GitStatusEntry, reference: Option<String>) {",
       "kind": "runtime-shared-state"
     },
@@ -101,7 +101,7 @@
       "ownership": "The Source Control review loader owns the queued Git review load state for one review tab.",
       "justification": "Blob and worktree reads complete asynchronously and need one cancellable queue, byte counter, and output accumulator without blocking the GTK main loop.",
       "path": "src/source_control/review_loader.rs",
-      "line": 180,
+      "line": 202,
       "match": "load: Rc<RefCell<ReviewLoad>>,",
       "kind": "runtime-shared-state"
     },
@@ -109,7 +109,7 @@
       "ownership": "The Source Control review loader owns the queued Git review load state for one review tab.",
       "justification": "Blob and worktree reads complete asynchronously and need one cancellable queue, byte counter, and output accumulator without blocking the GTK main loop.",
       "path": "src/source_control/review_loader.rs",
-      "line": 216,
+      "line": 238,
       "match": "fn finish(load: &Rc<RefCell<ReviewLoad>>) {",
       "kind": "runtime-shared-state"
     },
@@ -117,7 +117,7 @@
       "ownership": "The Source Control review loader owns the queued Git review load state for one review tab.",
       "justification": "Blob and worktree reads complete asynchronously and need one cancellable queue, byte counter, and output accumulator without blocking the GTK main loop.",
       "path": "src/source_control/review_loader.rs",
-      "line": 237,
+      "line": 259,
       "match": "fn abort(load: &Rc<RefCell<ReviewLoad>>) {",
       "kind": "runtime-shared-state"
     },
@@ -125,7 +125,7 @@
       "ownership": "The Source Control review loader owns the queued Git review load state for one review tab.",
       "justification": "Blob and worktree reads complete asynchronously and need one cancellable queue, byte counter, and output accumulator without blocking the GTK main loop.",
       "path": "src/source_control/review_loader.rs",
-      "line": 308,
+      "line": 330,
       "match": "load: &Rc<RefCell<ReviewLoad>>,",
       "kind": "runtime-shared-state"
     },
@@ -133,7 +133,7 @@
       "ownership": "The Source Control review loader owns the queued Git review load state for one review tab.",
       "justification": "Blob and worktree reads complete asynchronously and need one cancellable queue, byte counter, and output accumulator without blocking the GTK main loop.",
       "path": "src/source_control/review_loader.rs",
-      "line": 336,
+      "line": 358,
       "match": "load: Rc<RefCell<ReviewLoad>>,",
       "kind": "runtime-shared-state"
     },
@@ -141,7 +141,7 @@
       "ownership": "The Source Control review loader owns the queued Git review load state for one review tab.",
       "justification": "Blob and worktree reads complete asynchronously and need one cancellable queue, byte counter, and output accumulator without blocking the GTK main loop.",
       "path": "src/source_control/review_loader.rs",
-      "line": 374,
+      "line": 486,
       "match": "fn append_skip(load: &Rc<RefCell<ReviewLoad>>, entry: &GitStatusEntry, reason: &str) {",
       "kind": "runtime-shared-state"
     },

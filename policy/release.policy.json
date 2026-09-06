@@ -91,7 +91,9 @@
     "public_key_fingerprint_required": true,
     "tag_format": "v{app/Cargo.toml.package.version}",
     "appstream_top_release_must_match_tag": true,
-    "tag_commit_must_be_ancestor_of_main": true
+    "tag_commit_must_be_ancestor_of_main": true,
+    "tag_commit_must_be_exact_sha": true,
+    "release_content_must_use_tag_commit": true
   },
   "signed_flatpak_publish": {
     "signing_environment": "flatpak-beta-signing",
@@ -105,11 +107,12 @@
       "required_check_app_slug": "github-actions",
       "required_validate_jobs_must_run": true,
       "required_validate_checks_must_not_continue_on_error": true,
+      "required_live_governance_check_for_publish": true,
       "required_validate_check_contexts": [
         "dependency-preflight",
         "policy-pack",
         "native-tests",
-        "ruleset-governance",
+        "governance-static",
         "flatpak-tests",
         "flatpak"
       ],
@@ -124,7 +127,8 @@
       "pull_request_workflows_must_not_receive_signing_secrets": true,
       "tag_or_dispatch_publish_only": true,
       "workflow_dispatch_requires_validated_target_tag_ref": true,
-      "workflow_dispatch_build_must_checkout_target_tag": true,
+      "workflow_dispatch_build_must_checkout_tag_commit": true,
+      "checked_out_head_must_match_tag_commit_before_secrets": true,
       "manual_rerun_must_validate_same_commit": true,
       "ostree_commits_and_summary_must_be_signed": true,
       "generated_repo_must_contain_summary_and_summary_sig": true
@@ -171,7 +175,31 @@
       ]
     },
     "repository_governance": {
-      "validation_step_condition": "github.actor != 'dependabot[bot]' && (github.event_name != 'pull_request' || (github.event.pull_request.user.login != 'dependabot[bot]' && github.event.pull_request.head.repo.full_name == github.repository))",
+      "truthful_checks": {
+        "static_context": "governance-static",
+        "static_command": "python3 -m tools.policy_check --release-static-check --root app --strict",
+        "live_context": "governance-live",
+        "live_environment": "ruleset-governance-live",
+        "live_secret": "RULESET_GOVERNANCE_TOKEN",
+        "live_allowed_events": [
+          "push",
+          "schedule",
+          "workflow_dispatch"
+        ],
+        "live_workflow_name": "Validate",
+        "live_workflow_path": ".github/workflows/validate.yml",
+        "live_job": "governance-live",
+        "live_decisive_step": "Verify GitHub ruleset governance",
+        "main_ref": "refs/heads/main",
+        "main_branch": "main",
+        "repository_secret_forbidden": true,
+        "environment_branch_policy": {
+          "protected_branches": false,
+          "custom_branch_policies": true,
+          "name": "main",
+          "type": "branch"
+        }
+      },
       "main_branch_protection_or_ruleset_required": true,
       "version_tag_ruleset_required": true,
       "disabled_rulesets_are_not_mitigation": true,
@@ -328,23 +356,28 @@
   },
   "planned_remediation": [
     {
-      "finding_id": "POLICY-RIT-GEN-028",
-      "target_milestone": "P3 Task 7",
-      "review_artifact": "docs/policy-validation.md",
+      "finding_id": "POLICY-RIT-GEN-038",
+      "target_milestone": "Audit P3 Task 8B remote activation",
+      "review_artifact": "docs/github-ruleset-governance.md",
       "created": "2026-09-06",
-      "max_age_days": 120,
-      "reason": "Release preflight reads AppStream metadata from the working checkout rather than the validated tag commit SHA, and the signing build checks out the validated tag ref rather than the validated tag commit SHA.",
-      "removal_condition": "Read AppStream metadata from the validated tag commit SHA, checkout the preflight tag_commit output before signing, and add passing regression fixtures that reject loss of either SHA binding."
+      "max_age_days": 30,
+      "reason": "Remote protection still requires the old ruleset-governance context and the credential remains repository-scoped. The locally implemented tokenless static check, protected integrated-main live check, exact producer/SHA evidence and environment-only credential boundary are not activated remotely.",
+      "removal_condition": "Offline fixtures and structural enforcement pass; governance-static and protected governance-live are implemented; the environment-only secret and exact one-context ruleset transition are explicitly approved and verified; and ordinary PR, fork or Dependabot, exact main-push and publish-eligibility evidence is terminal and provenance-bound.",
+      "approval_required": "cadric repository owner"
     }
   ],
   "verifiers": {
     "workflow_static_checks": [
       "publish workflow tag/version consistency",
-      "tag commit ancestry against the fetched origin/main ref in active preflight",
-      "AppStream top release comparison against the release tag in active preflight",
+      "peeled tag commit identity and ancestry against the fetched origin/main ref in active preflight",
+      "Cargo and AppStream content read from the stable validated tag commit SHA",
+      "build checkout and pre-secret HEAD verification against the validated tag commit SHA",
       "temporary GNUPGHOME mode and agent/removal cleanup before private-key import",
       "GitHub-hosted Ubuntu runner and preflight dependency for the signing build",
       "validation gate before signing secret access",
+      "unconditional tokenless governance-static checkout, identity and gate ordering",
+      "protected-main governance-live producer, environment, identity and decisive-step ordering",
+      "provenance-bound live check, run, job, repository, SHA and decisive-step evidence before publish",
       "signing environment scoping",
       "GPG public key pin against committed public key",
       "Pages artifact shape checks before upload",
@@ -353,6 +386,7 @@
     ],
     "artifact_checks": [
       "planned_remediation schema and max-age enforcement",
+      "governance environment branch-policy and repository/environment secret metadata pagination",
       "local patch manifest schema and drift checks",
       "key governance docs contain no release-blocking TBD markers"
     ]

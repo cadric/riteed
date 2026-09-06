@@ -85,57 +85,22 @@ jobs:
           fi
 
           git fetch origin "+refs/tags/$release_ref:refs/tags/$release_ref" +refs/heads/main:refs/remotes/origin/main
-          version="$(git show "$release_ref:app/Cargo.toml" | sed -n 's/^version = "\(.*\)"/\1/p' | head -n 1)"
+          tag_commit="$(git rev-parse --verify "refs/tags/$release_ref^{commit}")"
+          if [[ ! "$tag_commit" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Release tag must resolve to one full commit SHA." >&2
+            exit 1
+          fi
+          version="$(git show "$tag_commit:app/Cargo.toml" | sed -n 's/^version = "\(.*\)"/\1/p' | head -n 1)"
           test -n "$version"
           if [[ "$release_ref" != "v$version" ]]; then
             echo "Tag $release_ref does not match app/Cargo.toml version $version." >&2
             exit 1
           fi
 
-          tag_commit="$(git rev-list -n 1 "$release_ref")"
           git merge-base --is-ancestor "$tag_commit" origin/main
 
           checks_json="$RUNNER_TEMP/release-check-runs.json"
-          CHECK_RUNS_JSON="$checks_json" TAG_COMMIT="$tag_commit" python3 - <<'PY'
-          import json
-          import os
-          import urllib.parse
-          import urllib.request
-
-          repo = os.environ["GITHUB_REPOSITORY"]
-          token = os.environ["GH_TOKEN"]
-          tag_commit = os.environ["TAG_COMMIT"]
-          payloads = []
-          url = (
-              "https://api.github.com/repos/"
-              + urllib.parse.quote(repo, safe="/")
-              + "/commits/"
-              + urllib.parse.quote(tag_commit, safe="")
-              + "/check-runs?per_page=100&filter=all"
-          )
-          headers = {
-              "Accept": "application/vnd.github+json",
-              "Authorization": f"Bearer {token}",
-              "X-GitHub-Api-Version": "2022-11-28",
-          }
-          while url:
-              request = urllib.request.Request(url, headers=headers)
-              with urllib.request.urlopen(request, timeout=20) as response:
-                  payload = json.loads(response.read().decode("utf-8"))
-                  link = response.headers.get("Link", "")
-              payloads.append(payload)
-              next_url = ""
-              for part in link.split(","):
-                  if 'rel="next"' not in part:
-                      continue
-                  start = part.find("<")
-                  end = part.find(">", start + 1)
-                  if start != -1 and end != -1:
-                      next_url = part[start + 1 : end]
-              url = next_url
-          with open(os.environ["CHECK_RUNS_JSON"], "w", encoding="utf-8") as output:
-              json.dump(payloads, output)
-          PY
+          python3 -m tools.release_evidence_fetch --repository "$GITHUB_REPOSITORY" --head-sha "$tag_commit" --policy policy/release.policy.json --output "$checks_json"
           if [[ "$ROLLBACK_REASON" == *$'\n'* || "$ROLLBACK_REF" == *$'\n'* ]]; then
             echo "Rollback inputs must be single-line values." >&2
             exit 1
@@ -147,15 +112,20 @@ jobs:
             fi
           fi
 
-          VERSION="$version" python3 - <<'PY'
+          TAG_COMMIT="$tag_commit" VERSION="$version" python3 - <<'PY'
           import datetime as dt
           import os
+          import subprocess
           import sys
           import xml.etree.ElementTree as ET
           from zoneinfo import ZoneInfo
 
           version = os.environ["VERSION"]
-          root = ET.parse("app/data/io.github.cadric.Riteed.metainfo.xml").getroot()
+          tag_commit = os.environ["TAG_COMMIT"]
+          metadata = subprocess.check_output(
+              ["git", "show", f"{tag_commit}:app/data/io.github.cadric.Riteed.metainfo.xml"]
+          )
+          root = ET.fromstring(metadata)
           releases = root.find("releases")
           if releases is None:
               print("AppStream metadata has no <releases> section.", file=sys.stderr)
@@ -313,20 +283,18 @@ jobs:
             echo "Published beta source: ${published_source_ref:-unknown}@${published_source_commit:-unknown}"
           fi
 
-          {
-            echo "version=$version"
-            echo "release_ref=$release_ref"
-            echo "tag_commit=$tag_commit"
-            if [[ "${EMERGENCY_ROLLBACK,,}" == "true" ]]; then
-              echo "emergency_rollback=true"
-              echo "rollback_ref=$ROLLBACK_REF"
-              echo "rollback_reason=$ROLLBACK_REASON"
-            else
-              echo "emergency_rollback=false"
-              echo "rollback_ref="
-              echo "rollback_reason="
-            fi
-          } >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "release_ref=$release_ref" >> "$GITHUB_OUTPUT"
+          echo "tag_commit=$tag_commit" >> "$GITHUB_OUTPUT"
+          if [[ "${EMERGENCY_ROLLBACK,,}" == "true" ]]; then
+            echo "emergency_rollback=true" >> "$GITHUB_OUTPUT"
+            echo "rollback_ref=$ROLLBACK_REF" >> "$GITHUB_OUTPUT"
+            echo "rollback_reason=$ROLLBACK_REASON" >> "$GITHUB_OUTPUT"
+          else
+            echo "emergency_rollback=false" >> "$GITHUB_OUTPUT"
+            echo "rollback_ref=" >> "$GITHUB_OUTPUT"
+            echo "rollback_reason=" >> "$GITHUB_OUTPUT"
+          fi
       - name: Require successful Validate checks for release commit
         env:
           CHECK_RUNS_JSON: ${{ runner.temp }}/release-check-runs.json
@@ -348,7 +316,14 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ needs.preflight.outputs.release_ref }}
+          ref: ${{ needs.preflight.outputs.tag_commit }}
+      - name: Verify checked-out release commit
+        env:
+          TAG_COMMIT: ${{ needs.preflight.outputs.tag_commit }}
+        run: |
+          set -euo pipefail
+          actual_head="$(git rev-parse HEAD)"
+          test "$actual_head" = "$TAG_COMMIT"
       - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6
       - name: Install Flatpak tooling
         run: |

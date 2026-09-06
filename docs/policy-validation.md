@@ -22,9 +22,9 @@ it is not a test-coverage percentage.
 | Programmatically constructed UI and HIG | Rust source rules, widget tests and human review; XML discovery does not inventory Rust-created widgets. Menu review counts describe reviewed menus, not an independently computed Rust menu model. |
 | Gettext | Extraction/POT equality, catalog format validation and source-linked context review. Extraction cannot prove that every arbitrary Rust string intended for display uses gettext. |
 | Dependencies | Exact stack/lock synchronization and complete accounting of generated Cargo source entries. Every archive/checksum must belong to the lockfile; only the reviewed vendor config is additionally allowed. |
-| Release check status | `tools.release_check_runs` executes the exact-commit, app-identity, newest-run, completed-success decision. Incomplete pagination, invalid IDs and malformed input fail closed. Offline tests exercise actual decisions. |
-| Release workflow wiring | Exact helper invocation before signing, tag ancestry against fetched `origin/main`, AppStream top-release comparison, private-key import cleanup, GitHub-hosted signing runner, exact build checkout ref, approved governance condition, supported shell/working directory, and an unconditional success dependency chain for every signing job. Folded YAML scalars, decoy owners and conditional/error-tolerant paths are rejected. General workflow shell remains reviewed code. |
-| Live repository governance | Separate token-scoped governance job. Offline policy validation cannot certify current remote settings. |
+| Release check status | `tools.release_check_runs` executes the exact-commit, app-identity, newest-run, completed-success decision. Live governance evidence additionally binds the newest check to exact Actions run/job URLs, producer event, workflow, repository, job SHA, and one completed-success decisive step. Complete stable pagination, strict IDs, and malformed-input rejection are covered offline. |
+| Release workflow wiring | Exact helper invocation before signing, tag ancestry against fetched `origin/main`, AppStream top-release comparison, private-key import cleanup, GitHub-hosted signing runner, exact build checkout ref, tokenless static governance, protected-main live governance, supported shell/working directory, and unconditional dependency chains are enforced. Checkout, identity, gate and secret ordering is exact; folded YAML, decoy owners and conditional/error-tolerant paths are rejected. |
+| Live repository governance | The token-scoped job verifies rulesets plus the exact main-only governance environment and environment-only secret metadata. Offline policy validation proves its wiring and payload decisions, not current remote state. |
 | App line coverage | Separate `tools.coverage_check` invocation; the percentage applies to app coverage, not Python validator tests. |
 | Validator implementation | Root unittest discovery in CI plus negative fixtures. `--policy-pack-check` itself checks policy bundle integrity and scoped line limits; it is not a replacement for those tests. |
 
@@ -78,9 +78,9 @@ commit. Highest check-run ID selects the newest created run; queued/in-progress
 reruns invalidate earlier successes. If the result changes during pagination,
 validation fails and must be rerun.
 
-The P2 release guard checks prove that the active preflight and signing jobs
-retain their reviewed guard structure. `POLICY-RIT-GEN-028` records the
-remaining SHA-binding gap: AppStream metadata still comes from the working
-checkout, and the build checkout still resolves the validated tag ref. P3 Task
-7 must read metadata from the validated commit SHA, checkout that exact SHA,
-and add negative fixtures for both bindings before the debt entry is removed.
+Release guard checks prove that the active preflight peels the validated tag to
+one full commit SHA and keeps that value stable through Cargo/AppStream object
+reads, ancestry, check collection, rollback provenance and job outputs. The
+build checks out that exact SHA and asserts its actual HEAD before any signing
+secret is exposed. Local extracted fixtures cover divergent working-tree
+metadata and a force-moved annotated tag; they do not sign or publish.

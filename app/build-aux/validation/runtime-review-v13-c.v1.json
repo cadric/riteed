@@ -251,11 +251,27 @@
     },
     {
       "path": "src/workspace_open.rs",
-      "line": 419,
+      "line": 421,
       "match": "fn finish_open_request(workspace: &Rc<Workspace>, request: &Rc<RefCell<OpenRequest>>) {",
       "kind": "runtime-shared-state",
       "ownership": "The open-request finisher reads shared batch state.",
       "justification": "Completion handling needs the accumulated batch results to decide between restore selection, aggregated toasts, and fallback UI state."
+    },
+    {
+      "path": "src/gtk_tests_pending_open.rs",
+      "line": 13,
+      "match": "type Completions = Rc<RefCell<VecDeque<(bool, Box<dyn FnOnce()>)>>>;",
+      "kind": "runtime-shared-state",
+      "ownership": "The GTK test owns the queue of held workspace open completions.",
+      "justification": "Test-only callbacks are released explicitly to prove old cancellation cannot clear the successor registration; each continuation is consumed once."
+    },
+    {
+      "path": "src/gtk_tests_pending_open.rs",
+      "line": 16,
+      "match": "static HELD: RefCell<Option<(String, Completions)>>",
+      "kind": "runtime-shared-state",
+      "ownership": "A test-only thread-local hook is scoped to one synthetic URI and cleared by HoldGuard.",
+      "justification": "Only the serial GTK test thread uses the hook; ordinary opens retain direct completion and the entire module is cfg(test)."
     }
   ]
 }

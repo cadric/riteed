@@ -3,7 +3,7 @@
   "sites": [
     {
       "path": "src/git_process/test_hooks.rs",
-      "line": 48,
+      "line": 57,
       "match": "static HOOKS: RefCell<Option<Hooks>> = const { RefCell::new(None) };",
       "kind": "runtime-shared-state",
       "ownership": "Test-only thread-local hooks retain one repository-scoped callback/child observer or one identity-owned controlled mutation override.",
@@ -11,7 +11,7 @@
     },
     {
       "path": "src/git_process/test_hooks.rs",
-      "line": 49,
+      "line": 58,
       "match": "static CONTROLLED_MUTATION: RefCell<Option<ControlledEntry>> = const { RefCell::new(None) };",
       "kind": "runtime-shared-state",
       "ownership": "Test-only thread-local hooks retain one repository-scoped callback/child observer or one identity-owned controlled mutation override.",
@@ -27,7 +27,7 @@
     },
     {
       "path": "src/gtk_tests_source_operations.rs",
-      "line": 33,
+      "line": 34,
       "match": "deadline_fired: Rc<Cell<bool>>,",
       "kind": "runtime-shared-state",
       "ownership": "The GTK regression fixture owns these main-loop observation cells, held continuations, cancellation tokens and child handles.",
@@ -35,16 +35,8 @@
     },
     {
       "path": "src/gtk_tests_source_operations.rs",
-      "line": 34,
-      "match": "communication_settled: Rc<Cell<bool>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The GTK regression fixture owns these main-loop observation cells, held continuations, cancellation tokens and child handles.",
-      "justification": "Tests explicitly wait for real child readiness/results and terminal wait, release held continuations, and assert repository/snapshot or dispatch identity. Fixture teardown cancels and force-reaps observed children; weak controller/window captures and bounded event-loop watchdogs prevent retained UI lifetimes."
-    },
-    {
-      "path": "src/gtk_tests_source_operations.rs",
       "line": 35,
-      "match": "wait_completed: Rc<Cell<bool>>,",
+      "match": "io_settled: Rc<Cell<bool>>,",
       "kind": "runtime-shared-state",
       "ownership": "The GTK regression fixture owns these main-loop observation cells, held continuations, cancellation tokens and child handles.",
       "justification": "Tests explicitly wait for real child readiness/results and terminal wait, release held continuations, and assert repository/snapshot or dispatch identity. Fixture teardown cancels and force-reaps observed children; weak controller/window captures and bounded event-loop watchdogs prevent retained UI lifetimes."
@@ -52,6 +44,14 @@
     {
       "path": "src/gtk_tests_source_operations.rs",
       "line": 36,
+      "match": "wait_completed: Rc<Cell<bool>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The GTK regression fixture owns these main-loop observation cells, held continuations, cancellation tokens and child handles.",
+      "justification": "Tests explicitly wait for real child readiness/results and terminal wait, release held continuations, and assert repository/snapshot or dispatch identity. Fixture teardown cancels and force-reaps observed children; weak controller/window captures and bounded event-loop watchdogs prevent retained UI lifetimes."
+    },
+    {
+      "path": "src/gtk_tests_source_operations.rs",
+      "line": 37,
       "match": "held_grace: Rc<RefCell<Option<GraceAdvance>>>,",
       "kind": "runtime-shared-state",
       "ownership": "The GTK regression fixture owns these main-loop observation cells, held continuations, cancellation tokens and child handles.",
@@ -59,7 +59,7 @@
     },
     {
       "path": "src/gtk_tests_source_operations.rs",
-      "line": 101,
+      "line": 102,
       "match": "state: Rc<RefCell<SourceControlState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The GTK regression fixture owns these main-loop observation cells, held continuations, cancellation tokens and child handles.",
@@ -67,7 +67,7 @@
     },
     {
       "path": "src/gtk_tests_source_operations.rs",
-      "line": 102,
+      "line": 103,
       "match": "children: Rc<RefCell<Vec<TestChild>>>,",
       "kind": "runtime-shared-state",
       "ownership": "The GTK regression fixture owns these main-loop observation cells, held continuations, cancellation tokens and child handles.",
@@ -75,7 +75,7 @@
     },
     {
       "path": "src/gtk_tests_source_operations.rs",
-      "line": 103,
+      "line": 104,
       "match": "cancellations: Rc<RefCell<Vec<gio::Cancellable>>>,",
       "kind": "runtime-shared-state",
       "ownership": "The GTK regression fixture owns these main-loop observation cells, held continuations, cancellation tokens and child handles.",
@@ -83,7 +83,7 @@
     },
     {
       "path": "src/gtk_tests_source_operations.rs",
-      "line": 104,
+      "line": 105,
       "match": "dispatches: Rc<RefCell<Vec<Vec<String>>>>,",
       "kind": "runtime-shared-state",
       "ownership": "The GTK regression fixture owns these main-loop observation cells, held continuations, cancellation tokens and child handles.",
@@ -91,7 +91,7 @@
     },
     {
       "path": "src/gtk_tests_source_operations.rs",
-      "line": 105,
+      "line": 106,
       "match": "labels: Rc<RefCell<Vec<String>>>,",
       "kind": "runtime-shared-state",
       "ownership": "The GTK regression fixture owns these main-loop observation cells, held continuations, cancellation tokens and child handles.",
@@ -99,7 +99,7 @@
     },
     {
       "path": "src/gtk_tests_source_operations.rs",
-      "line": 150,
+      "line": 151,
       "match": "fn state(&self) -> Rc<RefCell<SourceControlState>> {",
       "kind": "runtime-shared-state",
       "ownership": "The GTK regression fixture owns these main-loop observation cells, held continuations, cancellation tokens and child handles.",
@@ -107,7 +107,7 @@
     },
     {
       "path": "src/gtk_tests_source_operations.rs",
-      "line": 414,
+      "line": 419,
       "match": "let held_grace: Rc<RefCell<Option<GraceAdvance>>> = Rc::new(RefCell::new(None));",
       "kind": "runtime-shared-state",
       "ownership": "The GTK regression fixture owns these main-loop observation cells, held continuations, cancellation tokens and child handles.",
@@ -203,7 +203,7 @@
     },
     {
       "path": "src/source_control/review_loader.rs",
-      "line": 263,
+      "line": 285,
       "match": "fn load_is_current(load: &Rc<RefCell<ReviewLoad>>) -> bool {",
       "kind": "runtime-shared-state",
       "ownership": "A review load owns its private cancellation/generation and the captured source snapshot identity; controller and tab references remain weak.",
@@ -211,7 +211,7 @@
     },
     {
       "path": "src/source_control/review_loader.rs",
-      "line": 291,
+      "line": 313,
       "match": "fn review_tab_is_attached(source: &Weak<RefCell<SourceControlState>>, tab: &Rc<EditorTab>) -> bool {",
       "kind": "runtime-shared-state",
       "ownership": "A review load owns its private cancellation/generation and the captured source snapshot identity; controller and tab references remain weak.",

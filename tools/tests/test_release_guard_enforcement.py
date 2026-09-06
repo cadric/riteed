@@ -108,7 +108,7 @@ class ReleaseGuardEnforcementTests(unittest.TestCase):
         self._assert_guard_error(
             lambda text: _without_block(
                 text,
-                '          VERSION="$version" python3 - <<\'PY\'\n',
+                '          TAG_COMMIT="$tag_commit" VERSION="$version" python3 - <<\'PY\'\n',
                 '          remote_state="$(mktemp -d)"\n',
             ),
             "AppStream top release must match the release tag",
@@ -151,8 +151,8 @@ class ReleaseGuardEnforcementTests(unittest.TestCase):
                     1,
                 ),
                 "wrong tag source": lambda text: text.replace(
-                    '          tag_commit="$(git rev-list -n 1 "$release_ref")"\n',
-                    '          tag_commit="$(git rev-list -n 1 HEAD)"\n',
+                    '          tag_commit="$(git rev-parse --verify "refs/tags/$release_ref^{commit}")"\n',
+                    '          tag_commit="$(git rev-parse --verify HEAD)"\n',
                     1,
                 ),
                 "unrelated job": lambda text: text.replace(merge, "", 1)
@@ -174,7 +174,7 @@ class ReleaseGuardEnforcementTests(unittest.TestCase):
         )
 
     def test_appstream_guard_rejects_decoys_and_false_comparisons(self) -> None:
-        start = '          VERSION="$version" python3 - <<\'PY\'\n'
+        start = '          TAG_COMMIT="$tag_commit" VERSION="$version" python3 - <<\'PY\'\n'
         end = '          remote_state="$(mktemp -d)"\n'
         mismatch = "          if release_version != version:\n"
         exit_block = (
@@ -185,8 +185,8 @@ class ReleaseGuardEnforcementTests(unittest.TestCase):
         self._assert_guard_mutations(
             {
                 "wrong metadata": lambda text: text.replace(
-                    "ET.parse(\"app/data/io.github.cadric.Riteed.metainfo.xml\")",
-                    "ET.parse(\"app/data/other.metainfo.xml\")",
+                    'f"{tag_commit}:app/data/io.github.cadric.Riteed.metainfo.xml"',
+                    'f"{tag_commit}:app/data/other.metainfo.xml"',
                     1,
                 ),
                 "short-circuited comparison": lambda text: text.replace(
@@ -293,7 +293,10 @@ class ReleaseGuardEnforcementTests(unittest.TestCase):
         )
 
     def test_ancestry_guard_rejects_tag_commit_rebinding(self) -> None:
-        derived = '          tag_commit="$(git rev-list -n 1 "$release_ref")"\n'
+        derived = (
+            '          tag_commit="$(git rev-parse --verify '
+            '"refs/tags/$release_ref^{commit}")"\n'
+        )
         self._assert_guard_mutations(
             {
                 "assignment": lambda text: text.replace(
@@ -516,6 +519,32 @@ class ReleaseGuardEnforcementTests(unittest.TestCase):
                 "release_identity.appstream_top_release_must_match_tag must be true",
             ),
             (
+                ("release_identity", "tag_commit_must_be_exact_sha"),
+                "release_identity.tag_commit_must_be_exact_sha must be true",
+            ),
+            (
+                ("release_identity", "release_content_must_use_tag_commit"),
+                "release_identity.release_content_must_use_tag_commit must be true",
+            ),
+            (
+                (
+                    "signed_flatpak_publish",
+                    "hard_requirements",
+                    "workflow_dispatch_build_must_checkout_tag_commit",
+                ),
+                "signed_flatpak_publish.hard_requirements."
+                "workflow_dispatch_build_must_checkout_tag_commit must be true",
+            ),
+            (
+                (
+                    "signed_flatpak_publish",
+                    "hard_requirements",
+                    "checked_out_head_must_match_tag_commit_before_secrets",
+                ),
+                "signed_flatpak_publish.hard_requirements."
+                "checked_out_head_must_match_tag_commit_before_secrets must be true",
+            ),
+            (
                 "signing_key_governance",
                 "private_key_import",
                 "temporary_gnupg_home_required",
@@ -615,9 +644,16 @@ class ReleaseGuardEnforcementTests(unittest.TestCase):
                 "</releases></component>\n",
                 encoding="utf-8",
             )
+            self._git(fixture, "init", "--initial-branch=main")
+            self._git(fixture, "config", "user.name", "Guard Test")
+            self._git(fixture, "config", "user.email", "guard@example.invalid")
+            self._git(fixture, "add", ".")
+            self._git(fixture, "commit", "-m", "metadata")
             self.assertEqual(self._run_appstream(fixture, source, "1.2.3"), 0)
             self.assertNotEqual(self._run_appstream(fixture, source, "9.9.9"), 0)
             metadata.write_text("<component/>\n", encoding="utf-8")
+            self._git(fixture, "add", str(metadata.relative_to(fixture)))
+            self._git(fixture, "commit", "-m", "invalid metadata")
             self.assertNotEqual(self._run_appstream(fixture, source, "1.2.3"), 0)
 
     def _git(self, cwd: Path, *arguments: str) -> None:
@@ -647,6 +683,17 @@ class ReleaseGuardEnforcementTests(unittest.TestCase):
     def _run_appstream(self, fixture: Path, source: str, version: str) -> int:
         environment = os.environ.copy()
         environment["VERSION"] = version
+        tag_commit = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=fixture,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False,
+            timeout=10,
+        )
+        self.assertEqual(tag_commit.returncode, 0, tag_commit.stderr)
+        environment["TAG_COMMIT"] = tag_commit.stdout.strip()
         return subprocess.run(
             ["python3", "-c", source],
             cwd=fixture,
@@ -655,6 +702,7 @@ class ReleaseGuardEnforcementTests(unittest.TestCase):
             stderr=subprocess.PIPE,
             text=True,
             check=False,
+            timeout=10,
         ).returncode
 
 

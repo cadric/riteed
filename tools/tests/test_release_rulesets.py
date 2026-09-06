@@ -20,7 +20,7 @@ def _policy() -> dict[str, Any]:
                     "dependency-preflight",
                     "policy-pack",
                     "native-tests",
-                    "ruleset-governance",
+                    "governance-static",
                     "flatpak-tests",
                     "flatpak",
                 ]
@@ -84,7 +84,7 @@ def _active_rulesets() -> list[dict[str, Any]]:
                             {"context": "dependency-preflight"},
                             {"context": "policy-pack"},
                             {"context": "native-tests"},
-                            {"context": "ruleset-governance"},
+                            {"context": "governance-static"},
                             {"context": "flatpak-tests"},
                             {"context": "flatpak"},
                         ],

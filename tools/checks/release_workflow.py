@@ -37,8 +37,13 @@ def check_publish_triggers(workflow: Workflow | None, errors: list[str]) -> None
     if "workflow_dispatch" in workflow.triggers:
         if not _any_run_contains(workflow, "release_ref", "REQUESTED_RELEASE_REF", "GITHUB_EVENT_NAME", "workflow_dispatch"):
             foundation.add(errors, f"{WORKFLOW}: workflow_dispatch must validate an explicit release_ref version tag")
-        if not _build_checkout_targets_release_ref(workflow):
-            foundation.add(errors, f"{WORKFLOW}: build checkout must target needs.preflight.outputs.release_ref")
+        if not _build_checkout_targets_tag_commit(workflow):
+            foundation.add(errors, f"{WORKFLOW}: build checkout must target needs.preflight.outputs.tag_commit")
+        if not _build_verifies_tag_commit_before_secret(workflow):
+            foundation.add(
+                errors,
+                f"{WORKFLOW}: build must verify checked-out HEAD against tag_commit before signing secrets",
+            )
 
 
 def check_monotonic_candidate_ref(
@@ -152,7 +157,7 @@ def check_required_validate_checks(
         foundation.add(errors, f"{WORKFLOW}: strict release-check-runs invocation is required before signing")
 
 
-def check_ruleset_governance_wiring(
+def check_required_validate_jobs(
     policy: dict[str, Any],
     workflow: Workflow | None,
     errors: list[str],
@@ -160,27 +165,6 @@ def check_ruleset_governance_wiring(
     if workflow is None:
         return
     _check_required_validate_jobs(policy, workflow, errors)
-    job = workflow.jobs.get("ruleset-governance")
-    if job is None:
-        foundation.add(errors, f"{VALIDATE_WORKFLOW}: ruleset-governance job is required")
-        return
-    governance_steps = [step for step in job.steps if _is_governance_step(step)]
-    if len(governance_steps) != 1:
-        foundation.add(errors, f"{VALIDATE_WORKFLOW}: ruleset-governance must run tools.ruleset_governance_check")
-    else:
-        expected = (
-            policy.get("github_actions_release_safety", {})
-            .get("repository_governance", {})
-            .get("validation_step_condition")
-        )
-        if not _supported_run_context(workflow, job, governance_steps[0], require_root=True):
-            foundation.add(errors, f"{VALIDATE_WORKFLOW}: governance must execute in the repository root with the supported shell")
-        actual = governance_steps[0].raw.get("if")
-        if not isinstance(expected, str) or not expected.strip() or actual != expected:
-            foundation.add(errors, f"{VALIDATE_WORKFLOW}: ruleset-governance must use the approved execution condition")
-    token_env = job.env | (governance_steps[0].env if len(governance_steps) == 1 else {})
-    if not any(token_env.get(key) == "${{ secrets.RULESET_GOVERNANCE_TOKEN }}" for key in ("GITHUB_TOKEN", "GH_TOKEN")):
-        foundation.add(errors, f"{VALIDATE_WORKFLOW}: ruleset-governance must use RULESET_GOVERNANCE_TOKEN")
     native = workflow.jobs.get("native-tests")
     if native and _job_mentions_token(native):
         foundation.add(errors, f"{VALIDATE_WORKFLOW}: native-tests must not pass GitHub tokens into the container")
@@ -290,15 +274,57 @@ def _any_run_contains(workflow: Workflow, *tokens: str) -> bool:
     return any(all(token in step.run for token in tokens) for job in workflow.jobs.values() for step in job.steps)
 
 
-def _build_checkout_targets_release_ref(workflow: Workflow) -> bool:
+def _build_checkout_targets_tag_commit(workflow: Workflow) -> bool:
     build = workflow.jobs.get("build")
     if build is None:
         return False
     checkouts = [step for step in build.steps if step.uses.startswith("actions/checkout@")]
     if len(checkouts) != 1:
         return False
+    if _has_condition(build) or _continues_on_error(build):
+        return False
+    if _has_condition(checkouts[0]) or _continues_on_error(checkouts[0]):
+        return False
     with_value = checkouts[0].raw.get("with")
-    return isinstance(with_value, dict) and with_value.get("ref") == "${{ needs.preflight.outputs.release_ref }}"
+    return isinstance(with_value, dict) and with_value.get("ref") == "${{ needs.preflight.outputs.tag_commit }}"
+
+
+def _build_verifies_tag_commit_before_secret(workflow: Workflow) -> bool:
+    build = workflow.jobs.get("build")
+    if build is None or _has_condition(build) or _continues_on_error(build):
+        return False
+    if _contains_signing_secret(workflow.raw.get("env", {})) or _contains_signing_secret(
+        build.raw.get("env", {})
+    ):
+        return False
+    checkout_indexes = [
+        index
+        for index, step in enumerate(build.steps)
+        if step.uses.startswith("actions/checkout@")
+    ]
+    secret_indexes = [
+        index for index, step in enumerate(build.steps) if _step_uses_signing_secret(step)
+    ]
+    if len(checkout_indexes) != 1 or not secret_indexes:
+        return False
+    expected = [
+        ["set", "-euo", "pipefail"],
+        ["actual_head=$(git rev-parse HEAD)"],
+        ["test", "$actual_head", "=", "$TAG_COMMIT"],
+    ]
+    verifiers = [
+        index
+        for index, step in enumerate(build.steps)
+        if step.env.get("TAG_COMMIT") == "${{ needs.preflight.outputs.tag_commit }}"
+        and not _has_condition(step)
+        and not _continues_on_error(step)
+        and _supported_run_context(workflow, build, step, require_root=True)
+        and _shell_commands(step.run) == expected
+    ]
+    return (
+        len(verifiers) == 1
+        and checkout_indexes[0] < verifiers[0] < min(secret_indexes)
+    )
 
 
 def _monotonic_candidate_uses_release_ref(workflow: Workflow) -> bool:
@@ -480,18 +506,12 @@ def _check_required_validate_jobs(policy: dict[str, Any], workflow: Workflow, er
 
 
 def _allowed_conditional_step(job_id: str, step: Step) -> bool:
-    if job_id == "ruleset-governance" and _is_governance_step(step):
-        return True
     condition = str(step.raw.get("if", "")).strip()
     return step.uses.startswith("actions/upload-artifact@") and condition in {
         "failure()",
         "failure() || cancelled()",
         "cancelled() || failure()",
     }
-
-
-def _is_governance_step(step: Step) -> bool:
-    return _shell_commands(step.run) == [["python3", "-m", "tools.ruleset_governance_check"]]
 
 
 def _has_condition(value: Job | Step) -> bool:
@@ -504,12 +524,22 @@ def _continues_on_error(value: Job | Step) -> bool:
 
 
 def _job_uses_secret(job: Any) -> bool:
-    values = [*job.env.keys(), *job.env.values()]
-    for step in job.steps:
-        values.extend(step.env.keys())
-        values.extend(step.env.values())
-        values.append(step.run)
-    return any(secret in str(value) for secret in SIGNING_SECRETS for value in values)
+    return _contains_signing_secret(job.raw)
+
+
+def _step_uses_signing_secret(step: Step) -> bool:
+    return _contains_signing_secret(step.raw)
+
+
+def _contains_signing_secret(value: Any) -> bool:
+    if isinstance(value, dict):
+        return any(
+            _contains_signing_secret(key) or _contains_signing_secret(item)
+            for key, item in value.items()
+        )
+    if isinstance(value, (list, tuple)):
+        return any(_contains_signing_secret(item) for item in value)
+    return any(secret in str(value) for secret in SIGNING_SECRETS)
 
 
 def _job_mentions_token(job: Any) -> bool:

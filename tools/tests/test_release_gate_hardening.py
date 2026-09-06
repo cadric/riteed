@@ -280,18 +280,18 @@ class ReleaseWorkflowGateTests(unittest.TestCase):
                 release.check_release(root, errors)
                 self.assertTrue(errors)
 
-    def test_build_checkout_ref_must_be_exact_release_output(self) -> None:
+    def test_build_checkout_ref_must_be_exact_tag_commit_output(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             _copy_release_context(root)
             path = root / ".github" / "workflows" / "publish-flatpak.yml"
-            path.write_text(
-                path.read_text(encoding="utf-8").replace(
-                    "ref: ${{ needs.preflight.outputs.release_ref }}",
-                    "ref: ${{ needs.preflight.outputs.release_ref }}-decoy",
-                ),
-                encoding="utf-8",
+            original = path.read_text(encoding="utf-8")
+            changed = original.replace(
+                "ref: ${{ needs.preflight.outputs.tag_commit }}",
+                "ref: ${{ needs.preflight.outputs.tag_commit }}-decoy",
             )
+            self.assertNotEqual(changed, original)
+            path.write_text(changed, encoding="utf-8")
 
             errors: list[str] = []
             release.check_release(root, errors)
@@ -427,13 +427,13 @@ class ReleaseWorkflowGateTests(unittest.TestCase):
             path = root / ".github" / "workflows" / "validate.yml"
             lines = path.read_text(encoding="utf-8").splitlines()
             index = lines.index("      - name: Verify GitHub ruleset governance")
-            lines[index + 1] = "        if: ${{ false }}"
+            lines.insert(index + 1, "        if: ${{ false }}")
             path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
             errors: list[str] = []
             release.check_release(root, errors)
 
-        self.assertTrue(any("approved execution condition" in item for item in errors), errors)
+        self.assertTrue(any("governance-live" in item for item in errors), errors)
 
     def test_required_validate_job_cannot_be_conditionally_skipped(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

@@ -263,7 +263,7 @@
     {
       "resolution": "This short loading status is shown inside a Git review tab while the surrounding Source Control review context remains visible.",
       "path": "src/source_control/review_loader.rs",
-      "line": 46,
+      "line": 48,
       "match": "tab.set_git_review_text(&ellipsis_label(gettext(\"Loading Git review\")));",
       "kind": "i18n-short-string"
     },

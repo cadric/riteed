@@ -99,8 +99,8 @@
       "entrypoints": ["large_file::reader::read_window", "large_file::page_text::decode_page_window"],
       "real_input_shape": "User-selected local, portal, or mounted document file bytes read through async Gio windows and decoded from arbitrary byte windows without loading the whole file into GtkTextBuffer.",
       "coverage": [
-        {"type": "unit", "path": "app/src/large_file/reader.rs", "target": "read_window_records_offset_and_eof", "input_shape_asserted": "Window metadata for a bounded paged read"},
-        {"type": "unit", "path": "app/src/large_file/reader.rs", "target": "short_nonzero_read_requests_more_bytes", "input_shape_asserted": "Short non-EOF reads continue filling the requested window"},
+        {"type": "unit", "path": "app/src/large_file/reader_tests.rs", "target": "read_window_records_offset_and_eof", "input_shape_asserted": "Window metadata for a bounded paged read"},
+        {"type": "unit", "path": "app/src/large_file/reader_tests.rs", "target": "short_nonzero_read_requests_more_bytes", "input_shape_asserted": "Short non-EOF reads continue filling the requested window"},
         {"type": "property", "path": "app/src/large_file/page_text.rs", "target": "proptest_page_window_offsets_are_bounded", "input_shape_asserted": "Arbitrary byte windows and u64 offsets preserve ordered bounded progress when checked arithmetic succeeds"},
         {"type": "fuzz", "path": "app/fuzz/fuzz_targets/page_text_decode.rs", "target": "page_text_decode", "input_shape_asserted": "Eight little-endian offset bytes followed by arbitrary paged document bytes"}
       ],
@@ -153,16 +153,22 @@
     {
       "id": "git_status_ui",
       "kind": "project-tree",
-      "source_paths": ["app/src/source_control/*.rs", "app/src/source_control/**/*.rs", "app/src/git_process.rs", "app/src/git_status.rs"],
+      "source_paths": ["app/src/source_control/*.rs", "app/src/source_control/**/*.rs", "app/src/git_process.rs", "app/src/git_process/**/*.rs", "app/src/git_status.rs"],
       "entrypoints": ["open_source_control", "git-refresh", "git status --porcelain=v2 -z"],
-      "real_input_shape": "Generated and user-selected Git worktrees whose source-control sidebar consumes Git status subprocess output, attrs/tree metadata, and degraded states.",
+      "real_input_shape": "Generated and user-selected Git worktrees whose source-control sidebar consumes Git status subprocess output, attrs/tree metadata, bounded worktree file bytes for reviews, and degraded states.",
       "coverage": [
         {"type": "integration", "path": "app/src/gtk_tests_v9.rs", "target": "exercise_source_control_folder_flow", "input_shape_asserted": "GTK flow opens a Git folder and asserts source-control rows and review compare state"},
+        {"type": "integration", "path": "app/src/gtk_tests_v9.rs", "target": "exercise_review_close_reopen_during_worktree_read", "input_shape_asserted": "A real review A is cancelled after its first worktree chunk, review B opens before A settles, and B remains attached with complete text after both owned streams close"},
+        {"type": "integration", "path": "app/src/source_control/review_loader_tests.rs", "target": "real_worktree_loader_rejects_limit_plus_one", "input_shape_asserted": "A real Gio worktree read stops at the injected checked sentinel, closes its stream, and rejects the incomplete over-limit file"},
+        {"type": "integration", "path": "app/src/source_control/review_loader_tests.rs", "target": "cancellation_between_chunks_closes_once_and_completes_once", "input_shape_asserted": "A deterministic multi-chunk Gio worktree read is cancelled between chunks and closes before its single terminal callback"},
+        {"type": "integration", "path": "app/src/git_process/output_tests.rs", "target": "blob_and_status_caps_stop_retaining_after_the_sentinel", "input_shape_asserted": "Controlled Git children exceed the review-blob and status stdout profiles while the logical retained-byte counter stays within cap-plus-sentinel and concurrent scratch budgets"},
+        {"type": "integration", "path": "app/src/git_process/output_tests.rs", "target": "output_before_large_stdin_progresses_all_three_pipes", "input_shape_asserted": "A controlled child fills both output pipes before reading a large stdin payload, proving all three streams progress concurrently without deadlock"},
+        {"type": "integration", "path": "app/src/git_process/output_tests.rs", "target": "timeout_cleans_pipes_held_after_the_direct_child_is_reaped", "input_shape_asserted": "A forked descendant retains inherited output descriptors after the direct child reaps; the private cleanup boundary settles pipes and delivers one timeout"},
         {"type": "stress", "path": "stress/scripts/git-status-stress.json", "target": "git-status-stress", "input_shape_asserted": "Stress script opens generated repos for many-untracked, many-modified, conflicted, non-UTF-8, submodule, index-lock, and huge-status cases"}
       ],
       "gaps": [],
       "reviewed_exceptions": [],
-      "last_reviewed": "2026-05-26"
+      "last_reviewed": "2026-09-06"
     },
     {
       "id": "save_search_ui",

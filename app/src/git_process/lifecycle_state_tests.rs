@@ -2,18 +2,29 @@ use super::GitProcessError;
 use super::lifecycle::{GitLifecycle, capture_result};
 
 #[test]
-fn communication_and_successful_wait_are_both_required_exactly_once() {
-    let mut lifecycle = GitLifecycle::default();
-    assert!(!lifecycle.begin_wait());
-    assert!(!lifecycle.finish_wait());
-    lifecycle.communicated();
-    assert!(!lifecycle.is_reaped());
-    assert!(lifecycle.begin_wait());
-    assert!(!lifecycle.begin_wait());
-    assert!(lifecycle.finish_wait());
-    assert!(lifecycle.is_reaped());
-    assert!(!lifecycle.finish_wait());
-    assert!(!lifecycle.begin_wait());
+fn io_and_successful_wait_are_both_required_in_either_order() {
+    for io_first in [false, true] {
+        let mut lifecycle = GitLifecycle::default();
+        if io_first {
+            assert!(lifecycle.settle_io());
+            assert!(!lifecycle.take_terminal());
+        }
+        assert!(lifecycle.begin_wait());
+        assert!(!lifecycle.begin_wait());
+        assert!(lifecycle.finish_wait());
+        assert!(lifecycle.is_reaped());
+        if io_first {
+            assert!(lifecycle.take_terminal());
+        } else {
+            assert!(!lifecycle.take_terminal(), "I/O is still required");
+            assert!(lifecycle.settle_io());
+            assert!(lifecycle.take_terminal());
+        }
+        assert!(!lifecycle.take_terminal());
+        assert!(!lifecycle.finish_wait());
+        assert!(!lifecycle.begin_wait());
+        assert!(!lifecycle.settle_io());
+    }
 }
 
 #[test]
@@ -25,7 +36,7 @@ fn cancellation_deadline_and_io_failure_preserve_the_first_reason() {
     ] {
         let mut lifecycle = GitLifecycle::default();
         lifecycle.record_reason(first.clone());
-        lifecycle.communicated();
+        lifecycle.settle_io();
         lifecycle.record_reason(GitProcessError::TimedOut);
         lifecycle.record_reason(GitProcessError::Cancelled);
         assert!(lifecycle.begin_wait());
@@ -38,7 +49,6 @@ fn cancellation_deadline_and_io_failure_preserve_the_first_reason() {
 #[test]
 fn failed_waits_retain_supervision_and_report_once() {
     let mut lifecycle = GitLifecycle::default();
-    lifecycle.communicated();
     assert!(lifecycle.begin_wait());
     assert!(lifecycle.wait_failed());
     assert!(!lifecycle.finish_wait());

@@ -48,9 +48,9 @@ class ReleaseHardeningTests(unittest.TestCase):
             workflow_path.write_text(workflow, encoding="utf-8")
             errors: list[str] = []
             release.check_release(root, errors)
-            self.assertTrue(any("RULESET_GOVERNANCE_TOKEN" in item for item in errors), errors)
+            self.assertTrue(any("governance-live" in item for item in errors), errors)
 
-    def test_ruleset_governance_step_skips_contexts_without_repo_secrets(self) -> None:
+    def test_static_governance_is_unconditional_and_live_is_main_only(self) -> None:
         workflow_path = REPO_ROOT / ".github" / "workflows" / "validate.yml"
         errors: list[str] = []
         workflow = release_workflow.parse(
@@ -60,12 +60,14 @@ class ReleaseHardeningTests(unittest.TestCase):
         )
         self.assertEqual(errors, [])
         self.assertIsNotNone(workflow)
-        job = workflow.jobs["ruleset-governance"]
-        step = next(step for step in job.steps if "tools.ruleset_governance_check" in step.run)
-        condition = str(step.raw.get("if", ""))
-        self.assertIn("github.actor != 'dependabot[bot]'", condition)
-        self.assertIn("github.event.pull_request.user.login != 'dependabot[bot]'", condition)
-        self.assertIn("github.event.pull_request.head.repo.full_name == github.repository", condition)
+        static = workflow.jobs["governance-static"]
+        live = workflow.jobs["governance-live"]
+        self.assertEqual(str(static.raw.get("if", "")), "")
+        condition = str(live.raw.get("if", ""))
+        self.assertIn("github.event_name == 'push'", condition)
+        self.assertIn("github.event_name == 'schedule'", condition)
+        self.assertIn("github.event_name == 'workflow_dispatch'", condition)
+        self.assertIn("github.ref == 'refs/heads/main'", condition)
 
     def test_publish_required_checks_must_be_nonempty_policy_list(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -153,13 +155,13 @@ jobs:
             self.assertTrue(any("pages: write must stay scoped" in item for item in errors), errors)
             self.assertTrue(any("id-token: write must stay scoped" in item for item in errors), errors)
 
-    def test_manual_publish_checkout_must_target_release_ref(self) -> None:
+    def test_manual_publish_checkout_must_target_tag_commit(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             _copy_release_context(root)
             workflow_path = root / ".github" / "workflows" / "publish-flatpak.yml"
             workflow = workflow_path.read_text(encoding="utf-8").replace(
-                "        with:\n          ref: ${{ needs.preflight.outputs.release_ref }}\n",
+                "        with:\n          ref: ${{ needs.preflight.outputs.tag_commit }}\n",
                 "",
                 1,
             )

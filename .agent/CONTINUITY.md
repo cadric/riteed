@@ -2,6 +2,81 @@
 
 ## OUTCOMES
 
+- 2026-09-06 audit P3 Task 8 local implementation (RIT-GEN-038): Validate now
+  separates the unconditional tokenless `governance-static` PR context from
+  protected-main `governance-live`. Publish collection and decision require
+  complete bounded same-origin API pages, the newest exact-SHA check, exact
+  workflow/run/job/repository provenance and one successful decisive step.
+  The live checker validates the main-only environment plus repository-secret
+  absence and environment-secret presence. Offline fixtures cover skipped,
+  neutral, failed and wrong-producer evidence, strict IDs, incomplete/changing
+  pagination, foreign URLs, null responses and credential-safe errors. Final
+  tooling tests passed 328 tests with one intentional live-token skip; 42
+  policy tests, strict policy-pack, app strict (465 library tests plus stress/UI)
+  and 84.6% coverage passed. Independent review is clear. The repository owner
+  approved the bounded remote activation, but no remote state was changed by
+  this local task; `POLICY-RIT-GEN-038` remains open pending environment/secret/
+  context activation and real PR/main/publish evidence. PR #38 CodeQL high
+  alert 185 traced a policy-configured secret identifier, not a credential
+  value, into repository-present and environment-missing diagnostics. The
+  follow-up keeps both decisions but emits scope-only messages; a synthetic
+  sentinel regression covers the helper and actual CLI output. CodeQL rerun
+  evidence remains pending.
+
+- 2026-09-06 audit P3 Task 7 (RIT-GEN-028): manual release preflight now
+  resolves one peeled 40-hex tag commit and reads Cargo/AppStream metadata
+  from that object. Exact-check collection and rollback keep the same commit,
+  while the build checks out the exported SHA and verifies `HEAD` before any
+  signing-secret exposure. Release tooling rejects rebinding, duplicate output
+  exports/mappings, misplaced or inert guards, conditional/fallback checkout
+  and verifier steps, and workflow/job/step secret exposure before the verifier.
+  Real temporary-repository tests cover divergent worktree metadata, annotated
+  and moved tags, and both matching and mismatching checked-out `HEAD` values.
+  The implementation and 287-test tooling suite passed with one intentional
+  live-token skip; 40 policy unit tests and the strict policy-pack gate passed.
+  Final app strict passed 465 library tests plus the stress unit and UI smoke,
+  and coverage was 84.7%. Independent review found no outstanding issue after
+  guard bodies were bound to their active owners. No GitHub write, release
+  dispatch or Flatpak build was performed.
+
+- 2026-09-06 audit P3 Task 12B (RIT-GEN-021): the shared Git runner now
+  concurrently streams stdin/stdout/stderr with cap-plus-sentinel retention,
+  fixed 64 KiB discard reads, uncancelled closes/wait, and terminal delivery
+  only after I/O settlement plus direct-child reap. Caller cancellation reaches
+  supervision through an owned watcher without cancelling cleanup. A private
+  cleanup token is activated only after cleanup is requested and the direct
+  child has reaped, covering inherited descendant pipe descriptors without
+  truncating normal drains or live mutations. The test peak is a conservative
+  logical upper bound, not allocator/RSS evidence. Task 12A and 12B together
+  close RIT-GEN-021. Focused Git/GTK and git-status-stress passed; final strict
+  validation passed 465 library tests plus stress/UI smoke, and coverage was
+  84.7%. Independent rereview cleared the descendant-fixture teardown and
+  found no remaining actionable issue. No GitHub writes or Flatpak build were
+  performed.
+
+- 2026-09-06 audit P3 Task 12A (RIT-GEN-021): Git review worktree reads now
+  stop at shared 1,000,001-byte limit plus checked sentinel, require EOF,
+  and close owned Gio streams before terminal delivery even on cancellation.
+  Actual loader RED accepted six bytes under injected five-byte cap; final
+  byte-count and GTK A-close/B-reopen coverage pass. Strict gate: 456 tests;
+  coverage: 84.6%. Independent rereview cleared test setup/timeout findings.
+  See docs/audit-p3-cleanup.md for bounds, transient copies and evidence.
+  Git subprocess pipe buffering remains pending Task 12B; do not close the
+  full RIT-GEN-021 finding yet. No GitHub writes or Flatpak build performed.
+
+- 2026-09-06 audit P3 Task 2: existing RIT-GEN-022 URI/tab/request-token
+  ownership is characterized with held real workspace-open completions. A's
+  cancelled callback cannot clear B's pending registration; B finishes attached
+  with the expected text and URI. No runtime repair or new RED is claimed.
+  Focused GTK, strict app gate (447 tests), independent review, and coverage
+  (83.8%) passed on fix/audit-p3 based on integrated main 6aaffc3e.
+  Baseline discovery: desktop high-contrast=true makes the existing v10
+  Solarized test fail because app_chrome intentionally emits no custom CSS.
+  Private Xvfb/D-Bus alone still reads that setting. Isolated XDG config/data
+  plus GSETTINGS_BACKEND=memory passes; no desktop preferences were modified.
+  Remaining P3 tasks are not complete. Logs: /tmp/riteed-p3-validation-hGkt8u/;
+  local ledger: docs/superpowers/p3-progress.md.
+
 - 2026-09-06 P2 integration follow-up: the user approved committing P2
   and merging it into local main before the separate P3 cleanup. This
   supersedes the earlier no-commit/build status below. Twelve signed commits

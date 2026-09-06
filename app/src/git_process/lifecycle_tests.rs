@@ -18,7 +18,7 @@ fn timed_out_mutation_remains_pending_during_its_grace_checkpoint() {
     let actions: Rc<RefCell<Vec<&'static str>>> = Rc::new(RefCell::new(Vec::new()));
     let actions_for_start = Rc::clone(&actions);
     let actions_for_deadline = Rc::clone(&actions);
-    let actions_for_communication = Rc::clone(&actions);
+    let actions_for_io = Rc::clone(&actions);
     let actions_for_wait = Rc::clone(&actions);
     let actions_for_term = Rc::clone(&actions);
     let actions_for_force = Rc::clone(&actions);
@@ -46,9 +46,11 @@ fn timed_out_mutation_remains_pending_during_its_grace_checkpoint() {
             communication_error: false,
             wait_error: None,
             wait_failed: None,
-            communication_settled: Some(Rc::new(move || {
-                actions_for_communication.borrow_mut().push("communication");
+            io_settled: Some(Rc::new(move || {
+                actions_for_io.borrow_mut().push("io");
             })),
+            io_fault: None,
+            cancellation_accepted: None,
             wait_completed: Some(Rc::new(move || actions_for_wait.borrow_mut().push("wait"))),
             term_sent: Some(Rc::new(move || actions_for_term.borrow_mut().push("term"))),
             force_exited: Some(Rc::new(move || {
@@ -73,10 +75,7 @@ fn timed_out_mutation_remains_pending_during_its_grace_checkpoint() {
         held_grace.borrow().is_some(),
         "the grace callback must be held explicitly"
     );
-    spin_until(&context, Duration::from_secs(10), || {
-        actions.borrow().contains(&"communication")
-    });
-    assert!(actions.borrow().contains(&"communication"));
+    assert!(!actions.borrow().contains(&"io"));
     assert!(
         results.borrow().is_empty(),
         "a mutating child must remain supervised during the grace checkpoint"
@@ -84,6 +83,9 @@ fn timed_out_mutation_remains_pending_during_its_grace_checkpoint() {
     assert!(!actions.borrow().contains(&"force"));
     assert!(!actions.borrow().contains(&"term"));
     fixture.release();
+    spin_until(&context, Duration::from_secs(10), || {
+        actions.borrow().contains(&"io")
+    });
     spin_until(&context, Duration::from_secs(10), || {
         !results.borrow().is_empty()
     });
@@ -110,6 +112,8 @@ fn cancelled_mutation_defers_terminal_callback_until_reaped() {
     let child_for_start = Rc::clone(&fixture.child);
     let settled = Rc::new(Cell::new(false));
     let settled_for_config = Rc::clone(&settled);
+    let accepted = Rc::new(Cell::new(false));
+    let accepted_for_config = Rc::clone(&accepted);
     let cancellable = gio::Cancellable::new();
     run_git_with_deadlines(
         fixture.spec(),
@@ -125,7 +129,9 @@ fn cancelled_mutation_defers_terminal_callback_until_reaped() {
             communication_error: false,
             wait_error: None,
             wait_failed: None,
-            communication_settled: Some(Rc::new(move || settled_for_config.set(true))),
+            io_settled: Some(Rc::new(move || settled_for_config.set(true))),
+            io_fault: None,
+            cancellation_accepted: Some(Rc::new(move || accepted_for_config.set(true))),
             wait_completed: None,
             term_sent: None,
             force_exited: None,
@@ -134,12 +140,14 @@ fn cancelled_mutation_defers_terminal_callback_until_reaped() {
     );
     fixture.wait_until_ready(&context);
     cancellable.cancel();
-    spin_until(&context, Duration::from_secs(10), || settled.get());
+    spin_until(&context, Duration::from_secs(10), || accepted.get());
+    assert!(!settled.get());
     assert!(
         results.borrow().is_empty(),
         "mutating cancellation must retain the operation until the child reaps"
     );
     fixture.release();
+    spin_until(&context, Duration::from_secs(10), || settled.get());
     spin_until(&context, Duration::from_secs(10), || {
         fixture.exited.is_file()
     });
@@ -179,6 +187,8 @@ fn cancelled_mutation_keeps_cancelled_reason_when_its_deadline_later_fires() {
     let held_grace_for_config = Rc::clone(&held_grace);
     let settled = Rc::new(Cell::new(false));
     let settled_for_config = Rc::clone(&settled);
+    let accepted = Rc::new(Cell::new(false));
+    let accepted_for_config = Rc::clone(&accepted);
     let cancellable = gio::Cancellable::new();
     run_git_with_deadlines(
         fixture.spec(),
@@ -194,7 +204,9 @@ fn cancelled_mutation_keeps_cancelled_reason_when_its_deadline_later_fires() {
             communication_error: false,
             wait_error: None,
             wait_failed: None,
-            communication_settled: Some(Rc::new(move || settled_for_config.set(true))),
+            io_settled: Some(Rc::new(move || settled_for_config.set(true))),
+            io_fault: None,
+            cancellation_accepted: Some(Rc::new(move || accepted_for_config.set(true))),
             wait_completed: None,
             term_sent: None,
             force_exited: None,
@@ -205,7 +217,8 @@ fn cancelled_mutation_keeps_cancelled_reason_when_its_deadline_later_fires() {
     );
     fixture.wait_until_ready(&context);
     cancellable.cancel();
-    spin_until(&context, Duration::from_secs(10), || settled.get());
+    spin_until(&context, Duration::from_secs(10), || accepted.get());
+    assert!(!settled.get());
     assert!(
         results.borrow().is_empty(),
         "cancellation must remain pending before deadline"
@@ -216,6 +229,7 @@ fn cancelled_mutation_keeps_cancelled_reason_when_its_deadline_later_fires() {
     });
     assert!(results.borrow().is_empty());
     fixture.release();
+    spin_until(&context, Duration::from_secs(10), || settled.get());
     spin_until(&context, Duration::from_secs(10), || {
         !results.borrow().is_empty()
     });

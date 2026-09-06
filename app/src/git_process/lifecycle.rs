@@ -24,7 +24,11 @@ pub(super) struct GitDeadlineConfig {
     #[cfg(test)]
     pub(super) child_started: Option<ChildStartedObserver>,
     #[cfg(test)]
-    pub(super) communication_settled: Option<Rc<dyn Fn()>>,
+    pub(super) io_settled: Option<Rc<dyn Fn()>>,
+    #[cfg(test)]
+    pub(super) io_fault: Option<Rc<dyn Fn()>>,
+    #[cfg(test)]
+    pub(super) cancellation_accepted: Option<Rc<dyn Fn()>>,
     #[cfg(test)]
     pub(super) wait_completed: Option<Rc<dyn Fn()>>,
     #[cfg(test)]
@@ -51,7 +55,11 @@ impl GitDeadlineConfig {
             #[cfg(test)]
             child_started: None,
             #[cfg(test)]
-            communication_settled: None,
+            io_settled: None,
+            #[cfg(test)]
+            io_fault: None,
+            #[cfg(test)]
+            cancellation_accepted: None,
             #[cfg(test)]
             wait_completed: None,
             #[cfg(test)]
@@ -68,20 +76,30 @@ impl GitDeadlineConfig {
 #[derive(Default)]
 pub(super) struct GitLifecycle {
     pub(super) reason: Option<super::GitProcessError>,
-    phase: Phase,
+    io: IoPhase,
+    wait: WaitPhase,
+    completed: bool,
     wait_failure_reported: bool,
 }
+
 #[derive(Default, Eq, PartialEq)]
-enum Phase {
+enum IoPhase {
     #[default]
-    Communicating,
-    ReadyToWait,
-    Waiting,
+    Active,
+    Settled,
+}
+
+#[derive(Default, Eq, PartialEq)]
+enum WaitPhase {
+    #[default]
+    Idle,
+    InFlight,
     Reaped,
 }
+
 impl GitLifecycle {
     pub(super) fn is_reaped(&self) -> bool {
-        self.phase == Phase::Reaped
+        self.wait == WaitPhase::Reaped
     }
 
     pub(super) fn record_reason(&mut self, reason: super::GitProcessError) {
@@ -89,27 +107,39 @@ impl GitLifecycle {
             self.reason = Some(reason);
         }
     }
-    pub(super) fn communicated(&mut self) {
-        self.phase = Phase::ReadyToWait;
-    }
-    pub(super) fn begin_wait(&mut self) -> bool {
-        if self.phase != Phase::ReadyToWait {
+    pub(super) fn settle_io(&mut self) -> bool {
+        if self.io == IoPhase::Settled {
             return false;
         }
-        self.phase = Phase::Waiting;
+        self.io = IoPhase::Settled;
+        true
+    }
+    pub(super) fn begin_wait(&mut self) -> bool {
+        if self.wait != WaitPhase::Idle || self.completed {
+            return false;
+        }
+        self.wait = WaitPhase::InFlight;
         true
     }
     pub(super) fn wait_failed(&mut self) -> bool {
-        self.phase = Phase::ReadyToWait;
+        self.wait = WaitPhase::Idle;
         let report = !self.wait_failure_reported;
         self.wait_failure_reported = true;
         report
     }
     pub(super) fn finish_wait(&mut self) -> bool {
-        if self.phase != Phase::Waiting {
+        if self.wait != WaitPhase::InFlight {
             return false;
         }
-        self.phase = Phase::Reaped;
+        self.wait = WaitPhase::Reaped;
+        true
+    }
+
+    pub(super) fn take_terminal(&mut self) -> bool {
+        if self.completed || self.io != IoPhase::Settled || self.wait != WaitPhase::Reaped {
+            return false;
+        }
+        self.completed = true;
         true
     }
 }

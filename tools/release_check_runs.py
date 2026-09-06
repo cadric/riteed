@@ -7,6 +7,8 @@ from pathlib import Path
 import sys
 from typing import Any
 
+from tools.checks import release_evidence
+
 
 class CheckRunInputError(ValueError):
     pass
@@ -92,8 +94,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--head-sha", required=True, help="Exact release commit SHA")
     args = parser.parse_args(argv)
     try:
-        payloads = _load_payloads(args.input)
-        required, app_slug = _load_policy(args.policy)
+        payloads, evidence = _load_evidence(args.input)
+        required, app_slug, require_live = _load_policy(args.policy)
     except (CheckRunInputError, OSError) as exc:
         print(str(exc), file=sys.stderr)
         return 2
@@ -106,12 +108,35 @@ def main(argv: list[str] | None = None) -> int:
     if errors:
         print("\n".join(errors), file=sys.stderr)
         return 1
+    if require_live:
+        if evidence is None:
+            print("Release checks require paginated live governance evidence.", file=sys.stderr)
+            return 1
+        policy = _load_json(args.policy)
+        errors = release_evidence.check_live_governance(
+            evidence,
+            policy=policy,
+            head_sha=args.head_sha,
+            app_slug=app_slug,
+        )
+        if errors:
+            print("\n".join(errors), file=sys.stderr)
+            return 1
     return 0
 
 
-def _load_payloads(path: Path) -> list[dict[str, Any]]:
+def _load_evidence(path: Path) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
     raw = _load_json(path)
+    if isinstance(raw, dict) and "check_runs" in raw:
+        pages = raw.get("check_runs")
+        if not isinstance(pages, list):
+            raise CheckRunInputError(f"{path}: check_runs evidence must be a non-empty page list")
+        return _validate_payloads(path, pages), raw
     values = raw if isinstance(raw, list) else [raw]
+    return _validate_payloads(path, values), None
+
+
+def _validate_payloads(path: Path, values: Any) -> list[dict[str, Any]]:
     if not values or not all(isinstance(value, dict) for value in values):
         raise CheckRunInputError(f"{path}: expected a check-runs object or non-empty list of objects")
     for value in values:
@@ -121,23 +146,30 @@ def _load_payloads(path: Path) -> list[dict[str, Any]]:
     return values
 
 
-def _load_policy(path: Path) -> tuple[list[str], str]:
+def _load_policy(path: Path) -> tuple[list[str], str, bool]:
     raw = _load_json(path)
     if not isinstance(raw, dict):
         raise CheckRunInputError(f"{path}: release policy must be an object")
     requirements = raw.get("signed_flatpak_publish", {}).get("hard_requirements", {})
     required = requirements.get("required_validate_check_contexts")
     app_slug = requirements.get("required_check_app_slug")
+    require_live = requirements.get("required_live_governance_check_for_publish", False)
     if (
         not isinstance(required, list)
         or not required
-        or not all(isinstance(item, str) and item.strip() for item in required)
+        or not all(
+            isinstance(item, str) and item and item.strip() == item for item in required
+        )
         or len(set(required)) != len(required)
     ):
         raise CheckRunInputError(f"{path}: required_validate_check_contexts must be unique non-empty strings")
-    if not isinstance(app_slug, str) or not app_slug.strip():
+    if not isinstance(app_slug, str) or not app_slug or app_slug.strip() != app_slug:
         raise CheckRunInputError(f"{path}: required_check_app_slug must be a non-empty string")
-    return [item.strip() for item in required], app_slug.strip()
+    if not isinstance(require_live, bool):
+        raise CheckRunInputError(
+            f"{path}: required_live_governance_check_for_publish must be boolean"
+        )
+    return required, app_slug, require_live
 
 
 def _load_json(path: Path) -> Any:

@@ -24,6 +24,10 @@ GitHub Actions imports the private key only inside the protected
 `flatpak-beta-signing` environment, signs both OSTree commits and repository
 summary metadata, verifies that the imported secret key matches the committed
 public key, and exports the committed binary public key into `GPGKey=` fields.
+Preflight peels the requested version tag to one full commit SHA and reads
+Cargo/AppStream metadata from that object. The build checks out and verifies
+the same SHA before the signing secrets are exposed; the tag name remains in
+published provenance and rollback review.
 
 ## Key Rotation And Recovery
 
@@ -52,7 +56,8 @@ use the emergency rollback input on the publish workflow, document the target
 version/ref in the release notes, and preserve the previous Pages artifact for
 post-incident comparison. Emergency rollback publishing routes through the
 separate `flatpak-beta-rollback` GitHub environment; its required reviewer
-identity is policy-pinned and verified by the live `ruleset-governance` job.
+identity is policy-pinned and verified by the protected-main
+`governance-live` job.
 
 ## Install
 

@@ -98,8 +98,8 @@
       "justification": "The helper takes and cancels the current Gio cancellable before a page, search, or line-jump operation installs its replacement."
     },
     {
-      "path": "src/large_file/reader.rs",
-      "line": 445,
+      "path": "src/large_file/reader_tests.rs",
+      "line": 156,
       "match": "result: &Rc<RefCell<Option<Result<ReadWindow, AppError>>>>,",
       "kind": "runtime-shared-state",
       "ownership": "The reader unit test owns one local callback result cell for one temporary Gio read.",

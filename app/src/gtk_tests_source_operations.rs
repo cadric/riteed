@@ -23,7 +23,8 @@ type HeldStatus = Rc<RefCell<Option<Resume>>>;
 #[derive(Default)]
 struct LifecycleObservers {
     deadline_fired: Option<Rc<dyn Fn()>>,
-    communication_settled: Option<Rc<dyn Fn()>>,
+    io_settled: Option<Rc<dyn Fn()>>,
+    cancellation_accepted: Option<Rc<dyn Fn()>>,
     wait_completed: Option<Rc<dyn Fn()>>,
     grace_checkpoint: Option<Rc<dyn Fn(GraceAdvance)>>,
 }
@@ -31,7 +32,7 @@ struct LifecycleObservers {
 struct GraceSignals {
     held_status: HeldStatus,
     deadline_fired: Rc<Cell<bool>>,
-    communication_settled: Rc<Cell<bool>>,
+    io_settled: Rc<Cell<bool>>,
     wait_completed: Rc<Cell<bool>>,
     held_grace: Rc<RefCell<Option<GraceAdvance>>>,
 }
@@ -230,7 +231,9 @@ impl Fixture {
             operation,
             grace,
             deadline_fired: observers.deadline_fired,
-            communication_settled: observers.communication_settled,
+            io_settled: observers.io_settled,
+            io_fault: None,
+            cancellation_accepted: observers.cancellation_accepted,
             wait_completed: observers.wait_completed,
             grace_checkpoint: observers.grace_checkpoint,
         })
@@ -302,10 +305,9 @@ fn exercise_grace_root_round_trip(app: &adw::Application) {
     fixture.action(GitRowAction::Stage);
     spin_until("controlled writer reports ready", || child.ready.exists());
     spin_until("Task 1 deadline and grace checkpoints", || {
-        signals.deadline_fired.get()
-            && signals.communication_settled.get()
-            && signals.held_grace.borrow().is_some()
+        signals.deadline_fired.get() && signals.held_grace.borrow().is_some()
     });
+    assert!(!signals.io_settled.get());
     assert_grace_deadline_state(&fixture, &signals, children_before);
     let before_repeat = fixture.dispatches.borrow().len();
     fixture.action(GitRowAction::Stage);
@@ -334,6 +336,9 @@ fn exercise_grace_root_round_trip(app: &adw::Application) {
     let old_timeout = gettextrs::gettext("The Git operation timed out.");
     fixture.labels.borrow_mut().clear();
     child.release();
+    spin_until("controlled writer settles owned pipes", || {
+        signals.io_settled.get()
+    });
     spin_until("controlled writer reaches terminal wait", || {
         signals.wait_completed.get()
     });
@@ -409,11 +414,11 @@ fn install_grace_control(
         *held_status_for_hook.borrow_mut() = Some(resume);
     })));
     let deadline_fired = Rc::new(Cell::new(false));
-    let communication_settled = Rc::new(Cell::new(false));
+    let io_settled = Rc::new(Cell::new(false));
     let wait_completed = Rc::new(Cell::new(false));
     let held_grace: Rc<RefCell<Option<GraceAdvance>>> = Rc::new(RefCell::new(None));
     let deadline_for_hook = Rc::clone(&deadline_fired);
-    let communication_for_hook = Rc::clone(&communication_settled);
+    let io_for_hook = Rc::clone(&io_settled);
     let wait_for_hook = Rc::clone(&wait_completed);
     let grace_for_hook = Rc::clone(&held_grace);
     let guard = fixture.controlled(
@@ -422,7 +427,8 @@ fn install_grace_control(
         Duration::from_millis(30),
         LifecycleObservers {
             deadline_fired: Some(Rc::new(move || deadline_for_hook.set(true))),
-            communication_settled: Some(Rc::new(move || communication_for_hook.set(true))),
+            io_settled: Some(Rc::new(move || io_for_hook.set(true))),
+            cancellation_accepted: None,
             wait_completed: Some(Rc::new(move || wait_for_hook.set(true))),
             grace_checkpoint: Some(Rc::new(move |advance| {
                 *grace_for_hook.borrow_mut() = Some(advance);
@@ -434,7 +440,7 @@ fn install_grace_control(
         GraceSignals {
             held_status,
             deadline_fired,
-            communication_settled,
+            io_settled,
             wait_completed,
             held_grace,
         },
@@ -449,8 +455,10 @@ fn exercise_user_cancellation(app: &adw::Application) {
     let child = ControlledChild::new(fixture.repo_a.path(), "cancel", 0, None);
     let deadline_fired = Rc::new(Cell::new(false));
     let deadline_for_hook = Rc::clone(&deadline_fired);
-    let communication_settled = Rc::new(Cell::new(false));
-    let communication_for_hook = Rc::clone(&communication_settled);
+    let io_settled = Rc::new(Cell::new(false));
+    let io_for_hook = Rc::clone(&io_settled);
+    let cancellation_accepted = Rc::new(Cell::new(false));
+    let cancellation_for_hook = Rc::clone(&cancellation_accepted);
     let wait_completed = Rc::new(Cell::new(false));
     let wait_for_hook = Rc::clone(&wait_completed);
     let _guard = fixture.controlled(
@@ -459,7 +467,8 @@ fn exercise_user_cancellation(app: &adw::Application) {
         Duration::from_millis(30),
         LifecycleObservers {
             deadline_fired: Some(Rc::new(move || deadline_for_hook.set(true))),
-            communication_settled: Some(Rc::new(move || communication_for_hook.set(true))),
+            io_settled: Some(Rc::new(move || io_for_hook.set(true))),
+            cancellation_accepted: Some(Rc::new(move || cancellation_for_hook.set(true))),
             wait_completed: Some(Rc::new(move || wait_for_hook.set(true))),
             grace_checkpoint: None,
         },
@@ -480,9 +489,10 @@ fn exercise_user_cancellation(app: &adw::Application) {
     if let Some(cancellable) = cancellable {
         cancellable.cancel();
     }
-    spin_until("user cancellation settles communication", || {
-        communication_settled.get()
+    spin_until("supervisor accepts user cancellation", || {
+        cancellation_accepted.get()
     });
+    assert!(!io_settled.get());
     assert!(!deadline_fired.get());
     assert!(!wait_completed.get());
     assert!(fixture.state().borrow().mutation_active_for_tests());
@@ -491,6 +501,7 @@ fn exercise_user_cancellation(app: &adw::Application) {
     commit_button.emit_clicked();
     assert_eq!(fixture.dispatches.borrow().len(), before_repeat);
     child.release();
+    spin_until("cancelled child settles owned pipes", || io_settled.get());
     spin_until("cancelled child reaches terminal wait", || {
         wait_completed.get()
     });

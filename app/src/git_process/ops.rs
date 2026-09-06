@@ -10,11 +10,10 @@ use crate::git_status::{
 
 use super::repo::parse_single_git_path;
 use super::support::optional_text;
-use super::{GitCallback, GitIdentity, GitProcess, GitProcessError};
+use super::{GIT_BLOB_BYTE_LIMIT, GitCallback, GitIdentity, GitProcess, GitProcessError};
 
-const STATUS_CAP: usize = 4 * 1024 * 1024;
+pub(super) const STATUS_CAP: usize = 4 * 1024 * 1024;
 const ATTR_CAP: usize = 2 * 1024 * 1024;
-const BLOB_CAP: usize = 1_000_001;
 /// Mutating git children must not be `SIGKILL`ed on user cancellation; a killed
 /// index writer strands .git/index.lock.
 const MUTATING_KILL_ON_CANCEL: bool = false;
@@ -155,7 +154,7 @@ impl GitProcess {
         self.run(
             ["cat-file", "blob", oid],
             None,
-            BLOB_CAP,
+            GIT_BLOB_BYTE_LIMIT,
             false,
             READ_ONLY_KILL_ON_CANCEL,
             cancellable,

@@ -270,6 +270,8 @@ fn open_file_in_tab(
     source: OpenSource,
     callback: Rc<dyn Fn(Result<String, AppError>)>,
 ) {
+    #[cfg(test)]
+    let callback = pending::tests::hold_completion(file, callback);
     let read_guard = tab.capture_document_read_guard();
     let weak = Rc::downgrade(workspace);
     let tab = tab.clone();

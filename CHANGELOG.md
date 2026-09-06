@@ -15,6 +15,8 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 ## Unreleased
 
 ### Changed
+- Characterized close/reopen ownership with held real open completions, so
+  cancelled old requests cannot clear a successor's pending registration.
 - Expanded regression coverage for overlapping file opens and the complete
   generated Cargo source inventory, preserving the existing fixes.
 - Scheduled stress validation now runs monthly instead of daily while keeping
@@ -24,6 +26,23 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
   active scheduled/manual CI execution.
 
 ### Fixed
+- Split GitHub governance into an unconditional tokenless static check and a
+  protected-main live check. Flatpak publish preflight now requires complete,
+  provenance-bound evidence that the newest live check's decisive step ran
+  successfully, and live validation verifies main-only environment/secret
+  metadata without exposing the credential to pull-request code. Governance
+  diagnostics report only the failing scope and do not repeat the configured
+  secret identifier.
+- Git reviews now read worktree versions through the same bounded per-file
+  limit as Git blobs, rejecting incomplete or oversized text before display.
+- Git subprocess output now streams through concurrent bounded stdout and
+  stderr pumps while stdin progresses independently. Oversized read-only
+  commands terminate promptly; mutations retain their supervised grace and
+  drain behavior without allocating the complete output.
+- Release preflight now binds Cargo metadata, AppStream metadata, exact check
+  collection, rollback provenance, build checkout, and the pre-secret HEAD
+  assertion to one peeled tag commit SHA. A moved tag cannot change the signed
+  build after preflight validation.
 - Bound the Flatpak rollback gate's candidate ref to the release tag validated
   by manual-dispatch preflight, preserving idempotent same-release republishes.
 - Release validation now requires exact SHA-256 digests for CI job containers

@@ -3,59 +3,59 @@
   "sites": [
     {
       "path": "src/git_process.rs",
-      "line": 388,
+      "line": 293,
       "match": "fn install_operation_deadline(state: &Rc<RefCell<GitRunState>>, cancellable: &gio::Cancellable) {",
       "kind": "runtime-shared-state",
-      "ownership": "One GitRunState is retained by its owned operation/grace sources and asynchronous communication/wait callbacks; it contains no UI or workspace reference.",
-      "justification": "Communication completion is distinct from successful child wait. User-cancelled mutations retain the original deadline; only terminal completion removes owned sources and takes the optional callback. The callback runs after the RefCell borrow ends. Held checkpoints exist only in tests."
+      "ownership": "One GitRunState is retained by its owned operation/grace sources and asynchronous stream/wait callbacks; it contains no UI or workspace reference.",
+      "justification": "I/O settlement is distinct from successful child wait. User-cancelled mutations retain the original deadline; only terminal completion removes owned sources and takes the optional callback. The callback runs after the RefCell borrow ends. Held checkpoints exist only in tests."
     },
     {
       "path": "src/git_process.rs",
-      "line": 425,
+      "line": 340,
       "match": "fn begin_mutation_grace(state: &Rc<RefCell<GitRunState>>) {",
       "kind": "runtime-shared-state",
-      "ownership": "One GitRunState is retained by its owned operation/grace sources and asynchronous communication/wait callbacks; it contains no UI or workspace reference.",
-      "justification": "Communication completion is distinct from successful child wait. User-cancelled mutations retain the original deadline; only terminal completion removes owned sources and takes the optional callback. The callback runs after the RefCell borrow ends. Held checkpoints exist only in tests."
+      "ownership": "One GitRunState is retained by its owned operation/grace sources and asynchronous stream/wait callbacks; it contains no UI or workspace reference.",
+      "justification": "I/O settlement is distinct from successful child wait. User-cancelled mutations retain the original deadline; only terminal completion removes owned sources and takes the optional callback. The callback runs after the RefCell borrow ends. Held checkpoints exist only in tests."
     },
     {
       "path": "src/git_process.rs",
-      "line": 460,
+      "line": 375,
       "match": "fn send_term_then_force(state: &Rc<RefCell<GitRunState>>) {",
       "kind": "runtime-shared-state",
-      "ownership": "One GitRunState is retained by its owned operation/grace sources and asynchronous communication/wait callbacks; it contains no UI or workspace reference.",
-      "justification": "Communication completion is distinct from successful child wait. User-cancelled mutations retain the original deadline; only terminal completion removes owned sources and takes the optional callback. The callback runs after the RefCell borrow ends. Held checkpoints exist only in tests."
+      "ownership": "One GitRunState is retained by its owned operation/grace sources and asynchronous stream/wait callbacks; it contains no UI or workspace reference.",
+      "justification": "I/O settlement is distinct from successful child wait. User-cancelled mutations retain the original deadline; only terminal completion removes owned sources and takes the optional callback. The callback runs after the RefCell borrow ends. Held checkpoints exist only in tests."
     },
     {
       "path": "src/git_process.rs",
-      "line": 476,
+      "line": 391,
       "match": "fn force_exit(state: &Rc<RefCell<GitRunState>>) {",
       "kind": "runtime-shared-state",
-      "ownership": "One GitRunState is retained by its owned operation/grace sources and asynchronous communication/wait callbacks; it contains no UI or workspace reference.",
-      "justification": "Communication completion is distinct from successful child wait. User-cancelled mutations retain the original deadline; only terminal completion removes owned sources and takes the optional callback. The callback runs after the RefCell borrow ends. Held checkpoints exist only in tests."
+      "ownership": "One GitRunState is retained by its owned operation/grace sources and asynchronous stream/wait callbacks; it contains no UI or workspace reference.",
+      "justification": "I/O settlement is distinct from successful child wait. User-cancelled mutations retain the original deadline; only terminal completion removes owned sources and takes the optional callback. The callback runs after the RefCell borrow ends. Held checkpoints exist only in tests."
     },
     {
       "path": "src/git_process.rs",
-      "line": 490,
+      "line": 405,
       "match": "fn start_uncancelled_wait(state: &Rc<RefCell<GitRunState>>) {",
       "kind": "runtime-shared-state",
-      "ownership": "One GitRunState is retained by its owned operation/grace sources and asynchronous communication/wait callbacks; it contains no UI or workspace reference.",
-      "justification": "Communication completion is distinct from successful child wait. User-cancelled mutations retain the original deadline; only terminal completion removes owned sources and takes the optional callback. The callback runs after the RefCell borrow ends. Held checkpoints exist only in tests."
+      "ownership": "One GitRunState is retained by its owned operation/grace sources and asynchronous stream/wait callbacks; it contains no UI or workspace reference.",
+      "justification": "I/O settlement is distinct from successful child wait. User-cancelled mutations retain the original deadline; only terminal completion removes owned sources and takes the optional callback. The callback runs after the RefCell borrow ends. Held checkpoints exist only in tests."
     },
     {
       "path": "src/git_process.rs",
-      "line": 537,
+      "line": 452,
       "match": "fn finish_reaped(state: &Rc<RefCell<GitRunState>>) {",
       "kind": "runtime-shared-state",
-      "ownership": "One GitRunState is retained by its owned operation/grace sources and asynchronous communication/wait callbacks; it contains no UI or workspace reference.",
-      "justification": "Communication completion is distinct from successful child wait. User-cancelled mutations retain the original deadline; only terminal completion removes owned sources and takes the optional callback. The callback runs after the RefCell borrow ends. Held checkpoints exist only in tests."
+      "ownership": "One GitRunState is retained by its owned operation/grace sources and asynchronous stream/wait callbacks; it contains no UI or workspace reference.",
+      "justification": "I/O settlement is distinct from successful child wait. User-cancelled mutations retain the original deadline; only terminal completion removes owned sources and takes the optional callback. The callback runs after the RefCell borrow ends. Held checkpoints exist only in tests."
     },
     {
       "path": "src/git_process.rs",
-      "line": 585,
+      "line": 148,
       "match": "state: &Rc<RefCell<GitRunState>>,",
       "kind": "runtime-shared-state",
-      "ownership": "One GitRunState is retained by its owned operation/grace sources and asynchronous communication/wait callbacks; it contains no UI or workspace reference.",
-      "justification": "Communication completion is distinct from successful child wait. User-cancelled mutations retain the original deadline; only terminal completion removes owned sources and takes the optional callback. The callback runs after the RefCell borrow ends. Held checkpoints exist only in tests."
+      "ownership": "One GitRunState is retained by its owned operation/grace sources and asynchronous stream/wait callbacks; it contains no UI or workspace reference.",
+      "justification": "I/O settlement is distinct from successful child wait. User-cancelled mutations retain the original deadline; only terminal completion removes owned sources and takes the optional callback. The callback runs after the RefCell borrow ends. Held checkpoints exist only in tests."
     },
     {
       "path": "src/git_process/lifecycle_matrix_tests.rs",
@@ -115,7 +115,7 @@
     },
     {
       "path": "src/git_process/lifecycle_tests.rs",
-      "line": 107,
+      "line": 109,
       "match": "let results: Rc<RefCell<Vec<Result<super::GitRunOutput, GitProcessError>>>> =",
       "kind": "runtime-shared-state",
       "ownership": "RIT-GEN-007 test fixtures own only synthetic temporary files, child handles, event observations and held test continuations; compiled only in the test module.",
@@ -123,7 +123,7 @@
     },
     {
       "path": "src/git_process/lifecycle_tests.rs",
-      "line": 173,
+      "line": 181,
       "match": "let results: Rc<RefCell<Vec<Result<super::GitRunOutput, GitProcessError>>>> =",
       "kind": "runtime-shared-state",
       "ownership": "RIT-GEN-007 test fixtures own only synthetic temporary files, child handles, event observations and held test continuations; compiled only in the test module.",
@@ -131,7 +131,7 @@
     },
     {
       "path": "src/git_process/lifecycle_tests.rs",
-      "line": 239,
+      "line": 253,
       "match": "child: Rc<RefCell<Option<super::TestChild>>>,",
       "kind": "runtime-shared-state",
       "ownership": "RIT-GEN-007 test fixtures own only synthetic temporary files, child handles, event observations and held test continuations; compiled only in the test module.",
@@ -155,55 +155,55 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 230,
+      "line": 74,
       "match": "let flags = gio::SubprocessFlags::STDIN_PIPE",
       "kind": "runtime-git-subprocess",
-      "ownership": "The typed /app/bin/git runner owns this subprocess and its stdin/stdout/stderr capture until communication settles and uncancelled wait succeeds.",
-      "justification": "Only typed production operations construct argv with fixed environment and sandbox Git. Cancellation and deadlines retain child supervision; mutation timeout waits through TERM and force-exit grace. Output caps are checked after communicate buffering; bounded streaming remains separate P3 work."
+      "ownership": "The typed /app/bin/git runner owns this subprocess and its stdin/stdout/stderr pumps until every stream closes and uncancelled wait succeeds.",
+      "justification": "Only typed production operations construct argv with fixed environment and sandbox Git. Cancellation and deadlines retain child supervision; mutation timeout waits through TERM and force-exit grace. Concurrent bounded pumps retain each output cap plus one sentinel, then discard fixed-size chunks while supervision continues."
     },
     {
       "path": "src/git_process.rs",
-      "line": 231,
+      "line": 75,
       "match": "| gio::SubprocessFlags::STDOUT_PIPE",
       "kind": "runtime-git-subprocess",
-      "ownership": "The typed /app/bin/git runner owns this subprocess and its stdin/stdout/stderr capture until communication settles and uncancelled wait succeeds.",
-      "justification": "Only typed production operations construct argv with fixed environment and sandbox Git. Cancellation and deadlines retain child supervision; mutation timeout waits through TERM and force-exit grace. Output caps are checked after communicate buffering; bounded streaming remains separate P3 work."
+      "ownership": "The typed /app/bin/git runner owns this subprocess and its stdin/stdout/stderr pumps until every stream closes and uncancelled wait succeeds.",
+      "justification": "Only typed production operations construct argv with fixed environment and sandbox Git. Cancellation and deadlines retain child supervision; mutation timeout waits through TERM and force-exit grace. Concurrent bounded pumps retain each output cap plus one sentinel, then discard fixed-size chunks while supervision continues."
     },
     {
       "path": "src/git_process.rs",
-      "line": 232,
+      "line": 76,
       "match": "| gio::SubprocessFlags::STDERR_PIPE;",
       "kind": "runtime-git-subprocess",
-      "ownership": "The typed /app/bin/git runner owns this subprocess and its stdin/stdout/stderr capture until communication settles and uncancelled wait succeeds.",
-      "justification": "Only typed production operations construct argv with fixed environment and sandbox Git. Cancellation and deadlines retain child supervision; mutation timeout waits through TERM and force-exit grace. Output caps are checked after communicate buffering; bounded streaming remains separate P3 work."
+      "ownership": "The typed /app/bin/git runner owns this subprocess and its stdin/stdout/stderr pumps until every stream closes and uncancelled wait succeeds.",
+      "justification": "Only typed production operations construct argv with fixed environment and sandbox Git. Cancellation and deadlines retain child supervision; mutation timeout waits through TERM and force-exit grace. Concurrent bounded pumps retain each output cap plus one sentinel, then discard fixed-size chunks while supervision continues."
     },
     {
       "path": "src/git_process.rs",
-      "line": 233,
+      "line": 77,
       "match": "let launcher = gio::SubprocessLauncher::new(flags);",
       "kind": "runtime-git-subprocess",
-      "ownership": "The typed /app/bin/git runner owns this subprocess and its stdin/stdout/stderr capture until communication settles and uncancelled wait succeeds.",
-      "justification": "Only typed production operations construct argv with fixed environment and sandbox Git. Cancellation and deadlines retain child supervision; mutation timeout waits through TERM and force-exit grace. Output caps are checked after communicate buffering; bounded streaming remains separate P3 work."
+      "ownership": "The typed /app/bin/git runner owns this subprocess and its stdin/stdout/stderr pumps until every stream closes and uncancelled wait succeeds.",
+      "justification": "Only typed production operations construct argv with fixed environment and sandbox Git. Cancellation and deadlines retain child supervision; mutation timeout waits through TERM and force-exit grace. Concurrent bounded pumps retain each output cap plus one sentinel, then discard fixed-size chunks while supervision continues."
     },
     {
       "path": "src/git_process.rs",
-      "line": 329,
+      "line": 176,
       "match": "subprocess: gio::Subprocess,",
       "kind": "runtime-git-subprocess",
-      "ownership": "The typed /app/bin/git runner owns this subprocess and its stdin/stdout/stderr capture until communication settles and uncancelled wait succeeds.",
-      "justification": "Only typed production operations construct argv with fixed environment and sandbox Git. Cancellation and deadlines retain child supervision; mutation timeout waits through TERM and force-exit grace. Output caps are checked after communicate buffering; bounded streaming remains separate P3 work."
+      "ownership": "The typed /app/bin/git runner owns this subprocess and its stdin/stdout/stderr pumps until every stream closes and uncancelled wait succeeds.",
+      "justification": "Only typed production operations construct argv with fixed environment and sandbox Git. Cancellation and deadlines retain child supervision; mutation timeout waits through TERM and force-exit grace. Concurrent bounded pumps retain each output cap plus one sentinel, then discard fixed-size chunks while supervision continues."
     },
     {
       "path": "src/git_process.rs",
-      "line": 347,
+      "line": 208,
       "match": "subprocess: gio::Subprocess,",
       "kind": "runtime-git-subprocess",
-      "ownership": "The typed /app/bin/git runner owns this subprocess and its stdin/stdout/stderr capture until communication settles and uncancelled wait succeeds.",
-      "justification": "Only typed production operations construct argv with fixed environment and sandbox Git. Cancellation and deadlines retain child supervision; mutation timeout waits through TERM and force-exit grace. Output caps are checked after communicate buffering; bounded streaming remains separate P3 work."
+      "ownership": "The typed /app/bin/git runner owns this subprocess and its stdin/stdout/stderr pumps until every stream closes and uncancelled wait succeeds.",
+      "justification": "Only typed production operations construct argv with fixed environment and sandbox Git. Cancellation and deadlines retain child supervision; mutation timeout waits through TERM and force-exit grace. Concurrent bounded pumps retain each output cap plus one sentinel, then discard fixed-size chunks while supervision continues."
     },
     {
       "path": "src/git_process.rs",
-      "line": 565,
+      "line": 509,
       "match": "pub(crate) struct TestChild(gio::Subprocess);",
       "kind": "runtime-git-subprocess",
       "ownership": "The cfg(test) boundary wrapper owns a reference to an observed test child for fixture teardown.",
@@ -219,15 +219,15 @@
     },
     {
       "path": "src/git_process/lifecycle_matrix_tests.rs",
-      "line": 122,
-      "match": "pump(\"child readiness\", || run.directory.join(\"ready\").exists());",
+      "line": 125,
+      "match": "run.directory.join(\"ready\").exists() || (kill_on_cancel && run.has(\"io-fault\"))",
       "kind": "runtime-sync-fs",
       "ownership": "RIT-GEN-007 test fixtures own only synthetic temporary files, child handles, event observations and held test continuations; compiled only in the test module.",
       "justification": "The controlled-child handshake and bounded GLib pumping exercise the shared production runner. Teardown force-exits and waits for the fixture child; result and event slots record terminal ordering without holding application windows. Filesystem probes are confined to the fixture directory, never user documents or portal paths."
     },
     {
       "path": "src/git_process/lifecycle_matrix_tests.rs",
-      "line": 265,
+      "line": 270,
       "match": "assert!(run.directory.join(\"term\").exists());",
       "kind": "runtime-sync-fs",
       "ownership": "RIT-GEN-007 test fixtures own only synthetic temporary files, child handles, event observations and held test continuations; compiled only in the test module.",
@@ -235,7 +235,7 @@
     },
     {
       "path": "src/git_process/lifecycle_tests.rs",
-      "line": 144,
+      "line": 152,
       "match": "fixture.exited.is_file()",
       "kind": "runtime-sync-fs",
       "ownership": "RIT-GEN-007 test fixtures own only synthetic temporary files, child handles, event observations and held test continuations; compiled only in the test module.",
@@ -243,7 +243,7 @@
     },
     {
       "path": "src/git_process/lifecycle_tests.rs",
-      "line": 147,
+      "line": 155,
       "match": "fixture.exited.is_file(),",
       "kind": "runtime-sync-fs",
       "ownership": "RIT-GEN-007 test fixtures own only synthetic temporary files, child handles, event observations and held test continuations; compiled only in the test module.",
@@ -251,7 +251,7 @@
     },
     {
       "path": "src/git_process/lifecycle_tests.rs",
-      "line": 281,
+      "line": 295,
       "match": "spin_until(context, Duration::from_secs(10), || self.ready.is_file());",
       "kind": "runtime-sync-fs",
       "ownership": "RIT-GEN-007 test fixtures own only synthetic temporary files, child handles, event observations and held test continuations; compiled only in the test module.",
@@ -259,7 +259,7 @@
     },
     {
       "path": "src/git_process/lifecycle_tests.rs",
-      "line": 283,
+      "line": 297,
       "match": "self.ready.is_file(),",
       "kind": "runtime-sync-fs",
       "ownership": "RIT-GEN-007 test fixtures own only synthetic temporary files, child handles, event observations and held test continuations; compiled only in the test module.",
