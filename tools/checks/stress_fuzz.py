@@ -6,7 +6,7 @@ from fnmatch import fnmatch
 from pathlib import Path
 from typing import Any
 
-from tools.checks import foundation, remediation
+from tools.checks import foundation, remediation, stress_fuzz_targets
 from tools.validation_tooling import contract_root, iso_date_not_future_status, normalize_path, read_text
 
 
@@ -39,6 +39,7 @@ def check_stress_fuzz(root: Path, errors: list[str]) -> None:
     active = remediation.validate_planned_remediation(policy, POLICY_FILE, errors)
     registry_entries = _check_parser_registry(repo, policy, active, errors)
     _check_fuzz_targets(repo, policy, active, registry_entries, errors)
+    stress_fuzz_targets.check_target_contracts(repo, policy, errors)
     _check_stress_scripts(repo, policy, active, registry_entries, errors)
     _check_runner_fidelity(repo, active, errors)
     _check_ci_generated_inputs(repo, policy, active, errors)

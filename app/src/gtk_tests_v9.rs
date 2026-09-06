@@ -6,13 +6,23 @@ use gtk4::gio;
 use gtk4::prelude::*;
 use libadwaita as adw;
 
+use crate::editor_tab::EditorTab;
 use crate::git_process::test_support::{
     FixtureRepoFile, FixtureRepoKind, init_modified_fixture_repo_for_tests,
 };
 use crate::gtk_tests::{build_window, drain_events, spin_until, test_tmp_dir};
 use crate::settings::SourceControlViewMode;
 use crate::sidebar_host::SOURCE_CONTROL_ICON;
-use crate::workspace::OpenSource;
+use crate::window::Window;
+use crate::workspace::{OpenSource, Workspace};
+
+struct WindowCleanup(Rc<Window>);
+
+impl Drop for WindowCleanup {
+    fn drop(&mut self) {
+        self.0.widget().destroy();
+    }
+}
 
 pub(crate) fn exercise_v9_source_control(test_app: &adw::Application) {
     exercise_non_git_folder(test_app);
@@ -234,19 +244,17 @@ fn exercise_editor_source_control_minimap_bands(test_app: &adw::Application) {
     let tracked_file = FixtureRepoFile::MINIMAP;
     let tracked_name = tracked_file.name();
     let current_text = "same\nnew\nlast\nadded\n";
-    let Ok(repo) = init_modified_fixture_repo_for_tests(
+    let repo = init_modified_fixture_repo_for_tests(
         FixtureRepoKind::V9_SOURCE_CONTROL_MINIMAP,
         tracked_file,
         b"same\nold\nlast\n",
         current_text.as_bytes(),
-    ) else {
-        return;
-    };
+    )
+    .unwrap_or_else(|error| unreachable!("real minimap repository fixture: {error:?}"));
     let tracked_path = repo.file_path(tracked_file);
 
-    let Some(window) = build_window(test_app) else {
-        return;
-    };
+    let window = build_window(test_app).unwrap_or_else(|| unreachable!("GTK minimap window"));
+    let _cleanup = WindowCleanup(Rc::clone(&window));
     window.handle_application_open(vec![gio::File::for_path(repo.path())]);
     window.request_open_files(
         vec![gio::File::for_path(&tracked_path)],
@@ -264,6 +272,21 @@ fn exercise_editor_source_control_minimap_bands(test_app: &adw::Application) {
     });
     assert!(!window.selected_dirty_for_tests());
     assert!(window.selected_source_control_minimap_tags_compose_for_tests());
+    let workspace = window
+        .workspace_weak_for_tests()
+        .upgrade()
+        .unwrap_or_else(|| unreachable!("minimap window owns its workspace"));
+    let tab = workspace
+        .selected_tab()
+        .unwrap_or_else(|| unreachable!("minimap document tab is selected"));
+    spin_until(
+        "v14.5 source control history settles before spawn baseline",
+        || {
+            window.source_control_recent_commit_count_for_tests() > 0
+                && !workspace.selected_state_refresh_queued_for_tests()
+        },
+    );
+    exercise_minimap_cursor_spawn_dedupe(&window, &workspace, &tab);
     let decorated_text = window.selected_text_for_tests();
 
     window.set_selected_text_for_tests("same\nlocal\nlast\nadded\n");
@@ -288,6 +311,39 @@ fn exercise_editor_source_control_minimap_bands(test_app: &adw::Application) {
                 .is_none()
                 && window.selected_source_control_minimap_tag_counts_for_tests() == (0, 0, 0)
         },
+    );
+}
+
+fn exercise_minimap_cursor_spawn_dedupe(window: &Window, workspace: &Workspace, tab: &EditorTab) {
+    let cursor_spawn_baseline = crate::git_process::test_hooks::spawn_count_for_tests();
+    let buffer = tab.text_buffer();
+    for offset in [buffer.char_count(), 0, buffer.char_count(), 0] {
+        buffer.place_cursor(&buffer.iter_at_offset(offset));
+        assert!(workspace.selected_state_refresh_queued_for_tests());
+        spin_until("v14.5 cursor minimap refresh idle completes", || {
+            !workspace.selected_state_refresh_queued_for_tests()
+        });
+    }
+    assert_eq!(
+        crate::git_process::test_hooks::spawn_count_for_tests(),
+        cursor_spawn_baseline,
+        "clean cursor moves must not spawn Git children"
+    );
+
+    let fast_clean_spawn_baseline = crate::git_process::test_hooks::spawn_count_for_tests();
+    buffer.set_text("same\nold\nlast\nextra-a\nextra-b\n");
+    buffer.set_modified(false);
+    assert!(!tab.source_control_minimap_stale_for_tests());
+    buffer.place_cursor(&buffer.start_iter());
+    assert!(workspace.selected_state_refresh_queued_for_tests());
+    spin_until("v14.5 fast clean text refreshes minimap bands", || {
+        !workspace.selected_state_refresh_queued_for_tests()
+            && window.selected_source_control_minimap_tag_counts_for_tests() == (2, 0, 0)
+    });
+    assert_eq!(
+        crate::git_process::test_hooks::spawn_count_for_tests(),
+        fast_clean_spawn_baseline + 1,
+        "changed clean text must load one fresh reference blob"
     );
 }
 

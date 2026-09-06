@@ -14,7 +14,7 @@ use super::display::{
 };
 use super::model::{DiffRowKind, DiffRowModel};
 use crate::editor_tab::{ReviewFileId, ReviewKind, ReviewSnapshotFingerprint, ReviewTabSpec};
-use crate::git_status::GitFileStatus;
+use crate::git_status::{GitFileStatus, escape_git_path_display};
 use crate::settings::CompareReviewSettingsSnapshot;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -557,7 +557,7 @@ fn path_display(raw_path: &[u8]) -> String {
     }
     std::str::from_utf8(raw_path).map_or_else(
         |_error| pgettext("git path fallback", "Invalid path encoding"),
-        ToOwned::to_owned,
+        escape_git_path_display,
     )
 }
 

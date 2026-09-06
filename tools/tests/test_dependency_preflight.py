@@ -334,9 +334,9 @@ sourceview5 = { version = "=0.11.0" }
                 0,
                 {
                     "type": "inline",
-                    "contents": "[source.vendored-sources]\n",
+                    "contents": "[source.vendored-sources]\ndirectory=\"cargo/vendor\"\n[source.crates-io]\nreplace-with=\"vendored-sources\"\n",
                     "dest": "cargo",
-                    "dest-filename": "config.toml",
+                    "dest-filename": "config",
                 },
             )
             _write(app / "build-aux" / "cargo" / "cargo-sources.json", json.dumps(sources) + "\n")
@@ -356,7 +356,7 @@ sourceview5 = { version = "=0.11.0" }
             check_dependency_preflight(app, errors)
         self.assertEqual(errors, [])
 
-    def test_non_crates_io_archive_source_is_not_stale(self) -> None:
+    def test_non_crates_io_archive_source_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             app = _fixture(tmpdir)
             sources = json.loads((app / "build-aux" / "cargo" / "cargo-sources.json").read_text(encoding="utf-8"))
@@ -372,7 +372,7 @@ sourceview5 = { version = "=0.11.0" }
             _write(app / "build-aux" / "cargo" / "cargo-sources.json", json.dumps(sources) + "\n")
             errors: list[str] = []
             check_dependency_preflight(app, errors)
-        self.assertEqual(errors, [])
+        self.assertTrue(any("archive destination is absent from Cargo.lock" in item for item in errors), errors)
 
 
 if __name__ == "__main__":

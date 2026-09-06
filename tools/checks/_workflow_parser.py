@@ -211,8 +211,10 @@ class _Parser:
             return self._nested_or_empty(indent)
         value = raw_value.strip()
         self._reject_unsupported(line, value)
-        if value in {"|", "|-", ">", ">-"}:
-            return self._parse_block_scalar(indent, folded=value.startswith(">"))
+        if value.startswith(">"):
+            self._error(line, "folded YAML scalars are not supported; use literal | for executable steps")
+        if value in {"|", "|-"}:
+            return self._parse_block_scalar(indent)
         return self._parse_scalar(line, value)
 
     def _nested_or_empty(self, indent: int) -> Any:
@@ -227,7 +229,7 @@ class _Parser:
         self.index = saved
         return has_child
 
-    def _parse_block_scalar(self, indent: int, *, folded: bool) -> str:
+    def _parse_block_scalar(self, indent: int) -> str:
         collected: list[str] = []
         while self.index < len(self.lines):
             line = self.lines[self.index]
@@ -238,8 +240,6 @@ class _Parser:
             else:
                 collected.append(line.text[indent + 2 :] if len(line.text) >= indent + 2 else "")
             self.index += 1
-        if folded:
-            return "\n".join(part if not part else part.rstrip() for part in collected)
         return "\n".join(collected) + ("\n" if collected else "")
 
     def _split_key_value(self, line: _Line, text: str) -> tuple[str, str | None]:

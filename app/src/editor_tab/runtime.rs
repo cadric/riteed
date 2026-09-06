@@ -124,6 +124,7 @@ impl EditorTab {
                             .document
                             .set_saved_with_display_path(path_info.path, path_info.display_path);
                         state.external.pending = PendingExternalState::Idle;
+                        state.external.reload_deferred_by_edit = false;
                     }
                     self.swap_monitor(&new_file);
                     self.refresh_language_for_file(&new_file);
@@ -264,6 +265,7 @@ impl EditorTab {
             state.document.saved_format = document.format.clone();
             state.document.source_file = Some(document.source_file.clone());
             state.external.pending = PendingExternalState::Idle;
+            state.external.reload_deferred_by_edit = false;
             state.external.writability = Writability::Unknown;
             state.autosave.paused_message = None;
             state.ui.external_prompt_active = false;
@@ -297,7 +299,7 @@ impl EditorTab {
         self.resolve_display_path_for_access_path(&document.path);
     }
 
-    pub(super) fn dirty_generation(&self) -> u64 {
+    pub(crate) fn dirty_generation(&self) -> u64 {
         self.state.borrow().dirty_generation()
     }
 
@@ -392,6 +394,9 @@ impl EditorTab {
             let mut state = self.state.borrow_mut();
             state.io.loading = false;
             state.io.external_reload_in_progress = false;
+            if applied {
+                state.external.reload_deferred_by_edit = false;
+            }
             if !applied && matches!(state.external.pending, PendingExternalState::Idle) {
                 state.external.pending = PendingExternalState::ContentPossiblyChanged {
                     acknowledged: false,
@@ -405,13 +410,44 @@ impl EditorTab {
         self.notify_external_state_change();
     }
 
+    pub(super) fn finish_reload_conflict(&self, document_changed: bool) {
+        {
+            let mut state = self.state.borrow_mut();
+            state.io.loading = false;
+            state.io.external_reload_in_progress = false;
+            if document_changed {
+                state.external.reload_deferred_by_edit = true;
+            }
+        }
+        if let Some(page) = self.page() {
+            page.set_loading(false);
+        }
+        self.sync_presentation();
+    }
+
     pub(super) fn start_io_request(
         &self,
         candidate_encodings: Option<SList<sourceview5::Encoding>>,
     ) -> (u64, gio::Cancellable) {
+        self.start_io_request_with_reload_owner(candidate_encodings, false)
+    }
+
+    pub(super) fn start_reload_io_request(
+        &self,
+        candidate_encodings: Option<SList<sourceview5::Encoding>>,
+    ) -> (u64, gio::Cancellable) {
+        self.start_io_request_with_reload_owner(candidate_encodings, true)
+    }
+
+    fn start_io_request_with_reload_owner(
+        &self,
+        candidate_encodings: Option<SList<sourceview5::Encoding>>,
+        external_reload_in_progress: bool,
+    ) -> (u64, gio::Cancellable) {
         let (result, pending_apply) = {
             let mut state = self.state.borrow_mut();
             let pending_apply = state.io.take_pending_apply();
+            state.io.external_reload_in_progress = external_reload_in_progress;
             (state.io.start_request(candidate_encodings), pending_apply)
         };
         if let Some(pending_apply) = pending_apply {

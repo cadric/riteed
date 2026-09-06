@@ -86,7 +86,13 @@ def contract_root(root: Path) -> Path:
 def repo_root(explicit: str | None = None, *, allow_policy_pack: bool = False) -> Path:
     candidates: list[Path] = []
     if explicit:
-        candidates.append(Path(explicit).resolve())
+        target = Path(explicit).resolve()
+        if target.is_dir() and _has_app_layout(target):
+            contract_root(target)
+            return target
+        if allow_policy_pack and _is_policy_pack_repo(target):
+            return target
+        fail(f"[validation] repository root is not a supported target: {target}")
     candidates.extend([Path.cwd().resolve(), Path(__file__).resolve().parent.parent])
     seen: set[Path] = set()
     for start in candidates:

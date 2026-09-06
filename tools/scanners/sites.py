@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-from tools.validation_tooling import line_text, load_json, normalize_path, read_text, scoped_files
+from tools.validation_tooling import contract_root, line_text, load_json, normalize_path, read_text, scoped_files
 
 
 @dataclass(frozen=True)
@@ -56,10 +56,15 @@ def load_review_entries(
     errors: list[str],
 ) -> list[ReviewEntry]:
     entries: list[ReviewEntry] = []
+    policy = load_json(contract_root(root) / "policy/validation-tooling.policy.json")
+    field_types = policy.get("review_field_types", {})
     for path in scoped_files(root, config.get("globs", [])):
         payload = load_json(path)
+        if not isinstance(payload, dict):
+            errors.append(f"{path.relative_to(root)}: review artifact must be an object")
+            continue
         version = payload.get("version")
-        if not isinstance(version, int):
+        if type(version) is not int or version != policy.get("review_artifact_version"):
             errors.append(f"{path.relative_to(root)}: review artifact must define integer version")
         sections = config.get("sections", {})
         for section_name, section_cfg in sections.items():
@@ -87,9 +92,14 @@ def load_review_entries(
                         f"{path.relative_to(root)}: section {section_name!r} entry is missing required fields {missing}"
                     )
                     continue
+                invalid = [field for field in section_cfg.get("required_fields", [])
+                           if not _valid_field(item.get(field), field_types.get(field))]
+                if invalid:
+                    errors.append(f"{path.relative_to(root)}: invalid typed review fields {invalid}")
+                    continue
                 rel = normalize_path(str(item.get("path", "")))
                 line_no = item.get("line")
-                if not isinstance(line_no, int) or line_no < 1:
+                if type(line_no) is not int or line_no < 1:
                     errors.append(f"{path.relative_to(root)}: review entry line must be a 1-based integer")
                     continue
                 match = str(item.get("match", ""))
@@ -104,6 +114,20 @@ def load_review_entries(
                     )
                 )
     return entries
+
+
+def _valid_field(value: Any, kind: str | None) -> bool:
+    if kind == "nonempty-string":
+        return isinstance(value, str) and bool(value.strip())
+    if kind == "positive-integer":
+        return type(value) is int and value > 0
+    if kind == "boolean":
+        return type(value) is bool
+    if kind == "string-list":
+        return isinstance(value, list) and bool(value) and all(
+            isinstance(item, str) and bool(item.strip()) for item in value
+        )
+    return False
 
 
 def validate_review_links(root: Path, hits: list[ScanHit], entries: list[ReviewEntry], errors: list[str]) -> None:

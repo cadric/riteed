@@ -360,18 +360,18 @@
     },
     {
       "file": "release.policy.json",
-      "sha256": "bfd4feb964f2ec273e440da2802429595242bd6356e5720a9b12fd420918c61c",
-      "bytes": 13877
+      "sha256": "b1a9dc50673d81005003f467b90130ab7c25deeaae296eb2295f0dfb2d0a156e",
+      "bytes": 15435
     },
     {
       "file": "stress-fuzz.policy.json",
-      "sha256": "501478ab65b585e49b176f3b7bb5f4ae647b01b28e9ace411b5dce5ef5dde1e3",
-      "bytes": 11771
+      "sha256": "0fe8763d205007aefea6d293070bbd5f520dc3127cbbc12d42e8a2026af0836d",
+      "bytes": 13096
     },
     {
       "file": "validation-tooling.policy.json",
-      "sha256": "ac09123f6615cd046a3b62714160d44aaea8ae43efcadebb2c4d4ad58952ca39",
-      "bytes": 15925
+      "sha256": "6ddb69284f983b4465ba0bbff74bb7d211676aaf1d196fd64e6cd67432a360a0",
+      "bytes": 17340
     }
   ]
 }

@@ -4,6 +4,7 @@ import re
 from pathlib import Path
 
 from tools.scanners.sites import ScanHit
+from tools.scanners.rust_syntax import RustSyntax
 from tools.validation_tooling import match_any, normalize_path, read_text, relpath, scoped_files
 
 RUST_GLOBS = ["src/**/*.rs", "crates/**/*.rs"]
@@ -22,36 +23,6 @@ def _test_only_file(rel: str) -> bool:
         or rel.endswith("/test_support.rs")
         or rel.startswith("src/gtk_tests")
     )
-
-
-def _cfg_test_lines(lines: list[str]) -> set[int]:
-    ignored: set[int] = set()
-    pending = False
-    depth: int | None = None
-    for index, line in enumerate(lines, start=1):
-        stripped = line.strip()
-        if "#[cfg(test)]" in stripped or "#[cfg(any(test" in stripped:
-            ignored.add(index)
-            pending = True
-            continue
-        if pending:
-            ignored.add(index)
-            if not stripped or stripped.startswith("#["):
-                continue
-            delta = line.count("{") - line.count("}")
-            if "{" in line and delta > 0:
-                depth = delta
-                pending = False
-            else:
-                pending = False
-                depth = None
-            continue
-        if depth is not None:
-            ignored.add(index)
-            depth += line.count("{") - line.count("}")
-            if depth <= 0:
-                depth = None
-    return ignored
 
 
 def source_regex_hits(root: Path, patterns: list[dict[str, object]]) -> list[str]:
@@ -88,12 +59,18 @@ def runtime_review_hits(root: Path, patterns: list[dict[str, object]]) -> list[S
             rel = normalize_path(path.relative_to(root).as_posix())
             if ignore_test_only and _test_only_file(rel):
                 continue
-            lines = read_text(path).splitlines()
-            ignored = _cfg_test_lines(lines) if ignore_test_only else set()
-            for index, line in enumerate(lines, start=1):
-                if index in ignored:
-                    continue
-                if regex.search(line):
+            syntax = RustSyntax(read_text(path))
+            for index, (line, masked_line) in enumerate(
+                zip(syntax.source_lines, syntax.masked_lines, strict=True), start=1
+            ):
+                matches = list(regex.finditer(masked_line))
+                if ignore_test_only:
+                    matches = [
+                        match
+                        for match in matches
+                        if not syntax.is_test_only(index, match.start())
+                    ]
+                if matches:
                     hits.append(
                         ScanHit(
                             path=rel,
@@ -181,7 +158,5 @@ def startup_like_write(path: Path, line_no: int, contexts: list[str]) -> bool:
     return any(ctx.lower() in lowered for ctx in contexts)
 
 
-def async_blocking_hit(path: Path, line_no: int) -> bool:
-    lines = read_text(path).splitlines()
-    window = _context_window(lines, line_no, size=12)
-    return "async fn" in window or "async move {" in window or "async {" in window
+def async_blocking_hit(path: Path, line_no: int, column: int = 0) -> bool:
+    return RustSyntax(read_text(path)).is_async(line_no, column)

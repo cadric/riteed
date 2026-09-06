@@ -3,67 +3,75 @@ use std::rc::Rc;
 use gettextrs::gettext;
 use gtk4::{gio, prelude::*};
 
-use crate::git_process::{GitCallback, GitProcess, GitProcessError, GitRepoContext};
+use crate::git_process::{GitCallback, GitProcess, GitRepoContext};
 use crate::git_status::{GitAttrState, GitStatusSnapshot};
 
 use super::refresh::{
     RefreshOrigin, ellipsis_label, emit_project_statuses, rebuild_views, refresh_status_with_origin,
 };
+use super::slots::{RefreshTicket, cancel_queued};
 use super::{
-    SourceControlState, SourceStateRef, actions, cancel_minimap_requests_locked, cancel_refresh,
-    cancel_review_requests_locked, git_error_is_cancelled, git_error_text, live,
-    set_commit_controls_enabled,
+    SourceControlState, SourceStateRef, actions, cancel_minimap_requests, cancel_review_requests,
+    live, operation_bridge, set_commit_controls_enabled, set_status_label,
 };
 
 // PARSER-BOUNDARY: id=git_status_ui
 pub(super) fn set_project_root(state: &SourceStateRef, folder: Option<gio::File>) {
-    cancel_refresh(state);
+    let ticket = begin_root_change(state);
+    if !operation_bridge::is_refresh_current(state, &ticket) {
+        return;
+    }
     live::cancel(state);
+    if !operation_bridge::is_refresh_current(state, &ticket) {
+        return;
+    }
+    cancel_review_requests(state);
+    if !operation_bridge::is_refresh_current(state, &ticket) {
+        return;
+    }
+    cancel_minimap_requests(state);
+    if !operation_bridge::is_refresh_current(state, &ticket) {
+        return;
+    }
     let Some(folder) = folder else {
-        reset_project_state(state, &gettext("Open a folder to see Git status."), false);
+        if reset_project_state(
+            state,
+            &ticket,
+            &gettext("Open a folder to see Git status."),
+            false,
+        ) {
+            let _finished = operation_bridge::finish_refresh(state, &ticket);
+        }
         return;
     };
     let Some(path) = folder.path() else {
-        reset_project_state(
+        if reset_project_state(
             state,
+            &ticket,
             &gettext("Only local Git folders are supported."),
             false,
-        );
+        ) {
+            let _finished = operation_bridge::finish_refresh(state, &ticket);
+        }
         return;
     };
-    let cancellable = gio::Cancellable::new();
-    {
-        let mut state = state.borrow_mut();
-        state.cancellable = Some(cancellable.clone());
-        state.repo = None;
-        state.process = None;
-        state.attrs = GitAttrState::default();
-        state.snapshot = GitStatusSnapshot::default();
-        state.status_stale = true;
-        state.action_generation = state.action_generation.wrapping_add(1);
-        state.review_generation = state.review_generation.wrapping_add(1);
-        cancel_review_requests_locked(&mut state);
-        cancel_minimap_requests_locked(&mut state);
-        state
-            .status_label
-            .set_label(&ellipsis_label(gettext("Refreshing Git status")));
-        set_commit_controls_enabled(&state, false);
-        emit_project_statuses(&state);
-        state.history.clear();
-        rebuild_views(&state);
+    if !reset_project_state(
+        state,
+        &ticket,
+        &ellipsis_label(gettext("Refreshing Git status")),
+        true,
+    ) {
+        return;
     }
-    actions::fire_state_change_handler(state);
-    close_review_tabs_for_current_repo(state);
     let weak = Rc::downgrade(state);
-    let cancellable_for_callback = cancellable.clone();
+    let cancellable = ticket.cancellable().clone();
     let callback: GitCallback<GitRepoContext> = Rc::new(move |result| {
-        let timed_out = matches!(&result, Err(error) if error == &GitProcessError::TimedOut);
-        if cancellable_for_callback.is_cancelled() && !timed_out {
-            return;
-        }
         let Some(state) = weak.upgrade() else {
             return;
         };
+        if !operation_bridge::is_refresh_current(&state, &ticket) {
+            return;
+        }
         match result {
             Ok(repo_context) => {
                 {
@@ -75,18 +83,28 @@ pub(super) fn set_project_root(state: &SourceStateRef, folder: Option<gio::File>
                     state.status_stale = true;
                 }
                 live::install(&state);
+                if !operation_bridge::is_refresh_current(&state, &ticket) {
+                    return;
+                }
                 refresh_status_with_origin(&state, RefreshOrigin::Initial);
             }
-            Err(error) if git_error_is_cancelled(&error) => {}
-            Err(error) if matches!(error, GitProcessError::TimedOut) => {
-                reset_project_state(&state, &git_error_text(&error), true);
+            Err(error) if super::git_error_is_cancelled(&error) => {
+                let _finished = operation_bridge::finish_refresh(&state, &ticket);
+            }
+            Err(error) if matches!(error, crate::git_process::GitProcessError::TimedOut) => {
+                if reset_project_state(&state, &ticket, &super::git_error_text(&error), true) {
+                    let _finished = operation_bridge::finish_refresh(&state, &ticket);
+                }
             }
             Err(_error) => {
-                reset_project_state(
+                if reset_project_state(
                     &state,
+                    &ticket,
                     &gettext("This folder is not a Git repository."),
                     false,
-                );
+                ) {
+                    let _finished = operation_bridge::finish_refresh(&state, &ticket);
+                }
             }
         }
     });
@@ -99,26 +117,64 @@ pub(super) fn set_project_root(state: &SourceStateRef, folder: Option<gio::File>
     GitProcess::detect_repo(&path, &cancellable, callback);
 }
 
-fn reset_project_state(state: &SourceStateRef, label: &str, mark_stale: bool) {
-    {
+fn begin_root_change(state: &SourceStateRef) -> RefreshTicket {
+    let (ticket, cancellations) = {
+        let mut state = state.borrow_mut();
+        state.operations.invalidate_root();
+        state.snapshot_id = None;
+        let ticket = state.operations.begin_detection();
+        let cancellations = state.operations.take_cancellations();
+        (ticket, cancellations)
+    };
+    cancel_queued(cancellations);
+    ticket
+}
+
+fn reset_project_state(
+    state: &SourceStateRef,
+    ticket: &RefreshTicket,
+    label: &str,
+    mark_stale: bool,
+) -> bool {
+    if !operation_bridge::is_refresh_current(state, ticket) {
+        return false;
+    }
+    let history = {
         let mut state = state.borrow_mut();
         state.repo = None;
         state.process = None;
         state.attrs = GitAttrState::default();
         state.snapshot = GitStatusSnapshot::default();
         state.status_stale = mark_stale;
-        state.action_generation = state.action_generation.wrapping_add(1);
         state.review_generation = state.review_generation.wrapping_add(1);
-        cancel_review_requests_locked(&mut state);
-        cancel_minimap_requests_locked(&mut state);
-        state.status_label.set_label(label);
-        set_commit_controls_enabled(&state, false);
-        emit_project_statuses(&state);
-        state.history.clear();
-        rebuild_views(&state);
+        Rc::clone(&state.history)
+    };
+    set_status_label(state, label);
+    if !operation_bridge::is_refresh_current(state, ticket) {
+        return false;
+    }
+    set_commit_controls_enabled(state, false);
+    if !operation_bridge::is_refresh_current(state, ticket) {
+        return false;
+    }
+    emit_project_statuses(state);
+    if !operation_bridge::is_refresh_current(state, ticket) {
+        return false;
+    }
+    history.clear();
+    if !operation_bridge::is_refresh_current(state, ticket) {
+        return false;
+    }
+    rebuild_views(state);
+    if !operation_bridge::is_refresh_current(state, ticket) {
+        return false;
     }
     actions::fire_state_change_handler(state);
+    if !operation_bridge::is_refresh_current(state, ticket) {
+        return false;
+    }
     close_review_tabs_for_current_repo(state);
+    operation_bridge::is_refresh_current(state, ticket)
 }
 
 fn close_review_tabs_for_current_repo(state: &SourceStateRef) {

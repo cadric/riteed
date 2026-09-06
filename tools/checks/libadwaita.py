@@ -13,7 +13,7 @@ def check_libadwaita(root: Path, errors: list[str]) -> list[ReviewEntry]:
     policy = libadwaita_policy(root)
     enforcement = policy.get("enforcement", {})
     errors.extend(css_regex_hits(root, enforcement.get("hard_fail_patterns", [])))
-    hits = ui_surface_hits(root) + blueprint_surface_hits(root) + css_review_hits(root)
+    hits = ui_surface_hits(root, errors) + blueprint_surface_hits(root) + css_review_hits(root)
     config = validation_policy(root)["review_artifacts"]["ui"]
     entries = load_review_entries(root, "ui", config, errors)
     validate_review_links(root, hits, entries, errors)

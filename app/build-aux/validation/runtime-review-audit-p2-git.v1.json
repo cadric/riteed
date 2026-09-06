@@ -1,0 +1,269 @@
+{
+  "version": 1,
+  "sites": [
+    {
+      "path": "src/git_process.rs",
+      "line": 388,
+      "match": "fn install_operation_deadline(state: &Rc<RefCell<GitRunState>>, cancellable: &gio::Cancellable) {",
+      "kind": "runtime-shared-state",
+      "ownership": "One GitRunState is retained by its owned operation/grace sources and asynchronous communication/wait callbacks; it contains no UI or workspace reference.",
+      "justification": "Communication completion is distinct from successful child wait. User-cancelled mutations retain the original deadline; only terminal completion removes owned sources and takes the optional callback. The callback runs after the RefCell borrow ends. Held checkpoints exist only in tests."
+    },
+    {
+      "path": "src/git_process.rs",
+      "line": 425,
+      "match": "fn begin_mutation_grace(state: &Rc<RefCell<GitRunState>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "One GitRunState is retained by its owned operation/grace sources and asynchronous communication/wait callbacks; it contains no UI or workspace reference.",
+      "justification": "Communication completion is distinct from successful child wait. User-cancelled mutations retain the original deadline; only terminal completion removes owned sources and takes the optional callback. The callback runs after the RefCell borrow ends. Held checkpoints exist only in tests."
+    },
+    {
+      "path": "src/git_process.rs",
+      "line": 460,
+      "match": "fn send_term_then_force(state: &Rc<RefCell<GitRunState>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "One GitRunState is retained by its owned operation/grace sources and asynchronous communication/wait callbacks; it contains no UI or workspace reference.",
+      "justification": "Communication completion is distinct from successful child wait. User-cancelled mutations retain the original deadline; only terminal completion removes owned sources and takes the optional callback. The callback runs after the RefCell borrow ends. Held checkpoints exist only in tests."
+    },
+    {
+      "path": "src/git_process.rs",
+      "line": 476,
+      "match": "fn force_exit(state: &Rc<RefCell<GitRunState>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "One GitRunState is retained by its owned operation/grace sources and asynchronous communication/wait callbacks; it contains no UI or workspace reference.",
+      "justification": "Communication completion is distinct from successful child wait. User-cancelled mutations retain the original deadline; only terminal completion removes owned sources and takes the optional callback. The callback runs after the RefCell borrow ends. Held checkpoints exist only in tests."
+    },
+    {
+      "path": "src/git_process.rs",
+      "line": 490,
+      "match": "fn start_uncancelled_wait(state: &Rc<RefCell<GitRunState>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "One GitRunState is retained by its owned operation/grace sources and asynchronous communication/wait callbacks; it contains no UI or workspace reference.",
+      "justification": "Communication completion is distinct from successful child wait. User-cancelled mutations retain the original deadline; only terminal completion removes owned sources and takes the optional callback. The callback runs after the RefCell borrow ends. Held checkpoints exist only in tests."
+    },
+    {
+      "path": "src/git_process.rs",
+      "line": 537,
+      "match": "fn finish_reaped(state: &Rc<RefCell<GitRunState>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "One GitRunState is retained by its owned operation/grace sources and asynchronous communication/wait callbacks; it contains no UI or workspace reference.",
+      "justification": "Communication completion is distinct from successful child wait. User-cancelled mutations retain the original deadline; only terminal completion removes owned sources and takes the optional callback. The callback runs after the RefCell borrow ends. Held checkpoints exist only in tests."
+    },
+    {
+      "path": "src/git_process.rs",
+      "line": 585,
+      "match": "state: &Rc<RefCell<GitRunState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "One GitRunState is retained by its owned operation/grace sources and asynchronous communication/wait callbacks; it contains no UI or workspace reference.",
+      "justification": "Communication completion is distinct from successful child wait. User-cancelled mutations retain the original deadline; only terminal completion removes owned sources and takes the optional callback. The callback runs after the RefCell borrow ends. Held checkpoints exist only in tests."
+    },
+    {
+      "path": "src/git_process/lifecycle_matrix_tests.rs",
+      "line": 13,
+      "match": "type Results = Rc<RefCell<Vec<Result<GitRunOutput, GitProcessError>>>>;",
+      "kind": "runtime-shared-state",
+      "ownership": "RIT-GEN-007 test fixtures own only synthetic temporary files, child handles, event observations and held test continuations; compiled only in the test module.",
+      "justification": "The controlled-child handshake and bounded GLib pumping exercise the shared production runner. Teardown force-exits and waits for the fixture child; result and event slots record terminal ordering without holding application windows. Filesystem probes are confined to the fixture directory, never user documents or portal paths."
+    },
+    {
+      "path": "src/git_process/lifecycle_matrix_tests.rs",
+      "line": 14,
+      "match": "type Continuation = Rc<RefCell<Option<Rc<dyn Fn()>>>>;",
+      "kind": "runtime-shared-state",
+      "ownership": "RIT-GEN-007 test fixtures own only synthetic temporary files, child handles, event observations and held test continuations; compiled only in the test module.",
+      "justification": "The controlled-child handshake and bounded GLib pumping exercise the shared production runner. Teardown force-exits and waits for the fixture child; result and event slots record terminal ordering without holding application windows. Filesystem probes are confined to the fixture directory, never user documents or portal paths."
+    },
+    {
+      "path": "src/git_process/lifecycle_matrix_tests.rs",
+      "line": 40,
+      "match": "child: Rc<RefCell<Option<super::TestChild>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "RIT-GEN-007 test fixtures own only synthetic temporary files, child handles, event observations and held test continuations; compiled only in the test module.",
+      "justification": "The controlled-child handshake and bounded GLib pumping exercise the shared production runner. Teardown force-exits and waits for the fixture child; result and event slots record terminal ordering without holding application windows. Filesystem probes are confined to the fixture directory, never user documents or portal paths."
+    },
+    {
+      "path": "src/git_process/lifecycle_matrix_tests.rs",
+      "line": 42,
+      "match": "events: Rc<RefCell<Vec<&'static str>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "RIT-GEN-007 test fixtures own only synthetic temporary files, child handles, event observations and held test continuations; compiled only in the test module.",
+      "justification": "The controlled-child handshake and bounded GLib pumping exercise the shared production runner. Teardown force-exits and waits for the fixture child; result and event slots record terminal ordering without holding application windows. Filesystem probes are confined to the fixture directory, never user documents or portal paths."
+    },
+    {
+      "path": "src/git_process/lifecycle_tests.rs",
+      "line": 8,
+      "match": "type HeldGrace = Rc<RefCell<Option<Rc<dyn Fn()>>>>;",
+      "kind": "runtime-shared-state",
+      "ownership": "RIT-GEN-007 test fixtures own only synthetic temporary files, child handles, event observations and held test continuations; compiled only in the test module.",
+      "justification": "The controlled-child handshake and bounded GLib pumping exercise the shared production runner. Teardown force-exits and waits for the fixture child; result and event slots record terminal ordering without holding application windows. Filesystem probes are confined to the fixture directory, never user documents or portal paths."
+    },
+    {
+      "path": "src/git_process/lifecycle_tests.rs",
+      "line": 18,
+      "match": "let actions: Rc<RefCell<Vec<&'static str>>> = Rc::new(RefCell::new(Vec::new()));",
+      "kind": "runtime-shared-state",
+      "ownership": "RIT-GEN-007 test fixtures own only synthetic temporary files, child handles, event observations and held test continuations; compiled only in the test module.",
+      "justification": "The controlled-child handshake and bounded GLib pumping exercise the shared production runner. Teardown force-exits and waits for the fixture child; result and event slots record terminal ordering without holding application windows. Filesystem probes are confined to the fixture directory, never user documents or portal paths."
+    },
+    {
+      "path": "src/git_process/lifecycle_tests.rs",
+      "line": 28,
+      "match": "let results: Rc<RefCell<Vec<Result<super::GitRunOutput, GitProcessError>>>> =",
+      "kind": "runtime-shared-state",
+      "ownership": "RIT-GEN-007 test fixtures own only synthetic temporary files, child handles, event observations and held test continuations; compiled only in the test module.",
+      "justification": "The controlled-child handshake and bounded GLib pumping exercise the shared production runner. Teardown force-exits and waits for the fixture child; result and event slots record terminal ordering without holding application windows. Filesystem probes are confined to the fixture directory, never user documents or portal paths."
+    },
+    {
+      "path": "src/git_process/lifecycle_tests.rs",
+      "line": 107,
+      "match": "let results: Rc<RefCell<Vec<Result<super::GitRunOutput, GitProcessError>>>> =",
+      "kind": "runtime-shared-state",
+      "ownership": "RIT-GEN-007 test fixtures own only synthetic temporary files, child handles, event observations and held test continuations; compiled only in the test module.",
+      "justification": "The controlled-child handshake and bounded GLib pumping exercise the shared production runner. Teardown force-exits and waits for the fixture child; result and event slots record terminal ordering without holding application windows. Filesystem probes are confined to the fixture directory, never user documents or portal paths."
+    },
+    {
+      "path": "src/git_process/lifecycle_tests.rs",
+      "line": 173,
+      "match": "let results: Rc<RefCell<Vec<Result<super::GitRunOutput, GitProcessError>>>> =",
+      "kind": "runtime-shared-state",
+      "ownership": "RIT-GEN-007 test fixtures own only synthetic temporary files, child handles, event observations and held test continuations; compiled only in the test module.",
+      "justification": "The controlled-child handshake and bounded GLib pumping exercise the shared production runner. Teardown force-exits and waits for the fixture child; result and event slots record terminal ordering without holding application windows. Filesystem probes are confined to the fixture directory, never user documents or portal paths."
+    },
+    {
+      "path": "src/git_process/lifecycle_tests.rs",
+      "line": 239,
+      "match": "child: Rc<RefCell<Option<super::TestChild>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "RIT-GEN-007 test fixtures own only synthetic temporary files, child handles, event observations and held test continuations; compiled only in the test module.",
+      "justification": "The controlled-child handshake and bounded GLib pumping exercise the shared production runner. Teardown force-exits and waits for the fixture child; result and event slots record terminal ordering without holding application windows. Filesystem probes are confined to the fixture directory, never user documents or portal paths."
+    },
+    {
+      "path": "src/git_process/tests.rs",
+      "line": 429,
+      "match": "let slot: Rc<RefCell<Option<Result<T, GitProcessError>>>> = Rc::new(RefCell::new(None));",
+      "kind": "runtime-shared-state",
+      "ownership": "RIT-GEN-007 test fixtures own only synthetic temporary files, child handles, event observations and held test continuations; compiled only in the test module.",
+      "justification": "The controlled-child handshake and bounded GLib pumping exercise the shared production runner. Teardown force-exits and waits for the fixture child; result and event slots record terminal ordering without holding application windows. Filesystem probes are confined to the fixture directory, never user documents or portal paths."
+    },
+    {
+      "path": "src/git_process/tests.rs",
+      "line": 444,
+      "match": "let slot: Rc<RefCell<Option<Result<T, GitProcessError>>>> = Rc::new(RefCell::new(None));",
+      "kind": "runtime-shared-state",
+      "ownership": "RIT-GEN-007 test fixtures own only synthetic temporary files, child handles, event observations and held test continuations; compiled only in the test module.",
+      "justification": "The controlled-child handshake and bounded GLib pumping exercise the shared production runner. Teardown force-exits and waits for the fixture child; result and event slots record terminal ordering without holding application windows. Filesystem probes are confined to the fixture directory, never user documents or portal paths."
+    },
+    {
+      "path": "src/git_process.rs",
+      "line": 230,
+      "match": "let flags = gio::SubprocessFlags::STDIN_PIPE",
+      "kind": "runtime-git-subprocess",
+      "ownership": "The typed /app/bin/git runner owns this subprocess and its stdin/stdout/stderr capture until communication settles and uncancelled wait succeeds.",
+      "justification": "Only typed production operations construct argv with fixed environment and sandbox Git. Cancellation and deadlines retain child supervision; mutation timeout waits through TERM and force-exit grace. Output caps are checked after communicate buffering; bounded streaming remains separate P3 work."
+    },
+    {
+      "path": "src/git_process.rs",
+      "line": 231,
+      "match": "| gio::SubprocessFlags::STDOUT_PIPE",
+      "kind": "runtime-git-subprocess",
+      "ownership": "The typed /app/bin/git runner owns this subprocess and its stdin/stdout/stderr capture until communication settles and uncancelled wait succeeds.",
+      "justification": "Only typed production operations construct argv with fixed environment and sandbox Git. Cancellation and deadlines retain child supervision; mutation timeout waits through TERM and force-exit grace. Output caps are checked after communicate buffering; bounded streaming remains separate P3 work."
+    },
+    {
+      "path": "src/git_process.rs",
+      "line": 232,
+      "match": "| gio::SubprocessFlags::STDERR_PIPE;",
+      "kind": "runtime-git-subprocess",
+      "ownership": "The typed /app/bin/git runner owns this subprocess and its stdin/stdout/stderr capture until communication settles and uncancelled wait succeeds.",
+      "justification": "Only typed production operations construct argv with fixed environment and sandbox Git. Cancellation and deadlines retain child supervision; mutation timeout waits through TERM and force-exit grace. Output caps are checked after communicate buffering; bounded streaming remains separate P3 work."
+    },
+    {
+      "path": "src/git_process.rs",
+      "line": 233,
+      "match": "let launcher = gio::SubprocessLauncher::new(flags);",
+      "kind": "runtime-git-subprocess",
+      "ownership": "The typed /app/bin/git runner owns this subprocess and its stdin/stdout/stderr capture until communication settles and uncancelled wait succeeds.",
+      "justification": "Only typed production operations construct argv with fixed environment and sandbox Git. Cancellation and deadlines retain child supervision; mutation timeout waits through TERM and force-exit grace. Output caps are checked after communicate buffering; bounded streaming remains separate P3 work."
+    },
+    {
+      "path": "src/git_process.rs",
+      "line": 329,
+      "match": "subprocess: gio::Subprocess,",
+      "kind": "runtime-git-subprocess",
+      "ownership": "The typed /app/bin/git runner owns this subprocess and its stdin/stdout/stderr capture until communication settles and uncancelled wait succeeds.",
+      "justification": "Only typed production operations construct argv with fixed environment and sandbox Git. Cancellation and deadlines retain child supervision; mutation timeout waits through TERM and force-exit grace. Output caps are checked after communicate buffering; bounded streaming remains separate P3 work."
+    },
+    {
+      "path": "src/git_process.rs",
+      "line": 347,
+      "match": "subprocess: gio::Subprocess,",
+      "kind": "runtime-git-subprocess",
+      "ownership": "The typed /app/bin/git runner owns this subprocess and its stdin/stdout/stderr capture until communication settles and uncancelled wait succeeds.",
+      "justification": "Only typed production operations construct argv with fixed environment and sandbox Git. Cancellation and deadlines retain child supervision; mutation timeout waits through TERM and force-exit grace. Output caps are checked after communicate buffering; bounded streaming remains separate P3 work."
+    },
+    {
+      "path": "src/git_process.rs",
+      "line": 565,
+      "match": "pub(crate) struct TestChild(gio::Subprocess);",
+      "kind": "runtime-git-subprocess",
+      "ownership": "The cfg(test) boundary wrapper owns a reference to an observed test child for fixture teardown.",
+      "justification": "Only the approved subprocess boundary exposes force-and-wait cleanup; GTK fixtures cannot access Gio subprocess control directly. Test teardown reaps observed children even after an assertion failure, while normal completion remains owned by the actual supervisor."
+    },
+    {
+      "path": "src/git_process/lifecycle_matrix_tests.rs",
+      "line": 62,
+      "match": "assert!(!directory.exists(), \"fixture directory must be fresh\");",
+      "kind": "runtime-sync-fs",
+      "ownership": "RIT-GEN-007 test fixtures own only synthetic temporary files, child handles, event observations and held test continuations; compiled only in the test module.",
+      "justification": "The controlled-child handshake and bounded GLib pumping exercise the shared production runner. Teardown force-exits and waits for the fixture child; result and event slots record terminal ordering without holding application windows. Filesystem probes are confined to the fixture directory, never user documents or portal paths."
+    },
+    {
+      "path": "src/git_process/lifecycle_matrix_tests.rs",
+      "line": 122,
+      "match": "pump(\"child readiness\", || run.directory.join(\"ready\").exists());",
+      "kind": "runtime-sync-fs",
+      "ownership": "RIT-GEN-007 test fixtures own only synthetic temporary files, child handles, event observations and held test continuations; compiled only in the test module.",
+      "justification": "The controlled-child handshake and bounded GLib pumping exercise the shared production runner. Teardown force-exits and waits for the fixture child; result and event slots record terminal ordering without holding application windows. Filesystem probes are confined to the fixture directory, never user documents or portal paths."
+    },
+    {
+      "path": "src/git_process/lifecycle_matrix_tests.rs",
+      "line": 265,
+      "match": "assert!(run.directory.join(\"term\").exists());",
+      "kind": "runtime-sync-fs",
+      "ownership": "RIT-GEN-007 test fixtures own only synthetic temporary files, child handles, event observations and held test continuations; compiled only in the test module.",
+      "justification": "The controlled-child handshake and bounded GLib pumping exercise the shared production runner. Teardown force-exits and waits for the fixture child; result and event slots record terminal ordering without holding application windows. Filesystem probes are confined to the fixture directory, never user documents or portal paths."
+    },
+    {
+      "path": "src/git_process/lifecycle_tests.rs",
+      "line": 144,
+      "match": "fixture.exited.is_file()",
+      "kind": "runtime-sync-fs",
+      "ownership": "RIT-GEN-007 test fixtures own only synthetic temporary files, child handles, event observations and held test continuations; compiled only in the test module.",
+      "justification": "The controlled-child handshake and bounded GLib pumping exercise the shared production runner. Teardown force-exits and waits for the fixture child; result and event slots record terminal ordering without holding application windows. Filesystem probes are confined to the fixture directory, never user documents or portal paths."
+    },
+    {
+      "path": "src/git_process/lifecycle_tests.rs",
+      "line": 147,
+      "match": "fixture.exited.is_file(),",
+      "kind": "runtime-sync-fs",
+      "ownership": "RIT-GEN-007 test fixtures own only synthetic temporary files, child handles, event observations and held test continuations; compiled only in the test module.",
+      "justification": "The controlled-child handshake and bounded GLib pumping exercise the shared production runner. Teardown force-exits and waits for the fixture child; result and event slots record terminal ordering without holding application windows. Filesystem probes are confined to the fixture directory, never user documents or portal paths."
+    },
+    {
+      "path": "src/git_process/lifecycle_tests.rs",
+      "line": 281,
+      "match": "spin_until(context, Duration::from_secs(10), || self.ready.is_file());",
+      "kind": "runtime-sync-fs",
+      "ownership": "RIT-GEN-007 test fixtures own only synthetic temporary files, child handles, event observations and held test continuations; compiled only in the test module.",
+      "justification": "The controlled-child handshake and bounded GLib pumping exercise the shared production runner. Teardown force-exits and waits for the fixture child; result and event slots record terminal ordering without holding application windows. Filesystem probes are confined to the fixture directory, never user documents or portal paths."
+    },
+    {
+      "path": "src/git_process/lifecycle_tests.rs",
+      "line": 283,
+      "match": "self.ready.is_file(),",
+      "kind": "runtime-sync-fs",
+      "ownership": "RIT-GEN-007 test fixtures own only synthetic temporary files, child handles, event observations and held test continuations; compiled only in the test module.",
+      "justification": "The controlled-child handshake and bounded GLib pumping exercise the shared production runner. Teardown force-exits and waits for the fixture child; result and event slots record terminal ordering without holding application windows. Filesystem probes are confined to the fixture directory, never user documents or portal paths."
+    }
+  ]
+}

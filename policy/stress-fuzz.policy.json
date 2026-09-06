@@ -128,7 +128,8 @@
       "frontmatter_split",
       "git_status_parse",
       "diff_compute",
-      "unsupported_scanner"
+      "unsupported_scanner",
+      "page_text_decode"
     ],
     "seed_contract": {
       "corpus_root": "app/fuzz/corpus",
@@ -149,7 +150,29 @@
       },
       "unsupported_scanner": {
         "real_shape": "Markdown source bytes containing HTML, image/link targets, unsupported syntax, and malformed UTF-8 after app decoding."
+      },
+      "page_text_decode": {
+        "real_shape": "An eight-byte little-endian u64 file offset followed by arbitrary paged document bytes, including empty payloads and split UTF-8 sequences.",
+        "offset_prefix_bytes": 8,
+        "byte_order": "little",
+        "max_seed_scan_bytes": 4096,
+        "near_max_distance": 4,
+        "required_seed_classes": [
+          "offset_zero",
+          "offset_near_max",
+          "offset_max",
+          "empty_payload",
+          "incomplete_utf8",
+          "continuation_only"
+        ]
       }
+    },
+    "ci_execution": {
+      "job": "stress",
+      "step": "Run scheduled stress suite",
+      "required_condition": "github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'",
+      "container_image_prefix": "fedora:42",
+      "required_triggers": ["schedule", "workflow_dispatch"]
     },
     "lockfile_sync": {
       "app_lockfile": "app/Cargo.lock",
@@ -268,8 +291,11 @@
     ],
     "fuzz_checks": [
       "required fuzz target files exist",
+      "required fuzz targets have exact Cargo bin registrations",
       "each target has a seed corpus",
       "git_status_parse seeds contain NUL-delimited porcelain v2 examples",
+      "page_text_decode seeds cover every policy-owned offset and byte-shape class",
+      "scheduled/manual stress invokes every required fuzz target through cargo-fuzz",
       "app/fuzz/Cargo.lock stays synchronized with app/Cargo.lock via dependency preflight"
     ],
     "stress_checks": [
@@ -288,6 +314,9 @@
   "prohibited": [
     "parser_or_untrusted_input_boundary_without_registry_mapping_or_reviewed_exception",
     "fuzz_target_existence_without_real_input_shape_evidence",
+    "required_fuzz_target_without_exact_cargo_bin_registration",
+    "required_fuzz_target_without_policy_owned_semantic_seed_classes",
+    "required_fuzz_target_not_invoked_by_scheduled_or_manual_stress",
     "newline_only_git_porcelain_v2_z_seed_without_planned_remediation",
     "stress_script_that_does_not_exercise_its_named_boundary",
     "generated_stress_corpus_not_consumed_by_scheduled_or_manual_stress_job",

@@ -6,13 +6,13 @@ use std::rc::{Rc, Weak};
 
 use gettextrs::gettext;
 use gtk4::accessible::Property;
-use gtk4::{gio, prelude::*};
+use gtk4::{gio, glib, prelude::*};
 use libadwaita as adw;
 
 use crate::editor_tab::EditorTab;
 #[cfg(test)]
 use crate::git_process::{GitCallback, GitRepoContext};
-use crate::git_process::{GitIdentity, GitProcess, GitProcessError};
+use crate::git_process::{GitProcess, GitProcessError};
 use crate::git_status::{GitAttrState, GitCapabilities, GitStatusSnapshot};
 use crate::settings::AppSettings;
 #[cfg(test)]
@@ -22,11 +22,13 @@ use crate::workspace::Workspace;
 pub(crate) mod action_widgets;
 pub(crate) mod actions;
 mod active_row;
+mod commit;
 mod history;
 mod list_view;
 mod live;
 mod live_scheduler;
 mod minimap;
+mod operation_bridge;
 mod path_target;
 mod refresh;
 mod review;
@@ -34,6 +36,7 @@ mod review_loader;
 mod root;
 mod row_popover;
 mod row_widgets;
+mod slots;
 mod status_style;
 #[cfg(test)]
 mod testing;
@@ -47,8 +50,15 @@ mod weak;
 
 use history::SourceControlHistory;
 use live::SourceControlLiveRefresh;
-use refresh::{RefreshOrigin, finish_error, refresh_status, refresh_status_with_origin};
+use refresh::{RefreshOrigin, refresh_status_with_origin};
+use slots::{OperationSlots, SnapshotId};
 use view_mode::SourceControlViews;
+
+use operation_bridge::{
+    cancel_minimap_requests, cancel_minimap_requests_for_tab, cancel_review_requests,
+    remove_minimap_cancellable, remove_review_cancellable, track_minimap_cancellable,
+    track_review_cancellable,
+};
 
 pub(super) type SourceStateRef = Rc<RefCell<SourceControlState>>;
 #[cfg(test)]
@@ -71,9 +81,9 @@ pub(super) struct SourceControlState {
     pub(super) root: adw::ToolbarView,
     pub(super) title: adw::WindowTitle,
     pub(super) status_label: gtk4::Label,
-    views: SourceControlViews,
+    views: Rc<SourceControlViews>,
     pub(super) active_uri: Option<String>,
-    history: SourceControlHistory,
+    history: Rc<SourceControlHistory>,
     history_split: gtk4::Paned,
     pub(super) commit_revealer: gtk4::Revealer,
     pub(super) commit_entry: gtk4::Entry,
@@ -85,12 +95,13 @@ pub(super) struct SourceControlState {
     pub(super) capabilities: GitCapabilities,
     pub(super) attrs: GitAttrState,
     pub(super) snapshot: GitStatusSnapshot,
-    pub(super) cancellable: Option<gio::Cancellable>,
+    pub(super) snapshot_id: Option<SnapshotId>,
+    pub(super) operations: OperationSlots,
     pub(super) review_cancellables: Vec<gio::Cancellable>,
     pub(super) minimap_cancellables: Vec<MinimapRequest>,
-    pub(super) live_refresh: Option<SourceControlLiveRefresh>,
+    pub(super) live_refresh: Option<Rc<RefCell<SourceControlLiveRefresh>>>,
+    pub(super) recovery_source: Option<glib::SourceId>,
     pub(super) status_stale: bool,
-    pub(super) action_generation: u64,
     pub(super) review_generation: u64,
     pub(super) review_staged_action: gio::SimpleAction,
     pub(super) review_unstaged_action: gio::SimpleAction,
@@ -98,6 +109,19 @@ pub(super) struct SourceControlState {
     #[cfg(test)]
     detect_repo: DetectRepoForTests,
     status_handler: Option<GitStatusHandler>,
+}
+
+impl Drop for SourceControlState {
+    fn drop(&mut self) {
+        if let Some(source) = self.recovery_source.take() {
+            source.remove();
+        }
+        self.operations.cancel_refresh();
+        let mut cancellations = self.operations.drain_for_teardown();
+        cancellations.extend(operation_bridge::take_review_cancellations(self));
+        cancellations.extend(operation_bridge::take_minimap_cancellations(self));
+        slots::cancel_queued(cancellations);
+    }
 }
 
 impl SourceControlController {
@@ -154,13 +178,13 @@ impl SourceControlController {
         status_label.set_wrap(true);
         changes_pane.append(&status_label);
 
-        let views = SourceControlViews::new(settings);
+        let views = Rc::new(SourceControlViews::new(settings));
         changes_pane.append(&views.widget());
 
         let (commit_revealer, commit_entry, commit_button) = ui::build_commit_controls();
         changes_pane.append(&commit_revealer);
 
-        let history = SourceControlHistory::new();
+        let history = Rc::new(SourceControlHistory::new());
         let history_split = ui::build_history_split(&changes_pane, &history);
         content.append(&history_split);
         root.set_content(Some(&content));
@@ -169,9 +193,9 @@ impl SourceControlController {
             root,
             title,
             status_label,
-            views,
+            views: Rc::clone(&views),
             active_uri: None,
-            history,
+            history: Rc::clone(&history),
             history_split,
             commit_revealer,
             commit_entry,
@@ -183,12 +207,13 @@ impl SourceControlController {
             capabilities: GitCapabilities::default(),
             attrs: GitAttrState::default(),
             snapshot: GitStatusSnapshot::default(),
-            cancellable: None,
+            snapshot_id: None,
+            operations: OperationSlots::new(),
             review_cancellables: Vec::new(),
             minimap_cancellables: Vec::new(),
             live_refresh: None,
+            recovery_source: None,
             status_stale: true,
-            action_generation: 0,
             review_generation: 0,
             review_staged_action,
             review_unstaged_action,
@@ -199,10 +224,7 @@ impl SourceControlController {
             }),
             status_handler: None,
         }));
-        state
-            .borrow()
-            .views
-            .connect_activation(Rc::downgrade(&state));
+        views.connect_activation(Rc::downgrade(&state));
         history::connect_toggle(&state);
         review::install_actions(&state, window);
         install_callbacks(&state, &refresh);
@@ -388,95 +410,32 @@ fn install_callbacks(state: &SourceStateRef, refresh: &gio::SimpleAction) {
     let weak = Rc::downgrade(state);
     state.borrow().commit_button.connect_clicked(move |_| {
         if let Some(state) = weak.upgrade() {
-            commit(&state);
+            commit::run(&state);
         }
     });
 }
 
-pub(super) fn set_commit_controls_enabled(state: &SourceControlState, enabled: bool) {
-    state.commit_button.set_sensitive(enabled);
-    state.commit_revealer.set_reveal_child(enabled);
+pub(super) fn set_commit_controls_enabled(state: &SourceStateRef, enabled: bool) {
+    let (button, revealer) = {
+        let state = state.borrow();
+        (state.commit_button.clone(), state.commit_revealer.clone())
+    };
+    button.set_sensitive(enabled);
+    revealer.set_reveal_child(enabled);
+}
+
+pub(super) fn set_status_label(state: &SourceStateRef, text: &str) {
+    let label = state.borrow().status_label.clone();
+    label.set_label(text);
+}
+
+pub(super) fn set_title_subtitle(state: &SourceStateRef, text: &str) {
+    let title = state.borrow().title.clone();
+    title.set_subtitle(text);
 }
 
 pub(super) fn git_error_is_cancelled(error: &GitProcessError) -> bool {
     matches!(error, GitProcessError::Cancelled)
-}
-
-fn commit(state: &SourceStateRef) {
-    let (process, message, settings_identity, attrs_unavailable) = {
-        let state = state.borrow();
-        let Some(process) = state.process.clone() else {
-            return;
-        };
-        let message = state.commit_entry.text().to_string();
-        let identity = state.settings.git_identity();
-        (process, message, identity, state.attrs.is_unavailable())
-    };
-    if attrs_unavailable {
-        state
-            .borrow()
-            .status_label
-            .set_label(&git_attrs_unavailable_text());
-        return;
-    }
-    if message.trim().is_empty() {
-        state
-            .borrow()
-            .status_label
-            .set_label(&gettext("Enter a commit message first."));
-        return;
-    }
-    let cancellable = gio::Cancellable::new();
-    state.borrow_mut().cancellable = Some(cancellable.clone());
-    let weak = Rc::downgrade(state);
-    let process_for_commit = process.clone();
-    let cancellable_for_commit = cancellable.clone();
-    process.read_git_identity(
-        &cancellable,
-        Rc::new(move |identity| {
-            if cancellable_for_commit.is_cancelled() {
-                return;
-            }
-            let Some(state) = weak.upgrade() else {
-                return;
-            };
-            let identity = identity.ok().flatten().or_else(|| {
-                GitIdentity::new(settings_identity.0.clone(), settings_identity.1.clone()).ok()
-            });
-            let Some(identity) = identity else {
-                finish_error(
-                    &state,
-                    &gettext(
-                        "Set a Git identity in the Source Control preferences before committing.",
-                    ),
-                );
-                return;
-            };
-            let weak = Rc::downgrade(&state);
-            let cancellable_for_callback = cancellable_for_commit.clone();
-            process_for_commit.commit(
-                &identity,
-                &message,
-                &cancellable_for_commit,
-                Rc::new(move |result| {
-                    if cancellable_for_callback.is_cancelled() {
-                        return;
-                    }
-                    let Some(state) = weak.upgrade() else {
-                        return;
-                    };
-                    match result {
-                        Ok(()) => {
-                            state.borrow().commit_entry.set_text("");
-                            refresh_status(&state);
-                        }
-                        Err(error) if git_error_is_cancelled(&error) => {}
-                        Err(error) => finish_error(&state, &git_error_text(&error)),
-                    }
-                }),
-            );
-        }),
-    );
 }
 
 pub(super) fn git_error_text(error: &GitProcessError) -> String {
@@ -495,85 +454,4 @@ pub(super) fn git_attrs_unavailable_text() -> String {
 
 fn saved_file_in_repo(state: &SourceControlState, file: &gio::File) -> bool {
     root::saved_file_in_repo(state, file)
-}
-
-fn cancel_refresh(state: &SourceStateRef) {
-    if let Some(cancellable) = state.borrow_mut().cancellable.take() {
-        cancellable.cancel();
-    }
-}
-
-pub(super) fn track_review_cancellable(state: &SourceStateRef, cancellable: &gio::Cancellable) {
-    state
-        .borrow_mut()
-        .review_cancellables
-        .push(cancellable.clone());
-}
-
-pub(super) fn remove_review_cancellable(state: &SourceStateRef, cancellable: &gio::Cancellable) {
-    state
-        .borrow_mut()
-        .review_cancellables
-        .retain(|active| active != cancellable);
-}
-
-pub(super) fn track_minimap_cancellable(
-    state: &SourceStateRef,
-    tab: &Rc<EditorTab>,
-    source: &str,
-    cancellable: &gio::Cancellable,
-) {
-    state
-        .borrow_mut()
-        .minimap_cancellables
-        .push(MinimapRequest {
-            tab: Rc::downgrade(tab),
-            source: source.to_string(),
-            cancellable: cancellable.clone(),
-        });
-}
-
-pub(super) fn remove_minimap_cancellable(state: &SourceStateRef, cancellable: &gio::Cancellable) {
-    state
-        .borrow_mut()
-        .minimap_cancellables
-        .retain(|active| &active.cancellable != cancellable);
-}
-
-pub(super) fn cancel_minimap_requests_for_tab(
-    state: &SourceStateRef,
-    tab: &Rc<EditorTab>,
-    source: Option<&str>,
-) {
-    let mut state = state.borrow_mut();
-    let mut retained = Vec::new();
-    for request in state.minimap_cancellables.drain(..) {
-        let same_tab = request
-            .tab
-            .upgrade()
-            .is_some_and(|active| Rc::ptr_eq(&active, tab));
-        let same_source = source.is_none_or(|source| request.source == source);
-        if same_tab && same_source {
-            request.cancellable.cancel();
-        } else {
-            retained.push(request);
-        }
-    }
-    state.minimap_cancellables = retained;
-}
-
-pub(super) fn cancel_minimap_requests(state: &SourceStateRef) {
-    cancel_minimap_requests_locked(&mut state.borrow_mut());
-}
-
-pub(super) fn cancel_review_requests_locked(state: &mut SourceControlState) {
-    for cancellable in state.review_cancellables.drain(..) {
-        cancellable.cancel();
-    }
-}
-
-pub(super) fn cancel_minimap_requests_locked(state: &mut SourceControlState) {
-    for request in state.minimap_cancellables.drain(..) {
-        request.cancellable.cancel();
-    }
 }

@@ -48,6 +48,19 @@ Changing policy target versions in the same PR is not self-approval. Treat that
 as a GTK-stack update and review it against the GNOME platform, Flatpak runtime,
 and binding release notes before merge.
 
+## CI Container Image Updates
+
+Release-gating workflow containers and literal `docker pull`/`docker run`
+commands keep their human-readable tag and an exact lowercase 64-hex
+`@sha256:` digest. To update one, resolve the digest for the intended tag from
+the registry, review the image publisher and tag change, replace every use of
+that image together, and keep the tag annotation beside the workflow entry.
+
+Run the release checker and policy-pack gates after a digest change. The pull
+and container startup in the pull request's Validate workflow are the live
+proof that the reviewed digest remains available; offline policy validation
+checks the reference shape and does not contact a registry.
+
 ## Preflight Contract
 
 - Exact full-version matching is required for binding pairs that release

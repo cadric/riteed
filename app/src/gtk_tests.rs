@@ -577,6 +577,58 @@ pub(crate) fn run_gtk_flow(label: &str, run: impl FnOnce()) {
     write_gtk_flow_marker(&format!("gtk-flow-end={label} elapsed_ms={elapsed_ms}"));
 }
 
+fn exercise_document_close_integrity(test_app: &adw::Application) {
+    run_gtk_flow("document-pending-open-ownership", || {
+        crate::workspace_open::exercise_pending_open_ownership(test_app);
+    });
+    run_gtk_flow("document-window-save", || {
+        crate::gtk_tests_document_close::exercise_window_save(test_app);
+    });
+    run_gtk_flow("document-close-newer-edits", || {
+        crate::gtk_tests_document_close::exercise_newer_edits(test_app);
+    });
+    run_gtk_flow("document-window-recheck", || {
+        crate::gtk_tests_document_close::exercise_window_recheck(test_app);
+    });
+    run_gtk_flow("document-close-cancel-failure", || {
+        crate::gtk_tests_document_close::exercise_cancel_and_failure(test_app);
+    });
+    run_gtk_flow("document-close-save-as", || {
+        crate::gtk_tests_document_close::exercise_save_as(test_app);
+    });
+    run_gtk_flow("document-close-rejected-sibling", || {
+        crate::gtk_tests_document_close::exercise_rejected_sibling_close(test_app);
+    });
+    run_gtk_flow("document-close-stale-callbacks", || {
+        crate::workspace_close::tests::exercise_stale_callbacks(test_app);
+    });
+    run_gtk_flow("document-close-detached-queue", || {
+        crate::workspace_close::tests::exercise_detached_queue(test_app);
+    });
+}
+
+fn exercise_core_surfaces_actions() {
+    assert_settings_apply();
+    assert_app_actions_exist();
+    crate::source_control::tree_model::exercise_state_restore_for_tests();
+    crate::markdown::render_tests::exercise_markdown_renderer();
+}
+
+fn exercise_source_control_ownership(test_app: &adw::Application) {
+    run_gtk_flow("source-control-status-diff-ownership", || {
+        crate::gtk_tests_source_ownership::exercise_status_diff_ownership(test_app);
+    });
+    run_gtk_flow("source-control-index-lock-entry-guards", || {
+        crate::gtk_tests_source_ownership::exercise_index_lock_entry_guards(test_app);
+    });
+    run_gtk_flow("source-control-reentrant-root-change", || {
+        crate::gtk_tests_source_ownership::exercise_reentrant_root_change(test_app);
+    });
+    run_gtk_flow("source-control-mutation-grace-root-round-trip", || {
+        crate::gtk_tests_source_operations::exercise_mutation_grace_root_round_trip(test_app);
+    });
+}
+
 #[test]
 fn gtk_surfaces_and_editor_flow_work() {
     let _guard = crate::test_support::init_gtk_for_tests();
@@ -584,12 +636,7 @@ fn gtk_surfaces_and_editor_flow_work() {
         return;
     }
 
-    run_gtk_flow("core-surfaces-actions", || {
-        assert_settings_apply();
-        assert_app_actions_exist();
-        crate::source_control::tree_model::exercise_state_restore_for_tests();
-        crate::markdown::render_tests::exercise_markdown_renderer();
-    });
+    run_gtk_flow("core-surfaces-actions", exercise_core_surfaces_actions);
 
     let test_app = adw::Application::builder()
         .application_id("io.github.cadric.Riteed.WindowTabTests")
@@ -597,6 +644,9 @@ fn gtk_surfaces_and_editor_flow_work() {
         .build();
     let _registered = test_app.register(None::<&gio::Cancellable>);
 
+    run_gtk_flow("document-read-integrity", || {
+        crate::gtk_tests_document_reads::exercise_document_read_integrity(&test_app);
+    });
     run_gtk_flow("window-tab-flow", || exercise_window_tab_flow(&test_app));
     run_gtk_flow("dialog-lifecycle", || {
         crate::gtk_tests_dialog_lifecycle::exercise_dialog_lifecycle(&test_app);
@@ -605,6 +655,7 @@ fn gtk_surfaces_and_editor_flow_work() {
         exercise_restore_and_recent_pruning(&test_app);
     });
     run_gtk_flow("close-flows", || exercise_close_flows(&test_app));
+    exercise_document_close_integrity(&test_app);
     run_gtk_flow("window-lifecycle-release", || {
         crate::gtk_tests_lifecycle::exercise_window_lifecycle_release(&test_app);
     });
@@ -647,6 +698,7 @@ fn gtk_surfaces_and_editor_flow_work() {
     run_gtk_flow("v9-source-control", || {
         crate::gtk_tests_v9::exercise_v9_source_control(&test_app);
     });
+    exercise_source_control_ownership(&test_app);
     run_gtk_flow("v10-chrome-palette", || {
         crate::gtk_tests_v10::exercise_chrome_palette(&test_app);
     });

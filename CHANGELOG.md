@@ -1,6 +1,6 @@
 ---
 created: 2026-04-19
-updated: 2026-08-10
+updated: 2026-09-06
 status: current
 priority: high
 type: changelog
@@ -15,15 +15,63 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 ## Unreleased
 
 ### Changed
+- Expanded regression coverage for overlapping file opens and the complete
+  generated Cargo source inventory, preserving the existing fixes.
 - Scheduled stress validation now runs monthly instead of daily while keeping
   manual workflow dispatch available for release and high-risk change checks.
+- Added offset-framed fuzz and property coverage for paged UTF-8 decoding, with
+  policy checks for Cargo registration, semantic seeds, registry mapping, and
+  active scheduled/manual CI execution.
 
 ### Fixed
+- Bound the Flatpak rollback gate's candidate ref to the release tag validated
+  by manual-dispatch preflight, preserving idempotent same-release republishes.
+- Release validation now requires exact SHA-256 digests for CI job containers
+  and actual Docker pull/run image operands, preventing tags from drifting.
+- Release validation now rejects removal or decoy placement of tag ancestry,
+  AppStream version, hosted signing runner, and temporary GPG-home cleanup
+  guards before a signed Flatpak publish.
+- Saving during window close no longer aborts the app. Close callbacks are
+  bound to their original document and close operation.
+- Save-and-close now keeps newer unsaved edits and their undo history, including
+  Save As and changes to tabs processed earlier during window close.
+- Opening, reloading, and reopening with another encoding now preserve edits
+  made during asynchronous reads and explain why the load was cancelled.
+- Interrupted automatic reloads keep an actionable banner, and failed saves
+  that replace a reload no longer block later reload attempts.
+- Pending file opens reserve their tabs and only clear their own registration,
+  so overlapping opens and close/reopen callbacks cannot hijack another request.
+- Markdown parsing now treats CRLF as one line ending, preserving a single
+  paragraph and soft break instead of inserting a blank line.
+- Policy validation now rejects skipped release/governance gates, uses a tested
+  exact-commit release-check decision, and accounts for every Cargo source.
+- Policy scanners now handle multiline UI XML and Rust comment/async scopes,
+  reject invalid review evidence and wrong explicit target roots, and read
+  toolchain requirements from policy. Rust source categories are inventoried
+  so new files cannot silently escape validation ownership.
 - Scheduled Git status stress runs now recognize Riteed's intentional
   index-lock wait state instead of reporting a timing-dependent false failure.
 - Cancelled Git subprocesses are force-terminated and reaped without querying
   exit status before GIO has completed its wait, avoiding fatal GLib criticals
   during rapid stress-runner repository switches.
+- Git operation callbacks now wait for owned child cleanup; timed-out mutations
+  receive a TERM grace interval before forced termination, while cancelled
+  mutations retain their deadline until their child has exited. Read-only I/O
+  failures trigger immediate cleanup; failed child waits retain supervision
+  with a bounded diagnostic and retry interval.
+- Source Control gives refresh, Diff and mutation requests separate owners.
+  A cancelled writer keeps its slot until terminal cleanup, including across
+  project switches, and every mutation outcome schedules fresh current-project
+  status. Older callbacks cannot replace a newer project or snapshot.
+- Stage and Commit respect Git's existing index lock before starting work and
+  never replay a denied action automatically. Serialization is per controller;
+  Git's own locks remain authoritative across windows and external tools.
+- Git review tabs escape control and bidirectional filename characters so
+  rendered buffer lines stay aligned with review navigation while raw Git path
+  bytes remain unchanged for file identity and actions.
+- Clean modified files reuse their current Source Control minimap data across
+  cursor moves, avoiding a Git child process for every movement while still
+  refreshing after rapid edits become clean.
 
 ## 0.3.8 - 2026-07-06
 

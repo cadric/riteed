@@ -40,9 +40,25 @@ pub enum OpenSource {
     Drop,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) struct PendingOpenToken(u64);
+
+impl PendingOpenToken {
+    pub(crate) const fn new(value: u64) -> Self {
+        Self(value)
+    }
+}
+
+pub(crate) struct PendingOpenTarget {
+    pub(crate) uri: String,
+    pub(crate) tab: Weak<EditorTab>,
+    pub(crate) token: PendingOpenToken,
+}
+
 pub(crate) struct WorkspaceState {
     pub(crate) tabs: Vec<Rc<EditorTab>>,
-    pub(crate) pending_open_targets: Vec<(String, Weak<EditorTab>)>,
+    pub(crate) pending_open_targets: Vec<PendingOpenTarget>,
+    pub(crate) pending_open_generation: u64,
     pub(crate) recent_files: Vec<String>,
     pub(crate) stored_session_files: Vec<String>,
     pub(crate) stored_selected_file: String,
@@ -141,6 +157,7 @@ impl Workspace {
             state: RefCell::new(WorkspaceState {
                 tabs: Vec::new(),
                 pending_open_targets: Vec::new(),
+                pending_open_generation: 0,
                 recent_files: parts.settings.recent_files(),
                 stored_session_files: parts.settings.session_files(),
                 stored_selected_file: parts.settings.session_selected_file(),
@@ -406,8 +423,14 @@ impl Workspace {
                                 workspace.refresh_selected_state();
                                 if saved_tab.is_dirty() {
                                     autosave::reschedule_tab_autosave(&workspace, &saved_tab);
+                                    if !crate::workspace_close::is_close_target(&workspace, &saved_tab) {
+                                        workspace.show_toast(&gettext(
+                                            "An earlier version was saved. Newer changes are still unsaved.",
+                                        ));
+                                    }
+                                } else {
+                                    workspace.show_toast(&gettext("The Document Was Saved."));
                                 }
-                                workspace.show_toast(&gettext("The Document Was Saved."));
                             }
                             SaveResult::CancelledByUser => {}
                             SaveResult::Failed(error) => {
@@ -507,6 +530,12 @@ impl Workspace {
                             Ok(()) => {
                                 workspace.refresh_selected_state();
                                 workspace.show_toast(&gettext("The File Was Reloaded."));
+                            }
+                            Err(crate::error::AppError::DocumentChangedDuringRead) => {
+                                workspace.refresh_selected_state();
+                                workspace.show_toast(&gettext(
+                                    "The load was cancelled because the document changed. Your changes have been kept.",
+                                ));
                             }
                             Err(crate::error::AppError::Cancelled) => {}
                             Err(error) => crate::dialogs::present_error(&workspace.shell, &error),

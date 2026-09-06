@@ -2087,3 +2087,16 @@ msgstr ""
 msgctxt "viewer search"
 msgid "Find"
 msgstr ""
+
+msgid "Closing was cancelled because the document has newer unsaved changes."
+msgstr ""
+
+msgid "An earlier version was saved. Newer changes are still unsaved."
+msgstr ""
+
+msgctxt "error title"
+msgid "Load Cancelled"
+msgstr ""
+
+msgid "The load was cancelled because the document changed. Your changes have been kept."
+msgstr ""

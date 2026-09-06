@@ -26,6 +26,8 @@ impl GitProcess {
         cancellable: &gio::Cancellable,
         callback: GitCallback<GitStatusSnapshot>,
     ) {
+        #[cfg(test)]
+        let repo = self.repo.work_tree.clone();
         self.run(
             [
                 "status",
@@ -41,7 +43,11 @@ impl GitProcess {
             READ_ONLY_KILL_ON_CANCEL,
             cancellable,
             Rc::new(move |result| {
-                callback(result.map(|output| parse_status(&output.stdout)));
+                let result = result.map(|output| parse_status(&output.stdout));
+                #[cfg(test)]
+                super::test_hooks::status(&repo, result, Rc::clone(&callback));
+                #[cfg(not(test))]
+                callback(result);
             }),
         );
     }
@@ -144,6 +150,8 @@ impl GitProcess {
         cancellable: &gio::Cancellable,
         callback: GitCallback<Vec<u8>>,
     ) {
+        #[cfg(test)]
+        let repo = self.repo.work_tree.clone();
         self.run(
             ["cat-file", "blob", oid],
             None,
@@ -151,7 +159,13 @@ impl GitProcess {
             false,
             READ_ONLY_KILL_ON_CANCEL,
             cancellable,
-            Rc::new(move |result| callback(result.map(|output| output.stdout))),
+            Rc::new(move |result| {
+                let result = result.map(|output| output.stdout);
+                #[cfg(test)]
+                super::test_hooks::blob(&repo, result, Rc::clone(&callback));
+                #[cfg(not(test))]
+                callback(result);
+            }),
         );
     }
 

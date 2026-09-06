@@ -11,9 +11,10 @@ use gtk4::{gio, prelude::*};
 use crate::editor_tab::{EditorTab, ReviewFileId, ReviewFileInput, ReviewKind, ReviewTabSpec};
 use crate::git_process::{GitProcess, GitProcessError};
 use crate::git_status::{GitFileStatus, GitStatusEntry, GitWorktreeMode};
+use crate::source_control::slots::SnapshotId;
 use crate::source_control::{
-    SourceControlState, SourceStateRef, git_error_text, remove_review_cancellable,
-    track_review_cancellable,
+    SourceControlState, SourceStateRef, git_error_text, operation_bridge,
+    remove_review_cancellable, track_review_cancellable,
 };
 
 const REVIEW_FILE_CAP: usize = 200;
@@ -24,12 +25,21 @@ pub(super) fn start(
     tab: &Rc<EditorTab>,
     spec: ReviewTabSpec,
     entries: Vec<GitStatusEntry>,
+    snapshot_id: SnapshotId,
 ) {
-    let Some(process) = state.borrow().process.clone() else {
+    if !operation_bridge::is_snapshot_current(state, &snapshot_id) {
+        tab.set_git_review_text(&gettext("This review is out of date."));
+        return;
+    }
+    let (process, repo) = {
+        let state = state.borrow();
+        (state.process.clone(), state.repo.clone())
+    };
+    let Some(process) = process else {
         tab.set_git_review_text(&gettext("Unable to start the Git review."));
         return;
     };
-    let Some(repo) = state.borrow().repo.clone() else {
+    let Some(repo) = repo else {
         tab.set_git_review_text(&gettext("No Git repository is active."));
         return;
     };
@@ -53,6 +63,7 @@ pub(super) fn start(
         loaded_bytes: 0,
         skipped: 0,
         generation,
+        snapshot_id,
     }));
     if skipped_for_cap > 0 {
         let mut state = load.borrow_mut();
@@ -73,10 +84,11 @@ struct ReviewLoad {
     loaded_bytes: usize,
     skipped: usize,
     generation: u64,
+    snapshot_id: SnapshotId,
 }
 
 fn pump(load: Rc<RefCell<ReviewLoad>>) {
-    if load.borrow().cancellable.is_cancelled() {
+    if !load_is_current(&load) {
         abort(&load);
         return;
     }
@@ -88,6 +100,10 @@ fn pump(load: Rc<RefCell<ReviewLoad>>) {
 }
 
 fn load_reference(load: Rc<RefCell<ReviewLoad>>, entry: GitStatusEntry) {
+    if !load_is_current(&load) {
+        abort(&load);
+        return;
+    }
     let oid = reference_oid(load.borrow().spec.review_kind, &entry);
     let Some(oid) = oid else {
         load_current(load, entry, None);
@@ -99,21 +115,31 @@ fn load_reference(load: Rc<RefCell<ReviewLoad>>, entry: GitStatusEntry) {
         &load,
         &oid,
         entry.path.display().to_string(),
-        Rc::new(move |reference| match reference {
-            Ok(reference) => load_current(
-                Rc::clone(&load_for_callback),
-                entry_for_callback.clone(),
-                Some(reference),
-            ),
-            Err(reason) => {
-                append_skip(&load_for_callback, &entry_for_callback, &reason);
-                pump(Rc::clone(&load_for_callback));
+        Rc::new(move |reference| {
+            if !load_is_current(&load_for_callback) {
+                abort(&load_for_callback);
+                return;
+            }
+            match reference {
+                Ok(reference) => load_current(
+                    Rc::clone(&load_for_callback),
+                    entry_for_callback.clone(),
+                    Some(reference),
+                ),
+                Err(reason) => {
+                    append_skip(&load_for_callback, &entry_for_callback, &reason);
+                    pump(Rc::clone(&load_for_callback));
+                }
             }
         }),
     );
 }
 
 fn load_current(load: Rc<RefCell<ReviewLoad>>, entry: GitStatusEntry, reference: Option<String>) {
+    if !load_is_current(&load) {
+        abort(&load);
+        return;
+    }
     let current = current_source(load.borrow().spec.review_kind, &entry);
     match current {
         CurrentSource::Empty => record_file(load, &entry, reference, None),
@@ -123,16 +149,22 @@ fn load_current(load: Rc<RefCell<ReviewLoad>>, entry: GitStatusEntry, reference:
                 &load,
                 &oid,
                 entry.path.display().to_string(),
-                Rc::new(move |current| match current {
-                    Ok(current) => record_file(
-                        Rc::clone(&load_for_callback),
-                        &entry,
-                        reference.clone(),
-                        Some(current),
-                    ),
-                    Err(reason) => {
-                        append_skip(&load_for_callback, &entry, &reason);
-                        pump(Rc::clone(&load_for_callback));
+                Rc::new(move |current| {
+                    if !load_is_current(&load_for_callback) {
+                        abort(&load_for_callback);
+                        return;
+                    }
+                    match current {
+                        Ok(current) => record_file(
+                            Rc::clone(&load_for_callback),
+                            &entry,
+                            reference.clone(),
+                            Some(current),
+                        ),
+                        Err(reason) => {
+                            append_skip(&load_for_callback, &entry, &reason);
+                            pump(Rc::clone(&load_for_callback));
+                        }
                     }
                 }),
             );
@@ -150,6 +182,10 @@ fn record_file(
     reference: Option<String>,
     current: Option<String>,
 ) {
+    if !load_is_current(&load) {
+        abort(&load);
+        return;
+    }
     let added_bytes = reference
         .as_ref()
         .map_or(0, String::len)
@@ -178,11 +214,7 @@ fn record_file(
 }
 
 fn finish(load: &Rc<RefCell<ReviewLoad>>) {
-    let current = {
-        let state = load.borrow();
-        review_load_is_current(&state)
-    };
-    if !current {
+    if !load_is_current(load) {
         abort(load);
         return;
     }
@@ -203,50 +235,73 @@ fn finish(load: &Rc<RefCell<ReviewLoad>>) {
 }
 
 fn abort(load: &Rc<RefCell<ReviewLoad>>) {
-    let (tab, cancellable, source, show_stale) = {
+    let (tab, cancellable, source) = {
         let state = load.borrow();
         (
             state.tab.clone(),
             state.cancellable.clone(),
             state.source.upgrade(),
-            !state.cancellable.is_cancelled() && review_tab_is_attached(&state),
         )
     };
     tab.clear_review_load_cancellable(&cancellable);
     if let Some(source) = source {
         remove_review_cancellable(&source, &cancellable);
     }
+    let show_stale = {
+        let state = load.borrow();
+        let cancelled = state.cancellable.is_cancelled();
+        let source = state.source.clone();
+        let tab = Rc::clone(&state.tab);
+        drop(state);
+        !cancelled && review_tab_is_attached(&source, &tab)
+    };
     if show_stale {
         tab.set_git_review_text(&gettext("This review is out of date."));
     }
 }
 
-fn review_load_is_current(load: &ReviewLoad) -> bool {
-    if load.cancellable.is_cancelled() {
+fn load_is_current(load: &Rc<RefCell<ReviewLoad>>) -> bool {
+    let (cancelled, source, generation, snapshot_id, tab) = {
+        let load = load.borrow();
+        (
+            load.cancellable.is_cancelled(),
+            load.source.clone(),
+            load.generation,
+            load.snapshot_id.clone(),
+            Rc::clone(&load.tab),
+        )
+    };
+    if cancelled {
         return false;
     }
-    let Some(source) = load.source.upgrade() else {
+    let Some(source_state) = source.upgrade() else {
         return false;
     };
-    if source.borrow().review_generation != load.generation {
+    let source_current = {
+        let source = source_state.borrow();
+        source.review_generation == generation
+            && source.operations.is_snapshot_current(&snapshot_id)
+    };
+    if !source_current {
         return false;
     }
-    review_tab_is_attached(load)
+    review_tab_is_attached(&source, &tab)
 }
 
-fn review_tab_is_attached(load: &ReviewLoad) -> bool {
-    let Some(source) = load.source.upgrade() else {
+fn review_tab_is_attached(source: &Weak<RefCell<SourceControlState>>, tab: &Rc<EditorTab>) -> bool {
+    let Some(source) = source.upgrade() else {
         return false;
     };
-    let Some(workspace) = source.borrow().workspace.upgrade() else {
+    let workspace = source.borrow().workspace.upgrade();
+    let Some(workspace) = workspace else {
         return false;
     };
-    let Some(page) = load.tab.page() else {
+    let Some(page) = tab.page() else {
         return false;
     };
     workspace
         .find_tab_by_page(&page)
-        .is_some_and(|tab| Rc::ptr_eq(&tab, &load.tab))
+        .is_some_and(|attached| Rc::ptr_eq(&attached, tab))
 }
 
 fn load_blob_text(
@@ -257,10 +312,15 @@ fn load_blob_text(
 ) {
     let process = load.borrow().process.clone();
     let cancellable = load.borrow().cancellable.clone();
+    let load = Rc::clone(load);
     process.cat_blob(
         oid,
         &cancellable,
         Rc::new(move |result| {
+            if !load_is_current(&load) {
+                abort(&load);
+                return;
+            }
             callback(result.and_then(decode_text).map_err(|error| {
                 gettext("Unable to load Git blob for review.")
                     + "\n"
@@ -280,18 +340,26 @@ fn load_worktree_text(
 ) {
     let file = gio::File::for_path(path);
     let cancellable = load.borrow().cancellable.clone();
-    file.load_contents_async(Some(&cancellable), move |result| match result {
-        Ok((bytes, _etag)) => match decode_text(bytes.to_vec()) {
-            Ok(current) => record_file(Rc::clone(&load), &entry, reference.clone(), Some(current)),
+    file.load_contents_async(Some(&cancellable), move |result| {
+        if !load_is_current(&load) {
+            abort(&load);
+            return;
+        }
+        match result {
+            Ok((bytes, _etag)) => match decode_text(bytes.to_vec()) {
+                Ok(current) => {
+                    record_file(Rc::clone(&load), &entry, reference.clone(), Some(current));
+                }
+                Err(error) => {
+                    append_skip(&load, &entry, &git_error_text(&error));
+                    pump(Rc::clone(&load));
+                }
+            },
+            Err(error) if error.matches(gio::IOErrorEnum::Cancelled) => abort(&load),
             Err(error) => {
-                append_skip(&load, &entry, &git_error_text(&error));
+                append_skip(&load, &entry, error.message());
                 pump(Rc::clone(&load));
             }
-        },
-        Err(error) if error.matches(gio::IOErrorEnum::Cancelled) => abort(&load),
-        Err(error) => {
-            append_skip(&load, &entry, error.message());
-            pump(Rc::clone(&load));
         }
     });
 }

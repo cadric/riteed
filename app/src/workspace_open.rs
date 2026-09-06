@@ -9,10 +9,17 @@ use crate::dialogs;
 use crate::document_limits::{
     self, OpenDecision, OpenFilePlan, OpenFileSupport, OpenPlanQueryResult,
 };
-use crate::editor_tab::EditorTab;
+use crate::editor_tab::{DocumentReadGuard, EditorTab};
 use crate::error::AppError;
 use crate::large_file::file_path_for_error;
 use crate::workspace::{OpenSource, Workspace};
+
+mod pending;
+
+#[cfg(test)]
+pub(crate) use pending::tests::exercise_pending_open_ownership;
+
+use pending::{acquire_open_target, clear_pending_open, find_tab_by_file, register_pending_open};
 
 struct OpenRequest {
     source: OpenSource,
@@ -104,7 +111,7 @@ pub(crate) fn request_open_file_then(
         return;
     }
     let (tab, remove_on_failure) = acquire_open_target(workspace);
-    register_pending_open(workspace, file, &tab);
+    let pending_token = register_pending_open(workspace, file, &tab);
     if let Some(page) = tab.page() {
         workspace.tab_view.set_selected_page(&page);
     }
@@ -119,7 +126,7 @@ pub(crate) fn request_open_file_then(
         source,
         Rc::new(move |result| {
             if let Some(workspace) = weak.upgrade() {
-                clear_pending_open(&workspace, &opened_file);
+                clear_pending_open(&workspace, &opened_file, &tab_for_result, pending_token);
                 if !open_target_is_current(&workspace, &tab_for_result, expected_page.as_ref()) {
                     callback(Err(AppError::Cancelled));
                     return;
@@ -134,10 +141,14 @@ pub(crate) fn request_open_file_then(
                         callback(Ok(tab_for_result.clone()));
                     }
                     Err(error) => {
-                        if remove_on_failure {
+                        if remove_on_failure
+                            && !matches!(error, AppError::DocumentChangedDuringRead)
+                        {
                             workspace.close_tab_if_clean(&tab_for_result);
                         }
-                        if source != OpenSource::SourceControl {
+                        if source != OpenSource::SourceControl
+                            || matches!(error, AppError::DocumentChangedDuringRead)
+                        {
                             handle_open_failure(&workspace, source, &opened_file, &error);
                         }
                         callback(Err(error));
@@ -196,7 +207,7 @@ fn process_open_request(workspace: &Rc<Workspace>, request: Rc<RefCell<OpenReque
     }
 
     let (tab, remove_on_failure) = acquire_open_target(workspace);
-    register_pending_open(workspace, &file, &tab);
+    let pending_token = register_pending_open(workspace, &file, &tab);
     if let Some(page) = tab.page() {
         workspace.tab_view.set_selected_page(&page);
     }
@@ -212,7 +223,7 @@ fn process_open_request(workspace: &Rc<Workspace>, request: Rc<RefCell<OpenReque
         source,
         Rc::new(move |result| {
             if let Some(workspace) = weak.upgrade() {
-                clear_pending_open(&workspace, &opened_file);
+                clear_pending_open(&workspace, &opened_file, &tab_for_result, pending_token);
                 if !open_target_is_current(&workspace, &tab_for_result, expected_page.as_ref()) {
                     request.borrow_mut().failures += 1;
                     process_open_request(&workspace, request.clone());
@@ -235,8 +246,12 @@ fn process_open_request(workspace: &Rc<Workspace>, request: Rc<RefCell<OpenReque
                         workspace.refresh_selected_state();
                     }
                     Err(error) => {
-                        request.borrow_mut().failures += 1;
-                        if remove_on_failure {
+                        if !matches!(error, AppError::DocumentChangedDuringRead) {
+                            request.borrow_mut().failures += 1;
+                        }
+                        if remove_on_failure
+                            && !matches!(error, AppError::DocumentChangedDuringRead)
+                        {
                             workspace.close_tab_if_clean(&tab_for_result);
                         }
                         handle_open_failure(&workspace, source, &opened_file, &error);
@@ -255,10 +270,10 @@ fn open_file_in_tab(
     source: OpenSource,
     callback: Rc<dyn Fn(Result<String, AppError>)>,
 ) {
+    let read_guard = tab.capture_document_read_guard();
     let weak = Rc::downgrade(workspace);
     let tab = tab.clone();
     let file = file.clone();
-    let expected_page = tab.page();
     let file_for_query = file.clone();
     document_limits::query_file_open_plan(
         &file_for_query,
@@ -267,8 +282,8 @@ fn open_file_in_tab(
             let Some(workspace) = weak.upgrade() else {
                 return;
             };
-            if !open_target_is_current(&workspace, &tab, expected_page.as_ref()) {
-                callback(Err(AppError::Cancelled));
+            if let Err(error) = verify_open_read_guard(&workspace, &tab, &read_guard) {
+                callback(Err(error));
                 return;
             }
             let size = match result {
@@ -293,7 +308,15 @@ fn open_file_in_tab(
                     &workspace.settings.large_file_thresholds(),
                 ),
             };
-            route_open_plan(&workspace, &tab, &file, source, plan, callback.clone());
+            route_open_plan(
+                &workspace,
+                &tab,
+                &file,
+                source,
+                plan,
+                read_guard.clone(),
+                callback.clone(),
+            );
         }),
     );
 }
@@ -304,16 +327,22 @@ fn route_open_plan(
     file: &gio::File,
     source: OpenSource,
     plan: OpenFilePlan,
+    read_guard: DocumentReadGuard,
     callback: Rc<dyn Fn(Result<String, AppError>)>,
 ) {
+    if let Err(error) = verify_open_read_guard(workspace, tab, &read_guard) {
+        callback(Err(error));
+        return;
+    }
     match plan.decision {
-        OpenDecision::Editor { .. } => tab.clone().load_file_with_open_support(
+        OpenDecision::Editor { .. } => tab.clone().load_file_with_open_support_guarded(
             &workspace.shell,
             file,
             OpenFileSupport {
                 supports_open: true,
                 size: Some(plan.size),
             },
+            read_guard,
             callback,
         ),
         OpenDecision::Viewer { .. } if source == OpenSource::SessionRestore => {
@@ -376,6 +405,17 @@ fn open_target_is_current(
             .is_some_and(|current| Rc::ptr_eq(&current, tab))
 }
 
+fn verify_open_read_guard(
+    workspace: &Workspace,
+    tab: &Rc<EditorTab>,
+    read_guard: &DocumentReadGuard,
+) -> Result<(), AppError> {
+    if !open_target_is_current(workspace, tab, read_guard.page()) {
+        return Err(AppError::Cancelled);
+    }
+    tab.verify_document_read_guard(read_guard)
+}
+
 fn finish_open_request(workspace: &Rc<Workspace>, request: &Rc<RefCell<OpenRequest>>) {
     let request = request.borrow();
     match request.source {
@@ -431,35 +471,6 @@ fn finish_restore(
     workspace.refresh_selected_state();
 }
 
-fn acquire_open_target(workspace: &Rc<Workspace>) -> (Rc<crate::editor_tab::EditorTab>, bool) {
-    if workspace.tab_view.n_pages() == 1 {
-        let existing = workspace.ordered_tabs();
-        if let Some(tab) = existing.first()
-            && tab.is_clean_untitled()
-        {
-            return (tab.clone(), false);
-        }
-    }
-    (workspace.add_empty_tab(true), true)
-}
-
-fn register_pending_open(workspace: &Workspace, file: &gio::File, tab: &Rc<EditorTab>) {
-    workspace
-        .state
-        .borrow_mut()
-        .pending_open_targets
-        .push((file.uri().to_string(), Rc::downgrade(tab)));
-}
-
-fn clear_pending_open(workspace: &Workspace, file: &gio::File) {
-    let uri = file.uri().to_string();
-    workspace
-        .state
-        .borrow_mut()
-        .pending_open_targets
-        .retain(|(pending, tab)| pending != &uri && tab.upgrade().is_some());
-}
-
 fn handle_open_failure(
     workspace: &Rc<Workspace>,
     source: OpenSource,
@@ -467,6 +478,10 @@ fn handle_open_failure(
     error: &AppError,
 ) {
     if matches!(error, AppError::Cancelled) {
+        return;
+    }
+    if matches!(error, AppError::DocumentChangedDuringRead) {
+        workspace.show_toast(&error.body());
         return;
     }
     match source {
@@ -501,29 +516,6 @@ fn prune_recent_if_missing(workspace: &Rc<Workspace>, file: &gio::File) {
             }
         },
     );
-}
-
-fn find_tab_by_file(
-    workspace: &Workspace,
-    file: &gio::File,
-) -> Option<Rc<crate::editor_tab::EditorTab>> {
-    let state = workspace.state.borrow();
-    state
-        .tabs
-        .iter()
-        .find(|tab| {
-            tab.session_uri()
-                .as_deref()
-                .is_some_and(|uri| file.equal(&gio::File::for_uri(uri)))
-        })
-        .cloned()
-        .or_else(|| {
-            state
-                .pending_open_targets
-                .iter()
-                .filter(|(uri, _)| file.equal(&gio::File::for_uri(uri)))
-                .find_map(|(_, tab)| tab.upgrade())
-        })
 }
 
 fn apply_text_filters(dialog: &gtk4::FileDialog) {

@@ -67,30 +67,27 @@ class ReleaseHardeningTests(unittest.TestCase):
         self.assertIn("github.event.pull_request.user.login != 'dependabot[bot]'", condition)
         self.assertIn("github.event.pull_request.head.repo.full_name == github.repository", condition)
 
-    def test_publish_required_checks_must_exactly_match_policy(self) -> None:
+    def test_publish_required_checks_must_be_nonempty_policy_list(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             _copy_release_context(root)
-            policy = json.loads((root / "policy" / "release.policy.json").read_text(encoding="utf-8"))
-            required = policy["signed_flatpak_publish"]["hard_requirements"]["required_validate_check_contexts"]
-            workflow_path = root / ".github" / "workflows" / "publish-flatpak.yml"
-            original = workflow_path.read_text(encoding="utf-8")
-            for check in required:
-                with self.subTest(check=check):
-                    workflow_path.write_text(original.replace(f"            {check}\n", ""), encoding="utf-8")
-                    errors: list[str] = []
-                    release.check_release(root, errors)
-                    self.assertTrue(any("required_checks must exactly match" in item for item in errors), errors)
-                    workflow_path.write_text(original, encoding="utf-8")
+            policy_path = root / "policy" / "release.policy.json"
+            policy = json.loads(policy_path.read_text(encoding="utf-8"))
+            policy["signed_flatpak_publish"]["hard_requirements"]["required_validate_check_contexts"] = []
+            policy_path.write_text(json.dumps(policy, indent=2) + "\n", encoding="utf-8")
 
-    def test_validation_gate_rejects_tail_latest_check_run_semantics(self) -> None:
+            errors: list[str] = []
+            release.check_release(root, errors)
+
+            self.assertTrue(any("required_validate_check_contexts must be a non-empty list" in item for item in errors), errors)
+
+    def test_validation_gate_rejects_decoy_helper_module(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             _copy_release_context(root)
             workflow_path = root / ".github" / "workflows" / "publish-flatpak.yml"
             workflow = workflow_path.read_text(encoding="utf-8")
-            workflow = workflow.replace('run.get("head_sha") != tag_commit', 'run.get("sha") != tag_commit')
-            workflow = workflow.replace('run.get("completed_at") or ""', '"tail -n 1"')
+            workflow = workflow.replace("python3 -m tools.release_check_runs \\", "python3 -m tools.release_check_runs_decoy \\")
             workflow_path.write_text(workflow, encoding="utf-8")
             errors: list[str] = []
             release.check_release(root, errors)

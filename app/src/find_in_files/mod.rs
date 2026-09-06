@@ -8,6 +8,7 @@ use gtk4::{gio, glib, pango, prelude::*};
 use libadwaita as adw;
 
 use crate::editor_tab::EditorTab;
+use crate::error::AppError;
 use crate::workspace::{OpenSource, Workspace};
 
 mod scanner;
@@ -328,7 +329,10 @@ impl FindInFilesController {
             OpenSource::ProjectTree,
             Rc::new(move |result| match result {
                 Ok(tab) => select_result(&tab, &found),
-                Err(error) => crate::dialogs::present_error(&parent, &error),
+                Err(error) if should_present_open_error(&error) => {
+                    crate::dialogs::present_error(&parent, &error);
+                }
+                Err(_) => {}
             }),
         );
     }
@@ -344,6 +348,10 @@ impl FindInFilesController {
         self.generation.set(next);
         next
     }
+}
+
+fn should_present_open_error(error: &AppError) -> bool {
+    !matches!(error, AppError::DocumentChangedDuringRead)
 }
 
 fn create_factory() -> gtk4::SignalListItemFactory {
@@ -446,7 +454,16 @@ fn format_summary(summary: &ScanSummary) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{ScanSummary, format_summary};
+    use super::{ScanSummary, format_summary, should_present_open_error};
+    use crate::error::AppError;
+
+    #[test]
+    fn document_read_notice_suppresses_a_second_open_error() {
+        assert!(!should_present_open_error(
+            &AppError::DocumentChangedDuringRead
+        ));
+        assert!(should_present_open_error(&AppError::Cancelled));
+    }
 
     #[test]
     fn summary_is_plural_sensitive() {

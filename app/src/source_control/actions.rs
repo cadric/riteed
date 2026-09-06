@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::rc::Rc;
 
 use gettextrs::{gettext, pgettext};
@@ -6,17 +6,25 @@ use gtk4::{gio, glib, prelude::*};
 
 use crate::dialogs::{self, GitDiscardResponse};
 use crate::editor_tab::EditorTab;
+use crate::error::AppError;
 use crate::git_process::GitProcessError;
-use crate::git_status::{
-    GitActionState, GitAttrState, GitFileStatus, GitStatusEntry, GitStatusSnapshot, GitWorktreeMode,
-};
+use crate::git_status::{GitActionState, GitFileStatus, GitStatusEntry};
 use crate::source_control::{
-    SourceControlState, SourceStateRef, git_attrs_unavailable_text, git_error_is_cancelled,
-    git_error_text, set_commit_controls_enabled,
+    SourceControlState, SourceStateRef, git_error_is_cancelled, git_error_text,
+    set_commit_controls_enabled, set_status_label,
 };
 use crate::workspace::{OpenSource, Workspace};
 
-use super::refresh::{finish_error, refresh_status};
+use super::operation_bridge;
+use super::refresh::finish_error;
+use super::slots::{DiffTicket, MutationTicket, SnapshotId};
+
+mod model;
+
+use model::{
+    commit_sensitive, discard_state, entry_disabled_reason, reference_oid, reference_text,
+    should_stage_delete, stage_mode_for_entry, too_many_changes_text,
+};
 
 #[derive(Clone, Copy)]
 pub(crate) enum GitRowAction {
@@ -26,12 +34,19 @@ pub(crate) enum GitRowAction {
     Discard,
 }
 
-pub(super) fn apply_entry_actions(state: &mut SourceControlState) {
+#[derive(Clone)]
+struct ActionTarget {
+    repo: PathBuf,
+    snapshot: SnapshotId,
+    entry: GitStatusEntry,
+}
+
+pub(super) fn apply_entry_actions(state: &mut SourceControlState, dirty_uris: &[String]) -> bool {
     let repo = state.repo.clone();
-    let dirty_uris = dirty_open_uris(state);
     let too_large = state.snapshot.too_large;
+    let writes_enabled = writes_enabled(state);
     for entry in &mut state.snapshot.entries {
-        let disabled = entry_disabled_reason(repo.as_deref(), entry, &state.attrs, &dirty_uris);
+        let disabled = entry_disabled_reason(repo.as_deref(), entry, &state.attrs, dirty_uris);
         if let Some(reason) = disabled {
             entry.stage_action = GitActionState::Disabled(reason.clone());
             entry.unstage_action = GitActionState::Disabled(reason.clone());
@@ -41,6 +56,14 @@ pub(super) fn apply_entry_actions(state: &mut SourceControlState) {
         }
         if too_large {
             let reason = too_many_changes_text();
+            entry.stage_action = GitActionState::Disabled(reason.clone());
+            entry.unstage_action = GitActionState::Disabled(reason.clone());
+            entry.discard_action = GitActionState::Disabled(reason);
+            entry.diff_action = GitActionState::Enabled;
+            continue;
+        }
+        if !writes_enabled {
+            let reason = gettext("Refreshing Git status");
             entry.stage_action = GitActionState::Disabled(reason.clone());
             entry.unstage_action = GitActionState::Disabled(reason.clone());
             entry.discard_action = GitActionState::Disabled(reason);
@@ -60,62 +83,66 @@ pub(super) fn apply_entry_actions(state: &mut SourceControlState) {
         entry.discard_action = discard_state(entry);
         entry.diff_action = GitActionState::Enabled;
     }
-    let can_commit = commit_sensitive(&state.snapshot, &state.attrs, state.status_stale);
-    set_commit_controls_enabled(state, can_commit);
+    commit_sensitive(&state.snapshot, &state.attrs, writes_enabled)
 }
 
-fn commit_sensitive(
-    snapshot: &GitStatusSnapshot,
-    attrs: &GitAttrState,
-    status_stale: bool,
-) -> bool {
-    !status_stale
-        && !snapshot.too_large
-        && !attrs.is_unavailable()
-        && snapshot
-            .entries
-            .iter()
-            .any(|entry| entry.staged && entry.unstage_action.enabled())
+pub(super) fn commit_is_eligible(state: &SourceControlState) -> bool {
+    commit_sensitive(&state.snapshot, &state.attrs, writes_enabled(state))
+}
+
+fn writes_enabled(state: &SourceControlState) -> bool {
+    !state.status_stale
+        && !state.operations.mutation_active()
+        && state
+            .snapshot_id
+            .as_ref()
+            .is_some_and(|snapshot| state.operations.is_snapshot_current(snapshot))
 }
 
 pub(crate) fn run_path_action(state: &SourceStateRef, path: &[u8], action: GitRowAction) {
-    let entry = state
-        .borrow()
-        .snapshot
-        .entries
-        .iter()
-        .find(|entry| entry.path.raw() == path)
-        .cloned();
-    let Some(entry) = entry else {
+    let target = {
+        let state = state.borrow();
+        let Some(repo) = state.repo.clone() else {
+            return;
+        };
+        let Some(snapshot) = state.snapshot_id.clone() else {
+            return;
+        };
+        if !state.operations.is_snapshot_current(&snapshot) {
+            return;
+        }
+        let entry = state
+            .snapshot
+            .entries
+            .iter()
+            .find(|entry| entry.path.raw() == path)
+            .cloned();
+        entry.map(|entry| ActionTarget {
+            repo,
+            snapshot,
+            entry,
+        })
+    };
+    let Some(target) = target else {
         return;
     };
-    if let Some(reason) = action_disabled_reason(&entry, action) {
-        state.borrow().status_label.set_label(reason);
+    if let Some(reason) = action_disabled_reason(&target.entry, action) {
+        set_status_label(state, reason);
         return;
     }
     match action {
-        GitRowAction::Diff => diff_entry(state, entry),
-        GitRowAction::Stage => stage_entry(state, &entry),
-        GitRowAction::Unstage => unstage_entry(state, &entry),
-        GitRowAction::Discard => confirm_discard_entry(state, entry),
+        GitRowAction::Diff => diff_entry(state, target),
+        GitRowAction::Stage => stage_entry(state, &target),
+        GitRowAction::Unstage => unstage_entry(state, &target),
+        GitRowAction::Discard => confirm_discard_entry(state, target),
     }
 }
 
 pub(crate) fn fire_state_change_handler(state: &SourceStateRef) {
-    super::review::sync_actions(&state.borrow());
+    super::review::sync_actions(state);
     let handler = { state.borrow().state_change_handler.as_ref().map(Rc::clone) };
     if let Some(handler) = handler {
         handler();
-    }
-}
-
-fn discard_state(entry: &GitStatusEntry) -> GitActionState {
-    if entry.status == GitFileStatus::Untracked {
-        GitActionState::Disabled(pgettext("git action disabled", "Untracked file"))
-    } else if !entry.unstaged {
-        GitActionState::Disabled(pgettext("git action disabled", "No unstaged change"))
-    } else {
-        GitActionState::Enabled
     }
 }
 
@@ -132,128 +159,149 @@ fn action_disabled_reason(entry: &GitStatusEntry, action: GitRowAction) -> Optio
     }
 }
 
-fn stage_entry(state: &SourceStateRef, entry: &GitStatusEntry) {
-    let (process, _repo, cancellable, _generation) = begin_action(state);
-    let Some(process) = process else {
+fn stage_entry(state: &SourceStateRef, target: &ActionTarget) {
+    let Some((process, ticket)) = begin_action(state, target) else {
         return;
     };
-    if should_stage_delete(entry) {
-        process.remove_from_index(&entry.path, &cancellable, action_callback(state));
+    let cancellable = ticket.cancellable().clone();
+    if should_stage_delete(&target.entry) {
+        process.remove_from_index(
+            &target.entry.path,
+            &cancellable,
+            action_callback(state, ticket),
+        );
         return;
     }
-    let Some(mode) = stage_mode_for_entry(entry) else {
-        finish_error(
+    let Some(mode) = stage_mode_for_entry(&target.entry) else {
+        finish_mutation_message(
             state,
+            &ticket,
             &gettext("This file type cannot be staged from Riteed."),
         );
         return;
     };
     let process_for_index = process.clone();
-    let path_for_index = entry.path.clone();
+    let path_for_index = target.entry.path.clone();
     let cancellable_for_index = cancellable.clone();
     let weak = Rc::downgrade(state);
     process.hash_file_no_filters(
-        &entry.path,
+        &target.entry.path,
         &cancellable,
         Rc::new(move |result| {
             let Some(state) = weak.upgrade() else {
                 return;
             };
-            if cancellable_for_index.is_cancelled() {
+            if !operation_bridge::is_mutation_current(&state, &ticket) {
+                finish_mutation(&state, &ticket, None);
                 return;
             }
             match result {
-                Ok(oid) => process_for_index.stage_blob_index_info(
-                    mode,
-                    &oid,
-                    &path_for_index,
-                    &cancellable_for_index,
-                    action_callback(&state),
-                ),
-                Err(error) => finish_error(&state, &git_error_text(&error)),
+                Ok(oid) if mutation_can_spawn(&state, &ticket) => {
+                    process_for_index.stage_blob_index_info(
+                        mode,
+                        &oid,
+                        &path_for_index,
+                        &cancellable_for_index,
+                        action_callback(&state, ticket.clone()),
+                    );
+                }
+                Ok(_oid) => finish_mutation(&state, &ticket, None),
+                Err(error) => finish_mutation(&state, &ticket, Some(&error)),
             }
         }),
     );
 }
 
-fn unstage_entry(state: &SourceStateRef, entry: &GitStatusEntry) {
-    let (process, _repo, cancellable, _generation) = begin_action(state);
-    let Some(process) = process else {
+fn unstage_entry(state: &SourceStateRef, target: &ActionTarget) {
+    let Some((process, ticket)) = begin_action(state, target) else {
         return;
     };
-    process.unstage_path(&entry.path, &cancellable, action_callback(state));
+    let cancellable = ticket.cancellable().clone();
+    process.unstage_path(
+        &target.entry.path,
+        &cancellable,
+        action_callback(state, ticket),
+    );
 }
 
-fn confirm_discard_entry(state: &SourceStateRef, entry: GitStatusEntry) {
+fn confirm_discard_entry(state: &SourceStateRef, target: ActionTarget) {
     let parent = state.borrow().root.clone();
-    let name = entry.path.display().to_string();
+    let name = target.entry.path.display().to_string();
     let weak = Rc::downgrade(state);
     dialogs::confirm_git_discard(&parent, &name, move |response| {
         let Some(state) = weak.upgrade() else {
             return;
         };
-        if response == GitDiscardResponse::Discard {
-            discard_entry(&state, &entry);
+        if response == GitDiscardResponse::Discard && target_is_current(&state, &target) {
+            discard_entry(&state, &target);
         }
     });
 }
 
-fn discard_entry(state: &SourceStateRef, entry: &GitStatusEntry) {
-    let (process, _repo, cancellable, _generation) = begin_action(state);
-    let Some(process) = process else {
+fn discard_entry(state: &SourceStateRef, target: &ActionTarget) {
+    let Some((process, ticket)) = begin_action(state, target) else {
         return;
     };
-    process.restore_worktree_path(&entry.path, &cancellable, action_callback(state));
+    let cancellable = ticket.cancellable().clone();
+    process.restore_worktree_path(
+        &target.entry.path,
+        &cancellable,
+        action_callback(state, ticket),
+    );
 }
 
-fn diff_entry(state: &SourceStateRef, entry: GitStatusEntry) {
-    let (process, repo, cancellable, generation) = begin_diff_action(state);
-    let Some(process) = process else {
+fn diff_entry(state: &SourceStateRef, target: ActionTarget) {
+    let Some((process, ticket)) = begin_diff_action(state, &target) else {
         return;
     };
-    if entry.status == GitFileStatus::Untracked {
-        compare_with_text(state, &entry, String::new(), generation);
+    let cancellable = ticket.cancellable().clone();
+    if target.entry.status == GitFileStatus::Untracked {
+        compare_with_text(state, &target, String::new(), ticket);
         return;
     }
-    let Some(oid) = reference_oid(&entry) else {
+    let Some(oid) = reference_oid(&target.entry) else {
+        let _finished = operation_bridge::finish_diff(state, &ticket);
         finish_error(state, &gettext("Diff unavailable for this Git state."));
         return;
     };
     let weak = Rc::downgrade(state);
-    let cancellable_for_callback = cancellable.clone();
     process.cat_blob(
         &oid,
         &cancellable,
         Rc::new(move |result| {
-            if cancellable_for_callback.is_cancelled() {
-                return;
-            }
             let Some(state) = weak.upgrade() else {
                 return;
             };
-            if !generation_matches(&state, generation) {
+            if !operation_bridge::is_diff_current(&state, &ticket) {
+                let _finished = operation_bridge::finish_diff(&state, &ticket);
                 return;
             }
             match result.and_then(reference_text) {
-                Ok(text) => compare_with_text(&state, &entry, text, generation),
-                Err(error) if git_error_is_cancelled(&error) => {}
-                Err(error) => finish_error(&state, &git_error_text(&error)),
+                Ok(text) => compare_with_text(&state, &target, text, ticket.clone()),
+                Err(error) if git_error_is_cancelled(&error) => {
+                    let _finished = operation_bridge::finish_diff(&state, &ticket);
+                }
+                Err(error) => {
+                    let _finished = operation_bridge::finish_diff(&state, &ticket);
+                    finish_error(&state, &git_error_text(&error));
+                }
             }
         }),
     );
-    drop(repo);
 }
 
 fn compare_with_text(
     state: &SourceStateRef,
-    entry: &GitStatusEntry,
+    target: &ActionTarget,
     text: String,
-    generation: u64,
+    ticket: DiffTicket,
 ) {
-    if !entry_matches_snapshot(&state.borrow(), entry) {
+    if !operation_bridge::is_diff_current(state, &ticket) || !target_is_current(state, target) {
+        let _finished = operation_bridge::finish_diff(state, &ticket);
         return;
     }
-    let Some((workspace, file)) = workspace_file_for_entry(&state.borrow(), entry) else {
+    let Some((workspace, file)) = workspace_file_for_target(state, target) else {
+        let _finished = operation_bridge::finish_diff(state, &ticket);
         finish_error(state, &gettext("Open the file before comparing it."));
         return;
     };
@@ -264,7 +312,7 @@ fn compare_with_text(
         .find(|tab| tab.session_uri().as_deref() == Some(uri.as_str()))
     else {
         let weak = Rc::downgrade(state);
-        let entry = entry.clone();
+        let target = target.clone();
         let text = Rc::new(text);
         workspace.request_open_file_then(
             &file,
@@ -273,9 +321,10 @@ fn compare_with_text(
                 let Some(state) = weak.upgrade() else {
                     return;
                 };
-                if !generation_matches(&state, generation)
-                    || !entry_matches_snapshot(&state.borrow(), &entry)
+                if !operation_bridge::is_diff_current(&state, &ticket)
+                    || !target_is_current(&state, &target)
                 {
+                    let _finished = operation_bridge::finish_diff(&state, &ticket);
                     return;
                 }
                 match result {
@@ -283,21 +332,39 @@ fn compare_with_text(
                         &tab,
                         (*text).clone(),
                         &state,
-                        generation,
-                        entry.clone(),
+                        ticket.clone(),
+                        target.clone(),
                     ),
-                    Err(_error) => {
+                    Err(error) if should_finish_open_with_error(&error) => {
+                        let _finished = operation_bridge::finish_diff(&state, &ticket);
                         finish_error(&state, &gettext("Unable to open file for compare."));
                     }
+                    Err(_) => finish_cancelled_open(&state, &ticket),
                 }
             }),
         );
         return;
     };
-    queue_start_git_compare(&tab, text, state, generation, entry.clone());
+    queue_start_git_compare(&tab, text, state, ticket, target.clone());
 }
 
-fn start_git_compare(tab: &Rc<EditorTab>, text: String, state: &SourceStateRef, generation: u64) {
+fn finish_cancelled_open(state: &SourceStateRef, ticket: &DiffTicket) {
+    if !operation_bridge::finish_diff(state, ticket) {
+        return;
+    }
+    fire_state_change_handler(state);
+}
+
+fn should_finish_open_with_error(error: &AppError) -> bool {
+    !matches!(error, AppError::DocumentChangedDuringRead)
+}
+
+fn start_git_compare(
+    tab: &Rc<EditorTab>,
+    text: String,
+    state: &SourceStateRef,
+    ticket: DiffTicket,
+) {
     let weak = Rc::downgrade(state);
     tab.start_compare_with_reference_text(
         pgettext("compare source", "Git Version"),
@@ -306,7 +373,9 @@ fn start_git_compare(tab: &Rc<EditorTab>, text: String, state: &SourceStateRef, 
             let Some(state) = weak.upgrade() else {
                 return;
             };
-            if result.is_err() && generation_matches(&state, generation) {
+            let current = operation_bridge::is_diff_current(&state, &ticket);
+            let _finished = operation_bridge::finish_diff(&state, &ticket);
+            if result.is_err() && current {
                 finish_error(&state, &gettext("Unable to start Git compare."));
             }
         }),
@@ -317,93 +386,127 @@ fn queue_start_git_compare(
     tab: &Rc<EditorTab>,
     text: String,
     state: &SourceStateRef,
-    generation: u64,
-    entry: GitStatusEntry,
+    ticket: DiffTicket,
+    target: ActionTarget,
 ) {
     let weak_state = Rc::downgrade(state);
     let weak_tab = Rc::downgrade(tab);
     let _source = glib::idle_add_local_once(move || {
-        let (Some(state), Some(tab)) = (weak_state.upgrade(), weak_tab.upgrade()) else {
+        let Some(state) = weak_state.upgrade() else {
             return;
         };
-        if !generation_matches(&state, generation)
-            || !entry_matches_snapshot(&state.borrow(), &entry)
+        let Some(tab) = weak_tab.upgrade() else {
+            let _finished = operation_bridge::finish_diff(&state, &ticket);
+            return;
+        };
+        if !operation_bridge::is_diff_current(&state, &ticket)
+            || !target_is_current(&state, &target)
         {
+            let _finished = operation_bridge::finish_diff(&state, &ticket);
             return;
         }
-        start_git_compare(&tab, text, &state, generation);
+        start_git_compare(&tab, text, &state, ticket);
     });
 }
 
 fn begin_action(
     state: &SourceStateRef,
-) -> (
-    Option<crate::git_process::GitProcess>,
-    Option<PathBuf>,
-    gio::Cancellable,
-    u64,
-) {
-    begin_action_inner(state, true)
+    target: &ActionTarget,
+) -> Option<(crate::git_process::GitProcess, MutationTicket)> {
+    let process = {
+        let state = state.borrow();
+        if state.status_stale || !target_is_current_locked(&state, target) {
+            return None;
+        }
+        state.process.clone()
+    };
+    let process = process?;
+    if operation_bridge::native_index_lock_exists(state) {
+        show_locked_wait(state);
+        return None;
+    }
+    let ticket = operation_bridge::try_begin_mutation(state, &target.repo)?;
+    set_commit_controls_enabled(state, false);
+    fire_state_change_handler(state);
+    if !mutation_can_spawn(state, &ticket) {
+        finish_mutation(state, &ticket, None);
+        return None;
+    }
+    Some((process, ticket))
 }
 
 fn begin_diff_action(
     state: &SourceStateRef,
-) -> (
-    Option<crate::git_process::GitProcess>,
-    Option<PathBuf>,
-    gio::Cancellable,
-    u64,
-) {
-    begin_action_inner(state, false)
-}
-
-fn begin_action_inner(
-    state: &SourceStateRef,
-    mutates_index: bool,
-) -> (
-    Option<crate::git_process::GitProcess>,
-    Option<PathBuf>,
-    gio::Cancellable,
-    u64,
-) {
-    let cancellable = gio::Cancellable::new();
-    let (process, repo, generation) = {
-        let mut state = state.borrow_mut();
-        if let Some(previous) = state.cancellable.take() {
-            previous.cancel();
+    target: &ActionTarget,
+) -> Option<(crate::git_process::GitProcess, DiffTicket)> {
+    let process = {
+        let state = state.borrow();
+        if !target_is_current_locked(&state, target) {
+            return None;
         }
-        state.action_generation = state.action_generation.wrapping_add(1);
-        state.cancellable = Some(cancellable.clone());
-        if mutates_index {
-            state.status_stale = true;
-            set_commit_controls_enabled(&state, false);
-        }
-        (
-            state.process.clone(),
-            state.repo.clone(),
-            state.action_generation,
-        )
+        state.process.clone()?
     };
-    fire_state_change_handler(state);
-    (process, repo, cancellable, generation)
+    let ticket = operation_bridge::begin_diff(state)?;
+    if !operation_bridge::is_diff_current(state, &ticket) {
+        let _finished = operation_bridge::finish_diff(state, &ticket);
+        return None;
+    }
+    Some((process, ticket))
 }
 
-fn action_callback(state: &SourceStateRef) -> Rc<dyn Fn(Result<(), GitProcessError>)> {
+fn action_callback(
+    state: &SourceStateRef,
+    ticket: MutationTicket,
+) -> Rc<dyn Fn(Result<(), GitProcessError>)> {
     let weak = Rc::downgrade(state);
     Rc::new(move |result| {
         let Some(state) = weak.upgrade() else {
             return;
         };
-        match result {
-            Ok(()) => refresh_status(&state),
-            Err(error) if git_error_is_cancelled(&error) => {}
-            Err(error) => finish_error(&state, &git_error_text(&error)),
-        }
+        finish_mutation(&state, &ticket, result.as_ref().err());
     })
 }
 
-fn generation_matches(state: &SourceStateRef, generation: u64) -> bool {
-    state.borrow().action_generation == generation
+pub(super) fn mutation_can_spawn(state: &SourceStateRef, ticket: &MutationTicket) -> bool {
+    !ticket.cancellable().is_cancelled()
+        && operation_bridge::is_mutation_current(state, ticket)
+        && operation_bridge::mutation_root_is_current(state, ticket)
+        && state.borrow().repo.as_deref() == Some(ticket.repo())
+}
+
+pub(super) fn finish_mutation(
+    state: &SourceStateRef,
+    ticket: &MutationTicket,
+    error: Option<&GitProcessError>,
+) {
+    let matched = operation_bridge::finish_mutation(state, ticket);
+    let current = operation_bridge::mutation_root_is_current(state, ticket);
+    if !matched {
+        return;
+    }
+    if let (true, Some(error)) = (
+        current,
+        error.filter(|error| !git_error_is_cancelled(error)),
+    ) {
+        finish_error(state, &git_error_text(error));
+    }
+    super::live::schedule(state);
+}
+
+pub(super) fn finish_mutation_message(
+    state: &SourceStateRef,
+    ticket: &MutationTicket,
+    message: &str,
+) {
+    let matched = operation_bridge::finish_mutation(state, ticket);
+    let current = operation_bridge::mutation_root_is_current(state, ticket);
+    if !matched {
+        return;
+    }
+    if current {
+        finish_error(state, message);
+    }
+    super::live::schedule(state);
 }
 
 fn entry_matches_snapshot(state: &SourceControlState, entry: &GitStatusEntry) -> bool {
@@ -418,53 +521,27 @@ fn entry_matches_snapshot(state: &SourceControlState, entry: &GitStatusEntry) ->
     })
 }
 
-fn entry_disabled_reason(
-    repo: Option<&Path>,
-    entry: &GitStatusEntry,
-    attrs: &GitAttrState,
-    dirty_uris: &[String],
-) -> Option<String> {
-    if entry.path.as_utf8().is_none() {
-        return Some(gettext("This path uses an unsupported encoding."));
-    }
-    if matches!(
-        entry.status,
-        GitFileStatus::Conflicted | GitFileStatus::Unsupported
-    ) {
-        return Some(gettext(
-            "This Git state is visible but not editable in Riteed.",
-        ));
-    }
-    if attrs.is_unavailable() {
-        return Some(git_attrs_unavailable_text());
-    }
-    if attrs.blocks(entry.path.raw()) {
-        return Some(gettext(
-            "Git content filters or EOL conversion are configured for this file.",
-        ));
-    }
-    let Some((repo, path)) = repo.zip(entry.path.as_utf8()) else {
-        return Some(gettext("No Git repository is active."));
-    };
-    if entry.worktree_mode.blocks_actions(entry.status) {
-        return Some(gettext(
-            "Directories, symlinks, and unsupported file modes are visible only.",
-        ));
-    }
-    let full_path = repo.join(path);
-    let uri = gio::File::for_path(full_path).uri().to_string();
-    if dirty_uris.iter().any(|dirty| dirty == &uri) {
-        return Some(gettext("Save the open document before using Git actions."));
-    }
-    None
+fn target_is_current(state: &SourceStateRef, target: &ActionTarget) -> bool {
+    target_is_current_locked(&state.borrow(), target)
 }
 
-fn too_many_changes_text() -> String {
-    gettext("Too many Git changes to display.")
+fn target_is_current_locked(state: &SourceControlState, target: &ActionTarget) -> bool {
+    state.repo.as_ref() == Some(&target.repo)
+        && state.operations.is_snapshot_current(&target.snapshot)
+        && entry_matches_snapshot(state, &target.entry)
 }
 
-fn dirty_open_uris(state: &SourceControlState) -> Vec<String> {
-    let Some(workspace) = state.workspace.upgrade() else {
+pub(super) fn show_locked_wait(state: &SourceStateRef) {
+    set_status_label(
+        state,
+        &super::refresh::ellipsis_label(gettext("Waiting for another Git operation to finish")),
+    );
+    super::live::schedule(state);
+}
+
+pub(super) fn dirty_open_uris(state: &SourceStateRef) -> Vec<String> {
+    let workspace = state.borrow().workspace.upgrade();
+    let Some(workspace) = workspace else {
         return Vec::new();
     };
     workspace
@@ -475,38 +552,13 @@ fn dirty_open_uris(state: &SourceControlState) -> Vec<String> {
         .collect()
 }
 
-fn should_stage_delete(entry: &GitStatusEntry) -> bool {
-    entry.status == GitFileStatus::Deleted
-        && entry.unstaged
-        && entry.worktree_mode == GitWorktreeMode::Absent
-}
-
-fn stage_mode_for_entry(entry: &GitStatusEntry) -> Option<&'static str> {
-    entry.worktree_mode.stage_mode()
-}
-
-fn workspace_file_for_entry(
-    state: &SourceControlState,
-    entry: &GitStatusEntry,
+fn workspace_file_for_target(
+    state: &SourceStateRef,
+    target: &ActionTarget,
 ) -> Option<(Rc<Workspace>, gio::File)> {
-    let workspace = state.workspace.upgrade()?;
-    let repo = state.repo.as_ref()?;
-    let path = entry.path.as_utf8()?;
-    Some((workspace, gio::File::for_path(repo.join(path))))
-}
-
-fn reference_oid(entry: &GitStatusEntry) -> Option<String> {
-    if entry.staged && !entry.unstaged {
-        return entry.head_oid.clone();
-    }
-    entry.index_oid.clone().or_else(|| entry.head_oid.clone())
-}
-
-fn reference_text(output: Vec<u8>) -> Result<String, GitProcessError> {
-    if output.contains(&0) {
-        return Err(GitProcessError::BinaryContent);
-    }
-    String::from_utf8(output).map_err(|_| GitProcessError::ParseFailed)
+    let workspace = state.borrow().workspace.upgrade()?;
+    let path = target.entry.path.as_utf8()?;
+    Some((workspace, gio::File::for_path(target.repo.join(path))))
 }
 
 #[cfg(test)]

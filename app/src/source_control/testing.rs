@@ -27,6 +27,13 @@ impl SourceControlController {
     }
 
     pub(crate) fn set_history_split_position_for_tests(&self, position: i32) {
-        self.state.borrow().history_split.set_position(position);
+        let split = self.state.borrow().history_split.clone();
+        split.set_position(position);
+    }
+}
+
+impl super::SourceControlState {
+    pub(crate) fn mutation_active_for_tests(&self) -> bool {
+        self.operations.mutation_active()
     }
 }

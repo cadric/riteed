@@ -95,29 +95,17 @@ jobs:
           tag_commit="$(git rev-list -n 1 "$release_ref")"
           git merge-base --is-ancestor "$tag_commit" origin/main
 
-          required_checks=(
-            dependency-preflight
-            policy-pack
-            native-tests
-            ruleset-governance
-            flatpak-tests
-            flatpak
-          )
-          for check in "${required_checks[@]}"; do
-            test -n "$check"
-          done
-          REQUIRED_CHECKS="${required_checks[*]}" TAG_COMMIT="$tag_commit" python3 - <<'PY'
+          checks_json="$RUNNER_TEMP/release-check-runs.json"
+          CHECK_RUNS_JSON="$checks_json" TAG_COMMIT="$tag_commit" python3 - <<'PY'
           import json
           import os
-          import sys
           import urllib.parse
           import urllib.request
 
           repo = os.environ["GITHUB_REPOSITORY"]
           token = os.environ["GH_TOKEN"]
           tag_commit = os.environ["TAG_COMMIT"]
-          required = os.environ["REQUIRED_CHECKS"].split()
-          runs_by_name = {name: [] for name in required}
+          payloads = []
           url = (
               "https://api.github.com/repos/"
               + urllib.parse.quote(repo, safe="/")
@@ -135,15 +123,7 @@ jobs:
               with urllib.request.urlopen(request, timeout=20) as response:
                   payload = json.loads(response.read().decode("utf-8"))
                   link = response.headers.get("Link", "")
-              for run in payload.get("check_runs", []):
-                  name = run.get("name")
-                  if name not in runs_by_name:
-                      continue
-                  if run.get("head_sha") != tag_commit:
-                      continue
-                  if run.get("app", {}).get("slug") != "github-actions":
-                      continue
-                  runs_by_name[name].append(run)
+              payloads.append(payload)
               next_url = ""
               for part in link.split(","):
                   if 'rel="next"' not in part:
@@ -153,31 +133,9 @@ jobs:
                   if start != -1 and end != -1:
                       next_url = part[start + 1 : end]
               url = next_url
-
-          errors = []
-          for name, runs in runs_by_name.items():
-              completed = [run for run in runs if run.get("status") == "completed"]
-              completed.sort(
-                  key=lambda run: (
-                      run.get("completed_at") or "",
-                      run.get("started_at") or "",
-                      int(run.get("id") or 0),
-                  )
-              )
-              if not completed:
-                  errors.append(f"Required Validate check {name} for {tag_commit} is missing.")
-                  continue
-              latest = completed[-1]
-              if latest.get("conclusion") != "success":
-                  errors.append(
-                      f"Required Validate check {name} for {tag_commit} is "
-                      f"{latest.get('conclusion') or 'unknown'}, not success."
-                  )
-          if errors:
-              print("\n".join(errors), file=sys.stderr)
-              sys.exit(1)
+          with open(os.environ["CHECK_RUNS_JSON"], "w", encoding="utf-8") as output:
+              json.dump(payloads, output)
           PY
-
           if [[ "$ROLLBACK_REASON" == *$'\n'* || "$ROLLBACK_REF" == *$'\n'* ]]; then
             echo "Rollback inputs must be single-line values." >&2
             exit 1
@@ -281,7 +239,7 @@ jobs:
           fi
 
           CANDIDATE_VERSION="$version" \
-          CANDIDATE_REF="$GITHUB_REF_NAME" \
+          CANDIDATE_REF="$release_ref" \
           CANDIDATE_COMMIT="$tag_commit" \
           PUBLISHED_VERSION="$published_version" \
           PUBLISHED_SOURCE_REF="$published_source_ref" \
@@ -369,6 +327,16 @@ jobs:
               echo "rollback_reason="
             fi
           } >> "$GITHUB_OUTPUT"
+      - name: Require successful Validate checks for release commit
+        env:
+          CHECK_RUNS_JSON: ${{ runner.temp }}/release-check-runs.json
+          TAG_COMMIT: ${{ steps.release.outputs.tag_commit }}
+        run: |
+          set -euo pipefail
+          python3 -m tools.release_check_runs \
+            --input "$CHECK_RUNS_JSON" \
+            --policy policy/release.policy.json \
+            --head-sha "$TAG_COMMIT"
 
   build:
     runs-on: ubuntu-latest

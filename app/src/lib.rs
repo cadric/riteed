@@ -92,6 +92,16 @@ pub mod fuzzing {
         let current = String::from_utf8_lossy(&bytes[current_start..]);
         crate::editor_tab::fuzz_compute_diff(&reference, &current)
     }
+
+    #[must_use]
+    pub fn decode_page_window_fuzz(offset: u64, bytes: &[u8]) -> (u64, u64, u64) {
+        let decoded = crate::large_file::page_text::decode_page_window(offset, bytes);
+        (
+            decoded.visible_start,
+            decoded.visible_end,
+            decoded.next_offset,
+        )
+    }
 }
 
 #[cfg(test)]
@@ -102,6 +112,10 @@ mod gtk_tests;
 mod gtk_tests_boundaries;
 #[cfg(test)]
 mod gtk_tests_dialog_lifecycle;
+#[cfg(test)]
+mod gtk_tests_document_close;
+#[cfg(test)]
+mod gtk_tests_document_reads;
 #[cfg(test)]
 mod gtk_tests_lifecycle;
 #[cfg(test)]
@@ -274,3 +288,9 @@ pub(crate) mod test_support {
         guard
     }
 }
+
+#[cfg(test)]
+mod gtk_tests_source_ownership;
+
+#[cfg(test)]
+mod gtk_tests_source_operations;

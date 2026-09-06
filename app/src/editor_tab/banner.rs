@@ -16,6 +16,8 @@ impl EditorTab {
                 }
             )
             && !state.ui.external_prompt_active
+            && !state.io.loading
+            && !state.external.reload_deferred_by_edit
             && state.compare.active.is_none()
     }
 
@@ -60,6 +62,7 @@ impl EditorTab {
         {
             let mut state = self.state.borrow_mut();
             state.external.pending.acknowledge();
+            state.external.reload_deferred_by_edit = false;
             state.ui.external_prompt_active = false;
         }
         self.sync_external_banner(true, true);
@@ -70,6 +73,7 @@ impl EditorTab {
         {
             let mut state = self.state.borrow_mut();
             state.external.pending = PendingExternalState::Idle;
+            state.external.reload_deferred_by_edit = false;
             state.ui.external_prompt_active = false;
             state.ui.visible_banner = VisibleBannerState::None;
             state.io.external_reload_in_progress = false;
@@ -83,7 +87,9 @@ impl EditorTab {
         let (visible, title, action) = {
             let state = self.state.borrow();
             let is_dirty = state.is_dirty(self.text_buffer.is_modified());
-            let should_offer_reload = is_selected && window_active && !is_dirty;
+            let should_offer_reload = is_selected
+                && window_active
+                && (!is_dirty || state.external.reload_deferred_by_edit);
             visible_banner_state(
                 &state,
                 should_offer_reload,

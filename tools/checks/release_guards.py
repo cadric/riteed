@@ -1,0 +1,597 @@
+from __future__ import annotations
+
+import ast
+import re
+import shlex
+from dataclasses import dataclass
+from typing import Any
+
+from tools.checks import foundation, release_workflow
+from tools.checks._workflow_parser import Job, Step, Workflow
+
+WORKFLOW = ".github/workflows/publish-flatpak.yml"
+POLICY_FILE = "policy/release.policy.json"
+APPSTREAM_PATH = "app/data/io.github.cadric.Riteed.metainfo.xml"
+APPSTREAM_COMMAND = 'VERSION="$version" python3 - <<\'PY\''
+ANCESTRY_COMMANDS = (
+    'git fetch origin "+refs/tags/$release_ref:refs/tags/$release_ref" '
+    "+refs/heads/main:refs/remotes/origin/main",
+    'tag_commit="$(git rev-list -n 1 "$release_ref")"',
+    'git merge-base --is-ancestor "$tag_commit" origin/main',
+)
+PRIVATE_IMPORT = "printf '%s' \"$FLATPAK_GPG_PRIVATE_KEY\" | gpg --batch --import"
+GNUPG_SETUP = (
+    'export GNUPGHOME="$(mktemp -d)"',
+    'chmod 700 "$GNUPGHOME"',
+    "cleanup() {",
+    "trap cleanup EXIT",
+    PRIVATE_IMPORT,
+)
+HOSTED_UBUNTU = re.compile(r"ubuntu-(?:latest|[0-9]{2}[.][0-9]{2}(?:-arm)?)")
+
+
+@dataclass(frozen=True)
+class GuardContext:
+    preflight: Job | None
+    release_step: Step | None
+    build: Job | None
+    signing_step: Step | None
+
+
+@dataclass(frozen=True)
+class ShellLine:
+    index: int
+    text: str
+    controls: tuple[str, ...]
+    substituted: bool
+    heredoc_marker: str = ""
+    heredoc_body: str = ""
+
+
+def check(policy: dict[str, Any], workflow: Workflow | None, errors: list[str]) -> None:
+    _check_policy_requirements(policy, errors)
+    if workflow is None:
+        return
+    context = _guard_context(workflow)
+    _check_ancestry(workflow, context, errors)
+    _check_appstream(workflow, context, errors)
+    _check_signing_hygiene(workflow, context, errors)
+    _check_hosted_runner(context, errors)
+
+
+def ancestry_commands(workflow: Workflow) -> list[str]:
+    context = _guard_context(workflow)
+    if not _active_root_step(workflow, context.preflight, context.release_step):
+        return []
+    prefix = _prefix_before(context.release_step.run, 'remote_state="$(mktemp -d)"')
+    commands = _top_level_lines(prefix)
+    positions = _ordered_positions(commands, ANCESTRY_COMMANDS)
+    version_assignment = next(
+        (line for line in commands if line.startswith('version="$(git show "$release_ref:')),
+        "",
+    )
+    stable = (
+        _stable_between(prefix, "release_ref", ANCESTRY_COMMANDS[0], ANCESTRY_COMMANDS[2])
+        and _stable_between(prefix, "tag_commit", ANCESTRY_COMMANDS[1], ANCESTRY_COMMANDS[2])
+        and _stable_between(prefix, "version", version_assignment, APPSTREAM_COMMAND)
+    )
+    return list(ANCESTRY_COMMANDS) if positions and stable else []
+
+
+def appstream_python(workflow: Workflow) -> str | None:
+    context = _guard_context(workflow)
+    if not _active_root_step(workflow, context.preflight, context.release_step):
+        return None
+    prefix = _prefix_before(context.release_step.run, 'remote_state="$(mktemp -d)"')
+    blocks = _top_level_heredocs(prefix)
+    matching = [body for command, marker, body in blocks if command == APPSTREAM_COMMAND and marker == "PY"]
+    return matching[0] if len(matching) == 1 else None
+
+
+def _check_policy_requirements(policy: dict[str, Any], errors: list[str]) -> None:
+    requirements = (
+        (
+            policy.get("release_identity", {}).get("tag_commit_must_be_ancestor_of_main"),
+            "release_identity.tag_commit_must_be_ancestor_of_main",
+        ),
+        (
+            policy.get("release_identity", {}).get("appstream_top_release_must_match_tag"),
+            "release_identity.appstream_top_release_must_match_tag",
+        ),
+        (
+            policy.get("signing_key_governance", {})
+            .get("private_key_import", {})
+            .get("temporary_gnupg_home_required"),
+            "signing_key_governance.private_key_import.temporary_gnupg_home_required",
+        ),
+        (
+            policy.get("signing_key_governance", {})
+            .get("private_key_import", {})
+            .get("kill_agent_on_exit_required"),
+            "signing_key_governance.private_key_import.kill_agent_on_exit_required",
+        ),
+        (
+            policy.get("github_actions_release_safety", {})
+            .get("mutable_inputs", {})
+            .get("github_hosted_runner_required_until_self_hosted_policy_exists"),
+            "github_actions_release_safety.mutable_inputs."
+            "github_hosted_runner_required_until_self_hosted_policy_exists",
+        ),
+    )
+    for value, path in requirements:
+        if value is not True:
+            foundation.add(errors, f"{POLICY_FILE}: {path} must be true")
+
+
+def _guard_context(workflow: Workflow) -> GuardContext:
+    preflight = workflow.jobs.get("preflight")
+    release_steps = (
+        [step for step in preflight.steps if step.raw.get("id") == "release"]
+        if preflight is not None
+        else []
+    )
+    build = workflow.jobs.get("build")
+    signing_steps = (
+        [
+            step
+            for step in build.steps
+            if "FLATPAK_GPG_PRIVATE_KEY" in step.env
+            or "FLATPAK_GPG_PRIVATE_KEY" in step.run
+        ]
+        if build is not None
+        else []
+    )
+    return GuardContext(
+        preflight,
+        release_steps[0] if len(release_steps) == 1 else None,
+        build,
+        signing_steps[0] if len(signing_steps) == 1 else None,
+    )
+
+
+def _check_ancestry(
+    workflow: Workflow, context: GuardContext, errors: list[str]
+) -> None:
+    if ancestry_commands(workflow):
+        return
+    foundation.add(
+        errors,
+        f"{WORKFLOW}: tag commit must be an ancestor of origin/main in the active release preflight",
+    )
+
+
+def _check_appstream(
+    workflow: Workflow, context: GuardContext, errors: list[str]
+) -> None:
+    source = appstream_python(workflow)
+    if source is not None and _appstream_ast_is_guard(source):
+        return
+    foundation.add(
+        errors,
+        f"{WORKFLOW}: AppStream top release must match the release tag in the active release preflight",
+    )
+
+
+def _check_signing_hygiene(
+    workflow: Workflow, context: GuardContext, errors: list[str]
+) -> None:
+    if _signing_hygiene_is_guarded(workflow, context):
+        return
+    foundation.add(
+        errors,
+        f"{WORKFLOW}: private key import requires temporary GNUPGHOME cleanup in the active signing step",
+    )
+
+
+def _check_hosted_runner(context: GuardContext, errors: list[str]) -> None:
+    build = context.build
+    runner = build.raw.get("runs-on") if build is not None else None
+    if (
+        isinstance(runner, str)
+        and HOSTED_UBUNTU.fullmatch(runner)
+        and _build_is_active(context)
+    ):
+        return
+    foundation.add(
+        errors,
+        f"{WORKFLOW}: build signing job must use a GitHub-hosted Ubuntu runner after preflight",
+    )
+
+
+def _signing_hygiene_is_guarded(
+    workflow: Workflow, context: GuardContext
+) -> bool:
+    if not _active_root_step(workflow, context.build, context.signing_step):
+        return False
+    if not _build_is_active(context):
+        return False
+    run = context.signing_step.run
+    prefix = _prefix_through(run, PRIVATE_IMPORT)
+    commands = _top_level_lines(prefix)
+    positions = _ordered_positions(commands, GNUPG_SETUP)
+    if not positions:
+        return False
+    cleanup = _function_body(prefix, "cleanup")
+    return (
+        'gpgconf --homedir "$GNUPGHOME" --kill gpg-agent || true' in cleanup
+        and 'rm -rf "$GNUPGHOME"' in cleanup
+        and _stable_after(run, "GNUPGHOME", GNUPG_SETUP[0])
+        and _cleanup_binding_is_preserved(run)
+    )
+
+
+def _cleanup_binding_is_preserved(run: str) -> bool:
+    _, separator, suffix = run.partition(PRIVATE_IMPORT)
+    if not separator:
+        return False
+    for raw in suffix.splitlines()[1:]:
+        text = _strip_shell_comment(raw).strip()
+        if (
+            re.match(r"^cleanup\s*\(\)\s*\{", text)
+            or re.match(r"^unset(?:\s+-f)?\s+cleanup(?:\s|$)", text)
+            or _trap_targets_exit(text)
+        ):
+            return False
+    return True
+
+
+def _trap_targets_exit(text: str) -> bool:
+    if not text.startswith("trap "):
+        return False
+    try:
+        tokens = shlex.split(text)
+    except ValueError:
+        return True
+    if len(tokens) > 1 and tokens[1] in {"-l", "-p"}:
+        return False
+    signals = tokens[3:] if len(tokens) > 1 and tokens[1] == "--" else tokens[2:]
+    return any(signal in {"0", "EXIT"} for signal in signals)
+
+
+def _stable_between(run: str, name: str, start: str, end: str) -> bool:
+    scanned = _scan_shell(run)
+    if scanned is None or not start:
+        return False
+    owners = [
+        [line for line in scanned if line.text == target and not line.controls and not line.substituted]
+        for target in (start, end)
+    ]
+    if any(len(owner) != 1 for owner in owners):
+        return False
+    first, last = owners[0][0].index, owners[1][0].index
+    return first < last and not any(
+        first < line.index < last and not line.substituted and _rebinds(line.text, name)
+        for line in scanned
+    )
+
+
+def _stable_after(run: str, name: str, declaration: str) -> bool:
+    _, separator, suffix = run.partition(declaration)
+    return bool(separator) and not any(
+        _rebinds(_strip_shell_comment(line).strip(), name)
+        for line in suffix.splitlines()[1:]
+    )
+
+
+def _rebinds(text: str, name: str) -> bool:
+    return bool(
+        re.match(rf"^(?:export\s+)?{name}=", text)
+        or re.match(rf"^unset(?:\s+-v)?\s+{name}(?:\s|$)", text)
+    )
+
+
+def _build_is_active(context: GuardContext) -> bool:
+    build = context.build
+    step = context.signing_step
+    return (
+        build is not None
+        and step is not None
+        and "preflight" in build.needs
+        and not _has_condition(build)
+        and not _has_condition(step)
+        and not _continues_on_error(build)
+        and not _continues_on_error(step)
+    )
+
+
+def _active_root_step(
+    workflow: Workflow, job: Job | None, step: Step | None
+) -> bool:
+    if job is None or step is None:
+        return False
+    if (
+        _has_condition(job)
+        or _has_condition(step)
+        or _continues_on_error(job)
+        or _continues_on_error(step)
+    ):
+        return False
+    context: dict[str, Any] = {}
+    for raw in (workflow.raw, job.raw):
+        defaults = raw.get("defaults", {})
+        if not isinstance(defaults, dict):
+            return False
+        run = defaults.get("run", {})
+        if not isinstance(run, dict):
+            return False
+        context.update(run)
+    context.update(
+        {key: step.raw[key] for key in ("shell", "working-directory") if key in step.raw}
+    )
+    return context.get("shell", "bash") == "bash" and context.get("working-directory", ".") == "."
+
+
+def _has_condition(value: Job | Step) -> bool:
+    return bool(str(value.raw.get("if", "")).strip())
+
+
+def _continues_on_error(value: Job | Step) -> bool:
+    raw = value.raw.get("continue-on-error")
+    return raw is not None and str(raw).strip().lower() != "false"
+
+
+def _ordered_positions(lines: list[str], required: tuple[str, ...]) -> list[int]:
+    positions: list[int] = []
+    start = 0
+    for command in required:
+        try:
+            position = lines.index(command, start)
+        except ValueError:
+            return []
+        positions.append(position)
+        start = position + 1
+    return positions
+
+
+def _prefix_before(run: str, terminal: str) -> str:
+    matches = [index for index, line in enumerate(run.splitlines()) if line.strip() == terminal]
+    if len(matches) != 1:
+        return ""
+    return "\n".join(run.splitlines()[: matches[0]]) + "\n"
+
+
+def _prefix_through(run: str, terminal: str) -> str:
+    matches = [index for index, line in enumerate(run.splitlines()) if line.strip() == terminal]
+    if len(matches) != 1:
+        return ""
+    return "\n".join(run.splitlines()[: matches[0] + 1]) + "\n"
+
+
+def _top_level_lines(run: str) -> list[str]:
+    scanned = _scan_shell(run)
+    if scanned is None:
+        return []
+    return [
+        line.text
+        for line in scanned
+        if not line.controls and not line.substituted
+    ]
+
+
+def _top_level_heredocs(run: str) -> list[tuple[str, str, str]]:
+    scanned = _scan_shell(run)
+    if scanned is None:
+        return []
+    return [
+        (line.text, line.heredoc_marker, line.heredoc_body)
+        for line in scanned
+        if not line.controls
+        and not line.substituted
+        and line.heredoc_marker
+    ]
+
+
+def _function_body(run: str, name: str) -> list[str]:
+    scanned = _scan_shell(run)
+    if scanned is None:
+        return []
+    opening = f"{name}() {{"
+    owners = [
+        line
+        for line in scanned
+        if line.text == opening and not line.controls and not line.substituted
+    ]
+    if len(owners) != 1:
+        return []
+    return [
+        line.text
+        for line in scanned
+        if line.index > owners[0].index
+        and line.controls == ("brace",)
+        and not line.substituted
+        and line.text != "}"
+    ]
+
+
+def _scan_shell(run: str) -> list[ShellLine] | None:
+    raw_lines = run.splitlines()
+    scanned: list[ShellLine] = []
+    controls: list[str] = []
+    substitutions: list[tuple[str, int]] = []
+    quote = ""
+    index = 0
+    while index < len(raw_lines):
+        raw = raw_lines[index]
+        text = _strip_shell_comment(raw).strip()
+        was_substituted = bool(substitutions or quote)
+        quote = release_workflow._update_substitution_scope(raw, substitutions, quote)
+        marker = _heredoc_marker(text)
+        body = ""
+        if marker:
+            end = index + 1
+            while end < len(raw_lines) and raw_lines[end].strip() != marker:
+                end += 1
+            if end >= len(raw_lines):
+                return None
+            body = "\n".join(raw_lines[index + 1 : end]) + "\n"
+        if text:
+            scanned.append(
+                ShellLine(index, text, tuple(controls), bool(substitutions or quote), marker, body)
+            )
+        if not marker and not was_substituted and not substitutions and not quote:
+            if not release_workflow._update_control_stack(text, controls):
+                return None
+        index = end + 1 if marker else index + 1
+    return scanned if not controls and not substitutions and not quote else None
+
+
+def _heredoc_marker(text: str) -> str:
+    match = re.search(r"<<-?\s*['\"]?([A-Za-z_][A-Za-z0-9_]*)['\"]?", text)
+    return match.group(1) if match is not None else ""
+
+
+def _strip_shell_comment(text: str) -> str:
+    quote = ""
+    escaped = False
+    for index, char in enumerate(text):
+        if escaped:
+            escaped = False
+            continue
+        if quote == '"' and char == "\\":
+            escaped = True
+            continue
+        if char in {"'", '"'}:
+            quote = "" if quote == char else char if not quote else quote
+            continue
+        if char == "#" and not quote and (index == 0 or text[index - 1].isspace()):
+            return text[:index]
+    return text
+
+
+def _appstream_ast_is_guard(source: str) -> bool:
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return False
+    expected_imports = {
+        ast.dump(ast.parse("import os").body[0]),
+        ast.dump(ast.parse("import sys").body[0]),
+        ast.dump(ast.parse("import xml.etree.ElementTree as ET").body[0]),
+    }
+    actual_imports = {ast.dump(node) for node in tree.body if isinstance(node, ast.Import)}
+    if not expected_imports.issubset(actual_imports):
+        return False
+    names = ("version", "root", "releases", "first_release", "release_version")
+    writes = {
+        name: [
+            node
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Name)
+            and node.id == name
+            and isinstance(node.ctx, ast.Store)
+        ]
+        for name in names
+    }
+    if any(len(writes[name]) != 1 for name in names):
+        return False
+    if any(
+        isinstance(node, ast.Name)
+        and node.id in {"os", "sys", "ET"}
+        and isinstance(node.ctx, ast.Store)
+        for node in ast.walk(tree)
+    ):
+        return False
+    assignments = {
+        node.targets[0].id: (index, node.value)
+        for index, node in enumerate(tree.body)
+        if isinstance(node, ast.Assign)
+        and len(node.targets) == 1
+        and isinstance(node.targets[0], ast.Name)
+        and node.targets[0].id in names
+    }
+    if not (
+        len(assignments) == len(names)
+        and _is_env_version(assignments["version"][1])
+        and _is_appstream_root(assignments["root"][1])
+        and _is_method_call(assignments["releases"][1], "root", "find", "releases")
+        and _is_method_call(
+            assignments["first_release"][1], "releases", "find", "release"
+        )
+        and _is_method_call(
+            assignments["release_version"][1], "first_release", "get", "version"
+        )
+    ):
+        return False
+    assignment_positions = [assignments[name][0] for name in names]
+    if assignment_positions != sorted(assignment_positions):
+        return False
+    guards = [
+        (index, node)
+        for index, node in enumerate(tree.body)
+        if isinstance(node, ast.If) and _is_version_mismatch(node.test)
+    ]
+    return (
+        len(guards) == 1
+        and guards[0][0] > assignment_positions[-1]
+        and any(_is_exit_one(node) for node in guards[0][1].body)
+    )
+
+
+def _is_env_version(node: ast.expr | None) -> bool:
+    return (
+        isinstance(node, ast.Subscript)
+        and isinstance(node.value, ast.Attribute)
+        and isinstance(node.value.value, ast.Name)
+        and node.value.value.id == "os"
+        and node.value.attr == "environ"
+        and isinstance(node.slice, ast.Constant)
+        and node.slice.value == "VERSION"
+    )
+
+
+def _is_appstream_root(node: ast.expr | None) -> bool:
+    return (
+        isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and node.func.attr == "getroot"
+        and isinstance(node.func.value, ast.Call)
+        and isinstance(node.func.value.func, ast.Attribute)
+        and isinstance(node.func.value.func.value, ast.Name)
+        and node.func.value.func.value.id == "ET"
+        and node.func.value.func.attr == "parse"
+        and len(node.func.value.args) == 1
+        and isinstance(node.func.value.args[0], ast.Constant)
+        and node.func.value.args[0].value == APPSTREAM_PATH
+    )
+
+
+def _is_method_call(
+    node: ast.expr | None, receiver: str, method: str, argument: str
+) -> bool:
+    return (
+        isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and isinstance(node.func.value, ast.Name)
+        and node.func.value.id == receiver
+        and node.func.attr == method
+        and len(node.args) == 1
+        and isinstance(node.args[0], ast.Constant)
+        and node.args[0].value == argument
+    )
+
+
+def _is_version_mismatch(node: ast.expr) -> bool:
+    return (
+        isinstance(node, ast.Compare)
+        and isinstance(node.left, ast.Name)
+        and node.left.id == "release_version"
+        and len(node.ops) == 1
+        and isinstance(node.ops[0], ast.NotEq)
+        and len(node.comparators) == 1
+        and isinstance(node.comparators[0], ast.Name)
+        and node.comparators[0].id == "version"
+    )
+
+
+def _is_exit_one(node: ast.stmt) -> bool:
+    return (
+        isinstance(node, ast.Expr)
+        and isinstance(node.value, ast.Call)
+        and isinstance(node.value.func, ast.Attribute)
+        and isinstance(node.value.func.value, ast.Name)
+        and node.value.func.value.id == "sys"
+        and node.value.func.attr == "exit"
+        and len(node.value.args) == 1
+        and isinstance(node.value.args[0], ast.Constant)
+        and node.value.args[0].value == 1
+    )

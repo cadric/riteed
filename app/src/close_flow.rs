@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 use std::collections::VecDeque;
-use std::rc::Rc;
+use std::rc::{Rc, Weak};
 
 use libadwaita as adw;
 
@@ -16,6 +16,13 @@ pub enum CloseMode {
 struct CloseState {
     mode: CloseMode,
     queue: VecDeque<Rc<EditorTab>>,
+    discarded: Vec<DiscardedRevision>,
+}
+
+struct DiscardedRevision {
+    tab: Weak<EditorTab>,
+    uri: Option<String>,
+    dirty_generation: u64,
 }
 
 pub struct CloseCoordinator {
@@ -29,6 +36,7 @@ impl CloseCoordinator {
             state: RefCell::new(CloseState {
                 mode: CloseMode::Tab(page.clone()),
                 queue: VecDeque::from([tab]),
+                discarded: Vec::new(),
             }),
         })
     }
@@ -39,6 +47,7 @@ impl CloseCoordinator {
             state: RefCell::new(CloseState {
                 mode: CloseMode::Window,
                 queue: VecDeque::from(queue),
+                discarded: Vec::new(),
             }),
         })
     }
@@ -49,6 +58,7 @@ impl CloseCoordinator {
             state: RefCell::new(CloseState {
                 mode: CloseMode::OtherTabs,
                 queue: VecDeque::from(queue),
+                discarded: Vec::new(),
             }),
         })
     }
@@ -58,8 +68,37 @@ impl CloseCoordinator {
         self.state.borrow().queue.front().cloned()
     }
 
+    #[must_use]
+    pub(crate) fn contains_page(&self, page: &adw::TabPage) -> bool {
+        self.state.borrow().queue.iter().any(|tab| {
+            tab.page()
+                .as_ref()
+                .is_some_and(|candidate| candidate == page)
+        })
+    }
+
     pub fn advance(&self) {
         let _removed = self.state.borrow_mut().queue.pop_front();
+    }
+
+    pub(crate) fn record_discard(&self, tab: &Rc<EditorTab>) {
+        let revision = DiscardedRevision {
+            tab: Rc::downgrade(tab),
+            uri: tab.document_uri(),
+            dirty_generation: tab.dirty_generation(),
+        };
+        self.state.borrow_mut().discarded.push(revision);
+    }
+
+    #[must_use]
+    pub(crate) fn permits_discard(&self, tab: &Rc<EditorTab>) -> bool {
+        let uri = tab.document_uri();
+        let generation = tab.dirty_generation();
+        self.state.borrow().discarded.iter().any(|revision| {
+            revision.tab.ptr_eq(&Rc::downgrade(tab))
+                && revision.uri == uri
+                && revision.dirty_generation == generation
+        })
     }
 
     #[must_use]

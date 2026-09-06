@@ -19,6 +19,7 @@ mod markdown_preview;
 pub(crate) mod minimap_diff;
 pub(crate) mod minimap_palette;
 mod open;
+mod read_guard;
 mod review;
 mod runtime;
 mod save;
@@ -26,6 +27,7 @@ mod state;
 mod view;
 
 pub(crate) use compare::{ReviewFileInput, ReviewScrollTarget};
+pub(crate) use read_guard::DocumentReadGuard;
 pub use review::{
     ReviewFileId, ReviewFileSpec, ReviewKind, ReviewSnapshotFingerprint, ReviewTabSpec, TabKind,
 };
@@ -443,6 +445,7 @@ impl EditorTab {
         self.is_document()
             && !self.is_dirty()
             && !self.is_loading()
+            && !self.state.borrow().external.reload_deferred_by_edit
             && !self.is_compare_active()
             && (!is_selected || !window_active)
     }

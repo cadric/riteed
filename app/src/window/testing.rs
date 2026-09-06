@@ -468,6 +468,14 @@ impl Window {
         self.source_control.activate_path_for_tests(path)
     }
 
+    pub(crate) fn source_control_run_action_for_tests(
+        &self,
+        uri: &str,
+        action: crate::source_control::actions::GitRowAction,
+    ) {
+        self.source_control.run_action_for_uri(uri, action);
+    }
+
     pub(crate) fn source_control_row_state_for_tests(
         &self,
         path: &str,

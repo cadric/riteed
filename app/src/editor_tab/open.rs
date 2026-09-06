@@ -8,7 +8,7 @@ use libadwaita as adw;
 use crate::dialogs::{self, DecodeFailureResponse, ReopenWithEncodingResponse};
 use crate::document_limits::{OpenDecision, OpenFileSupport};
 use crate::editor_io::{self, LoadFailure, LoadedDocument};
-use crate::editor_tab::{EditorTab, ReloadCause, ReloadResult};
+use crate::editor_tab::{DocumentReadGuard, EditorTab, ReloadCause, ReloadResult};
 use crate::editor_view::ReloadSnapshot;
 use crate::error::AppError;
 
@@ -23,21 +23,30 @@ impl EditorTab {
             callback(Err(AppError::Cancelled));
             return;
         }
-        self.load_file_with_candidates(parent, file, None, None, callback);
+        let read_guard = self.capture_document_read_guard();
+        self.load_file_with_candidates(parent, file, None, None, read_guard, callback);
     }
 
-    pub(crate) fn load_file_with_open_support(
+    pub(crate) fn load_file_with_open_support_guarded(
         self: &Rc<Self>,
         parent: &adw::ApplicationWindow,
         file: &gio::File,
         open_support: OpenFileSupport,
+        read_guard: DocumentReadGuard,
         callback: Rc<dyn Fn(Result<String, AppError>)>,
     ) {
         if !self.is_document() {
             callback(Err(AppError::Cancelled));
             return;
         }
-        self.load_file_with_candidates(parent, file, None, Some(open_support), callback);
+        self.load_file_with_candidates(
+            parent,
+            file,
+            None,
+            Some(open_support),
+            read_guard,
+            callback,
+        );
     }
 
     pub fn reload_from_disk(
@@ -54,10 +63,11 @@ impl EditorTab {
             callback(Err(AppError::MissingSavePath));
             return;
         };
-        let Some(expected_uri) = self.document_uri() else {
+        if self.document_uri().is_none() {
             callback(Err(AppError::MissingSavePath));
             return;
-        };
+        }
+        let read_guard = self.capture_document_read_guard();
         if let Err(error) = editor_io::validate_text_file_open(&saved_file) {
             callback(Err(map_load_failure_to_app_error(error)));
             return;
@@ -81,7 +91,7 @@ impl EditorTab {
             page.set_loading(true);
         }
 
-        let (generation, cancellable) = self.start_io_request(None);
+        let (generation, cancellable) = self.start_reload_io_request(None);
         let weak = Rc::downgrade(self);
         self.with_io_candidate_encodings(|encodings| {
             editor_io::load_text_file(
@@ -97,8 +107,21 @@ impl EditorTab {
                         callback(Err(AppError::Cancelled));
                         return;
                     }
+                    if let Err(error) = tab.verify_document_read_guard(&read_guard) {
+                        tab.finish_reload_conflict(matches!(
+                            error,
+                            AppError::DocumentChangedDuringRead
+                        ));
+                        callback(Err(error));
+                        return;
+                    }
                     match result {
                         Ok(document) => {
+                            let Some(expected_uri) = tab.document_uri() else {
+                                tab.finish_reload(false);
+                                callback(Err(AppError::Cancelled));
+                                return;
+                            };
                             if !tab.can_apply_reload(cause, &expected_uri, &should_apply) {
                                 tab.finish_reload(false);
                                 callback(Ok(ReloadResult::Deferred));
@@ -121,21 +144,9 @@ impl EditorTab {
                                 }),
                             );
                         }
-                        Err(LoadFailure::DecodeFailed(path)) => {
+                        Err(error) => {
                             tab.finish_reload(false);
-                            callback(Err(AppError::DecodeFailed(path)));
-                        }
-                        Err(LoadFailure::TooBig(path)) => {
-                            tab.finish_reload(false);
-                            callback(Err(AppError::FileTooBig(path)));
-                        }
-                        Err(LoadFailure::LineTooLong { path, .. }) => {
-                            tab.finish_reload(false);
-                            callback(Err(AppError::LineTooLong(path)));
-                        }
-                        Err(LoadFailure::Failed(error)) => {
-                            tab.finish_reload(false);
-                            callback(Err(error));
+                            callback(Err(map_load_failure_to_app_error(error)));
                         }
                     }
                 }),
@@ -160,6 +171,7 @@ impl EditorTab {
             callback(Err(AppError::MissingSavePath));
             return;
         }
+        let source_guard = self.capture_document_read_guard();
 
         let candidates = sourceview5::Encoding::default_candidates();
         let current = self.current_format().encoding().to_source_encoding();
@@ -183,9 +195,14 @@ impl EditorTab {
                     callback(Err(AppError::Cancelled));
                     return;
                 };
+                if let Err(error) = tab.verify_document_read_guard(&source_guard) {
+                    callback(Err(error));
+                    return;
+                }
                 if tab.is_dirty() {
                     let confirm_parent = action_parent.clone();
                     let weak = Rc::downgrade(&tab);
+                    let consent_guard = source_guard.clone();
                     dialogs::confirm_reopen_with_encoding(
                         &confirm_parent.clone(),
                         &tab.title(),
@@ -193,9 +210,17 @@ impl EditorTab {
                             if let Some(tab) = weak.upgrade() {
                                 match response {
                                     ReopenWithEncodingResponse::Reopen => {
+                                        if let Err(error) =
+                                            tab.verify_document_read_guard(&consent_guard)
+                                        {
+                                            callback(Err(error));
+                                            return;
+                                        }
+                                        let read_guard = tab.capture_document_read_guard();
                                         tab.reopen_with_encoding(
                                             &confirm_parent,
                                             &encoding,
+                                            read_guard,
                                             callback.clone(),
                                         );
                                     }
@@ -208,7 +233,8 @@ impl EditorTab {
                     );
                     return;
                 }
-                tab.reopen_with_encoding(&action_parent, &encoding, callback.clone());
+                let read_guard = tab.capture_document_read_guard();
+                tab.reopen_with_encoding(&action_parent, &encoding, read_guard, callback.clone());
             },
         );
     }
@@ -219,6 +245,7 @@ impl EditorTab {
         file: &gio::File,
         candidate_encodings: Option<SList<sourceview5::Encoding>>,
         open_support: Option<OpenFileSupport>,
+        read_guard: DocumentReadGuard,
         callback: Rc<dyn Fn(Result<String, AppError>)>,
     ) {
         if let Err(error) = editor_io::validate_text_file_open(file) {
@@ -226,7 +253,6 @@ impl EditorTab {
             return;
         }
         self.set_loading(true);
-        let start_dirty_generation = self.dirty_generation();
         let (generation, cancellable) = self.start_io_request(candidate_encodings);
         let weak = Rc::downgrade(self);
         let opened_file = file.clone();
@@ -241,14 +267,14 @@ impl EditorTab {
                     callback(Err(AppError::Cancelled));
                     return;
                 }
+                if let Err(error) = tab.verify_document_read_guard(&read_guard) {
+                    tab.set_loading(false);
+                    tab.sync_presentation();
+                    callback(Err(error));
+                    return;
+                }
                 match result {
                     Ok(document) => {
-                        if tab.dirty_generation() != start_dirty_generation {
-                            tab.set_loading(false);
-                            tab.sync_presentation();
-                            callback(Err(AppError::Cancelled));
-                            return;
-                        }
                         let monitored_file = gio::File::for_path(&document.path);
                         let uri = document.uri.clone();
                         let callback = callback.clone();
@@ -274,6 +300,7 @@ impl EditorTab {
                             &parent,
                             &opened_file,
                             &path,
+                            read_guard.clone(),
                             callback.clone(),
                         );
                     }
@@ -326,16 +353,21 @@ impl EditorTab {
         self: &Rc<Self>,
         parent: &adw::ApplicationWindow,
         encoding: &sourceview5::Encoding,
+        read_guard: DocumentReadGuard,
         callback: Rc<dyn Fn(Result<(), AppError>)>,
     ) {
         let Some(saved_file) = self.saved_file() else {
             callback(Err(AppError::MissingSavePath));
             return;
         };
-        let Some(expected_uri) = self.document_uri() else {
+        if self.document_uri().is_none() {
             callback(Err(AppError::MissingSavePath));
             return;
-        };
+        }
+        if let Err(error) = self.verify_document_read_guard(&read_guard) {
+            callback(Err(error));
+            return;
+        }
         if let Err(error) = editor_io::validate_text_file_open(&saved_file) {
             callback(Err(map_load_failure_to_app_error(error)));
             return;
@@ -361,11 +393,15 @@ impl EditorTab {
                         callback(Err(AppError::Cancelled));
                         return;
                     }
+                    if let Err(error) = tab.verify_document_read_guard(&read_guard) {
+                        tab.set_loading(false);
+                        tab.sync_presentation();
+                        callback(Err(error));
+                        return;
+                    }
                     match result {
                         Ok(document) => {
-                            if tab.document_uri().as_deref() != Some(expected_uri.as_str())
-                                || !tab.monitor_target_matches_current()
-                            {
+                            if !tab.monitor_target_matches_current() {
                                 tab.set_loading(false);
                                 tab.sync_presentation();
                                 callback(Err(AppError::Cancelled));
@@ -392,7 +428,12 @@ impl EditorTab {
                         Err(LoadFailure::DecodeFailed(path)) => {
                             tab.set_loading(false);
                             tab.sync_presentation();
-                            tab.offer_reopen_with_manual_encoding(&parent, &path, callback.clone());
+                            tab.offer_reopen_with_manual_encoding(
+                                &parent,
+                                &path,
+                                read_guard.clone(),
+                                callback.clone(),
+                            );
                         }
                         Err(LoadFailure::TooBig(path)) => {
                             tab.set_loading(false);
@@ -420,6 +461,7 @@ impl EditorTab {
         parent: &adw::ApplicationWindow,
         file: &gio::File,
         path: &Path,
+        read_guard: DocumentReadGuard,
         callback: Rc<dyn Fn(Result<String, AppError>)>,
     ) {
         let weak = Rc::downgrade(self);
@@ -440,6 +482,7 @@ impl EditorTab {
                     let callback = callback.clone();
                     let action_parent = action_parent.clone();
                     let opened_file = opened_file.clone();
+                    let retry_guard = read_guard.clone();
                     dialogs::choose_encoding(
                         &dialog_parent,
                         &title,
@@ -453,12 +496,17 @@ impl EditorTab {
                                     callback(Err(AppError::Cancelled));
                                     return;
                                 };
+                                if let Err(error) = tab.verify_document_read_guard(&retry_guard) {
+                                    callback(Err(error));
+                                    return;
+                                }
                                 let selected = std::iter::once(encoding).collect::<SList<_>>();
                                 tab.load_file_with_candidates(
                                     &action_parent,
                                     &opened_file,
                                     Some(selected),
                                     None,
+                                    retry_guard.clone(),
                                     callback.clone(),
                                 );
                             }
@@ -474,6 +522,7 @@ impl EditorTab {
         self: &Rc<Self>,
         parent: &adw::ApplicationWindow,
         path: &Path,
+        read_guard: DocumentReadGuard,
         callback: Rc<dyn Fn(Result<(), AppError>)>,
     ) {
         let weak = Rc::downgrade(self);
@@ -492,6 +541,7 @@ impl EditorTab {
                     let weak = Rc::downgrade(&tab);
                     let callback = callback.clone();
                     let action_parent = action_parent.clone();
+                    let retry_guard = read_guard.clone();
                     dialogs::choose_encoding(
                         &dialog_parent,
                         &title,
@@ -505,9 +555,14 @@ impl EditorTab {
                                     callback(Err(AppError::Cancelled));
                                     return;
                                 };
+                                if let Err(error) = tab.verify_document_read_guard(&retry_guard) {
+                                    callback(Err(error));
+                                    return;
+                                }
                                 tab.reopen_with_encoding(
                                     &action_parent,
                                     &encoding,
+                                    retry_guard.clone(),
                                     callback.clone(),
                                 );
                             }

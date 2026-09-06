@@ -171,6 +171,7 @@ impl EditorIoState {
 pub(super) struct ExternalFileState {
     pub(super) monitor: Option<MonitorBinding>,
     pub(super) pending: PendingExternalState,
+    pub(super) reload_deferred_by_edit: bool,
     pub(super) writability: Writability,
     pub(super) writability_generation: u64,
     pub(super) writability_cancellable: Option<gio::Cancellable>,
@@ -197,6 +198,7 @@ impl Default for ExternalFileState {
         Self {
             monitor: None,
             pending: PendingExternalState::Idle,
+            reload_deferred_by_edit: false,
             writability: Writability::Unknown,
             writability_generation: 0,
             writability_cancellable: None,

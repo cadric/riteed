@@ -51,3 +51,10 @@ path = "fuzz_targets/unsupported_scanner.rs"
 test = false
 doc = false
 bench = false
+
+[[bin]]
+name = "page_text_decode"
+path = "fuzz_targets/page_text_decode.rs"
+test = false
+doc = false
+bench = false

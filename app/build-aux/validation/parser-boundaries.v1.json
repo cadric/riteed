@@ -6,14 +6,17 @@
       "kind": "parser",
       "source_paths": ["app/src/markdown/parser.rs", "app/src/markdown/normalize.rs"],
       "entrypoints": ["riteed::fuzzing::parse_markdown_bytes", "markdown::parse_document"],
-      "real_input_shape": "Replacement-decoded Markdown document text after file loading and document limits, including CommonMark blocks, code fences, links, images, literal HTML, and frontmatter-adjacent body text.",
+      "real_input_shape": "Replacement-decoded Markdown document text after file loading and document limits, including CRLF and lone-CR line endings, ASCII controls, CommonMark blocks, code fences, links, images, literal HTML, and frontmatter-adjacent body text.",
       "coverage": [
-        {"type": "fuzz", "path": "app/fuzz/fuzz_targets/markdown_parse.rs", "target": "markdown_parse", "input_shape_asserted": "Markdown document bytes decoded with replacement before pulldown-cmark parsing"},
+        {"type": "fuzz", "path": "app/fuzz/fuzz_targets/markdown_parse.rs", "target": "markdown_parse", "input_shape_asserted": "Markdown document bytes decoded with replacement before pulldown-cmark parsing, including the retained CRLF soft-break seed at app/fuzz/corpus/markdown_parse/crlf-softbreak.md"},
+        {"type": "unit", "path": "app/src/markdown/parser_tests.rs", "target": "normalizes_crlf_as_one_line_ending", "input_shape_asserted": "CRLF collapses to exactly one newline before Markdown parsing"},
+        {"type": "unit", "path": "app/src/markdown/parser_tests.rs", "target": "parses_crlf_as_one_paragraph_with_soft_break", "input_shape_asserted": "Two Markdown source lines separated by CRLF parse as one paragraph containing one soft break"},
+        {"type": "unit", "path": "app/src/markdown/parser_tests.rs", "target": "normalization_preserves_lone_cr_controls_and_borrowed_input", "input_shape_asserted": "Lone CR, ASCII controls, replacement characters, LF, tabs, and unchanged borrowed input retain their normalization behavior"},
         {"type": "corpus", "path": "app/fuzz/corpus/markdown_parse/basic.md", "target": "markdown_parse", "input_shape_asserted": "Seed includes frontmatter-adjacent CommonMark, links, inline code, lists, and fenced code"}
       ],
       "gaps": [],
       "reviewed_exceptions": [],
-      "last_reviewed": "2026-05-26"
+      "last_reviewed": "2026-09-05"
     },
     {
       "id": "frontmatter_split",
@@ -75,31 +78,35 @@
     {
       "id": "document_file_load",
       "kind": "file-load",
-      "source_paths": ["app/src/editor_io.rs", "app/src/workspace_open.rs", "app/src/document_limits.rs"],
+      "source_paths": ["app/src/editor_io.rs", "app/src/workspace_open.rs", "app/src/workspace_open/pending.rs", "app/src/editor_tab/open.rs", "app/src/editor_tab/read_guard.rs", "app/src/document_limits.rs"],
       "entrypoints": ["Gio file open", "Workspace::open_files", "EditorTab::load_file"],
       "real_input_shape": "User-selected local, portal, or mounted document file bytes decoded with selected encoding, bounded by open-size policy, and routed away from editable SourceView when any decoded line exceeds the 64 KiB editor line gate.",
       "coverage": [
+        {"type": "integration", "path": "app/src/gtk_tests_document_reads.rs", "target": "exercise_document_read_integrity", "input_shape_asserted": "Actual metadata and file reads interleaved with GTK edits and undo; manual reload, encoding changes, decoding retry, request-owned overlapping opens and detached callbacks preserve current document state"},
+        {"type": "integration", "path": "app/src/gtk_tests_pending_open.rs", "target": "exercise_pending_open_ownership", "input_shape_asserted": "Actual pending registry cleanup invoked for old detached owner A after attached successor B is registered; old cleanup preserves B, same-tab request tokens remain distinct, and repeated opens deduplicate the attached target"},
         {"type": "integration", "path": "app/src/gtk_tests_boundaries.rs", "target": "exercise_open_file_at_cap", "input_shape_asserted": "Generated file at the open byte cap is opened through the real GTK flow"},
         {"type": "integration", "path": "app/src/gtk_tests_boundaries.rs", "target": "exercise_long_line_file_routes_to_viewer", "input_shape_asserted": "Generated file with a decoded line over 64 KiB opens through the real GTK flow and routes to the read-only viewer"},
         {"type": "stress", "path": "stress/scripts/open-save-search.json", "target": "open-save-search", "input_shape_asserted": "Stress runner opens a declared generated corpus file through GApplication open"}
       ],
       "gaps": [],
       "reviewed_exceptions": [],
-      "last_reviewed": "2026-06-10"
+      "last_reviewed": "2026-09-05"
     },
     {
       "id": "large_file_paged_reader",
       "kind": "untrusted-file-byte-boundary",
-      "source_paths": ["app/src/large_file/reader.rs"],
-      "entrypoints": ["large_file::reader::read_window"],
-      "real_input_shape": "User-selected local, portal, or mounted document file bytes read through async Gio windows without loading the whole file into GtkTextBuffer.",
+      "source_paths": ["app/src/large_file/reader.rs", "app/src/large_file/page_text.rs"],
+      "entrypoints": ["large_file::reader::read_window", "large_file::page_text::decode_page_window"],
+      "real_input_shape": "User-selected local, portal, or mounted document file bytes read through async Gio windows and decoded from arbitrary byte windows without loading the whole file into GtkTextBuffer.",
       "coverage": [
         {"type": "unit", "path": "app/src/large_file/reader.rs", "target": "read_window_records_offset_and_eof", "input_shape_asserted": "Window metadata for a bounded paged read"},
-        {"type": "unit", "path": "app/src/large_file/reader.rs", "target": "short_nonzero_read_requests_more_bytes", "input_shape_asserted": "Short non-EOF reads continue filling the requested window"}
+        {"type": "unit", "path": "app/src/large_file/reader.rs", "target": "short_nonzero_read_requests_more_bytes", "input_shape_asserted": "Short non-EOF reads continue filling the requested window"},
+        {"type": "property", "path": "app/src/large_file/page_text.rs", "target": "proptest_page_window_offsets_are_bounded", "input_shape_asserted": "Arbitrary byte windows and u64 offsets preserve ordered bounded progress when checked arithmetic succeeds"},
+        {"type": "fuzz", "path": "app/fuzz/fuzz_targets/page_text_decode.rs", "target": "page_text_decode", "input_shape_asserted": "Eight little-endian offset bytes followed by arbitrary paged document bytes"}
       ],
       "gaps": [],
       "reviewed_exceptions": [],
-      "last_reviewed": "2026-05-31"
+      "last_reviewed": "2026-09-06"
     },
     {
       "id": "large_file_streaming_search",
@@ -160,30 +167,34 @@
     {
       "id": "save_search_ui",
       "kind": "save-reload",
-      "source_paths": ["app/src/editor_search/**/*.rs", "app/src/editor_tab/save.rs", "app/src/workspace.rs"],
-      "entrypoints": ["win.search", "win.find-next", "win.save"],
+      "source_paths": ["app/src/editor_search/**/*.rs", "app/src/editor_tab/save.rs", "app/src/workspace.rs", "app/src/workspace_close.rs", "app/src/close_flow.rs"],
+      "entrypoints": ["win.search", "win.find-next", "win.save", "workspace_close::handle_window_close_request", "workspace_close::on_close_page"],
       "real_input_shape": "Open document text searched through the document search bar and saved through the Gio-backed save boundary with dirty/clean state transitions.",
       "coverage": [
+        {"type": "integration", "path": "app/src/gtk_tests_document_close.rs", "target": "exercise_newer_edits", "input_shape_asserted": "Real Save-and-close writes snapshot A while interactive edit B remains dirty, attached and undoable in tab/window/other-tabs modes with autosave on and off; explicit retry then writes B"},
+        {"type": "integration", "path": "app/src/gtk_tests_document_close.rs", "target": "exercise_window_recheck", "input_shape_asserted": "Later edits to previously saved, discarded or initially clean tabs prevent the final window close; Save As cancellation and real write failure are exercised by the same GTK suite"},
+        {"type": "integration", "path": "app/src/gtk_tests_document_close_lifecycle.rs", "target": "exercise_stale_callbacks", "input_shape_asserted": "Late dialog and actual save completions cannot advance a replacement close coordinator; GTK transfer detaches current and future queued targets without leaving a close operation pending"},
         {"type": "integration", "path": "app/src/gtk_tests_boundaries.rs", "target": "exercise_search_at_cap", "input_shape_asserted": "GTK flow opens search at the configured character cap and asserts search result state"},
         {"type": "stress", "path": "stress/scripts/open-save-search.json", "target": "open-save-search", "input_shape_asserted": "Stress script declares generated open/search fixtures plus search, save, and document-state assertions"}
       ],
       "gaps": [],
       "reviewed_exceptions": [],
-      "last_reviewed": "2026-05-26"
+      "last_reviewed": "2026-09-05"
     },
     {
       "id": "git_path_display",
       "kind": "filename",
-      "source_paths": ["app/src/git_status.rs", "app/src/source_control/list_view.rs", "app/src/source_control/tree_model.rs", "app/src/source_control/tree_view.rs"],
-      "entrypoints": ["GitPath::from_bytes", "Source Control list rows", "Source Control tree rows"],
+      "source_paths": ["app/src/git_status.rs", "app/src/source_control/list_view.rs", "app/src/source_control/tree_model.rs", "app/src/source_control/tree_view.rs", "app/src/editor_tab/compare/review_session.rs"],
+      "entrypoints": ["GitPath::from_bytes", "Source Control list rows", "Source Control tree rows", "Git review file-boundary and Change List labels"],
       "real_input_shape": "Git path bytes from porcelain v2 -z output, including valid UTF-8 controls, Unicode bidi controls, and invalid UTF-8 bytes that must preserve raw Git identity while producing safe labels/tooltips.",
       "coverage": [
         {"type": "unit", "path": "app/src/git_status/tests.rs", "target": "git_path_display_escapes_controls_and_preserves_identity_bytes", "input_shape_asserted": "Valid UTF-8 control bytes preserve raw identity while display text is escaped"},
+        {"type": "unit", "path": "app/src/editor_tab/compare/review_session_tests.rs", "target": "review_path_newline_keeps_rendered_line_map_aligned", "input_shape_asserted": "Review filenames with newlines keep one rendered buffer line per logical review row while raw Git identity remains unchanged"},
         {"type": "stress", "path": "stress/scripts/git-status-stress.json", "target": "git-status-stress", "input_shape_asserted": "Generated non-UTF-8 and control-path Git repos are opened through Source Control stress"}
       ],
       "gaps": [],
       "reviewed_exceptions": [],
-      "last_reviewed": "2026-05-26"
+      "last_reviewed": "2026-09-05"
     }
   ]
 }

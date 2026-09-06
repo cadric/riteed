@@ -102,7 +102,7 @@
     {
       "resolution": "This short banner title appears with the Refresh Review action on stale Git review tabs.",
       "path": "src/editor_tab/banner.rs",
-      "line": 150,
+      "line": 156,
       "match": "Some(gettext(\"Refresh Review\")),",
       "kind": "i18n-short-string"
     },
@@ -129,35 +129,35 @@
     },
     {
       "path": "src/find_in_files/mod.rs",
-      "line": 421,
+      "line": 429,
       "match": "let mut label = gettext(\"Searching\");",
       "resolution": "This short V12 string appears inside the Find in Files sidebar, where the query field, result list, and scan summary provide the missing context.",
       "kind": "i18n-short-string"
     },
     {
       "path": "src/find_in_files/mod.rs",
-      "line": 428,
+      "line": 436,
       "match": "gettext(\"No matches\")",
       "resolution": "This short V12 string appears inside the Find in Files sidebar, where the query field, result list, and scan summary provide the missing context.",
       "kind": "i18n-short-string"
     },
     {
       "path": "src/find_in_files/mod.rs",
-      "line": 430,
+      "line": 438,
       "match": "let results = ngettext(\"%d result\", \"%d results\", summary.matches)",
       "resolution": "This short V12 string appears inside the Find in Files sidebar, where the query field, result list, and scan summary provide the missing context.",
       "kind": "i18n-short-string"
     },
     {
       "path": "src/find_in_files/mod.rs",
-      "line": 432,
+      "line": 440,
       "match": "let files = ngettext(\"in %d file\", \"in %d files\", summary.files_searched)",
       "resolution": "This short V12 string appears inside the Find in Files sidebar, where the query field, result list, and scan summary provide the missing context.",
       "kind": "i18n-short-string"
     },
     {
       "path": "src/find_in_files/mod.rs",
-      "line": 440,
+      "line": 448,
       "match": "let skipped = ngettext(\"%d file skipped.\", \"%d files skipped.\", summary.skipped)",
       "resolution": "This short V12 string appears inside the Find in Files sidebar, where the query field, result list, and scan summary provide the missing context.",
       "kind": "i18n-short-string"
@@ -234,28 +234,28 @@
     },
     {
       "path": "src/source_control.rs",
-      "line": 121,
+      "line": 145,
       "match": "let title = adw::WindowTitle::new(&gettext(\"Source Control\"), \"\");",
       "resolution": "This short title labels the Source Control sidebar header above the changed-file tree and commit controls.",
       "kind": "i18n-short-string"
     },
     {
       "path": "src/source_control/history.rs",
-      "line": 279,
+      "line": 294,
       "match": "self.status.set_label(&gettext(\"No commits yet.\"));",
       "resolution": "This short Source Control string appears inside the Git sidebar where the changed-file, history, or action context is visible.",
       "kind": "i18n-short-string"
     },
     {
       "path": "src/source_control/refresh.rs",
-      "line": 281,
+      "line": 419,
       "match": "gettext(\"No changes.\")",
       "resolution": "This compact status appears in the Source Control panel when the repository has no changed files.",
       "kind": "i18n-short-string"
     },
     {
       "path": "src/source_control/refresh.rs",
-      "line": 283,
+      "line": 421,
       "match": "gettext(\"Changed files\")",
       "resolution": "This short Source Control string appears inside the Git sidebar where the changed-file, history, or action context is visible.",
       "kind": "i18n-short-string"
@@ -263,7 +263,7 @@
     {
       "resolution": "This short loading status is shown inside a Git review tab while the surrounding Source Control review context remains visible.",
       "path": "src/source_control/review_loader.rs",
-      "line": 36,
+      "line": 46,
       "match": "tab.set_git_review_text(&ellipsis_label(gettext(\"Loading Git review\")));",
       "kind": "i18n-short-string"
     },

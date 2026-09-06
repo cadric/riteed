@@ -148,17 +148,9 @@ def check_repo_layout(root: Path, errors: list[str]) -> None:
 
 
 def check_toolchain(root: Path, errors: list[str]) -> None:
-    toolchain = _safe_load_toml(root / "rust-toolchain.toml", errors, "rust-toolchain.toml")
-    if toolchain is None:
-        return
-    cfg = toolchain.get("toolchain", {}) if isinstance(toolchain.get("toolchain"), dict) else {}
-    channel = str(cfg.get("channel", "")).strip()
-    if not channel.startswith("1.95"):
-        add(errors, f"rust-toolchain.toml must pin Rust 1.95.x, found {channel!r}")
-    components = {str(item) for item in cfg.get("components", [])}
-    for component in ("rustfmt", "clippy"):
-        if component not in components:
-            add(errors, f"rust-toolchain.toml must include component {component!r}")
+    from tools.checks.toolchain import check_toolchain_policy
+
+    check_toolchain_policy(root, rust_policy(root), errors)
 
 
 def _lint_value(table: dict[str, Any], key: str) -> str | None:

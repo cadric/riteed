@@ -25,6 +25,11 @@ impl Workspace {
         });
     }
 
+    #[cfg(test)]
+    pub(crate) fn selected_state_refresh_queued_for_tests(&self) -> bool {
+        self.selected_state_refresh_queued.get()
+    }
+
     pub(crate) fn refresh_selected_state(&self) {
         self.sync_tab_action_state();
         let selected = self.selected_tab();

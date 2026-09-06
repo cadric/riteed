@@ -39,6 +39,7 @@
     "app/build-aux/flatpak/**",
     "policy/**",
     "tools/checks/dependency_preflight.py",
+    "tools/checks/release_guards.py",
     "tools/policy_check.py"
   ],
   "overlaps_with": [
@@ -101,6 +102,9 @@
     ],
     "hard_requirements": {
       "exact_commit_validation_gate": "Before importing signing secrets, publish must require a successful validation result for the exact tag commit or rerun the release-critical validation suite inside the publish workflow.",
+      "required_check_app_slug": "github-actions",
+      "required_validate_jobs_must_run": true,
+      "required_validate_checks_must_not_continue_on_error": true,
       "required_validate_check_contexts": [
         "dependency-preflight",
         "policy-pack",
@@ -128,6 +132,7 @@
     "monotonic_remote_update": {
       "older_tag_overwrite": "forbidden_by_default",
       "required_check": "Compare candidate version/ref against the currently published beta Pages remote before deleting or overwriting site/flatpak/repo.",
+      "candidate_ref_source": "validated_release_ref",
       "manual_rerun_behavior": "Must be idempotent for the same release and must fail for older releases unless emergency_rollback is explicitly active.",
       "legacy_pages_metadata_without_source_allowed_only_for_newer_version": true,
       "emergency_rollback": {
@@ -151,6 +156,7 @@
     "pinning": {
       "release_critical_actions": "pin_to_commit_sha_or_reviewed_exception",
       "release_critical_tool_installers": "pin_version_and_integrity_or_reviewed_exception",
+      "release_critical_container_images": "pin_to_sha256_digest",
       "major_version_action_tags": "forbidden_without_planned_remediation",
       "curl_pipe_shell_installers": "forbidden_without_version_integrity_and_review"
     },
@@ -165,6 +171,7 @@
       ]
     },
     "repository_governance": {
+      "validation_step_condition": "github.actor != 'dependabot[bot]' && (github.event_name != 'pull_request' || (github.event.pull_request.user.login != 'dependabot[bot]' && github.event.pull_request.head.repo.full_name == github.repository))",
       "main_branch_protection_or_ruleset_required": true,
       "version_tag_ruleset_required": true,
       "disabled_rulesets_are_not_mitigation": true,
@@ -319,10 +326,24 @@
       }
     }
   },
-  "planned_remediation": [],
+  "planned_remediation": [
+    {
+      "finding_id": "POLICY-RIT-GEN-028",
+      "target_milestone": "P3 Task 7",
+      "review_artifact": "docs/policy-validation.md",
+      "created": "2026-09-06",
+      "max_age_days": 120,
+      "reason": "Release preflight reads AppStream metadata from the working checkout rather than the validated tag commit SHA, and the signing build checks out the validated tag ref rather than the validated tag commit SHA.",
+      "removal_condition": "Read AppStream metadata from the validated tag commit SHA, checkout the preflight tag_commit output before signing, and add passing regression fixtures that reject loss of either SHA binding."
+    }
+  ],
   "verifiers": {
     "workflow_static_checks": [
-      "publish workflow tag/version/AppStream consistency",
+      "publish workflow tag/version consistency",
+      "tag commit ancestry against the fetched origin/main ref in active preflight",
+      "AppStream top release comparison against the release tag in active preflight",
+      "temporary GNUPGHOME mode and agent/removal cleanup before private-key import",
+      "GitHub-hosted Ubuntu runner and preflight dependency for the signing build",
       "validation gate before signing secret access",
       "signing environment scoping",
       "GPG public key pin against committed public key",

@@ -6,7 +6,8 @@ use gtk4::{accessible, prelude::*};
 use libadwaita as adw;
 
 use crate::git_process::{GitCommitSummary, GitLogState};
-use crate::source_control::{SourceStateRef, git_error_is_cancelled};
+use crate::source_control::slots::RefreshTicket;
+use crate::source_control::{SourceStateRef, operation_bridge};
 
 const RECENT_COMMIT_LIMIT: usize = 25;
 const HISTORY_EXPANDED_ICON: &str = "go-down-symbolic";
@@ -36,54 +37,68 @@ pub(super) fn connect_toggle(state: &SourceStateRef) {
     });
 }
 
-pub(super) fn refresh(state: &SourceStateRef, head_oid: Option<&str>) {
+pub(super) fn refresh(
+    state: &SourceStateRef,
+    head_oid: Option<&str>,
+    ticket: &RefreshTicket,
+    complete: Rc<dyn Fn()>,
+) {
+    if !operation_bridge::is_refresh_current(state, ticket) {
+        complete();
+        return;
+    }
     let head_oid_owned = head_oid.map(str::to_string);
-    let (process, cancellable, should_refresh) = {
+    let ticket = ticket.clone();
+    let (process, history) = {
         let state = state.borrow();
-        let Some(process) = state.process.clone() else {
-            state.history.clear();
-            return;
-        };
-        let Some(cancellable) = state.cancellable.clone() else {
-            state.history.clear();
-            return;
-        };
-        let should_refresh = state.history.should_refresh(head_oid);
-        if !state.history.is_expanded() {
-            state.history.root.set_visible(true);
-            if should_refresh {
-                state.history.needs_refresh.set(true);
-            }
+        (state.process.clone(), Rc::clone(&state.history))
+    };
+    let Some(process) = process else {
+        history.clear();
+        complete();
+        return;
+    };
+    let should_refresh = history.should_refresh(head_oid);
+    if !history.is_expanded() {
+        history.root.set_visible(true);
+        if !operation_bridge::is_refresh_current(state, &ticket) {
+            complete();
             return;
         }
         if should_refresh {
-            state.history.set_loading();
+            history.needs_refresh.set(true);
         }
-        (process, cancellable, should_refresh)
-    };
+        complete();
+        return;
+    }
     if !should_refresh {
+        complete();
+        return;
+    }
+    history.set_loading();
+    if !operation_bridge::is_refresh_current(state, &ticket) {
+        complete();
         return;
     }
     let weak = Rc::downgrade(state);
-    let cancellable_for_callback = cancellable.clone();
+    let cancellable = ticket.cancellable().clone();
     process.recent_commits(
         RECENT_COMMIT_LIMIT,
         &cancellable,
         Rc::new(move |result| {
-            if cancellable_for_callback.is_cancelled() {
-                return;
+            if let Some(state) = weak.upgrade()
+                && operation_bridge::is_refresh_current(&state, &ticket)
+            {
+                let history = Rc::clone(&state.borrow().history);
+                match result {
+                    Ok(log_state) => {
+                        history.set_state(&log_state, head_oid_owned.clone());
+                    }
+                    Err(error) if super::git_error_is_cancelled(&error) => {}
+                    Err(_error) => history.set_error(),
+                }
             }
-            let Some(state) = weak.upgrade() else {
-                return;
-            };
-            match result {
-                Ok(log_state) => state
-                    .borrow()
-                    .history
-                    .set_state(&log_state, head_oid_owned.clone()),
-                Err(error) if git_error_is_cancelled(&error) => {}
-                Err(_error) => state.borrow().history.set_error(),
-            }
+            complete();
         }),
     );
 }
@@ -99,9 +114,9 @@ enum HistorySplitAction {
 }
 
 fn set_expanded(state: &SourceStateRef, expanded: bool) -> bool {
-    let (header_button, chevron, content, split, split_action, head_oid) = {
+    let (history, header_button, chevron, content, split, split_action) = {
         let state = state.borrow();
-        let history = &state.history;
+        let history = Rc::clone(&state.history);
         if history.is_expanded() == expanded {
             return false;
         }
@@ -112,12 +127,12 @@ fn set_expanded(state: &SourceStateRef, expanded: bool) -> bool {
             HistorySplitAction::Collapse
         };
         (
+            Rc::clone(&history),
             history.header_button.clone(),
             history.chevron.clone(),
             history.content.clone(),
             state.history_split.clone(),
             split_action,
-            expanded.then(|| state.snapshot.head_oid.clone()),
         )
     };
     content.set_reveal_child(expanded);
@@ -132,13 +147,13 @@ fn set_expanded(state: &SourceStateRef, expanded: bool) -> bool {
         HistorySplitAction::Collapse => {
             let position = split.position();
             if position > 0 {
-                state.borrow().history.last_expanded_position.set(position);
+                history.last_expanded_position.set(position);
             }
             split.set_position(i32::MAX);
         }
     }
-    if let Some(head_oid) = head_oid {
-        refresh(state, head_oid.as_deref());
+    if expanded {
+        super::refresh::refresh_status(state);
     }
     true
 }

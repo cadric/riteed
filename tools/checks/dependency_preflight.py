@@ -6,7 +6,8 @@ import tomllib
 from pathlib import Path
 from typing import Any
 
-from tools.validation_tooling import contract_root, repo_root
+from tools.validation_tooling import contract_root, repo_root, load_json
+from tools.checks.cargo_source_inventory import check_source_inventory
 
 CRATES_IO_INDEX = "registry+https://github.com/rust-lang/crates.io-index"
 CRATES_IO_SPARSE_INDEX = "sparse+https://index.crates.io/"
@@ -88,7 +89,7 @@ def check_dependency_preflight(root: Path, errors: list[str]) -> None:
     if app_lock is not None and adw_policy is not None:
         _check_policy_target_version(app_manifest, app_lock, adw_policy, errors)
     if app_lock is not None and cargo_sources is not None:
-        _check_cargo_sources(app_lock, cargo_sources, errors)
+        _check_cargo_sources(app_lock, cargo_sources, errors, load_json(policy_root / "validation-tooling.policy.json").get("cargo_source_inventory", {}))
 
 
 def _load_toml(path: Path, errors: list[str]) -> dict[str, Any] | None:
@@ -414,9 +415,10 @@ def _is_static_crates_io_archive(item: dict[str, Any]) -> bool:
     )
 
 
-def _check_cargo_sources(app_lock: dict[str, Any], cargo_sources: list[Any], errors: list[str]) -> None:
+def _check_cargo_sources(app_lock: dict[str, Any], cargo_sources: list[Any], errors: list[str], contract: dict[str, Any]) -> None:
     _check_duplicate_cargo_sources(cargo_sources, errors)
     expected = _registry_packages(app_lock)
+    check_source_inventory(cargo_sources, set(expected), contract, errors)
     archives = {
         dest: item
         for dest, item in _sources_by_dest(cargo_sources, kind="archive").items()

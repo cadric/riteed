@@ -1,6 +1,90 @@
 # Continuity
 
 ## OUTCOMES
+
+- 2026-09-06 P2 integration follow-up: the user approved committing P2
+  and merging it into local main before the separate P3 cleanup. This
+  supersedes the earlier no-commit/build status below. Twelve signed commits
+  preserve the exact reviewed and validated task snapshots:
+  Task 1: `f7432453` (RIT-GEN-007).
+  Task 2: `9c880913` (RIT-GEN-008/010/019).
+  Task 3: `aef6df6f` (RIT-GEN-011).
+  Task 4: `d9830119` (RIT-GEN-009).
+  Task 5: `e38c09de` (RIT-GEN-012).
+  Task 6: `a307697b` (RIT-GEN-013).
+  Task 7: `1aa8d76a` (RIT-GEN-014).
+  Task 8: `5fe532d4` (RIT-GEN-015).
+  Task 9: `229958da` (RIT-GEN-016).
+  Task 10: `33ce8322` (RIT-GEN-017).
+  Task 11: `a788f714` (RIT-GEN-018).
+  Task 12: `aeb7a7cf` (P2 documentation).
+  A fresh pre-commit full app suite passed all 447 tests. The final P2
+  policy/tooling/coverage gates passed with 83.8% coverage. The installed
+  Flatpak `4c367357fd1e` has a binary identical to the completed P2 build;
+  the user found the manual test result reasonable. No release or push.
+  RIT-GEN-019 is included; RIT-GEN-028 remains typed P3 debt. P3 starts
+  from the integrated P2 tree and must reconcile its historical plan first.
+  Per-task evidence and the integration report remain in the preserved
+  `/home/cadric/Projects/riteed-worktrees/fix-audit-p2/.superpowers/sdd/2026-07-06-audit-p2-remediation/`.
+
+- 2026-09-06 audit P2 remediation is implemented in the isolated
+  `fix/audit-p2` worktree based on local main `4510e909` (two commits ahead
+  of origin/main). Tasks 1–10 have no commits by user instruction; optional
+  permission from Task11 onward was not used, preserving the uncommitted
+  task boundaries. No merge, push, release dispatch or Flatpak build/install.
+  RIT-GEN-007 now supervises Git operations until owned I/O and child reaping
+  finish. RIT-GEN-008/010/019 use separate owned refresh/diff/mutation slots,
+  retain cancelled writers across root changes, and recover current status;
+  RIT-GEN-019 is absorbed here from P3. RIT-GEN-009 escapes review display
+  paths without changing raw identity; RIT-GEN-012 skips redundant minimap
+  Git children; RIT-GEN-013 normalizes CRLF as one Markdown line ending.
+  Those fixes have genuine pre-fix RED evidence. RIT-GEN-011 was already
+  implemented in `4510e909`; same-turn open URI/text assertions now characterize it.
+  RIT-GEN-014 adds paged UTF-8 property/fuzz coverage, six semantic seeds,
+  registry and actual CI enforcement; no existing parser crash was claimed.
+  RIT-GEN-015 preserves `3051c82a` source-inventory enforcement and verifies its
+  full acceptance matrix plus real generated sources and reviewed patches.
+  RIT-GEN-016 pins/enforces CI image digests; RIT-GEN-017 binds rollback
+  identity to release_ref; RIT-GEN-018 enforces four scoped release guards
+  with real removal REDs and local extracted ancestry/AppStream behavior.
+  Existing save-fixture failures were diagnosed with controlled I/O evidence
+  and repaired without changing save runtime or relaxing timeouts.
+  Tasks 1–11 passed their required app/tooling gates and scoped reviews.
+  Task 11: 447 Rust tests, 276 tools tests (one existing live-token-only
+  skip), 40 policy tests, 83.8% coverage; explicit strict wrapper also passed.
+  Task 12 final gate results are recorded in the completion report.
+  Final evidence and per-finding reports remain under
+  `.superpowers/sdd/2026-07-06-audit-p2-remediation/`; task snapshots replace
+  commit boundaries. P3 RIT-GEN-028 remains typed release-policy debt for
+  SHA-bound AppStream content and build checkout. Live PR image pulls and
+  real manual release dispatch remain external validation, not local proof.
+- 2026-09-05 local Flatpak follow-up completed at the user's request after
+  F-01/F-04/F-06 validation: `scripts/local-flatpak-build` built/installed
+  Riteed 0.3.8 for the user on GNOME Platform 50. Flatpak commit
+  `a0521eaf5eb4da2e300baa50985e9e7598fba0effa97e1668039b0e709657448`;
+  installed binary matches the completed build and includes the new notices.
+  Locale extension updated too. Local unmerged branches have patch-equivalent
+  changes in main. The package was prepared before committing for the user's
+  desktop test; manual acceptance is separate from the automated checks.
+- 2026-09-05 document integrity fixes F-01/F-04/F-06 are implemented locally:
+  saving during window close avoids reentrant borrows; asynchronous reads
+  preserve newer edits/undo; save-and-close checks the current document and
+  rechecks all tabs before window close. Pending opens reserve their target
+  and use URI/tab/request ownership. Failed saves superseding reloads release
+  the old reload owner. Actual GTK/IO regressions were RED before the fixes.
+  Final isolated validation passed strict policy (413 tests), no-default
+  tests (412), coverage (82.8%) and the native release build. No dependencies,
+  lockfiles or policy limits changed. See `docs/document-integrity-remediation.md`
+  for tests, evidence and the directly overlapping P2 Task 3/P3 Task 2 scope;
+  the rest of P2/P3 remains separate. Existing local policy work is preserved.
+- 2026-09-05 policy-gate audit hardening is implemented locally: executable
+  release checks, strict governance wiring, complete Cargo source inventory,
+  lexical Rust and structural XML scanning, typed review evidence, explicit
+  target roots and Rust source ownership accounting. See
+  `docs/policy-validation.md` and the dedicated `tools/tests` regressions.
+  Independent release review also closed signing `always()`, folded YAML,
+  shell-only syntax checking and unguarded parallel signing job bypasses.
+  Strict app gate and coverage passed; app line coverage is 82.3%.
 - 2026-08-10 scheduled Validate stress frequency changed from daily to monthly
   at 02:37 UTC on the first day of each month. Manual `workflow_dispatch`
   remains available for releases and high-risk changes.
