@@ -123,6 +123,62 @@ impl DiffRowModel {
         };
         map.get(row).and_then(|line| *line)
     }
+
+    #[must_use]
+    #[cfg(feature = "fuzzing")]
+    pub(super) fn has_complete_line_identity(
+        &self,
+        reference_lines: usize,
+        current_lines: usize,
+    ) -> bool {
+        self.rows
+            .iter()
+            .zip(&self.row_to_reference_line)
+            .all(|(row, line)| row.reference_line == *line)
+            && self
+                .rows
+                .iter()
+                .zip(&self.row_to_current_line)
+                .all(|(row, line)| row.current_line == *line)
+            && side_mapping_is_valid(
+                &self.reference_line_to_row,
+                &self.row_to_reference_line,
+                self.rows.len(),
+                reference_lines,
+            )
+            && side_mapping_is_valid(
+                &self.current_line_to_row,
+                &self.row_to_current_line,
+                self.rows.len(),
+                current_lines,
+            )
+    }
+}
+
+#[cfg(feature = "fuzzing")]
+fn side_mapping_is_valid(
+    line_to_row: &[Option<usize>],
+    row_to_line: &[Option<usize>],
+    row_count: usize,
+    line_count: usize,
+) -> bool {
+    if line_to_row.len() != line_count || row_to_line.len() != row_count {
+        return false;
+    }
+    let mut seen = vec![false; line_count];
+    for (row, line) in row_to_line.iter().enumerate() {
+        let Some(line) = line else {
+            continue;
+        };
+        let Some(was_seen) = seen.get_mut(*line) else {
+            return false;
+        };
+        if *was_seen || line_to_row.get(*line) != Some(&Some(row)) {
+            return false;
+        }
+        *was_seen = true;
+    }
+    seen.into_iter().all(|was_seen| was_seen)
 }
 
 pub(super) fn build_row_model(

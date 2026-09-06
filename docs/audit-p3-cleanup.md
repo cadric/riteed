@@ -3,6 +3,41 @@
 This pass starts from integrated local main `6aaffc3e`. Findings are closed
 only after their implementation and validation; the overall pass is ongoing.
 
+## RIT-GEN-020: whitespace-ignore line identity (Task 1)
+
+Whitespace-ignore diffing now normalizes one element for each token produced by
+the existing `line_slices` tokenizer and passes those elements directly to
+`similar::TextDiff::diff_slices`. Each normalized element retains its original
+LF, CRLF, lone-CR or absent ending. The row model and presentation continue to
+use the original tokens, so no sentinel or synthetic newline changes displayed
+text or file semantics.
+
+The pre-fix RED compared `"a\n   "` with `"a\nb"`: the unterminated
+whitespace-only reference token had no row. The reverse input lost the current
+token, and the same omission occurred against empty input and a trailing
+newline. The focused GREEN covers those cases, original presentation text,
+LF/CRLF/lone CR, interior blanks, Unicode whitespace, trailing-newline
+boundaries, ignore=false, and property-generated total, unique, in-range
+round trips for every original token. Existing hidden-whitespace, inline,
+hunk and lone-CR regressions remain in the full suite.
+
+The `diff_compute` fuzz adapter runs both default and whitespace-ignore
+computations and asserts the same total/unique row-map invariant. Its committed
+midpoint-split seed contains an unterminated whitespace-only reference tail;
+explicit one-input replay executes that target path. The parser-boundary
+registry now records the fuzz assertion, deterministic corpus seed and property
+evidence. Task 11 remains responsible for later token-reuse cleanup.
+
+Final strict validation passed 473 library tests plus the stress-binary unit
+test and UI smoke. Coverage passed at 84.6% against the unchanged 80% minimum.
+The fixed-seed `cargo +nightly fuzz run` replay passed with one executed input.
+The first strict attempt correctly rejected shifted runtime-review anchors;
+their existing ownership evidence was re-anchored without semantic changes.
+The corrected gate then found a constant-assertion Clippy violation in the new
+test helper; the helper now asserts the actual optional mapping without a lint
+exception. Environment-only Mesa/portal/bus diagnostics remained non-fatal in
+the isolated Xvfb/D-Bus run. No Flatpak build or desktop test was performed.
+
 ## RIT-GEN-022: pending-open ownership characterization
 
 Commit `ce26e22` holds actual workspace open completions for a close/reopen

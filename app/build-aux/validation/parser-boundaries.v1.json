@@ -52,14 +52,16 @@
       "kind": "diff",
       "source_paths": ["app/src/editor_tab/compare/diff.rs"],
       "entrypoints": ["riteed::fuzzing::compute_diff_bytes", "editor_tab::compare::diff::compute_diff"],
-      "real_input_shape": "Line-oriented editor, saved-file, and Git comparison text split into reference/current sides with byte, line-count, and line-product limits.",
+      "real_input_shape": "Line-oriented editor, saved-file, and Git comparison text split into reference/current sides with byte, line-count, and line-product limits; default and leading/trailing-whitespace-ignore modes preserve original token identity.",
       "coverage": [
-        {"type": "fuzz", "path": "app/fuzz/fuzz_targets/diff_compute.rs", "target": "diff_compute", "input_shape_asserted": "Raw bytes split into reference/current texts around NUL or midpoint"},
-        {"type": "unit", "path": "app/src/editor_tab/compare/diff.rs", "target": "proptest_compute_diff_respects_caps", "input_shape_asserted": "Bounded random text pairs and compare cap boundaries"}
+        {"type": "fuzz", "path": "app/fuzz/fuzz_targets/diff_compute.rs", "target": "diff_compute", "input_shape_asserted": "Raw bytes split into reference/current texts around NUL or midpoint; both default and whitespace-ignore computations assert total unique round-trip row mappings"},
+        {"type": "corpus", "path": "app/fuzz/corpus/diff_compute/whitespace-only-tail.txt", "target": "diff_compute", "input_shape_asserted": "Midpoint-split line-oriented seed gives the reference side an unterminated whitespace-only tail for whitespace-ignore replay"},
+        {"type": "unit", "path": "app/src/editor_tab/compare/diff.rs", "target": "proptest_compute_diff_respects_caps", "input_shape_asserted": "Bounded random text pairs and compare cap boundaries"},
+        {"type": "property", "path": "app/src/editor_tab/compare/diff_tests.rs", "target": "all_original_tokens_map_once_and_roundtrip", "input_shape_asserted": "LF, CRLF, lone CR, empty input, trailing newline, blank lines, Unicode whitespace, and both whitespace option states retain one round-trip mapping per original token"}
       ],
       "gaps": [],
       "reviewed_exceptions": [],
-      "last_reviewed": "2026-05-26"
+      "last_reviewed": "2026-09-06"
     },
     {
       "id": "unsupported_scanner",

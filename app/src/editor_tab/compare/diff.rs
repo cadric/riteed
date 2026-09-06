@@ -61,17 +61,13 @@ pub(super) fn compute_diff_with_options(
 
     let reference_lines = line_slices(reference_text);
     let current_lines = line_slices(current_text);
-    let normalized_reference;
-    let normalized_current;
-    let (diff_reference, diff_current) = if options.ignore_leading_trailing_whitespace {
-        normalized_reference = trim_line_sides_text(reference_text);
-        normalized_current = trim_line_sides_text(current_text);
-        (normalized_reference.as_str(), normalized_current.as_str())
-    } else {
-        (reference_text, current_text)
-    };
-    let diff = compute_line_diff(diff_reference, diff_current);
-    let ops = line_ops(diff.ops());
+    let ops = compute_line_ops(
+        reference_text,
+        current_text,
+        &reference_lines,
+        &current_lines,
+        options.ignore_leading_trailing_whitespace,
+    );
     let model = build_row_model(&ops, &reference_lines, &current_lines);
     #[cfg(test)]
     let presentation = build_presentation(&model, &reference_lines, &current_lines);
@@ -88,18 +84,66 @@ pub(super) fn compute_diff_with_options(
     }
 }
 
+#[cfg(feature = "fuzzing")]
+pub(super) fn fuzz_compute_diff(reference_text: &str, current_text: &str) -> (bool, usize, bool) {
+    let default_computation =
+        compute_diff_with_options(reference_text, current_text, DiffOptions::default());
+    let whitespace_computation = compute_diff_with_options(
+        reference_text,
+        current_text,
+        DiffOptions {
+            ignore_leading_trailing_whitespace: true,
+        },
+    );
+    let reference_lines = line_slices(reference_text).len();
+    let current_lines = line_slices(current_text).len();
+    let mappings_valid = if default_computation.skip_reason.is_some() {
+        default_computation.model.too_large && whitespace_computation.model.too_large
+    } else {
+        default_computation
+            .model
+            .has_complete_line_identity(reference_lines, current_lines)
+            && whitespace_computation
+                .model
+                .has_complete_line_identity(reference_lines, current_lines)
+    };
+    (
+        default_computation.skip_reason.is_some(),
+        default_computation.model.changed_row_count(),
+        mappings_valid,
+    )
+}
+
 #[cfg(test)]
 pub(super) fn compute_diff_row_model(reference_text: &str, current_text: &str) -> DiffRowModel {
     compute_diff(reference_text, current_text).model
 }
 
-fn compute_line_diff<'text>(
-    reference_text: &'text str,
-    current_text: &'text str,
-) -> TextDiff<'text, 'text, str> {
+fn compute_line_ops(
+    reference_text: &str,
+    current_text: &str,
+    reference_lines: &[&str],
+    current_lines: &[&str],
+    ignore_leading_trailing_whitespace: bool,
+) -> Vec<DiffLineOp> {
     #[cfg(test)]
     LINE_DIFF_CALLS.with(|calls| calls.set(calls.get() + 1));
-    TextDiff::from_lines(reference_text, current_text)
+    if ignore_leading_trailing_whitespace {
+        let normalized_reference: Vec<String> = reference_lines
+            .iter()
+            .map(|line| normalized_line(line))
+            .collect();
+        let normalized_current: Vec<String> = current_lines
+            .iter()
+            .map(|line| normalized_line(line))
+            .collect();
+        let old: Vec<&str> = normalized_reference.iter().map(String::as_str).collect();
+        let new: Vec<&str> = normalized_current.iter().map(String::as_str).collect();
+        let diff = TextDiff::configure().diff_slices(&old, &new);
+        return line_ops(diff.ops());
+    }
+    let diff = TextDiff::from_lines(reference_text, current_text);
+    line_ops(diff.ops())
 }
 
 fn line_ops(ops: &[similar::DiffOp]) -> Vec<DiffLineOp> {
@@ -143,14 +187,9 @@ pub(super) fn line_slices(text: &str) -> Vec<&str> {
     text.tokenize_lines()
 }
 
-fn trim_line_sides_text(text: &str) -> String {
-    let mut normalized = String::new();
-    for line in line_slices(text) {
-        let (content, ending) = split_line_ending(line);
-        normalized.push_str(content.trim());
-        normalized.push_str(ending);
-    }
-    normalized
+fn normalized_line(line: &str) -> String {
+    let (content, ending) = split_line_ending(line);
+    format!("{}{ending}", content.trim())
 }
 
 fn split_line_ending(line: &str) -> (&str, &str) {

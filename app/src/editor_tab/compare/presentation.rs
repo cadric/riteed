@@ -290,6 +290,7 @@ fn plural_count(value: usize) -> u32 {
 fn strip_line_ending(line: &str) -> &str {
     line.strip_suffix("\r\n")
         .or_else(|| line.strip_suffix('\n'))
+        .or_else(|| line.strip_suffix('\r'))
         .unwrap_or(line)
 }
 

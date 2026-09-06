@@ -42,7 +42,7 @@ pub(crate) fn compare_row_count_for_texts_for_tests(
 }
 
 #[cfg(feature = "fuzzing")]
-pub(crate) fn fuzz_compute_diff(reference_text: &str, current_text: &str) -> (bool, usize) {
+pub(crate) fn fuzz_compute_diff(reference_text: &str, current_text: &str) -> (bool, usize, bool) {
     compare::fuzz_compute_diff(reference_text, current_text)
 }
 

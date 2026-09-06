@@ -2,6 +2,20 @@
 
 ## OUTCOMES
 
+- 2026-09-06 audit P3 Task 1 (RIT-GEN-020): whitespace-ignore compare now
+  preserves one normalized slice per original `line_slices` token, including
+  unterminated whitespace-only tails, while retaining original tokens for row
+  mapping and rendering. The pre-fix focused RED lost reference/current line
+  identity in six cases; focused GREEN passed eight deterministic/property
+  tests across LF, CRLF, lone CR, blank/empty/trailing-newline and Unicode
+  whitespace inputs with both option states. `diff_compute` now fuzzes default
+  and ignore=true mapping invariants, and its deterministic tail seed replayed
+  successfully. Final strict validation passed 473 library tests plus the
+  stress unit and UI smoke; coverage passed at 84.6%. Parser/runtime review
+  evidence, audit docs and CHANGELOG are synchronized. Task 11 token reuse was
+  intentionally not implemented; no dependency, lockfile, policy semantics,
+  user-visible strings, remote state or Flatpak installation changed.
+
 - 2026-09-06 audit P3 Task 8 local implementation (RIT-GEN-038): Validate now
   separates the unconditional tokenless `governance-static` PR context from
   protected-main `governance-live`. Publish collection and decision require

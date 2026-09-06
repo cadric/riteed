@@ -26,6 +26,8 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
   active scheduled/manual CI execution.
 
 ### Fixed
+- Compare reviews that ignore leading and trailing whitespace now retain every
+  original line, including an unterminated whitespace-only final line.
 - Split GitHub governance into an unconditional tokenless static check and a
   protected-main live check. Flatpak publish preflight now requires complete,
   provenance-bound evidence that the newest live check's decisive step ran
