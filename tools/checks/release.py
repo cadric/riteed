@@ -48,6 +48,7 @@ def check_release(root: Path, errors: list[str]) -> None:
     else:
         foundation.add(errors, "Missing validation workflow: .github/workflows/validate.yml")
     release_workflow.check_publish_triggers(workflow_model, errors)
+    release_workflow.check_monotonic_candidate_ref(policy, workflow_model, errors)
     release_workflow.check_secret_scope(workflow_model, workflow, errors)
     release_workflow.check_validation_gate(policy, workflow_model, active, errors)
     _check_rollback_gate(workflow, active, errors)

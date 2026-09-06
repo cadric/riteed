@@ -298,6 +298,128 @@ class ReleaseWorkflowGateTests(unittest.TestCase):
 
         self.assertTrue(any("build checkout must target" in item for item in errors), errors)
 
+    def test_rollback_candidate_ref_must_use_validated_release_ref(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            _copy_release_context(root)
+            baseline_errors: list[str] = []
+            release.check_release(root, baseline_errors)
+            self.assertEqual(baseline_errors, [])
+            path = root / ".github" / "workflows" / "publish-flatpak.yml"
+            lines = path.read_text(encoding="utf-8").splitlines()
+            assignments = [
+                index for index, line in enumerate(lines) if line.strip().startswith("CANDIDATE_REF=")
+            ]
+            self.assertEqual(len(assignments), 1, assignments)
+            indent = lines[assignments[0]][: -len(lines[assignments[0]].lstrip())]
+            lines[assignments[0]] = f'{indent}CANDIDATE_REF="$GITHUB_REF_NAME" \\'
+            path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+            errors: list[str] = []
+            release.check_release(root, errors)
+
+        self.assertTrue(any("candidate ref must use validated release_ref" in item for item in errors), errors)
+
+    def test_rollback_candidate_binding_rejects_detached_and_controlled_decoys(self) -> None:
+        correct = '          CANDIDATE_REF="$release_ref" \\\n'
+        wrong = '          CANDIDATE_REF="$GITHUB_REF_NAME" \\\n'
+        block_start = '          CANDIDATE_VERSION="$version" \\\n'
+        block_end = '          PY\n\n          if [[ -n "$published_version" ]]; then\n'
+        with tempfile.TemporaryDirectory() as source_tmp:
+            source = Path(source_tmp)
+            _copy_release_context(source)
+            source_path = source / ".github" / "workflows" / "publish-flatpak.yml"
+            baseline = source_path.read_text(encoding="utf-8")
+        self.assertEqual(baseline.count(correct), 1)
+        self.assertEqual(baseline.count(block_end), 1)
+        start = baseline.index(block_start)
+        end = baseline.index(block_end, start) + len("          PY\n")
+        owner = baseline[start:end]
+        invocation = "          python3 - <<'PY'\n"
+        prefix, body = owner.split(invocation, 1)
+        comment_body = "".join(
+            "          # " + line.strip() + "\n"
+            for line in body.splitlines()[:-1]
+        ) + "          pass\n          PY\n"
+        mutations = {
+            "missing prefix": baseline.replace(correct, "", 1),
+            "duplicate prefix": baseline.replace(correct, correct + correct, 1),
+            "comment decoy": baseline.replace(correct, wrong + "          # " + correct.lstrip(), 1),
+            "later assignment": baseline.replace(correct, wrong, 1).replace(
+                block_end,
+                '          PY\n          CANDIDATE_REF="$release_ref"\n\n'
+                '          if [[ -n "$published_version" ]]; then\n',
+                1,
+            ),
+            "unindented false block": baseline.replace(
+                block_start,
+                "          if false; then\n" + block_start,
+                1,
+            ).replace(block_end, "          PY\n          fi\n\n          if [[ -n \"$published_version\" ]]; then\n", 1),
+            "unrelated heredoc": baseline.replace(correct, wrong, 1).replace(
+                block_start, correct + invocation + "          pass\n          PY\n" + block_start, 1,
+            ),
+            "duplicate owning block": baseline[:end] + owner + baseline[end:],
+            "comment-only ownership markers": baseline.replace(owner, prefix + invocation + comment_body, 1),
+            "wrong Python input with comment decoy": baseline.replace(
+                'candidate_ref = os.environ["CANDIDATE_REF"]',
+                'candidate_ref = os.environ["GITHUB_REF_NAME"]  # candidate_ref = os.environ["CANDIDATE_REF"]',
+                1,
+            ),
+            "Python input overwritten": baseline.replace(
+                '          candidate_ref = os.environ["CANDIDATE_REF"]\n',
+                '          candidate_ref = os.environ["CANDIDATE_REF"]\n'
+                '          candidate_ref = os.environ["GITHUB_REF_NAME"]\n', 1,
+            ),
+            "skipped owning step": baseline.replace("        id: release\n", "        id: release\n        if: ${{ false }}\n", 1),
+            "multiline false control": baseline.replace(owner, "          if false\n          then\n" + owner + "          fi\n", 1),
+            "short-circuited subshell": baseline.replace(owner, "          false && (\n" + owner + "          )\n", 1),
+            "short-circuited command substitution": baseline.replace(
+                owner, '          true || captured="$(\n' + owner + '          )"\n', 1,
+            ),
+            "unsupported select loop": baseline.replace(
+                owner, "          select choice in skipped; do\n" + owner + "          done\n", 1,
+            ),
+        }
+        for label, workflow in mutations.items():
+            with self.subTest(label=label), tempfile.TemporaryDirectory() as tmpdir:
+                root = Path(tmpdir)
+                _copy_release_context(root)
+                baseline_errors: list[str] = []
+                release.check_release(root, baseline_errors)
+                self.assertEqual(baseline_errors, [])
+                path = root / ".github" / "workflows" / "publish-flatpak.yml"
+                path.write_text(workflow, encoding="utf-8")
+                errors: list[str] = []
+                release.check_release(root, errors)
+                self.assertTrue(
+                    any("candidate ref must use validated release_ref" in item for item in errors),
+                    errors,
+                )
+
+    def test_rollback_candidate_ref_source_is_policy_owned(self) -> None:
+        for value in (None, "github_ref_name"):
+            with self.subTest(value=value), tempfile.TemporaryDirectory() as tmpdir:
+                root = Path(tmpdir)
+                _copy_release_context(root)
+                baseline_errors: list[str] = []
+                release.check_release(root, baseline_errors)
+                self.assertEqual(baseline_errors, [])
+                path = root / "policy" / "release.policy.json"
+                policy = json.loads(path.read_text(encoding="utf-8"))
+                monotonic = policy["signed_flatpak_publish"]["monotonic_remote_update"]
+                if value is None:
+                    monotonic.pop("candidate_ref_source")
+                else:
+                    monotonic["candidate_ref_source"] = value
+                path.write_text(json.dumps(policy, indent=2) + "\n", encoding="utf-8")
+                errors: list[str] = []
+                release.check_release(root, errors)
+                self.assertTrue(
+                    any("candidate_ref_source must be validated_release_ref" in item for item in errors),
+                    errors,
+                )
+
     def test_governance_step_condition_must_match_approved_scope(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

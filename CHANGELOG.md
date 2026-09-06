@@ -22,6 +22,8 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
   active scheduled/manual CI execution.
 
 ### Fixed
+- Bound the Flatpak rollback gate's candidate ref to the release tag validated
+  by manual-dispatch preflight, preserving idempotent same-release republishes.
 - Release validation now requires exact SHA-256 digests for CI job containers
   and actual Docker pull/run image operands, preventing tags from drifting.
 - Saving during window close no longer aborts the app. Close callbacks are

@@ -147,7 +147,8 @@ The application ID is authoritative and must stay consistent across:
 - Release-gating workflow job containers and supported literal `docker pull`/`docker run` image operands must use exact `@sha256:` digests; update them through the reviewed image procedure in `docs/dependency-updates.md`.
 - Manual release workflow dispatch may target an explicit `v*` release tag only
   when preflight validates that tag, verifies exact release-critical checks on
-  its commit, and the build job checks out the target tag before signing.
+  its commit, the monotonic rollback gate uses that validated tag as its
+  candidate ref, and the build job checks out the target tag before signing.
 - Release governance must keep offline policy checks deterministic; live GitHub ruleset/environment checks belong only in the token-scoped governance job and must enforce the exact reviewed actors from release policy.
 - Local release-critical crate patches must keep their patch manifest, upstream `.crate` anchor, allowed-file diff checksum, unsafe/FFI baseline, and binary artifact marker in sync.
 - Parser, untrusted-input, fuzz, and stress-boundary changes must follow `policy/stress-fuzz.policy.json` and keep parser-boundary evidence current.

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import re
 import shlex
 from typing import Any
@@ -12,6 +13,7 @@ WORKFLOW = ".github/workflows/publish-flatpak.yml"
 VALIDATE_WORKFLOW = ".github/workflows/validate.yml"
 POLICY_FILE = "policy/release.policy.json"
 SIGNING_SECRETS = ("FLATPAK_GPG_PRIVATE_KEY", "FLATPAK_GPG_PASSPHRASE", "FLATPAK_GPG_KEY_ID")
+CANDIDATE_REF_SOURCE = "validated_release_ref"
 
 
 def parse(label: str, workflow: str, errors: list[str]) -> Workflow | None:
@@ -37,6 +39,25 @@ def check_publish_triggers(workflow: Workflow | None, errors: list[str]) -> None
             foundation.add(errors, f"{WORKFLOW}: workflow_dispatch must validate an explicit release_ref version tag")
         if not _build_checkout_targets_release_ref(workflow):
             foundation.add(errors, f"{WORKFLOW}: build checkout must target needs.preflight.outputs.release_ref")
+
+
+def check_monotonic_candidate_ref(
+    policy: dict[str, Any],
+    workflow: Workflow | None,
+    errors: list[str],
+) -> None:
+    configured = (
+        policy.get("signed_flatpak_publish", {})
+        .get("monotonic_remote_update", {})
+        .get("candidate_ref_source")
+    )
+    if configured != CANDIDATE_REF_SOURCE:
+        foundation.add(
+            errors,
+            f"{POLICY_FILE}: monotonic_remote_update.candidate_ref_source must be {CANDIDATE_REF_SOURCE}",
+        )
+    if workflow is not None and not _monotonic_candidate_uses_release_ref(workflow):
+        foundation.add(errors, f"{WORKFLOW}: monotonic rollback candidate ref must use validated release_ref")
 
 
 def check_secret_scope(workflow: Workflow | None, raw: str, errors: list[str]) -> None:
@@ -278,6 +299,159 @@ def _build_checkout_targets_release_ref(workflow: Workflow) -> bool:
         return False
     with_value = checkouts[0].raw.get("with")
     return isinstance(with_value, dict) and with_value.get("ref") == "${{ needs.preflight.outputs.release_ref }}"
+
+
+def _monotonic_candidate_uses_release_ref(workflow: Workflow) -> bool:
+    preflight = workflow.jobs.get("preflight")
+    if preflight is None:
+        return False
+    release_steps = [step for step in preflight.steps if step.raw.get("id") == "release"]
+    if len(release_steps) != 1:
+        return False
+    step = release_steps[0]
+    if (
+        _has_condition(preflight)
+        or _has_condition(step)
+        or _continues_on_error(preflight)
+        or _continues_on_error(step)
+        or not _supported_run_context(workflow, preflight, step, require_root=True)
+    ):
+        return False
+    blocks = [
+        block
+        for block in _top_level_python_blocks(step.run)
+        if _is_monotonic_body(block[1])
+    ]
+    if len(blocks) != 1:
+        return False
+    assignments: list[tuple[str, str]] = []
+    for line in blocks[0][0]:
+        match = re.fullmatch(r'([A-Z][A-Z0-9_]*)=(\S.*)[ \t]+\\', line)
+        if match is None:
+            return False
+        assignments.append((match.group(1), match.group(2)))
+    candidate_values = [value for name, value in assignments if name == "CANDIDATE_REF"]
+    return candidate_values == ['"$release_ref"']
+
+
+def _is_monotonic_body(body: str) -> bool:
+    """Recognise the actual input and comparison statements, never comment tokens."""
+    try:
+        module = ast.parse(body)
+    except SyntaxError:
+        return False
+    expected_ref = ast.dump(ast.parse('candidate_ref = os.environ["CANDIDATE_REF"]').body[0])
+    ref_writes = [
+        node for node in ast.walk(module)
+        if isinstance(node, ast.Name) and node.id == "candidate_ref" and isinstance(node.ctx, ast.Store)
+    ]
+    if len(ref_writes) != 1 or expected_ref not in [ast.dump(node) for node in module.body]:
+        return False
+    expected_key = ast.dump(ast.parse("candidate_key = version_key(candidate)").body[0])
+    if expected_key not in [ast.dump(node) for node in module.body]:
+        return False
+    expected_test = ast.dump(ast.parse("candidate_key == published_key", mode="eval").body)
+    comparisons = [
+        node for node in module.body
+        if isinstance(node, ast.If) and ast.dump(node.test) == expected_test
+    ]
+    expected_source = ast.dump(ast.parse(
+        "same_source = published_ref == candidate_ref and published_commit == candidate_commit"
+    ).body[0])
+    return len(comparisons) == 1 and expected_source in [ast.dump(node) for node in comparisons[0].body]
+
+
+def _top_level_python_blocks(run: str) -> list[tuple[list[str], str]]:
+    lines = run.splitlines()
+    blocks: list[tuple[list[str], str]] = []
+    controls: list[str] = []
+    substitutions: list[tuple[str, int]] = []
+    quote = ""
+    index = 0
+    while index < len(lines):
+        stripped = lines[index].strip()
+        quote = _update_substitution_scope(lines[index], substitutions, quote)
+        if "<<'PY'" in stripped:
+            end = index + 1
+            while end < len(lines) and lines[end].strip() != "PY":
+                end += 1
+            if end >= len(lines):
+                return []
+            prefix_start = index
+            while prefix_start > 0 and lines[prefix_start - 1].rstrip().endswith("\\"):
+                prefix_start -= 1
+            if (
+                stripped == "python3 - <<'PY'"
+                and not controls
+                and not substitutions
+                and not quote
+                and all(lines[item] == lines[item].lstrip() for item in range(prefix_start, index + 1))
+            ):
+                blocks.append((lines[prefix_start:index], "\n".join(lines[index + 1 : end])))
+            index = end + 1
+            continue
+        if not _update_control_stack(stripped, controls):
+            return []
+        index += 1
+    return blocks if not controls and not substitutions and not quote else []
+
+
+def _update_substitution_scope(line: str, stack: list[tuple[str, int]], quote: str) -> str:
+    """Track multiline $(...) owners while preserving their surrounding quotes."""
+    index = 0
+    while index < len(line):
+        char = line[index]
+        if char == "\\" and quote != "'":
+            index += 2
+            continue
+        if quote == "'":
+            if char == "'":
+                quote = ""
+        elif line[index:index + 2] == "$(":
+            stack.append((quote, 1))
+            quote = ""
+            index += 1
+        elif quote:
+            if char == quote:
+                quote = ""
+        elif char in {"'", '"'}:
+            quote = char
+        elif char == "#" and (index == 0 or line[index - 1].isspace()):
+            break
+        elif stack and char in {"(", ")"}:
+            parent_quote, depth = stack[-1]
+            depth += 1 if char == "(" else -1
+            if depth:
+                stack[-1] = parent_quote, depth
+            else:
+                stack.pop()
+                quote = parent_quote
+        index += 1
+    return quote
+
+
+def _update_control_stack(line: str, controls: list[str]) -> bool:
+    command = line.split("#", maxsplit=1)[0].strip()
+    if not command:
+        return True
+    closing = {"fi": "if", "done": "loop", "esac": "case", "}": "brace"}
+    if re.fullmatch(r'}\s+>>?\s+"\$GITHUB_OUTPUT"', command):
+        return bool(controls) and controls.pop() == "brace"
+    if command in closing:
+        return bool(controls) and controls.pop() == closing[command]
+    if re.match(r"^if\b.*;\s*then$", command):
+        controls.append("if")
+    elif re.match(r"^(?:for|while|until)\b.*;\s*do$", command):
+        controls.append("loop")
+    elif re.match(r"^case\b.*\bin$", command):
+        controls.append("case")
+    elif command == "{" or re.match(r"^[A-Za-z_][A-Za-z0-9_]*\(\)\s*\{$", command):
+        controls.append("brace")
+    elif re.match(r"^(?:if|then|for|while|until|select|do|case|function)\b", command):
+        return False  # Unsupported shell control cannot establish an active owner.
+    elif command in {"(", ")"} or re.search(r"(?:&&|\|\|)\s*\($", command):
+        return False
+    return True
 
 
 def _check_required_validate_jobs(policy: dict[str, Any], workflow: Workflow, errors: list[str]) -> None:

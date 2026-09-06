@@ -131,6 +131,7 @@
     "monotonic_remote_update": {
       "older_tag_overwrite": "forbidden_by_default",
       "required_check": "Compare candidate version/ref against the currently published beta Pages remote before deleting or overwriting site/flatpak/repo.",
+      "candidate_ref_source": "validated_release_ref",
       "manual_rerun_behavior": "Must be idempotent for the same release and must fail for older releases unless emergency_rollback is explicitly active.",
       "legacy_pages_metadata_without_source_allowed_only_for_newer_version": true,
       "emergency_rollback": {

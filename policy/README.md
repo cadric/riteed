@@ -118,6 +118,7 @@ Review artifacts use fixed semantic tags where a field would otherwise be ambigu
   inline status logic or presence of success-related words is not evidence.
 - `workflow_dispatch` release publishes may target an explicit `release_ref`, but
   that ref must be a validated `v*` tag, the build job must checkout that tag,
+  the monotonic rollback comparison must use it as the candidate ref,
   and legacy Pages metadata without source-ref/source-commit is accepted only
   when publishing a newer version than the current beta page.
 - `github_actions_release_safety.rollback_environment.reviewed_required_reviewers` is the exact allowlist for the emergency rollback environment's required reviewer identities; the live governance job must match `(actor_type, actor_id)` and missing or extra reviewers fail validation.

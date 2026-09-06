@@ -360,8 +360,8 @@
     },
     {
       "file": "release.policy.json",
-      "sha256": "fd666c73e5339b52e040c519bb72ce2de3f74736f54577a936c43e337585112a",
-      "bytes": 14355
+      "sha256": "cbfa2dbf30e12e53f072027e21b6e617002849dd2290163b0f41c3f286cae5c8",
+      "bytes": 14410
     },
     {
       "file": "stress-fuzz.policy.json",

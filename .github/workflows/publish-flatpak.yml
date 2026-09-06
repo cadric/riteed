@@ -239,7 +239,7 @@ jobs:
           fi
 
           CANDIDATE_VERSION="$version" \
-          CANDIDATE_REF="$GITHUB_REF_NAME" \
+          CANDIDATE_REF="$release_ref" \
           CANDIDATE_COMMIT="$tag_commit" \
           PUBLISHED_VERSION="$published_version" \
           PUBLISHED_SOURCE_REF="$published_source_ref" \
