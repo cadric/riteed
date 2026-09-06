@@ -131,7 +131,7 @@
     },
     {
       "path": "src/dialogs/encoding.rs",
-      "line": 289,
+      "line": 278,
       "match": "callback: RefCell<Option<EncodingCallback>>,",
       "kind": "runtime-shared-state",
       "ownership": "The encoding chooser owns its one-shot response callback for the dialog lifetime.",
@@ -139,7 +139,7 @@
     },
     {
       "path": "src/dialogs/encoding.rs",
-      "line": 290,
+      "line": 279,
       "match": "handled: Cell<bool>,",
       "kind": "runtime-shared-state",
       "ownership": "The encoding chooser owns its close/response guard.",

@@ -30,6 +30,8 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
   active scheduled/manual CI execution.
 
 ### Fixed
+- The encoding chooser now has a visible native dialog header and accessible
+  close control instead of exposing its title only to assistive metadata.
 - Editing an already-dirty document no longer rebuilds tab title presentation
   on every keystroke; dirty and saved indicator transitions still refresh.
 - Project sidebar toggles and project search now remain closed when no project

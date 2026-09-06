@@ -2,6 +2,17 @@
 
 ## OUTCOMES
 
+- 2026-09-06 audit P3 Task 5 (RIT-GEN-025): the encoding chooser now uses the
+  shared AdwDialog shell, giving its existing title a visible `AdwWindowTitle`
+  and its header a real accessible close button without new user-visible copy.
+  The existing 420-pixel content width and content-following size behavior are
+  retained. A real GTK pre-fix RED observed both visible-title and real-close
+  states as false; focused GREEN asserts the visible `WindowTitle("Choose")`
+  and `window-close-symbolic` button in all ten existing close/reopen rounds,
+  while the encoding leak canary still clears after every close. Runtime-review
+  anchors were moved to the unchanged callback/handled fields. No dependency,
+  policy, remote state or Flatpak installation changed.
+
 - 2026-09-06 audit P3 Task 3 (RIT-GEN-026): ordinary content changes still
   advance the dirty generation and schedule Markdown preview and Source Control
   minimap work, but no longer rebuild tab title presentation on every edit.

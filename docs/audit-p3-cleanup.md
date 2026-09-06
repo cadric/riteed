@@ -279,6 +279,33 @@ The Task 9 opportunistic rename was not taken: `gtk_tests_v13.rs` remains a
 small feature-level GTK suite, and no existing feature-named status-flow file
 would accept this one flow without unrelated module/test movement.
 
+## RIT-GEN-025: native encoding dialog shell (Task 5)
+
+The encoding chooser previously set `AdwDialog:title` but placed its content
+directly in the dialog. The title was therefore assistive metadata rather than
+a visible header, and the dialog had no native header close control.
+
+The chooser now passes its existing title through `build_dialog_shell`, reuses
+the shell's content box, and keeps the existing 420-pixel width and
+`follows-content-size=true` behavior. No gettext string changed or was added.
+Current libadwaita documentation confirms that an `AdwHeaderBar` inside an
+`AdwDialog` adapts its decoration layout to a close-only control, and that an
+`AdwWindowTitle` is the supported custom title widget.
+
+The dialog-lifecycle GTK flow now fails explicitly if its window fixture cannot
+be built. In each of the existing ten encoding rounds it traverses the actual
+presented widget tree and requires a visible `AdwWindowTitle` containing the
+fixture title, plus a visible button-role control containing the
+`window-close-symbolic` image. The definitive pre-fix RED observed both states
+as `(false, false)` instead of `(true, true)`. Focused GREEN passed all rounds,
+and the existing encoding leak canary continued to clear after every real
+dialog close.
+
+Removing the direct dialog/content builders shifted two existing runtime-review
+anchors. Only their line numbers were updated; their matches, ownership and
+justifications are unchanged. There were no encoding-dialog i18n-review anchors
+to move.
+
 ## Validation environment
 
 The existing Solarized chrome test assumes ordinary contrast. The desktop's

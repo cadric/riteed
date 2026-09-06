@@ -6,6 +6,8 @@ use gtk4::{gio, prelude::*};
 use libadwaita as adw;
 use libadwaita::prelude::*;
 
+use crate::dialog_shell::build_dialog_shell;
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum DecodeFailureResponse {
     Cancel,
@@ -190,6 +192,8 @@ fn present_encoding_dialog(
     accept_label: &str,
     on_response: impl FnOnce(Option<sourceview5::Encoding>) + 'static,
 ) -> adw::Dialog {
+    let shell = build_dialog_shell(title, 420, None, true);
+    let dialog = shell.dialog;
     let model = encodings
         .iter()
         .map(|encoding| encoding.to_str().to_string())
@@ -206,14 +210,7 @@ fn present_encoding_dialog(
         dropdown.set_selected(selected);
     }
 
-    let content = gtk4::Box::builder()
-        .orientation(gtk4::Orientation::Vertical)
-        .spacing(18)
-        .margin_bottom(18)
-        .margin_end(18)
-        .margin_start(18)
-        .margin_top(18)
-        .build();
+    let content = shell.content;
 
     let description_label = gtk4::Label::builder()
         .wrap(true)
@@ -234,14 +231,6 @@ fn present_encoding_dialog(
     button_box.append(&cancel_button);
     button_box.append(&accept_button);
     content.append(&button_box);
-
-    let dialog = adw::Dialog::builder()
-        .title(title)
-        .content_width(420)
-        .follows_content_size(true)
-        .can_close(true)
-        .child(&content)
-        .build();
 
     let state = Rc::new(EncodingDialogState {
         dialog: dialog.downgrade(),
