@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import contextlib
 import copy
+import io
 import unittest
 from unittest import mock
 from typing import Any
 
+from tools import ruleset_governance_check
 from tools.checks import governance_environment
 
 
@@ -66,6 +69,65 @@ def _errors(
 
 
 class GovernanceEnvironmentTests(unittest.TestCase):
+    def test_configured_secret_identifier_is_not_emitted_in_diagnostics(self) -> None:
+        sentinel = "SENSITIVE_POLICY_IDENTIFIER_SENTINEL"
+        policy = _policy()
+        policy["github_actions_release_safety"]["repository_governance"][
+            "truthful_checks"
+        ]["live_secret"] = sentinel
+        repo_copy = _pages("secrets", [{"name": sentinel}])
+        missing_env = _pages("secrets", [])
+
+        errors: list[str] = []
+        governance_environment.check_payloads(
+            _environment(),
+            _pages("branch_policies", [{"id": 1, "name": "main", "type": "branch"}]),
+            repo_copy,
+            missing_env,
+            policy,
+            errors,
+        )
+        self.assertEqual(len(errors), 2, errors)
+        self.assertNotIn(sentinel, "\n".join(errors))
+
+        def fetch_pages(url: str, *_args: Any) -> Any:
+            if url.endswith("deployment-branch-policies?per_page=100"):
+                return _pages(
+                    "branch_policies", [{"id": 1, "name": "main", "type": "branch"}]
+                )
+            if "/environments/" in url:
+                return missing_env
+            return repo_copy
+
+        output = io.StringIO()
+        with (
+            mock.patch.object(
+                ruleset_governance_check.foundation, "release_policy", return_value=policy
+            ),
+            mock.patch.object(
+                ruleset_governance_check.remediation,
+                "validate_planned_remediation",
+                return_value=set(),
+            ),
+            mock.patch.object(ruleset_governance_check.rulesets, "check_ruleset_governance"),
+            mock.patch.object(
+                ruleset_governance_check.rulesets,
+                "check_rollback_environment_governance",
+            ),
+            mock.patch.object(governance_environment.github_api, "github_token", return_value="token"),
+            mock.patch.object(
+                governance_environment.github_api, "fetch_json", return_value=_environment()
+            ),
+            mock.patch.object(
+                governance_environment.github_api, "fetch_pages", side_effect=fetch_pages
+            ),
+            contextlib.redirect_stdout(output),
+        ):
+            self.assertEqual(ruleset_governance_check.main(), 1)
+        self.assertIn("absent at repository scope", output.getvalue())
+        self.assertIn("exactly once at environment scope", output.getvalue())
+        self.assertNotIn(sentinel, output.getvalue())
+
     def test_remote_check_requires_a_token(self) -> None:
         with mock.patch.object(governance_environment.github_api, "github_token", return_value=None):
             errors: list[str] = []

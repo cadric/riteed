@@ -16,7 +16,12 @@
   and 84.6% coverage passed. Independent review is clear. The repository owner
   approved the bounded remote activation, but no remote state was changed by
   this local task; `POLICY-RIT-GEN-038` remains open pending environment/secret/
-  context activation and real PR/main/publish evidence.
+  context activation and real PR/main/publish evidence. PR #38 CodeQL high
+  alert 185 traced a policy-configured secret identifier, not a credential
+  value, into repository-present and environment-missing diagnostics. The
+  follow-up keeps both decisions but emits scope-only messages; a synthetic
+  sentinel regression covers the helper and actual CLI output. CodeQL rerun
+  evidence remains pending.
 
 - 2026-09-06 audit P3 Task 7 (RIT-GEN-028): manual release preflight now
   resolves one peeled 40-hex tag commit and reads Cargo/AppStream metadata

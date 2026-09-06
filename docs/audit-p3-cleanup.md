@@ -157,6 +157,15 @@ Logs are under `/tmp/riteed-p3-validation-hGkt8u/` as
 `task8b-final-policy-pack.log`, `task8b-final-app-strict.log`, and
 `task8b-final-coverage.log`.
 
+PR #38 CodeQL high alert 185 subsequently traced the configured `live_secret`
+identifier into repository-present and environment-missing diagnostics. The
+source is a policy identifier, not a PAT value, and no credential-value access
+was demonstrated. The follow-up nevertheless minimizes diagnostic data: both
+checks retain their decisions but report only the failing scope. A synthetic
+identifier regression was RED against the PR head and now proves the helper
+errors and actual CLI stdout do not repeat that identifier. Remote CodeQL rerun
+evidence remains pending.
+
 ## Validation environment
 
 The existing Solarized chrome test assumes ordinary contrast. The desktop's

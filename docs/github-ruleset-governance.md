@@ -202,6 +202,14 @@ including newest-check selection and the exact run/job/decisive-step producer.
 The live governance checker also validates the exact environment branch policy,
 repository-secret absence and environment-secret presence across all pages.
 
+On PR #38, CodeQL high alert 185 traced the policy-configured `live_secret`
+identifier through the repository-present and environment-missing diagnostics
+to CLI stdout. That identifier is not the PAT value, and the path does not read
+a credential value. The local follow-up still removes the unnecessary copy:
+diagnostics now state only repository or environment scope while preserving
+both failures. A synthetic configured-identifier regression covers direct
+helper errors and actual CLI output. Alert status awaits the remote rerun.
+
 `POLICY-RIT-GEN-038` remains open. This local implementation has not created
 the environment or moved the secret or required context. The candidate PR is
 expected to remain blocked by the old required context until the recorded

@@ -98,10 +98,12 @@ def check_payloads(
     if actual_branches != [expected_branch]:
         errors.append(f"{environment_name}: exactly one main branch deployment policy is required.")
     if any(item.get("name") == secret_name for item in repo_secrets):
-        errors.append(f"Repository secret {secret_name} must be absent.")
+        errors.append("Configured governance secret must be absent at repository scope.")
     matching_env = [item for item in env_secrets if item.get("name") == secret_name]
     if len(matching_env) != 1:
-        errors.append(f"Environment secret {secret_name} must exist exactly once.")
+        errors.append(
+            "Configured governance secret must exist exactly once at environment scope."
+        )
 
 
 def _config(
