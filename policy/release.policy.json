@@ -39,6 +39,7 @@
     "app/build-aux/flatpak/**",
     "policy/**",
     "tools/checks/dependency_preflight.py",
+    "tools/checks/release_guards.py",
     "tools/policy_check.py"
   ],
   "overlaps_with": [
@@ -325,10 +326,24 @@
       }
     }
   },
-  "planned_remediation": [],
+  "planned_remediation": [
+    {
+      "finding_id": "POLICY-RIT-GEN-028",
+      "target_milestone": "P3 Task 7",
+      "review_artifact": "docs/policy-validation.md",
+      "created": "2026-09-06",
+      "max_age_days": 120,
+      "reason": "Release preflight reads AppStream metadata from the working checkout rather than the validated tag commit SHA, and the signing build checks out the validated tag ref rather than the validated tag commit SHA.",
+      "removal_condition": "Read AppStream metadata from the validated tag commit SHA, checkout the preflight tag_commit output before signing, and add passing regression fixtures that reject loss of either SHA binding."
+    }
+  ],
   "verifiers": {
     "workflow_static_checks": [
-      "publish workflow tag/version/AppStream consistency",
+      "publish workflow tag/version consistency",
+      "tag commit ancestry against the fetched origin/main ref in active preflight",
+      "AppStream top release comparison against the release tag in active preflight",
+      "temporary GNUPGHOME mode and agent/removal cleanup before private-key import",
+      "GitHub-hosted Ubuntu runner and preflight dependency for the signing build",
       "validation gate before signing secret access",
       "signing environment scoping",
       "GPG public key pin against committed public key",

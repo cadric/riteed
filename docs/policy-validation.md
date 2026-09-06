@@ -23,7 +23,7 @@ it is not a test-coverage percentage.
 | Gettext | Extraction/POT equality, catalog format validation and source-linked context review. Extraction cannot prove that every arbitrary Rust string intended for display uses gettext. |
 | Dependencies | Exact stack/lock synchronization and complete accounting of generated Cargo source entries. Every archive/checksum must belong to the lockfile; only the reviewed vendor config is additionally allowed. |
 | Release check status | `tools.release_check_runs` executes the exact-commit, app-identity, newest-run, completed-success decision. Incomplete pagination, invalid IDs and malformed input fail closed. Offline tests exercise actual decisions. |
-| Release workflow wiring | Exact helper invocation before signing, exact build checkout ref, approved governance condition, supported shell/working directory, and an unconditional success dependency chain for every signing job. Folded YAML scalars and conditional/error-tolerant gate paths are rejected. General workflow shell remains reviewed code. |
+| Release workflow wiring | Exact helper invocation before signing, tag ancestry against fetched `origin/main`, AppStream top-release comparison, private-key import cleanup, GitHub-hosted signing runner, exact build checkout ref, approved governance condition, supported shell/working directory, and an unconditional success dependency chain for every signing job. Folded YAML scalars, decoy owners and conditional/error-tolerant paths are rejected. General workflow shell remains reviewed code. |
 | Live repository governance | Separate token-scoped governance job. Offline policy validation cannot certify current remote settings. |
 | App line coverage | Separate `tools.coverage_check` invocation; the percentage applies to app coverage, not Python validator tests. |
 | Validator implementation | Root unittest discovery in CI plus negative fixtures. `--policy-pack-check` itself checks policy bundle integrity and scoped line limits; it is not a replacement for those tests. |
@@ -59,8 +59,11 @@ Dedicated suites cover the 2026-09-05 audit failures:
 `test_policy_audit`, `test_cargo_source_inventory`,
 `test_release_gate_hardening`, `test_rust_scanner_hardening`,
 `test_ui_xml_hardening` and `test_source_scope` under `tools/tests/`.
-They use temporary local fixtures and never execute mutated workflow shell
-or require network access. Run them together with existing validator tests:
+They use temporary local fixtures and require no network access. The release
+guard suite also executes only the extracted ancestry commands against a local
+temporary Git remote and the extracted AppStream Python block against temporary
+metadata; mutated workflow shell is never executed. Run them together with
+existing validator tests:
 
 ```sh
 python3 -m unittest discover -s tools/tests -v
@@ -74,3 +77,10 @@ fetch all pages with `filter=all`, then evaluate required checks for the exact
 commit. Highest check-run ID selects the newest created run; queued/in-progress
 reruns invalidate earlier successes. If the result changes during pagination,
 validation fails and must be rerun.
+
+The P2 release guard checks prove that the active preflight and signing jobs
+retain their reviewed guard structure. `POLICY-RIT-GEN-028` records the
+remaining SHA-binding gap: AppStream metadata still comes from the working
+checkout, and the build checkout still resolves the validated tag ref. P3 Task
+7 must read metadata from the validated commit SHA, checkout that exact SHA,
+and add negative fixtures for both bindings before the debt entry is removed.

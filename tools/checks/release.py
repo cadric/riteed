@@ -8,7 +8,7 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-from tools.checks import foundation, release_workflow, remediation, workflow_images
+from tools.checks import foundation, release_guards, release_workflow, remediation, workflow_images
 from tools.validation_tooling import contract_root, normalize_path, read_text
 
 
@@ -48,6 +48,7 @@ def check_release(root: Path, errors: list[str]) -> None:
     else:
         foundation.add(errors, "Missing validation workflow: .github/workflows/validate.yml")
     release_workflow.check_publish_triggers(workflow_model, errors)
+    release_guards.check(policy, workflow_model, errors)
     release_workflow.check_monotonic_candidate_ref(policy, workflow_model, errors)
     release_workflow.check_secret_scope(workflow_model, workflow, errors)
     release_workflow.check_validation_gate(policy, workflow_model, active, errors)

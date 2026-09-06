@@ -26,6 +26,9 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
   by manual-dispatch preflight, preserving idempotent same-release republishes.
 - Release validation now requires exact SHA-256 digests for CI job containers
   and actual Docker pull/run image operands, preventing tags from drifting.
+- Release validation now rejects removal or decoy placement of tag ancestry,
+  AppStream version, hosted signing runner, and temporary GPG-home cleanup
+  guards before a signed Flatpak publish.
 - Saving during window close no longer aborts the app. Close callbacks are
   bound to their original document and close operation.
 - Save-and-close now keeps newer unsaved edits and their undo history, including

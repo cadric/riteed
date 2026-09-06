@@ -27,6 +27,10 @@ CI runs validator unit tests separately.
 - `cargo_source_inventory` owns the permitted generated archive/inline field
   sets and the exact parsed vendor configuration. Unknown sources, extra
   source options, orphaned checksums and non-lockfile archives fail.
+- Release guard validation owns the active preflight tag-ancestry and AppStream
+  comparison blocks plus the signing job's hosted runner and temporary GPG-home
+  cleanup. Typed remediation remains required for the separate validated-SHA
+  metadata and checkout bindings.
 - `rust.targets.rust.target_rust_family` and `rust.toolchain.required_components`
   drive toolchain checks directly; their values are not duplicated in Python.
 - UI XML uses structural parsing. Runtime review uses lexical comment/literal
