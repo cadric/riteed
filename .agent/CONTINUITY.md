@@ -2,6 +2,31 @@
 
 ## OUTCOMES
 
+- 2026-09-06 P2 integration follow-up: the user approved committing P2
+  and merging it into local main before the separate P3 cleanup. This
+  supersedes the earlier no-commit/build status below. Twelve signed commits
+  preserve the exact reviewed and validated task snapshots:
+  Task 1: `f7432453` (RIT-GEN-007).
+  Task 2: `9c880913` (RIT-GEN-008/010/019).
+  Task 3: `aef6df6f` (RIT-GEN-011).
+  Task 4: `d9830119` (RIT-GEN-009).
+  Task 5: `e38c09de` (RIT-GEN-012).
+  Task 6: `a307697b` (RIT-GEN-013).
+  Task 7: `1aa8d76a` (RIT-GEN-014).
+  Task 8: `5fe532d4` (RIT-GEN-015).
+  Task 9: `229958da` (RIT-GEN-016).
+  Task 10: `33ce8322` (RIT-GEN-017).
+  Task 11: `a788f714` (RIT-GEN-018).
+  Task 12: `aeb7a7cf` (P2 documentation).
+  A fresh pre-commit full app suite passed all 447 tests. The final P2
+  policy/tooling/coverage gates passed with 83.8% coverage. The installed
+  Flatpak `4c367357fd1e` has a binary identical to the completed P2 build;
+  the user found the manual test result reasonable. No release or push.
+  RIT-GEN-019 is included; RIT-GEN-028 remains typed P3 debt. P3 starts
+  from the integrated P2 tree and must reconcile its historical plan first.
+  Per-task evidence and the integration report remain in the preserved
+  `/home/cadric/Projects/riteed-worktrees/fix-audit-p2/.superpowers/sdd/2026-07-06-audit-p2-remediation/`.
+
 - 2026-09-06 audit P2 remediation is implemented in the isolated
   `fix/audit-p2` worktree based on local main `4510e909` (two commits ahead
   of origin/main). Tasks 1–10 have no commits by user instruction; optional
