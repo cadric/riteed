@@ -15,6 +15,8 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 ## Unreleased
 
 ### Changed
+- Expanded regression coverage for overlapping file opens and the complete
+  generated Cargo source inventory, preserving the existing fixes.
 - Scheduled stress validation now runs monthly instead of daily while keeping
   manual workflow dispatch available for release and high-risk change checks.
 - Added offset-framed fuzz and property coverage for paged UTF-8 decoding, with

@@ -1,6 +1,38 @@
 # Continuity
 
 ## OUTCOMES
+
+- 2026-09-06 audit P2 remediation is implemented in the isolated
+  `fix/audit-p2` worktree based on local main `4510e909` (two commits ahead
+  of origin/main). Tasks 1–10 have no commits by user instruction; optional
+  permission from Task11 onward was not used, preserving the uncommitted
+  task boundaries. No merge, push, release dispatch or Flatpak build/install.
+  RIT-GEN-007 now supervises Git operations until owned I/O and child reaping
+  finish. RIT-GEN-008/010/019 use separate owned refresh/diff/mutation slots,
+  retain cancelled writers across root changes, and recover current status;
+  RIT-GEN-019 is absorbed here from P3. RIT-GEN-009 escapes review display
+  paths without changing raw identity; RIT-GEN-012 skips redundant minimap
+  Git children; RIT-GEN-013 normalizes CRLF as one Markdown line ending.
+  Those fixes have genuine pre-fix RED evidence. RIT-GEN-011 was already
+  implemented in `4510e909`; same-turn open URI/text assertions now characterize it.
+  RIT-GEN-014 adds paged UTF-8 property/fuzz coverage, six semantic seeds,
+  registry and actual CI enforcement; no existing parser crash was claimed.
+  RIT-GEN-015 preserves `3051c82a` source-inventory enforcement and verifies its
+  full acceptance matrix plus real generated sources and reviewed patches.
+  RIT-GEN-016 pins/enforces CI image digests; RIT-GEN-017 binds rollback
+  identity to release_ref; RIT-GEN-018 enforces four scoped release guards
+  with real removal REDs and local extracted ancestry/AppStream behavior.
+  Existing save-fixture failures were diagnosed with controlled I/O evidence
+  and repaired without changing save runtime or relaxing timeouts.
+  Tasks 1–11 passed their required app/tooling gates and scoped reviews.
+  Task 11: 447 Rust tests, 276 tools tests (one existing live-token-only
+  skip), 40 policy tests, 83.8% coverage; explicit strict wrapper also passed.
+  Task 12 final gate results are recorded in the completion report.
+  Final evidence and per-finding reports remain under
+  `.superpowers/sdd/2026-07-06-audit-p2-remediation/`; task snapshots replace
+  commit boundaries. P3 RIT-GEN-028 remains typed release-policy debt for
+  SHA-bound AppStream content and build checkout. Live PR image pulls and
+  real manual release dispatch remain external validation, not local proof.
 - 2026-09-05 local Flatpak follow-up completed at the user's request after
   F-01/F-04/F-06 validation: `scripts/local-flatpak-build` built/installed
   Riteed 0.3.8 for the user on GNOME Platform 50. Flatpak commit
