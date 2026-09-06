@@ -2,6 +2,18 @@
 
 ## OUTCOMES
 
+- 2026-09-06 audit P3 Task 13 (RIT-GEN-023): a request to show the project
+  sidebar can no longer commit a true Gio action state when no project root is
+  active, and `win.find-in-files` leaves project search closed in that state.
+  The handler now obtains the controller borrow and validates the root before
+  mutation; no-root requests restore false, while `sidebar_state` remains the
+  single owner of valid-root action state and GSettings persistence. The real
+  failed-restore GTK flow asserts actual action state, action enablement and
+  invocation, search visibility and unchanged writes. Its pre-fix RED observed
+  `Some(true)` instead of `Some(false)` after the direct toggle; focused GREEN
+  passed the complete GTK flow. No user-visible string, dependency, policy,
+  remote state or Flatpak installation changed.
+
 - 2026-09-06 audit P3 Task 8 remote closure (RIT-GEN-038): the approved
   activation placed the governance credential only in the main-restricted
   `ruleset-governance-live` environment, removed the repository copy, and

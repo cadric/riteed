@@ -227,6 +227,34 @@ identifier regression was RED against the PR head and now proves the helper
 errors and actual CLI stdout do not repeat that identifier. Remote CodeQL rerun
 evidence remains pending.
 
+## RIT-GEN-023: rootless project sidebar state (Task 13)
+
+The `project-sidebar-visible` change-state handler previously committed the
+requested boolean before borrowing project state and checking for an active
+root. A no-root true request therefore left the Gio action at true even though
+the sidebar stayed closed. The project-search action also entered project
+search unconditionally.
+
+The handler now acquires the mutable state borrow first. A missing root resets
+the action to false and returns; a valid root delegates directly to
+`sidebar_state::set_sidebar_visibility`, which remains the single owner of the
+action state, animation, callback and GSettings persistence. Project search
+returns before either sidebar or search activation when no root exists.
+
+The existing failed-root GTK restore scenario now fails setup explicitly,
+reads the actual Gio action state rather than the action-enabled tuple, drives
+the real change-state handler, and proves `win.find-in-files` is enabled before
+invoking it. It asserts false action state and closed search after both paths,
+no additional settings writes, and retention of the remembered true
+preference. Existing valid-root toggle and restore coverage remains in the
+same full GTK flow.
+
+The pre-fix focused RED exited 101: the direct no-root toggle produced
+`Some(true)` instead of `Some(false)`. With the minimal reorder and search
+guard, the same complete GTK flow passed. Existing runtime-review anchors for
+`window_project.rs` precede the edited handler and remain exact; no ownership
+or justification metadata changed.
+
 ## Validation environment
 
 The existing Solarized chrome test assumes ordinary contrast. The desktop's

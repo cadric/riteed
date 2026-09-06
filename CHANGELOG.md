@@ -30,6 +30,8 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
   active scheduled/manual CI execution.
 
 ### Fixed
+- Project sidebar toggles and project search now remain closed when no project
+  folder is active, without changing the remembered sidebar preference.
 - Compare reviews that ignore leading and trailing whitespace now retain every
   original line, including an unterminated whitespace-only final line.
 - Split GitHub governance into an unconditional tokenless static check and a

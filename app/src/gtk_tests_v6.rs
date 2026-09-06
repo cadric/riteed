@@ -380,11 +380,8 @@ pub(crate) fn exercise_v6_project_restore(test_app: &adw::Application) {
     failed_settings.set_project_folder_uri(&file_uri);
     failed_settings.set_project_folder_display_name("Remembered");
     failed_settings.set_project_sidebar_visible(true);
-    let failed = Window::new_with_settings_for_tests(test_app, failed_settings.clone()).ok();
-    assert!(failed.is_some());
-    let Some(failed) = failed else {
-        return;
-    };
+    let failed = Window::new_with_settings_for_tests(test_app, failed_settings.clone())
+        .unwrap_or_else(|error| unreachable!("failed-root GTK window: {error:?}"));
     spin_until("restore failure leaves runtime without root", || {
         failed.project_root_uri_for_tests().is_none()
     });
@@ -394,6 +391,33 @@ pub(crate) fn exercise_v6_project_restore(test_app: &adw::Application) {
         failed.project_action_states_for_tests(),
         (false, false, false, false)
     );
+    let sidebar_action_state = || {
+        failed
+            .widget()
+            .action_state("project-sidebar-visible")
+            .and_then(|state| state.get::<bool>())
+    };
+    assert_eq!(sidebar_action_state(), Some(false));
+    let writes_before = failed_settings.write_log_for_tests().len();
+    failed.set_project_sidebar_visible_for_tests(true);
+    drain_events(4);
+    assert_eq!(
+        sidebar_action_state(),
+        Some(false),
+        "a direct sidebar toggle must not commit true without a project root"
+    );
+    assert_eq!(failed_settings.write_log_for_tests().len(), writes_before);
+
+    assert!(!failed.search_visible_for_tests());
+    assert!(failed.widget().is_action_enabled("find-in-files"));
+    let activated =
+        gtk4::prelude::WidgetExt::activate_action(failed.widget(), "win.find-in-files", None);
+    assert!(activated.is_ok(), "win.find-in-files must be invoked");
+    drain_events(4);
+    assert!(!failed.search_visible_for_tests());
+    assert_eq!(sidebar_action_state(), Some(false));
+    assert_eq!(failed_settings.write_log_for_tests().len(), writes_before);
+    assert!(failed_settings.project_sidebar_visible());
     restored.widget().close();
     failed.widget().close();
     drain_events(4);
