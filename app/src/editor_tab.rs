@@ -464,6 +464,11 @@ impl EditorTab {
     }
 
     fn sync_presentation(&self) {
+        #[cfg(test)]
+        {
+            let mut state = self.state.borrow_mut();
+            state.ui.presentation_sync_count = state.ui.presentation_sync_count.saturating_add(1);
+        }
         if let Some(page) = self.page() {
             page.set_title(&self.title());
             page.set_tooltip(&self.subtitle());

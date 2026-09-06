@@ -255,6 +255,30 @@ guard, the same complete GTK flow passed. Existing runtime-review anchors for
 `window_project.rs` precede the edited handler and remain exact; no ownership
 or justification metadata changed.
 
+## RIT-GEN-026: steady-state editor presentation (Task 3)
+
+GTK documents `TextBuffer::changed` as a content-change signal and
+`TextBuffer::modified-changed` as firing when the modified bit flips. Riteed's
+two callbacks both rebuilt tab presentation, so every edit after the document
+was already dirty repeated title, tooltip, indicator and visual-state work.
+
+The content-change callback now retains dirty-generation accounting, Markdown
+preview scheduling and Source Control minimap stale checks, but leaves title
+presentation to the existing modified-state transition callback. Save, open,
+compare and other explicit presentation call sites remain unchanged.
+
+The real GTK regression opens a named file and fails setup if its window or tab
+is missing. It first establishes the legitimate clean-to-dirty transition and
+observes the dirty tab indicator, then resets a per-tab `cfg(test)` counter
+before a six-edit steady-state burst. The pre-fix RED counted six presentation
+rebuilds; the focused GREEN counted zero. A real save writes the burst text,
+clears the dirty indicator, and retains the file title, proving that removing
+the content-change call did not remove dirty or save presentation updates.
+
+The Task 9 opportunistic rename was not taken: `gtk_tests_v13.rs` remains a
+small feature-level GTK suite, and no existing feature-named status-flow file
+would accept this one flow without unrelated module/test movement.
+
 ## Validation environment
 
 The existing Solarized chrome test assumes ordinary contrast. The desktop's

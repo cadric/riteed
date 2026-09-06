@@ -2,6 +2,17 @@
 
 ## OUTCOMES
 
+- 2026-09-06 audit P3 Task 3 (RIT-GEN-026): ordinary content changes still
+  advance the dirty generation and schedule Markdown preview and Source Control
+  minimap work, but no longer rebuild tab title presentation on every edit.
+  `modified-changed` remains the single dirty-transition refresh path. A
+  per-tab, test-only counter measured six rebuilds for six steady-state edits
+  in the pre-fix RED and zero after the one-line callback removal. The real GTK
+  flow establishes a clean tab, observes the dirty indicator, performs the
+  steady-state burst, saves the file, and observes the clean indicator while
+  retaining the file title. No user-visible string, dependency, policy,
+  remote state or Flatpak installation changed.
+
 - 2026-09-06 audit P3 Task 13 (RIT-GEN-023): a request to show the project
   sidebar can no longer commit a true Gio action state when no project root is
   active, and `win.find-in-files` leaves project search closed in that state.

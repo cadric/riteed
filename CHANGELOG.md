@@ -30,6 +30,8 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
   active scheduled/manual CI execution.
 
 ### Fixed
+- Editing an already-dirty document no longer rebuilds tab title presentation
+  on every keystroke; dirty and saved indicator transitions still refresh.
 - Project sidebar toggles and project search now remain closed when no project
   folder is active, without changing the remembered sidebar preference.
 - Compare reviews that ignore leading and trailing whitespace now retain every

@@ -154,6 +154,21 @@ impl EditorTab {
     }
 
     #[cfg(test)]
+    pub(crate) fn reset_presentation_sync_count_for_tests(&self) {
+        self.state.borrow_mut().ui.presentation_sync_count = 0;
+    }
+
+    #[cfg(test)]
+    pub(crate) fn presentation_sync_count_for_tests(&self) -> usize {
+        self.state.borrow().ui.presentation_sync_count
+    }
+
+    #[cfg(test)]
+    pub(crate) fn dirty_indicator_visible_for_tests(&self) -> Option<bool> {
+        self.page().map(|page| page.indicator_icon().is_some())
+    }
+
+    #[cfg(test)]
     pub(crate) fn select_offsets_for_tests(&self, start: i32, end: i32) {
         self.select_offsets(start, end);
     }
