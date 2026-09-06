@@ -15,6 +15,8 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 ## Unreleased
 
 ### Changed
+- Characterized close/reopen ownership with held real open completions, so
+  cancelled old requests cannot clear a successor's pending registration.
 - Expanded regression coverage for overlapping file opens and the complete
   generated Cargo source inventory, preserving the existing fixes.
 - Scheduled stress validation now runs monthly instead of daily while keeping

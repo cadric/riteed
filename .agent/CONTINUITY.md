@@ -2,6 +2,19 @@
 
 ## OUTCOMES
 
+- 2026-09-06 audit P3 Task 2: existing RIT-GEN-022 URI/tab/request-token
+  ownership is characterized with held real workspace-open completions. A's
+  cancelled callback cannot clear B's pending registration; B finishes attached
+  with the expected text and URI. No runtime repair or new RED is claimed.
+  Focused GTK, strict app gate (447 tests), independent review, and coverage
+  (83.8%) passed on fix/audit-p3 based on integrated main 6aaffc3e.
+  Baseline discovery: desktop high-contrast=true makes the existing v10
+  Solarized test fail because app_chrome intentionally emits no custom CSS.
+  Private Xvfb/D-Bus alone still reads that setting. Isolated XDG config/data
+  plus GSETTINGS_BACKEND=memory passes; no desktop preferences were modified.
+  Remaining P3 tasks are not complete. Logs: /tmp/riteed-p3-validation-hGkt8u/;
+  local ledger: docs/superpowers/p3-progress.md.
+
 - 2026-09-06 P2 integration follow-up: the user approved committing P2
   and merging it into local main before the separate P3 cleanup. This
   supersedes the earlier no-commit/build status below. Twelve signed commits

@@ -85,6 +85,13 @@ The new cases run inside the existing single-thread GTK test
   of full Gio completions. Restoring URI-only cleanup in the isolated copy
   provides a separate regression-sensitivity check.
 
+P3 follow-up holds the actual workspace open-completion callbacks in a
+test-only, URI-scoped queue. It closes A, opens attached B for the same file,
+delivers A's cancelled completion while B remains registered, and then
+delivers B's successful completion and checks its text and URI. This is
+characterization of the existing URI/tab/request-token implementation, not a
+new runtime fix or a new failing-first claim.
+
 Only chooser selections and selected lifecycle boundaries are injected by
 tests. The save dialog continuation normalizes the selected path and performs
 the actual snapshot write. Test setup failures are assertions. All GTK runs
