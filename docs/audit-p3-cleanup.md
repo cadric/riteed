@@ -306,6 +306,33 @@ anchors. Only their line numbers were updated; their matches, ownership and
 justifications are unchanged. There were no encoding-dialog i18n-review anchors
 to move.
 
+## RIT-GEN-027: shared streaming-search accumulator (Task 6)
+
+Large-file search previously passed owned carry and match vectors into every
+recursive async window step. The callback cloned the carry before extending it
+and cloned every match collected so far before scanning the next 256 KiB
+window, making accumulated-offset copying grow with both chunk count and match
+count.
+
+Each search now creates one `Rc<RefCell<SearchState>>` containing the bounded
+cross-window carry and match offsets. Processing takes the carry out for the
+combined scan, keeps `current_start` equal to the old carry length, derives the
+same saturating base offset, and either stores the bounded suffix for the next
+window or moves the terminal match vector into `SearchOutcome`. The scoped
+mutable borrow ends before invoking the caller or recursively dispatching the
+next Gio read, so a reentrant completion cannot observe an active borrow.
+
+The exact 10,000-match cap and `reached_cap` result, cancellation checks,
+retained stream ownership, scanned-window offset and cross-chunk stitching are
+unchanged. `scanned_bytes` remains in `SearchOutcome` for Task 10. This was a
+characterization refactor rather than a defect repair: the same seven focused
+search tests passed before and after, including match-cap, cancellation,
+retained-stream, byte-offset and cross-chunk cases; no artificial RED was
+introduced. The existing parser-boundary mapping and test targets remain
+exact, and its review date plus the new shared-state runtime anchor were
+refreshed. The source shift also reanchors the existing test callback result
+cell without changing its ownership or justification.
+
 ## Validation environment
 
 The existing Solarized chrome test assumes ordinary contrast. The desktop's

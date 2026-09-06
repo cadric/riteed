@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::rc::Rc;
 
 use gtk4::{gio, prelude::*};
@@ -14,6 +15,17 @@ pub(crate) struct SearchOutcome {
 }
 
 pub(crate) type SearchCallback = Rc<dyn Fn(Result<SearchOutcome, AppError>)>;
+
+#[derive(Default)]
+struct SearchState {
+    carry: Vec<u8>,
+    matches: Vec<u64>,
+}
+
+enum SearchStep {
+    Complete(SearchOutcome),
+    Continue(u64),
+}
 
 // PARSER-BOUNDARY: id=large_file_streaming_search
 pub(crate) fn search_file(
@@ -42,8 +54,7 @@ pub(crate) fn search_file(
                 query.clone(),
                 cancellable.clone(),
                 0,
-                Vec::new(),
-                Vec::new(),
+                Rc::new(RefCell::new(SearchState::default())),
                 callback.clone(),
             ),
             Err(error) => callback(Err(error)),
@@ -56,8 +67,7 @@ fn search_next(
     needle: Rc<Vec<u8>>,
     cancellable: Option<gio::Cancellable>,
     offset: u64,
-    carry: Vec<u8>,
-    matches: Vec<u64>,
+    state: Rc<RefCell<SearchState>>,
     callback: SearchCallback,
 ) {
     if cancellable
@@ -77,37 +87,47 @@ fn search_next(
         cancellable_for_read.as_ref(),
         Rc::new(move |result| match result {
             Ok(window) => {
-                let carry_len = carry.len();
-                let base_offset = window.offset.saturating_sub(usize_to_u64(carry_len));
-                let mut combined = carry.clone();
-                combined.extend_from_slice(&window.bytes);
+                let scanned_bytes = window
+                    .offset
+                    .saturating_add(usize_to_u64(window.bytes.len()));
+                let step = {
+                    let mut state = state.borrow_mut();
+                    let carry_len = state.carry.len();
+                    let base_offset = window.offset.saturating_sub(usize_to_u64(carry_len));
+                    let mut combined = std::mem::take(&mut state.carry);
+                    combined.extend_from_slice(&window.bytes);
 
-                let mut matches = matches.clone();
-                append_visible_matches(&combined, &needle, carry_len, base_offset, &mut matches);
-                let reached_cap = matches.len() >= VIEWER_SEARCH_MATCH_LIMIT;
-                if window.eof || reached_cap {
-                    callback(Ok(SearchOutcome {
-                        matches,
-                        reached_cap,
-                        scanned_bytes: window
-                            .offset
-                            .saturating_add(usize_to_u64(window.bytes.len())),
-                    }));
-                    return;
+                    append_visible_matches(
+                        &combined,
+                        &needle,
+                        carry_len,
+                        base_offset,
+                        &mut state.matches,
+                    );
+                    let reached_cap = state.matches.len() >= VIEWER_SEARCH_MATCH_LIMIT;
+                    if window.eof || reached_cap {
+                        SearchStep::Complete(SearchOutcome {
+                            matches: std::mem::take(&mut state.matches),
+                            reached_cap,
+                            scanned_bytes,
+                        })
+                    } else {
+                        state.carry = suffix_for_cross_chunk_matches(&combined, needle.len());
+                        SearchStep::Continue(scanned_bytes)
+                    }
+                };
+
+                match step {
+                    SearchStep::Complete(outcome) => callback(Ok(outcome)),
+                    SearchStep::Continue(next_offset) => search_next(
+                        &opened_for_callback,
+                        needle.clone(),
+                        cancellable.clone(),
+                        next_offset,
+                        state.clone(),
+                        callback.clone(),
+                    ),
                 }
-
-                let next_carry = suffix_for_cross_chunk_matches(&combined, needle.len());
-                search_next(
-                    &opened_for_callback,
-                    needle.clone(),
-                    cancellable.clone(),
-                    window
-                        .offset
-                        .saturating_add(usize_to_u64(window.bytes.len())),
-                    next_carry,
-                    matches,
-                    callback.clone(),
-                );
             }
             Err(error) => callback(Err(error)),
         }),

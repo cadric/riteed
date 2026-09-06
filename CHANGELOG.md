@@ -15,6 +15,8 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 ## Unreleased
 
 ### Changed
+- Large-file search now reuses one bounded match-and-carry accumulator across
+  streamed chunks instead of copying all collected offsets for every chunk.
 - Activated the split GitHub governance boundary: pull requests now require
   the tokenless static context, while live governance and its environment-only
   credential are restricted to protected main. Exact-main and Dependabot runs

@@ -2,6 +2,19 @@
 
 ## OUTCOMES
 
+- 2026-09-06 audit P3 Task 6 (RIT-GEN-027): large-file search now owns one
+  `Rc<RefCell<SearchState>>` for its bounded cross-chunk carry and capped match
+  offsets instead of cloning both vectors through every recursive async step.
+  Each window borrows only while updating the accumulator; the borrow ends
+  before either the terminal callback or the next read is dispatched, keeping
+  reentrant callbacks safe. Match cap, reached-cap reporting, cross-chunk base
+  and current-start math, cancellation, retained-stream lifetime and
+  `scanned_bytes` are unchanged. This was a characterization refactor: all
+  seven focused search tests passed before and after, with no artificial RED.
+  Per-task coverage is explicitly deferred to the aggregate final gate; no
+  dependency, policy, user-visible string, remote state or Flatpak installation
+  changed.
+
 - 2026-09-06 audit P3 Task 5 (RIT-GEN-025): the encoding chooser now uses the
   shared AdwDialog shell, giving its existing title a visible `AdwWindowTitle`
   and its header a real accessible close button without new user-visible copy.

@@ -535,6 +535,14 @@
       "kind": "runtime-shared-state",
       "ownership": "Compare scroll synchronization owns a shared handle to the tab-local logical row model.",
       "justification": "Programmatic first-hunk and hunk-navigation scrolls verify the target presentation row against the current row count without copying diff state into the scroll helper."
+    },
+    {
+      "path": "src/large_file/search.rs",
+      "line": 70,
+      "match": "state: Rc<RefCell<SearchState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Each large-file search owns one accumulator shared only by its sequential async window callbacks.",
+      "justification": "Carry and capped match offsets are updated within a scoped main-context borrow that ends before completion callbacks or recursive read dispatch, avoiding per-window vector copies and reentrant borrows."
     }
   ]
 }

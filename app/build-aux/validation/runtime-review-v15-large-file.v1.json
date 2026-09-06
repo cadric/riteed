@@ -107,7 +107,7 @@
     },
     {
       "path": "src/large_file/search.rs",
-      "line": 304,
+      "line": 324,
       "match": "result: &Rc<RefCell<Option<Result<SearchOutcome, AppError>>>>,",
       "kind": "runtime-shared-state",
       "ownership": "The search unit test owns one local callback result cell for one temporary streaming search.",
