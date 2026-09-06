@@ -37,7 +37,7 @@ fn git_operations_have_wall_clock_timeout_and_kill_grace() {
 
 #[test]
 fn detect_repo_does_not_retry_cancel_or_timeout() {
-    let source = include_str!("../git_process.rs");
+    let source = include_str!("client.rs");
     assert!(source.contains("GitProcessError::Cancelled | GitProcessError::TimedOut"));
     assert!(source.contains("callback(Err(error));"));
 }

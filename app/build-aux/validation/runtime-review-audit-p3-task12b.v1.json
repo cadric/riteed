@@ -1,0 +1,293 @@
+{
+  "version": 1,
+  "sites": [
+    {
+      "path": "src/git_process.rs",
+      "line": 163,
+      "match": "fn finish_io(state: &Rc<RefCell<GitRunState>>, output: io_pump::GitIoCapture) {",
+      "kind": "runtime-shared-state",
+      "ownership": "The main-loop Git supervisor owns one runner state until bounded I/O settlement and successful direct-child reaping.",
+      "justification": "Callbacks and timer sources retain only the typed subprocess state. First reason wins; caller cancellation is observed without cancelling supervision, private I/O cleanup waits for direct-child reap, and terminal delivery clears owned sources and disconnects the handler."
+    },
+    {
+      "path": "src/git_process.rs",
+      "line": 255,
+      "match": "fn install_cancellation_watch(state: &Rc<RefCell<GitRunState>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "The main-loop Git supervisor owns one runner state until bounded I/O settlement and successful direct-child reaping.",
+      "justification": "Callbacks and timer sources retain only the typed subprocess state. First reason wins; caller cancellation is observed without cancelling supervision, private I/O cleanup waits for direct-child reap, and terminal delivery clears owned sources and disconnects the handler."
+    },
+    {
+      "path": "src/git_process.rs",
+      "line": 271,
+      "match": "fn accept_user_cancellation(state: &Rc<RefCell<GitRunState>>) -> bool {",
+      "kind": "runtime-shared-state",
+      "ownership": "The main-loop Git supervisor owns one runner state until bounded I/O settlement and successful direct-child reaping.",
+      "justification": "Callbacks and timer sources retain only the typed subprocess state. First reason wins; caller cancellation is observed without cancelling supervision, private I/O cleanup waits for direct-child reap, and terminal delivery clears owned sources and disconnects the handler."
+    },
+    {
+      "path": "src/git_process.rs",
+      "line": 463,
+      "match": "fn request_io_cleanup(state: &Rc<RefCell<GitRunState>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "The main-loop Git supervisor owns one runner state until bounded I/O settlement and successful direct-child reaping.",
+      "justification": "Callbacks and timer sources retain only the typed subprocess state. First reason wins; caller cancellation is observed without cancelling supervision, private I/O cleanup waits for direct-child reap, and terminal delivery clears owned sources and disconnects the handler."
+    },
+    {
+      "path": "src/git_process.rs",
+      "line": 468,
+      "match": "fn cancel_requested_io_after_reap(state: &Rc<RefCell<GitRunState>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "The main-loop Git supervisor owns one runner state until bounded I/O settlement and successful direct-child reaping.",
+      "justification": "Callbacks and timer sources retain only the typed subprocess state. First reason wins; caller cancellation is observed without cancelling supervision, private I/O cleanup waits for direct-child reap, and terminal delivery clears owned sources and disconnects the handler."
+    },
+    {
+      "path": "src/git_process.rs",
+      "line": 478,
+      "match": "fn finish_terminal(state: &Rc<RefCell<GitRunState>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "The main-loop Git supervisor owns one runner state until bounded I/O settlement and successful direct-child reaping.",
+      "justification": "Callbacks and timer sources retain only the typed subprocess state. First reason wins; caller cancellation is observed without cancelling supervision, private I/O cleanup waits for direct-child reap, and terminal delivery clears owned sources and disconnects the handler."
+    },
+    {
+      "path": "src/git_process.rs",
+      "line": 531,
+      "match": "state: &Rc<RefCell<GitRunState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The main-loop Git supervisor owns one runner state until bounded I/O settlement and successful direct-child reaping.",
+      "justification": "Callbacks and timer sources retain only the typed subprocess state. First reason wins; caller cancellation is observed without cancelling supervision, private I/O cleanup waits for direct-child reap, and terminal delivery clears owned sources and disconnects the handler."
+    },
+    {
+      "path": "src/git_process/io_pump.rs",
+      "line": 105,
+      "match": "state: Rc<RefCell<GitIoState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "One stream-pump state owns bounded stdout/stderr accumulators and three asynchronous pipe operations on the runner main context.",
+      "justification": "Each output retains at most cap plus one sentinel and then discards fixed-size reads. Fault callbacks do not abandon sibling pipes; input and output streams close before the one completion callback moves accepted buffers."
+    },
+    {
+      "path": "src/git_process/io_pump.rs",
+      "line": 164,
+      "match": "fn close_input(stream: &gio::OutputStream, state: Rc<RefCell<GitIoState>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "One stream-pump state owns bounded stdout/stderr accumulators and three asynchronous pipe operations on the runner main context.",
+      "justification": "Each output retains at most cap plus one sentinel and then discards fixed-size reads. Fault callbacks do not abandon sibling pipes; input and output streams close before the one completion callback moves accepted buffers."
+    },
+    {
+      "path": "src/git_process/io_pump.rs",
+      "line": 207,
+      "match": "state: Rc<RefCell<GitIoState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "One stream-pump state owns bounded stdout/stderr accumulators and three asynchronous pipe operations on the runner main context.",
+      "justification": "Each output retains at most cap plus one sentinel and then discards fixed-size reads. Fault callbacks do not abandon sibling pipes; input and output streams close before the one completion callback moves accepted buffers."
+    },
+    {
+      "path": "src/git_process/io_pump.rs",
+      "line": 186,
+      "match": "state: Rc<RefCell<GitIoState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "One stream-pump state owns bounded stdout/stderr accumulators and three asynchronous pipe operations on the runner main context.",
+      "justification": "Each output retains at most cap plus one sentinel and then discards fixed-size reads. Fault callbacks do not abandon sibling pipes; input and output streams close before the one completion callback moves accepted buffers."
+    },
+    {
+      "path": "src/git_process/io_pump.rs",
+      "line": 248,
+      "match": "fn close_output(stream: &gio::InputStream, state: Rc<RefCell<GitIoState>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "One stream-pump state owns bounded stdout/stderr accumulators and three asynchronous pipe operations on the runner main context.",
+      "justification": "Each output retains at most cap plus one sentinel and then discards fixed-size reads. Fault callbacks do not abandon sibling pipes; input and output streams close before the one completion callback moves accepted buffers."
+    },
+    {
+      "path": "src/git_process/io_pump.rs",
+      "line": 261,
+      "match": "fn append_chunk(state: &Rc<RefCell<GitIoState>>, kind: PipeKind, chunk: &[u8]) -> bool {",
+      "kind": "runtime-shared-state",
+      "ownership": "One stream-pump state owns bounded stdout/stderr accumulators and three asynchronous pipe operations on the runner main context.",
+      "justification": "Each output retains at most cap plus one sentinel and then discards fixed-size reads. Fault callbacks do not abandon sibling pipes; input and output streams close before the one completion callback moves accepted buffers."
+    },
+    {
+      "path": "src/git_process/io_pump.rs",
+      "line": 278,
+      "match": "fn clear_in_flight(state: &Rc<RefCell<GitIoState>>, kind: PipeKind) {",
+      "kind": "runtime-shared-state",
+      "ownership": "One stream-pump state owns bounded stdout/stderr accumulators and three asynchronous pipe operations on the runner main context.",
+      "justification": "Each output retains at most cap plus one sentinel and then discards fixed-size reads. Fault callbacks do not abandon sibling pipes; input and output streams close before the one completion callback moves accepted buffers."
+    },
+    {
+      "path": "src/git_process/io_pump.rs",
+      "line": 283,
+      "match": "fn clear_in_flight(_state: &Rc<RefCell<GitIoState>>, _kind: PipeKind) {}",
+      "kind": "runtime-shared-state",
+      "ownership": "One stream-pump state owns bounded stdout/stderr accumulators and three asynchronous pipe operations on the runner main context.",
+      "justification": "Each output retains at most cap plus one sentinel and then discards fixed-size reads. Fault callbacks do not abandon sibling pipes; input and output streams close before the one completion callback moves accepted buffers."
+    },
+    {
+      "path": "src/git_process/io_pump.rs",
+      "line": 296,
+      "match": "fn record_io_error(state: &Rc<RefCell<GitIoState>>, error: &glib::Error) {",
+      "kind": "runtime-shared-state",
+      "ownership": "One stream-pump state owns bounded stdout/stderr accumulators and three asynchronous pipe operations on the runner main context.",
+      "justification": "Each output retains at most cap plus one sentinel and then discards fixed-size reads. Fault callbacks do not abandon sibling pipes; input and output streams close before the one completion callback moves accepted buffers."
+    },
+    {
+      "path": "src/git_process/io_pump.rs",
+      "line": 303,
+      "match": "fn record_fault(state: &Rc<RefCell<GitIoState>>, error: GitProcessError) {",
+      "kind": "runtime-shared-state",
+      "ownership": "One stream-pump state owns bounded stdout/stderr accumulators and three asynchronous pipe operations on the runner main context.",
+      "justification": "Each output retains at most cap plus one sentinel and then discards fixed-size reads. Fault callbacks do not abandon sibling pipes; input and output streams close before the one completion callback moves accepted buffers."
+    },
+    {
+      "path": "src/git_process/io_pump.rs",
+      "line": 315,
+      "match": "fn settle_part(state: &Rc<RefCell<GitIoState>>) {",
+      "kind": "runtime-shared-state",
+      "ownership": "One stream-pump state owns bounded stdout/stderr accumulators and three asynchronous pipe operations on the runner main context.",
+      "justification": "Each output retains at most cap plus one sentinel and then discards fixed-size reads. Fault callbacks do not abandon sibling pipes; input and output streams close before the one completion callback moves accepted buffers."
+    },
+    {
+      "path": "src/git_process/io_pump.rs",
+      "line": 346,
+      "match": "fn take_injected_stdin_error(state: &Rc<RefCell<GitIoState>>) -> bool {",
+      "kind": "runtime-shared-state",
+      "ownership": "One stream-pump state owns bounded stdout/stderr accumulators and three asynchronous pipe operations on the runner main context.",
+      "justification": "Each output retains at most cap plus one sentinel and then discards fixed-size reads. Fault callbacks do not abandon sibling pipes; input and output streams close before the one completion callback moves accepted buffers."
+    },
+    {
+      "path": "src/git_process/io_pump.rs",
+      "line": 352,
+      "match": "fn take_injected_stdin_error(_state: &Rc<RefCell<GitIoState>>) -> bool {",
+      "kind": "runtime-shared-state",
+      "ownership": "One stream-pump state owns bounded stdout/stderr accumulators and three asynchronous pipe operations on the runner main context.",
+      "justification": "Each output retains at most cap plus one sentinel and then discards fixed-size reads. Fault callbacks do not abandon sibling pipes; input and output streams close before the one completion callback moves accepted buffers."
+    },
+    {
+      "path": "src/git_process/output_tests.rs",
+      "line": 20,
+      "match": "type HeldGrace = Rc<RefCell<Option<Rc<dyn Fn()>>>>;",
+      "kind": "runtime-shared-state",
+      "ownership": "The output regression fixture owns its main-loop result cells, child handle, control markers and held grace continuation.",
+      "justification": "Controlled children use explicit readiness, emit, release, drain and exit markers. Tests await I/O settlement and direct-child reaping; teardown releases forked descendants and force-reaps the observed direct child."
+    },
+    {
+      "path": "src/git_process/output_tests.rs",
+      "line": 479,
+      "match": "child: Rc<RefCell<Option<super::TestChild>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The output regression fixture owns its main-loop result cells, child handle, control markers and held grace continuation.",
+      "justification": "Controlled children use explicit readiness, emit, release, drain and exit markers. Tests await I/O settlement and direct-child reaping; teardown releases forked descendants and force-reaps the observed direct child."
+    },
+    {
+      "path": "src/git_process/output_tests.rs",
+      "line": 480,
+      "match": "reaped: Rc<Cell<bool>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The output regression fixture owns its main-loop result cells, child handle, control markers and held grace continuation.",
+      "justification": "Controlled children use explicit readiness, emit, release, drain and exit markers. Tests await I/O settlement and direct-child reaping; teardown releases forked descendants and force-reaps the observed direct child."
+    },
+    {
+      "path": "src/git_process/output_tests.rs",
+      "line": 506,
+      "match": ") -> Rc<RefCell<Vec<Result<GitRunOutput, GitProcessError>>>> {",
+      "kind": "runtime-shared-state",
+      "ownership": "The output regression fixture owns its main-loop result cells, child handle, control markers and held grace continuation.",
+      "justification": "Controlled children use explicit readiness, emit, release, drain and exit markers. Tests await I/O settlement and direct-child reaping; teardown releases forked descendants and force-reaps the observed direct child."
+    },
+    {
+      "path": "src/git_process/output_tests.rs",
+      "line": 583,
+      "match": "child: Rc<RefCell<Option<super::TestChild>>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The output regression fixture owns its main-loop result cells, child handle, control markers and held grace continuation.",
+      "justification": "Controlled children use explicit readiness, emit, release, drain and exit markers. Tests await I/O settlement and direct-child reaping; teardown releases forked descendants and force-reaps the observed direct child."
+    },
+    {
+      "path": "src/git_process/output_tests.rs",
+      "line": 584,
+      "match": "reaped: Rc<Cell<bool>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The output regression fixture owns its main-loop result cells, child handle, control markers and held grace continuation.",
+      "justification": "Controlled children use explicit readiness, emit, release, drain and exit markers. Tests await I/O settlement and direct-child reaping; teardown releases forked descendants and force-reaps the observed direct child."
+    },
+    {
+      "path": "src/git_process/output_tests.rs",
+      "line": 585,
+      "match": "forced: Rc<Cell<bool>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "The output regression fixture owns its main-loop result cells, child handle, control markers and held grace continuation.",
+      "justification": "Controlled children use explicit readiness, emit, release, drain and exit markers. Tests await I/O settlement and direct-child reaping; teardown releases forked descendants and force-reaps the observed direct child."
+    },
+    {
+      "path": "src/git_process/output_tests.rs",
+      "line": 612,
+      "match": ") -> Rc<RefCell<Vec<Result<GitRunOutput, GitProcessError>>>> {",
+      "kind": "runtime-shared-state",
+      "ownership": "The output regression fixture owns its main-loop result cells, child handle, control markers and held grace continuation.",
+      "justification": "Controlled children use explicit readiness, emit, release, drain and exit markers. Tests await I/O settlement and direct-child reaping; teardown releases forked descendants and force-reaps the observed direct child."
+    },
+    {
+      "path": "src/git_process/test_hooks.rs",
+      "line": 59,
+      "match": "static OUTPUT_PEAK: RefCell<Option<OutputPeakEntry>> = const { RefCell::new(None) };",
+      "kind": "runtime-shared-state",
+      "ownership": "The test thread owns one identity-guarded logical output-peak observer.",
+      "justification": "The cfg(test) thread-local observer records a conservative bound over both accumulators and in-flight read budgets; its RAII guard removes only the matching hook."
+    },
+    {
+      "path": "src/git_process/output_tests.rs",
+      "line": 245,
+      "match": "fixture.drained.is_file(),",
+      "kind": "runtime-sync-fs",
+      "ownership": "The output regression fixture owns its main-loop result cells, child handle, control markers and held grace continuation.",
+      "justification": "Controlled children use explicit readiness, emit, release, drain and exit markers. Tests await I/O settlement and direct-child reaping; teardown releases forked descendants and force-reaps the observed direct child."
+    },
+    {
+      "path": "src/git_process/output_tests.rs",
+      "line": 292,
+      "match": "pump(\"mutation output drain\", || fixture.drained.is_file());",
+      "kind": "runtime-sync-fs",
+      "ownership": "The output regression fixture owns its main-loop result cells, child handle, control markers and held grace continuation.",
+      "justification": "Controlled children use explicit readiness, emit, release, drain and exit markers. Tests await I/O settlement and direct-child reaping; teardown releases forked descendants and force-reaps the observed direct child."
+    },
+    {
+      "path": "src/git_process/output_tests.rs",
+      "line": 300,
+      "match": "assert!(fixture.exited.is_file());",
+      "kind": "runtime-sync-fs",
+      "ownership": "The output regression fixture owns its main-loop result cells, child handle, control markers and held grace continuation.",
+      "justification": "Controlled children use explicit readiness, emit, release, drain and exit markers. Tests await I/O settlement and direct-child reaping; teardown releases forked descendants and force-reaps the observed direct child."
+    },
+    {
+      "path": "src/git_process/output_tests.rs",
+      "line": 543,
+      "match": "self.ready.is_file()",
+      "kind": "runtime-sync-fs",
+      "ownership": "The output regression fixture owns its main-loop result cells, child handle, control markers and held grace continuation.",
+      "justification": "Controlled children use explicit readiness, emit, release, drain and exit markers. Tests await I/O settlement and direct-child reaping; teardown releases forked descendants and force-reaps the observed direct child."
+    },
+    {
+      "path": "src/git_process/output_tests.rs",
+      "line": 570,
+      "match": "if self.exited.is_file() {",
+      "kind": "runtime-sync-fs",
+      "ownership": "The output regression fixture owns its main-loop result cells, child handle, control markers and held grace continuation.",
+      "justification": "Controlled children use explicit readiness, emit, release, drain and exit markers. Tests await I/O settlement and direct-child reaping; teardown releases forked descendants and force-reaps the observed direct child."
+    },
+    {
+      "path": "src/git_process/output_tests.rs",
+      "line": 560,
+      "match": "while !self.exited.is_file() && !expired.get() {",
+      "kind": "runtime-sync-fs",
+      "ownership": "The output regression fixture owns its main-loop result cells, child handle, control markers and held grace continuation.",
+      "justification": "Controlled children use explicit readiness, emit, release, drain and exit markers. Tests await I/O settlement and direct-child reaping; teardown releases forked descendants and force-reaps the observed direct child."
+    },
+    {
+      "path": "src/git_process/output_tests.rs",
+      "line": 657,
+      "match": "pump(\"controlled output child readiness\", || self.ready.is_file());",
+      "kind": "runtime-sync-fs",
+      "ownership": "The output regression fixture owns its main-loop result cells, child handle, control markers and held grace continuation.",
+      "justification": "Controlled children use explicit readiness, emit, release, drain and exit markers. Tests await I/O settlement and direct-child reaping; teardown releases forked descendants and force-reaps the observed direct child."
+    }
+  ]
+}

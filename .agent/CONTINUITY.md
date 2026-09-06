@@ -2,6 +2,21 @@
 
 ## OUTCOMES
 
+- 2026-09-06 audit P3 Task 12B (RIT-GEN-021): the shared Git runner now
+  concurrently streams stdin/stdout/stderr with cap-plus-sentinel retention,
+  fixed 64 KiB discard reads, uncancelled closes/wait, and terminal delivery
+  only after I/O settlement plus direct-child reap. Caller cancellation reaches
+  supervision through an owned watcher without cancelling cleanup. A private
+  cleanup token is activated only after cleanup is requested and the direct
+  child has reaped, covering inherited descendant pipe descriptors without
+  truncating normal drains or live mutations. The test peak is a conservative
+  logical upper bound, not allocator/RSS evidence. Task 12A and 12B together
+  close RIT-GEN-021. Focused Git/GTK and git-status-stress passed; final strict
+  validation passed 465 library tests plus stress/UI smoke, and coverage was
+  84.7%. Independent rereview cleared the descendant-fixture teardown and
+  found no remaining actionable issue. No GitHub writes or Flatpak build were
+  performed.
+
 - 2026-09-06 audit P3 Task 12A (RIT-GEN-021): Git review worktree reads now
   stop at shared 1,000,001-byte limit plus checked sentinel, require EOF,
   and close owned Gio streams before terminal delivery even on cancellation.

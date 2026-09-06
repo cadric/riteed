@@ -81,7 +81,9 @@ impl ChildRun {
             *child.borrow_mut() = Some(process);
         }));
         config.deadline_fired = Some(run.observer("deadline"));
-        config.communication_settled = Some(run.observer("communication"));
+        config.io_settled = Some(run.observer("io"));
+        config.io_fault = Some(run.observer("io-fault"));
+        config.cancellation_accepted = Some(run.observer("cancellation-accepted"));
         config.wait_completed = Some(run.observer("wait"));
         config.term_sent = Some(run.observer("term"));
         config.force_exited = Some(run.observer("force"));
@@ -119,7 +121,9 @@ impl ChildRun {
             run.child.borrow().is_some(),
             "runner must spawn the fixture"
         );
-        pump("child readiness", || run.directory.join("ready").exists());
+        pump("child readiness or supervised I/O fault", || {
+            run.directory.join("ready").exists() || (kill_on_cancel && run.has("io-fault"))
+        });
         run
     }
 
@@ -254,9 +258,10 @@ fn timeout_term_response_and_ignored_term_have_one_terminal_timeout() {
     let _guard = acquired.ok();
     for mode in ["term-exit", "ignore-term"] {
         let run = ChildRun::start(mode, false, true);
-        pump("communication settled during held grace", || {
-            run.has("communication") && run.grace.borrow().is_some()
+        pump("deadline reaches held grace", || {
+            run.grace.borrow().is_some()
         });
+        assert!(!run.has("io"));
         assert!(run.results.borrow().is_empty());
         assert!(!run.has("term"));
         assert!(!run.has("force"));
@@ -335,8 +340,7 @@ fn readonly_io_failure_forces_cleanup_without_waiting_for_deadline() {
     let run = ChildRun::start_with("io-failure", true, false, |config| {
         config.communication_error = true;
     });
-    run.cancellable.cancel();
-    pump("communication failure", || run.has("communication"));
+    pump("I/O failure", || run.has("io-fault"));
     assert!(
         run.has("force"),
         "read-only I/O failure must force cleanup immediately"
@@ -388,8 +392,7 @@ fn mutation_io_failure_retains_deadline_and_grace_until_reaped() {
         config.communication_error = true;
         config.operation = Duration::from_secs(3);
     });
-    run.cancellable.cancel();
-    pump("communication failure", || run.has("communication"));
+    pump("I/O failure", || run.has("io-fault"));
     assert!(!run.has("force"));
     assert!(!run.has("term"));
     assert!(!run.has("deadline"));

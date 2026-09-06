@@ -1,5 +1,4 @@
 use std::cell::RefCell;
-use std::path::Path;
 use std::rc::Rc;
 use std::sync::{
     Arc,
@@ -9,6 +8,8 @@ use std::time::Duration;
 
 use gtk4::{gio, glib, prelude::*};
 
+mod client;
+mod io_pump;
 mod lifecycle;
 mod log;
 mod ops;
@@ -25,8 +26,9 @@ use lifecycle::{
 pub(super) type ChildStartedObserver = Rc<dyn Fn(TestChild)>;
 pub(crate) use log::{GitCommitSummary, GitLogState};
 pub(crate) use repo::GitRepoContext;
-use repo::fallback_base;
-use support::{base_args, detect_repo_spec, git_env, identity_part_is_valid, stderr_text};
+#[cfg(test)]
+use support::detect_repo_spec;
+use support::{git_env, stderr_text};
 
 const STDERR_CAP: usize = 64 * 1024;
 pub(crate) const GIT_BLOB_BYTE_LIMIT: usize = 1_000_001;
@@ -54,169 +56,10 @@ pub(crate) struct GitIdentity {
     pub(crate) email: String,
 }
 
-impl GitIdentity {
-    pub(crate) fn new(name: String, email: String) -> Result<Self, GitProcessError> {
-        (identity_part_is_valid(&name) && identity_part_is_valid(&email))
-            .then_some(Self { name, email })
-            .ok_or(GitProcessError::InvalidIdentity)
-    }
-}
-
 #[derive(Clone, Debug)]
 pub(crate) struct GitProcess {
     repo: GitRepoContext,
 }
-
-impl GitProcess {
-    #[must_use]
-    pub(crate) fn new(repo: GitRepoContext) -> Self {
-        Self { repo }
-    }
-
-    #[must_use]
-    pub(crate) fn context(&self) -> &GitRepoContext {
-        &self.repo
-    }
-
-    pub(crate) fn detect_repo(
-        folder: &Path,
-        cancellable: &gio::Cancellable,
-        callback: GitCallback<GitRepoContext>,
-    ) {
-        let Some(folder) = folder.to_str() else {
-            callback(Err(GitProcessError::InvalidPath));
-            return;
-        };
-        let folder = String::from(folder);
-        let base = fallback_base(Path::new(&folder));
-        let cancellable_for_retry = cancellable.clone();
-        let folder_for_retry = folder.clone();
-        let base_for_retry = base.clone();
-        let callback_for_retry = Rc::clone(&callback);
-        run_git(
-            detect_repo_spec(&folder, true),
-            cancellable,
-            Rc::new(move |result| match result {
-                Ok(output) => match GitRepoContext::parse(&output.stdout, &base, true) {
-                    Ok(repo) => callback(Ok(repo)),
-                    Err(_error) => run_git(
-                        detect_repo_spec(&folder_for_retry, false),
-                        &cancellable_for_retry,
-                        Rc::new({
-                            let base = base_for_retry.clone();
-                            let callback = Rc::clone(&callback_for_retry);
-                            move |fallback| {
-                                callback(fallback.and_then(|output| {
-                                    GitRepoContext::parse(&output.stdout, &base, false)
-                                }));
-                            }
-                        }),
-                    ),
-                },
-                Err(error @ (GitProcessError::Cancelled | GitProcessError::TimedOut)) => {
-                    callback(Err(error));
-                }
-                Err(_error) => run_git(
-                    detect_repo_spec(&folder_for_retry, false),
-                    &cancellable_for_retry,
-                    Rc::new({
-                        let base = base_for_retry.clone();
-                        let callback = Rc::clone(&callback_for_retry);
-                        move |fallback| {
-                            callback(fallback.and_then(|output| {
-                                GitRepoContext::parse(&output.stdout, &base, false)
-                            }));
-                        }
-                    }),
-                ),
-            }),
-        );
-    }
-
-    #[allow(
-        clippy::too_many_arguments,
-        reason = "RIT-BATCH-2026-07-05-Task7 keeps this private runner signature explicit at call sites."
-    )]
-    fn run<const N: usize>(
-        &self,
-        args: [&str; N],
-        stdin: Option<Vec<u8>>,
-        stdout_cap: usize,
-        allow_failure: bool,
-        kill_on_cancel: bool,
-        cancellable: &gio::Cancellable,
-        callback: GitCallback<GitRunOutput>,
-    ) {
-        match self.spec(args, stdin, stdout_cap, allow_failure, kill_on_cancel) {
-            Ok(spec) => run_git(spec, cancellable, callback),
-            Err(error) => callback(Err(error)),
-        }
-    }
-
-    fn spec<const N: usize>(
-        &self,
-        args: [&str; N],
-        stdin: Option<Vec<u8>>,
-        stdout_cap: usize,
-        allow_failure: bool,
-        kill_on_cancel: bool,
-    ) -> Result<GitSpec, GitProcessError> {
-        let git_dir = self
-            .repo
-            .git_dir
-            .to_str()
-            .map(String::from)
-            .ok_or(GitProcessError::InvalidPath)?;
-        let work_tree = self
-            .repo
-            .work_tree
-            .to_str()
-            .map(String::from)
-            .ok_or(GitProcessError::InvalidPath)?;
-        let mut env: Vec<(String, String)> = git_env()
-            .into_iter()
-            .map(|(name, value)| (String::from(name), String::from(value)))
-            .collect();
-        env.extend([
-            (String::from("GIT_DIR"), git_dir),
-            (String::from("GIT_WORK_TREE"), work_tree),
-        ]);
-        Ok(GitSpec {
-            argv: base_args()
-                .into_iter()
-                .chain(args.into_iter().map(String::from))
-                .collect(),
-            env,
-            stdin,
-            stdout_cap,
-            allow_failure,
-            kill_on_cancel,
-        })
-    }
-
-    fn run_text<const N: usize>(
-        &self,
-        args: [&str; N],
-        allow_failure: bool,
-        cancellable: &gio::Cancellable,
-        callback: GitCallback<String>,
-    ) {
-        self.run(
-            args,
-            None,
-            4096,
-            allow_failure,
-            true,
-            cancellable,
-            Rc::new(move |result| {
-                callback(result.and_then(|output| {
-                    String::from_utf8(output.stdout).map_err(|_| GitProcessError::ParseFailed)
-                }));
-            }),
-        );
-    }
-}
-
 fn run_git(spec: GitSpec, cancellable: &gio::Cancellable, callback: GitCallback<GitRunOutput>) {
     run_git_with_deadlines(spec, cancellable, callback, GitDeadlineConfig::production());
 }
@@ -253,11 +96,12 @@ fn run_git_with_deadlines(
     };
     #[cfg(test)]
     test_hooks::started(&spec.env, TestChild(subprocess.clone()));
-    let stdin_bytes = glib::Bytes::from_owned(spec.stdin.unwrap_or_default());
     #[cfg(test)]
     if let Some(observer) = deadlines.child_started.as_ref() {
         observer(TestChild(subprocess.clone()));
     }
+    #[cfg(test)]
+    let inject_stdin_error = deadlines.communication_error;
     let state = Rc::new(RefCell::new(GitRunState::new(
         subprocess.clone(),
         spec.stdout_cap,
@@ -279,70 +123,86 @@ fn run_git_with_deadlines(
         }
     });
     state.borrow_mut().cancelled_handler = cancelled_handler.map(|id| (cancellable.clone(), id));
+    install_cancellation_watch(&state);
     install_operation_deadline(&state, cancellable);
-    let state_for_result = Rc::clone(&state);
-    subprocess.communicate_async(Some(&stdin_bytes), Some(cancellable), move |result| {
-        let mut state = state_for_result.borrow_mut();
+    let state_for_fault = Rc::clone(&state);
+    let state_for_complete = Rc::clone(&state);
+    io_pump::start(
+        subprocess.stdin_pipe(),
+        subprocess.stdout_pipe(),
+        subprocess.stderr_pipe(),
+        io_pump::GitIoConfig {
+            stdin: spec.stdin.unwrap_or_default(),
+            stdout_cap: spec.stdout_cap,
+            stderr_cap: STDERR_CAP,
+            cleanup: state.borrow().io_cleanup.clone(),
+            #[cfg(test)]
+            inject_stdin_error,
+        },
+        Rc::new(move |error| record_io_fault(&state_for_fault, error)),
+        Rc::new(move |output| finish_io(&state_for_complete, output)),
+    );
+    start_uncancelled_wait(&state);
+}
+
+fn record_io_fault(state: &Rc<RefCell<GitRunState>>, error: GitProcessError) {
+    let _accepted = accept_user_cancellation(state);
+    let should_kill = {
+        let mut run = state.borrow_mut();
+        run.lifecycle.record_reason(error);
+        run.policy.kill_on_cancel && !run.lifecycle.is_reaped()
+    };
+    if should_kill {
+        force_exit(state);
+    }
+    request_io_cleanup(state);
+    #[cfg(test)]
+    observe(state, |config| config.io_fault.clone());
+}
+
+fn finish_io(state: &Rc<RefCell<GitRunState>>, output: io_pump::GitIoCapture) {
+    let settled = {
+        let mut run = state.borrow_mut();
+        run.output = Some(output);
+        run.lifecycle.settle_io()
+    };
+    if settled {
         #[cfg(test)]
-        let result = if state.deadlines.communication_error {
-            Err(glib::Error::new(
-                gio::IOErrorEnum::Failed,
-                "injected communication failure",
-            ))
-        } else {
-            result
-        };
-        match result {
-            Ok((stdout, stderr)) => {
-                let stdout = stdout.map_or_else(Vec::new, |bytes| bytes.as_ref().to_vec());
-                let stderr = stderr.map_or_else(Vec::new, |bytes| bytes.as_ref().to_vec());
-                state.output = Some(Ok((stdout, stderr)));
-            }
-            Err(error) => {
-                let cancelled = error.matches(gio::IOErrorEnum::Cancelled);
-                let reason = if cancelled {
-                    state
-                        .lifecycle
-                        .reason
-                        .clone()
-                        .unwrap_or(GitProcessError::Cancelled)
-                } else {
-                    GitProcessError::CommandFailed(error.message().to_string())
-                };
-                state.lifecycle.record_reason(reason);
-                state.output = Some(Err(()));
-            }
-        }
-        state.lifecycle.communicated();
-        let should_kill = state.kill_on_cancel && matches!(state.output, Some(Err(())));
-        drop(state);
-        #[cfg(test)]
-        observe(&state_for_result, |config| {
-            config.communication_settled.clone()
-        });
-        if should_kill {
-            force_exit(&state_for_result);
-        }
-        start_uncancelled_wait(&state_for_result);
-    });
+        observe(state, |config| config.io_settled.clone());
+    }
+    finish_terminal(state);
 }
 struct GitRunState {
     subprocess: gio::Subprocess,
     stdout_cap: usize,
-    allow_failure: bool,
-    kill_on_cancel: bool,
+    policy: GitRunPolicy,
     callback: Option<GitCallback<GitRunOutput>>,
     output: Option<GitCapture>,
     lifecycle: GitLifecycle,
     user_cancelled: Arc<AtomicBool>,
     timeout_requested: Arc<AtomicBool>,
+    io_cleanup: gio::Cancellable,
+    cleanup: GitCleanupState,
     cancelled_handler: Option<(gio::Cancellable, gio::CancelledHandlerId)>,
+    cancel_watch: Option<glib::SourceId>,
     wait_retry: Option<glib::SourceId>,
     operation: Option<glib::SourceId>,
     grace: Option<glib::SourceId>,
     force_grace: Option<glib::SourceId>,
     deadlines: GitDeadlineConfig,
 }
+
+struct GitRunPolicy {
+    allow_failure: bool,
+    kill_on_cancel: bool,
+}
+
+#[derive(Default)]
+struct GitCleanupState {
+    cancellation_accepted: bool,
+    io_requested: bool,
+}
+
 impl GitRunState {
     fn new(
         subprocess: gio::Subprocess,
@@ -355,14 +215,19 @@ impl GitRunState {
         Self {
             subprocess,
             stdout_cap,
-            allow_failure,
-            kill_on_cancel,
+            policy: GitRunPolicy {
+                allow_failure,
+                kill_on_cancel,
+            },
             callback: Some(callback),
             output: None,
             lifecycle: GitLifecycle::default(),
             user_cancelled: Arc::new(AtomicBool::new(false)),
             timeout_requested: Arc::new(AtomicBool::new(false)),
+            io_cleanup: gio::Cancellable::new(),
+            cleanup: GitCleanupState::default(),
             cancelled_handler: None,
+            cancel_watch: None,
             wait_retry: None,
             operation: None,
             grace: None,
@@ -377,6 +242,7 @@ impl GitRunState {
             self.grace.take(),
             self.force_grace.take(),
             self.wait_retry.take(),
+            self.cancel_watch.take(),
         ]
         .into_iter()
         .flatten()
@@ -386,6 +252,44 @@ impl GitRunState {
     }
 }
 
+fn install_cancellation_watch(state: &Rc<RefCell<GitRunState>>) {
+    if accept_user_cancellation(state) {
+        return;
+    }
+    let state_for_watch = Rc::clone(state);
+    let source = glib::timeout_add_local(Duration::from_millis(10), move || {
+        if accept_user_cancellation(&state_for_watch) {
+            state_for_watch.borrow_mut().cancel_watch = None;
+            glib::ControlFlow::Break
+        } else {
+            glib::ControlFlow::Continue
+        }
+    });
+    state.borrow_mut().cancel_watch = Some(source);
+}
+
+fn accept_user_cancellation(state: &Rc<RefCell<GitRunState>>) -> bool {
+    let (accepted, force_now) = {
+        let mut run = state.borrow_mut();
+        if run.cleanup.cancellation_accepted || !run.user_cancelled.load(Ordering::SeqCst) {
+            return run.cleanup.cancellation_accepted;
+        }
+        run.cleanup.cancellation_accepted = true;
+        run.lifecycle.record_reason(GitProcessError::Cancelled);
+        (
+            true,
+            run.policy.kill_on_cancel && !run.lifecycle.is_reaped(),
+        )
+    };
+    if force_now {
+        force_exit(state);
+    }
+    request_io_cleanup(state);
+    #[cfg(test)]
+    observe(state, |config| config.cancellation_accepted.clone());
+    accepted
+}
+
 fn install_operation_deadline(state: &Rc<RefCell<GitRunState>>, cancellable: &gio::Cancellable) {
     let state_for_timeout = Rc::clone(state);
     let cancellable_for_timeout = cancellable.clone();
@@ -393,14 +297,23 @@ fn install_operation_deadline(state: &Rc<RefCell<GitRunState>>, cancellable: &gi
     let source = glib::timeout_add_local_once(operation, move || {
         let mut run = state_for_timeout.borrow_mut();
         run.operation = None;
-        if run.lifecycle.is_reaped() {
+        if run.user_cancelled.load(Ordering::SeqCst) {
+            let kill_now = run.policy.kill_on_cancel;
+            drop(run);
+            let _accepted = accept_user_cancellation(&state_for_timeout);
+            #[cfg(test)]
+            observe(&state_for_timeout, |config| config.deadline_fired.clone());
+            if kill_now {
+                force_exit(&state_for_timeout);
+            } else {
+                begin_mutation_grace(&state_for_timeout);
+            }
             return;
         }
         if run.lifecycle.reason.is_none() {
             run.lifecycle.reason = Some(
-                if run.user_cancelled.load(Ordering::SeqCst)
-                    || (cancellable_for_timeout.is_cancelled()
-                        && !run.timeout_requested.load(Ordering::SeqCst))
+                if cancellable_for_timeout.is_cancelled()
+                    && !run.timeout_requested.load(Ordering::SeqCst)
                 {
                     GitProcessError::Cancelled
                 } else {
@@ -408,9 +321,10 @@ fn install_operation_deadline(state: &Rc<RefCell<GitRunState>>, cancellable: &gi
                 },
             );
         }
-        let kill_now = run.kill_on_cancel;
+        let kill_now = run.policy.kill_on_cancel;
         run.timeout_requested.store(true, Ordering::SeqCst);
         drop(run);
+        request_io_cleanup(&state_for_timeout);
         #[cfg(test)]
         observe(&state_for_timeout, |config| config.deadline_fired.clone());
         cancellable_for_timeout.cancel();
@@ -536,26 +450,55 @@ fn start_uncancelled_wait(state: &Rc<RefCell<GitRunState>>) {
 }
 
 fn finish_reaped(state: &Rc<RefCell<GitRunState>>) {
-    let (callback, result, handler) = {
+    let finished = state.borrow_mut().lifecycle.finish_wait();
+    if !finished {
+        return;
+    }
+    #[cfg(test)]
+    observe(state, |config| config.wait_completed.clone());
+    cancel_requested_io_after_reap(state);
+    finish_terminal(state);
+}
+
+fn request_io_cleanup(state: &Rc<RefCell<GitRunState>>) {
+    state.borrow_mut().cleanup.io_requested = true;
+    cancel_requested_io_after_reap(state);
+}
+
+fn cancel_requested_io_after_reap(state: &Rc<RefCell<GitRunState>>) {
+    let cleanup = {
+        let run = state.borrow();
+        (run.cleanup.io_requested && run.lifecycle.is_reaped()).then(|| run.io_cleanup.clone())
+    };
+    if let Some(cleanup) = cleanup {
+        cleanup.cancel();
+    }
+}
+
+fn finish_terminal(state: &Rc<RefCell<GitRunState>>) {
+    let _accepted = accept_user_cancellation(state);
+    let (callback, handler) = {
         let mut run = state.borrow_mut();
-        if !run.lifecycle.finish_wait() {
+        if !run.lifecycle.take_terminal() {
             return;
         }
         run.clear_sources();
-        let result = if let Some(reason) = run.lifecycle.reason.clone() {
-            Err(reason)
-        } else {
-            let status = (!run.subprocess.has_signaled()).then(|| run.subprocess.exit_status());
-            let output = run.output.take();
-            capture_result(output, run.stdout_cap, run.allow_failure, status)
-        };
-        (run.callback.take(), result, run.cancelled_handler.take())
+        (run.callback.take(), run.cancelled_handler.take())
     };
     if let Some((cancellable, handler)) = handler {
         cancellable.disconnect_cancelled(handler);
     }
-    #[cfg(test)]
-    observe(state, |config| config.wait_completed.clone());
+    let _accepted = accept_user_cancellation(state);
+    let result = {
+        let mut run = state.borrow_mut();
+        if let Some(reason) = run.lifecycle.reason.clone() {
+            Err(reason)
+        } else {
+            let status = (!run.subprocess.has_signaled()).then(|| run.subprocess.exit_status());
+            let output = run.output.take();
+            capture_result(output, run.stdout_cap, run.policy.allow_failure, status)
+        }
+    };
     if let Some(callback) = callback {
         callback(result);
     }
@@ -578,6 +521,8 @@ mod lifecycle_matrix_tests;
 mod lifecycle_state_tests;
 #[cfg(test)]
 mod lifecycle_tests;
+#[cfg(test)]
+mod output_tests;
 #[cfg(test)]
 mod tests;
 

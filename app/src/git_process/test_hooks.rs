@@ -14,6 +14,7 @@ pub(crate) type Resume = Box<dyn FnOnce()>;
 pub(crate) type Hold<T> = Rc<dyn Fn(Result<T, GitProcessError>, Resume)>;
 pub(crate) type Dispatch = Rc<dyn Fn(Vec<String>, bool, gio::Cancellable)>;
 pub(crate) type GraceAdvance = Rc<dyn Fn()>;
+pub(crate) type OutputPeakObserver = Rc<dyn Fn(usize)>;
 
 pub(crate) struct Hooks {
     pub(crate) repo: PathBuf,
@@ -30,7 +31,9 @@ pub(crate) struct ControlledMutation {
     pub(crate) operation: Duration,
     pub(crate) grace: Duration,
     pub(crate) deadline_fired: Option<Rc<dyn Fn()>>,
-    pub(crate) communication_settled: Option<Rc<dyn Fn()>>,
+    pub(crate) io_settled: Option<Rc<dyn Fn()>>,
+    pub(crate) io_fault: Option<Rc<dyn Fn()>>,
+    pub(crate) cancellation_accepted: Option<Rc<dyn Fn()>>,
     pub(crate) wait_completed: Option<Rc<dyn Fn()>>,
     pub(crate) grace_checkpoint: Option<Rc<dyn Fn(GraceAdvance)>>,
 }
@@ -40,13 +43,20 @@ struct ControlledEntry {
     mutation: ControlledMutation,
 }
 
+struct OutputPeakEntry {
+    identity: Rc<()>,
+    observer: OutputPeakObserver,
+}
+
 pub(crate) struct ControlledMutationGuard(Rc<()>);
+pub(crate) struct OutputPeakGuard(Rc<()>);
 
 static SPAWN_COUNT: AtomicUsize = AtomicUsize::new(0);
 
 thread_local! {
     static HOOKS: RefCell<Option<Hooks>> = const { RefCell::new(None) };
     static CONTROLLED_MUTATION: RefCell<Option<ControlledEntry>> = const { RefCell::new(None) };
+    static OUTPUT_PEAK: RefCell<Option<OutputPeakEntry>> = const { RefCell::new(None) };
 }
 
 pub(crate) fn install(hooks: Option<Hooks>) {
@@ -68,9 +78,45 @@ pub(crate) fn install_controlled_mutation(mutation: ControlledMutation) -> Contr
     ControlledMutationGuard(identity)
 }
 
+pub(crate) fn install_output_peak_observer(observer: OutputPeakObserver) -> OutputPeakGuard {
+    let identity = Rc::new(());
+    OUTPUT_PEAK.with(|slot| {
+        *slot.borrow_mut() = Some(OutputPeakEntry {
+            identity: Rc::clone(&identity),
+            observer,
+        });
+    });
+    OutputPeakGuard(identity)
+}
+
+pub(crate) fn observe_output_peak(bytes: usize) {
+    let observer = OUTPUT_PEAK.with(|slot| {
+        slot.borrow()
+            .as_ref()
+            .map(|entry| Rc::clone(&entry.observer))
+    });
+    if let Some(observer) = observer {
+        observer(bytes);
+    }
+}
+
 impl Drop for ControlledMutationGuard {
     fn drop(&mut self) {
         CONTROLLED_MUTATION.with(|slot| {
+            let matching = slot
+                .borrow()
+                .as_ref()
+                .is_some_and(|entry| Rc::ptr_eq(&entry.identity, &self.0));
+            if matching {
+                *slot.borrow_mut() = None;
+            }
+        });
+    }
+}
+
+impl Drop for OutputPeakGuard {
+    fn drop(&mut self) {
+        OUTPUT_PEAK.with(|slot| {
             let matching = slot
                 .borrow()
                 .as_ref()
@@ -112,7 +158,9 @@ pub(super) fn prepare(
         operation: mutation.operation,
         grace: mutation.grace,
         deadline_fired: mutation.deadline_fired,
-        communication_settled: mutation.communication_settled,
+        io_settled: mutation.io_settled,
+        io_fault: mutation.io_fault,
+        cancellation_accepted: mutation.cancellation_accepted,
         wait_completed: mutation.wait_completed,
         grace_checkpoint: mutation.grace_checkpoint,
         ..deadlines

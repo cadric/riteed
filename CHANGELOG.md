@@ -28,6 +28,10 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 ### Fixed
 - Git reviews now read worktree versions through the same bounded per-file
   limit as Git blobs, rejecting incomplete or oversized text before display.
+- Git subprocess output now streams through concurrent bounded stdout and
+  stderr pumps while stdin progresses independently. Oversized read-only
+  commands terminate promptly; mutations retain their supervised grace and
+  drain behavior without allocating the complete output.
 - Bound the Flatpak rollback gate's candidate ref to the release tag validated
   by manual-dispatch preflight, preserving idempotent same-release republishes.
 - Release validation now requires exact SHA-256 digests for CI job containers
