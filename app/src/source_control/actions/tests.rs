@@ -111,16 +111,16 @@ fn unavailable_attrs_disable_git_actions_and_commit() {
         entries: vec![staged],
         ..GitStatusSnapshot::default()
     };
-    assert!(commit_sensitive(&snapshot, &known_attrs(), false));
-    assert!(!commit_sensitive(&snapshot, &attrs, false));
-    assert!(!commit_sensitive(&snapshot, &known_attrs(), true));
+    assert!(commit_sensitive(&snapshot, &known_attrs(), true));
+    assert!(!commit_sensitive(&snapshot, &attrs, true));
+    assert!(!commit_sensitive(&snapshot, &known_attrs(), false));
     assert!(!commit_sensitive(
         &GitStatusSnapshot {
             too_large: true,
             ..snapshot
         },
         &known_attrs(),
-        false,
+        true,
     ));
     assert_eq!(too_many_changes_text(), "Too many Git changes to display.");
 }
@@ -135,7 +135,7 @@ fn commit_controls_require_committable_staged_changes() {
             ..GitStatusSnapshot::default()
         },
         &known_attrs(),
-        false,
+        true,
     ));
 
     let mut staged = entry("tracked.txt", GitFileStatus::Modified, true, false);
@@ -146,7 +146,7 @@ fn commit_controls_require_committable_staged_changes() {
             ..GitStatusSnapshot::default()
         },
         &known_attrs(),
-        false,
+        true,
     ));
 }
 

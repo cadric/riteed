@@ -45,6 +45,13 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
   mutations retain their deadline until their child has exited. Read-only I/O
   failures trigger immediate cleanup; failed child waits retain supervision
   with a bounded diagnostic and retry interval.
+- Source Control gives refresh, Diff and mutation requests separate owners.
+  A cancelled writer keeps its slot until terminal cleanup, including across
+  project switches, and every mutation outcome schedules fresh current-project
+  status. Older callbacks cannot replace a newer project or snapshot.
+- Stage and Commit respect Git's existing index lock before starting work and
+  never replay a denied action automatically. Serialization is per controller;
+  Git's own locks remain authoritative across windows and external tools.
 
 ## 0.3.8 - 2026-07-06
 

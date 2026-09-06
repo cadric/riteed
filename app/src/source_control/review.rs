@@ -11,29 +11,29 @@ use crate::editor_tab::{
 #[cfg(test)]
 use crate::git_status::GitStatusSnapshot;
 use crate::git_status::{GitAttrState, GitFileStatus, GitStatusEntry};
+use crate::source_control::slots::SnapshotId;
 use crate::source_control::{
-    SourceControlState, SourceStateRef, git_attrs_unavailable_text, review_loader,
+    SourceStateRef, git_attrs_unavailable_text, review_loader, set_status_label,
 };
+use crate::workspace::Workspace;
 
 struct ReviewBuild {
     spec: ReviewTabSpec,
     entries: Vec<GitStatusEntry>,
+    snapshot_id: SnapshotId,
 }
 
 pub(super) fn install_actions(state: &SourceStateRef, window: &impl IsA<gio::ActionMap>) {
-    add_review_action(
-        state,
-        window,
-        &state.borrow().review_staged_action,
-        ReviewKind::Staged,
-    );
-    add_review_action(
-        state,
-        window,
-        &state.borrow().review_unstaged_action,
-        ReviewKind::Unstaged,
-    );
-    sync_actions(&state.borrow());
+    let (staged, unstaged) = {
+        let state = state.borrow();
+        (
+            state.review_staged_action.clone(),
+            state.review_unstaged_action.clone(),
+        )
+    };
+    add_review_action(state, window, &staged, ReviewKind::Staged);
+    add_review_action(state, window, &unstaged, ReviewKind::Unstaged);
+    sync_actions(state);
 }
 
 pub(super) fn review_menu_model() -> gio::Menu {
@@ -65,13 +65,53 @@ pub(crate) fn reviewable_unstaged(entry: &GitStatusEntry) -> bool {
     entry.unstaged && reviewable_entry(entry)
 }
 
-pub(super) fn sync_actions(state: &SourceControlState) {
-    state
-        .review_staged_action
-        .set_enabled(can_review(state, ReviewKind::Staged));
-    state
-        .review_unstaged_action
-        .set_enabled(can_review(state, ReviewKind::Unstaged));
+pub(super) fn sync_actions(state: &SourceStateRef) {
+    let (
+        staged,
+        unstaged,
+        repo,
+        status_stale,
+        mutation_active,
+        snapshot_current,
+        snapshot,
+        attrs,
+        workspace,
+    ) = {
+        let state = state.borrow();
+        (
+            state.review_staged_action.clone(),
+            state.review_unstaged_action.clone(),
+            state.repo.clone(),
+            state.status_stale,
+            state.operations.mutation_active(),
+            state
+                .snapshot_id
+                .as_ref()
+                .is_some_and(|snapshot| state.operations.is_snapshot_current(snapshot)),
+            state.snapshot.clone(),
+            state.attrs.clone(),
+            state.workspace.upgrade(),
+        )
+    };
+    let dirty_uris = dirty_open_uris(workspace.as_ref());
+    staged.set_enabled(can_review(
+        repo.as_deref(),
+        status_stale || !snapshot_current,
+        mutation_active,
+        &snapshot,
+        &attrs,
+        ReviewKind::Staged,
+        &dirty_uris,
+    ));
+    unstaged.set_enabled(can_review(
+        repo.as_deref(),
+        status_stale || !snapshot_current,
+        mutation_active,
+        &snapshot,
+        &attrs,
+        ReviewKind::Unstaged,
+        &dirty_uris,
+    ));
 }
 
 fn add_review_action(
@@ -90,14 +130,14 @@ fn add_review_action(
 }
 
 fn open_review(state: &SourceStateRef, kind: ReviewKind) {
-    let build = match build_spec(&state.borrow(), kind) {
+    let build = match build_spec(state, kind) {
         Ok(Some(build)) => build,
         Ok(None) => {
             show_empty_toast(state, kind);
             return;
         }
         Err(message) => {
-            state.borrow().status_label.set_label(&message);
+            set_status_label(state, &message);
             return;
         }
     };
@@ -106,7 +146,7 @@ fn open_review(state: &SourceStateRef, kind: ReviewKind) {
     };
     let tab = EditorTab::new_git_review(&workspace.settings, build.spec.clone());
     workspace.add_tab(tab.clone(), true);
-    review_loader::start(state, &tab, build.spec, build.entries);
+    review_loader::start(state, &tab, build.spec, build.entries, build.snapshot_id);
 }
 
 pub(super) fn refresh_open_review(state: &SourceStateRef, tab: &Rc<EditorTab>) {
@@ -117,41 +157,71 @@ pub(super) fn refresh_open_review(state: &SourceStateRef, tab: &Rc<EditorTab>) {
     if repo.as_deref() != Some(spec.repo_root.as_path()) {
         return;
     }
-    let build = match build_spec(&state.borrow(), spec.review_kind) {
+    let build = match build_spec(state, spec.review_kind) {
         Ok(Some(build)) => build,
         Ok(None) => {
             show_empty_toast(state, spec.review_kind);
             return;
         }
         Err(message) => {
-            state.borrow().status_label.set_label(&message);
+            set_status_label(state, &message);
             return;
         }
     };
-    review_loader::start(state, tab, build.spec, build.entries);
+    review_loader::start(state, tab, build.spec, build.entries, build.snapshot_id);
 }
 
-fn build_spec(state: &SourceControlState, kind: ReviewKind) -> Result<Option<ReviewBuild>, String> {
-    let Some(repo) = state.repo.clone() else {
+fn build_spec(state: &SourceStateRef, kind: ReviewKind) -> Result<Option<ReviewBuild>, String> {
+    let (
+        repo,
+        status_stale,
+        mutation_active,
+        snapshot,
+        attrs,
+        snapshot_id,
+        snapshot_current,
+        generation,
+        settings,
+        workspace,
+    ) = {
+        let state = state.borrow();
+        let snapshot_id = state.snapshot_id.clone();
+        let snapshot_current = snapshot_id
+            .as_ref()
+            .is_some_and(|snapshot| state.operations.is_snapshot_current(snapshot));
+        (
+            state.repo.clone(),
+            state.status_stale,
+            state.operations.mutation_active(),
+            state.snapshot.clone(),
+            state.attrs.clone(),
+            snapshot_id,
+            snapshot_current,
+            state.review_generation,
+            state.settings.clone(),
+            state.workspace.upgrade(),
+        )
+    };
+    let Some(repo) = repo else {
         return Err(gettext("No Git repository is active."));
     };
-    if state.status_stale {
+    if status_stale || mutation_active {
         return Err(gettext("Refresh Source Control before reviewing changes."));
     }
-    if state.snapshot.too_large {
+    let Some(snapshot_id) = snapshot_id else {
+        return Err(gettext("Refresh Source Control before reviewing changes."));
+    };
+    if !snapshot_current {
+        return Err(gettext("Refresh Source Control before reviewing changes."));
+    }
+    if snapshot.too_large {
         return Err(gettext("Too many Git changes to display."));
     }
-    if state.attrs.is_unavailable() {
+    if attrs.is_unavailable() {
         return Err(git_attrs_unavailable_text());
     }
-    let dirty_uris = dirty_open_uris(state);
-    let entries = review_entries(
-        &state.snapshot.entries,
-        &state.attrs,
-        repo.as_path(),
-        kind,
-        &dirty_uris,
-    );
+    let dirty_uris = dirty_open_uris(workspace.as_ref());
+    let entries = review_entries(&snapshot.entries, &attrs, repo.as_path(), kind, &dirty_uris);
     if entries.is_empty() {
         return Ok(None);
     }
@@ -160,52 +230,54 @@ fn build_spec(state: &SourceControlState, kind: ReviewKind) -> Result<Option<Rev
         .map(|entry| ReviewFileSpec::new(entry.path.raw().to_vec()))
         .collect();
     let fingerprint = match kind {
-        ReviewKind::Staged => fingerprint_for_staged(
-            &repo,
-            state.snapshot.head_oid.as_deref(),
-            &state.attrs,
-            &entries,
-        ),
-        ReviewKind::Unstaged => fingerprint_for_unstaged(state.review_generation),
+        ReviewKind::Staged => {
+            fingerprint_for_staged(&repo, snapshot.head_oid.as_deref(), &attrs, &entries)
+        }
+        ReviewKind::Unstaged => fingerprint_for_unstaged(generation),
     };
     Ok(Some(ReviewBuild {
         spec: ReviewTabSpec::new(
             kind,
             repo,
-            state.review_generation,
+            generation,
             fingerprint,
             files,
-            state.settings.compare_review_settings_snapshot(),
+            settings.compare_review_settings_snapshot(),
         ),
         entries,
+        snapshot_id,
     }))
 }
 
-fn can_review(state: &SourceControlState, kind: ReviewKind) -> bool {
-    if state.repo.is_none()
-        || state.status_stale
-        || state.snapshot.too_large
-        || state.attrs.is_unavailable()
-    {
+fn can_review(
+    repo: Option<&Path>,
+    stale: bool,
+    mutation: bool,
+    snapshot: &crate::git_status::GitStatusSnapshot,
+    attrs: &GitAttrState,
+    kind: ReviewKind,
+    dirty_uris: &[String],
+) -> bool {
+    if stale || mutation || snapshot.too_large || attrs.is_unavailable() {
         return false;
     }
-    let dirty_uris = dirty_open_uris(state);
-    let Some(repo) = state.repo.as_deref() else {
+    let Some(repo) = repo else {
         return false;
     };
-    state.snapshot.entries.iter().any(|entry| {
+    snapshot.entries.iter().any(|entry| {
         let reviewable = match kind {
             ReviewKind::Staged => reviewable_staged(entry),
             ReviewKind::Unstaged => {
-                reviewable_unstaged(entry) && !entry_is_dirty(repo, entry, &dirty_uris)
+                reviewable_unstaged(entry) && !entry_is_dirty(repo, entry, dirty_uris)
             }
         };
-        reviewable && !state.attrs.blocks(entry.path.raw())
+        reviewable && !attrs.blocks(entry.path.raw())
     })
 }
 
 fn show_empty_toast(state: &SourceStateRef, kind: ReviewKind) {
-    let Some(workspace) = state.borrow().workspace.upgrade() else {
+    let workspace = state.borrow().workspace.upgrade();
+    let Some(workspace) = workspace else {
         return;
     };
     let message = match kind {
@@ -256,8 +328,8 @@ fn reviewable_entry(entry: &GitStatusEntry) -> bool {
     ) && !entry.worktree_mode.blocks_actions(entry.status)
 }
 
-fn dirty_open_uris(state: &SourceControlState) -> Vec<String> {
-    let Some(workspace) = state.workspace.upgrade() else {
+fn dirty_open_uris(workspace: Option<&Rc<Workspace>>) -> Vec<String> {
+    let Some(workspace) = workspace else {
         return Vec::new();
     };
     workspace
@@ -299,45 +371,44 @@ pub(crate) fn fingerprint_for_unstaged(review_generation: u64) -> ReviewSnapshot
     ReviewSnapshotFingerprint::new(format!("unstaged-{review_generation}"))
 }
 
-pub(super) fn mark_open_reviews(state: &SourceControlState) {
-    let Some(workspace) = state.workspace.upgrade() else {
+pub(super) fn mark_open_reviews(state: &SourceStateRef) {
+    let (workspace, repo, snapshot, attrs, generation) = {
+        let state = state.borrow();
+        (
+            state.workspace.upgrade(),
+            state.repo.clone(),
+            state.snapshot.clone(),
+            state.attrs.clone(),
+            state.review_generation,
+        )
+    };
+    let Some(workspace) = workspace else {
         return;
     };
-    let Some(repo) = state.repo.as_ref() else {
+    let Some(repo) = repo else {
         return;
     };
     for tab in workspace.ordered_tabs() {
         let Some(spec) = tab.review_spec() else {
             continue;
         };
-        if spec.repo_root != *repo {
+        if spec.repo_root != repo {
             continue;
         }
-        if state.snapshot.too_large {
-            let fingerprint =
-                ReviewSnapshotFingerprint::new(format!("too-large-{}", state.review_generation));
-            let _stale = tab.mark_review_stale_if_mismatch(&fingerprint, state.review_generation);
+        if snapshot.too_large {
+            let fingerprint = ReviewSnapshotFingerprint::new(format!("too-large-{generation}"));
+            let _stale = tab.mark_review_stale_if_mismatch(&fingerprint, generation);
             continue;
         }
         let fingerprint = match spec.review_kind {
             ReviewKind::Staged => {
-                let entries = review_entries(
-                    &state.snapshot.entries,
-                    &state.attrs,
-                    repo,
-                    ReviewKind::Staged,
-                    &[],
-                );
-                fingerprint_for_staged(
-                    repo,
-                    state.snapshot.head_oid.as_deref(),
-                    &state.attrs,
-                    &entries,
-                )
+                let entries =
+                    review_entries(&snapshot.entries, &attrs, &repo, ReviewKind::Staged, &[]);
+                fingerprint_for_staged(&repo, snapshot.head_oid.as_deref(), &attrs, &entries)
             }
-            ReviewKind::Unstaged => fingerprint_for_unstaged(state.review_generation),
+            ReviewKind::Unstaged => fingerprint_for_unstaged(generation),
         };
-        let _stale = tab.mark_review_stale_if_mismatch(&fingerprint, state.review_generation);
+        let _stale = tab.mark_review_stale_if_mismatch(&fingerprint, generation);
     }
 }
 

@@ -76,11 +76,18 @@ impl SourceControlViews {
     }
 
     pub(super) fn rebuild(&self, entries: &[GitStatusEntry]) {
-        let mut last_entries = self.last_entries.borrow_mut();
-        if last_entries.as_slice() == entries {
+        let changed = {
+            let mut last_entries = self.last_entries.borrow_mut();
+            if last_entries.as_slice() == entries {
+                false
+            } else {
+                *last_entries = entries.to_vec();
+                true
+            }
+        };
+        if !changed {
             return;
         }
-        *last_entries = entries.to_vec();
         self.tree.rebuild(entries);
         self.list.rebuild(entries);
     }
@@ -115,9 +122,12 @@ impl SourceControlViews {
 
     #[cfg(test)]
     pub(super) fn set_mode_for_tests(state: &SourceStateRef, mode: SourceControlViewMode) {
-        let state = state.borrow();
-        state.settings.set_source_control_view_mode(mode);
-        state.views.set_mode(mode);
+        let (settings, views) = {
+            let state = state.borrow();
+            (state.settings.clone(), Rc::clone(&state.views))
+        };
+        settings.set_source_control_view_mode(mode);
+        views.set_mode(mode);
     }
 
     #[cfg(test)]

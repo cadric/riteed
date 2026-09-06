@@ -3,7 +3,7 @@
   "sites": [
     {
       "path": "src/git_process.rs",
-      "line": 382,
+      "line": 388,
       "match": "fn install_operation_deadline(state: &Rc<RefCell<GitRunState>>, cancellable: &gio::Cancellable) {",
       "kind": "runtime-shared-state",
       "ownership": "One GitRunState is retained by its owned operation/grace sources and asynchronous communication/wait callbacks; it contains no UI or workspace reference.",
@@ -11,7 +11,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 419,
+      "line": 425,
       "match": "fn begin_mutation_grace(state: &Rc<RefCell<GitRunState>>) {",
       "kind": "runtime-shared-state",
       "ownership": "One GitRunState is retained by its owned operation/grace sources and asynchronous communication/wait callbacks; it contains no UI or workspace reference.",
@@ -19,7 +19,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 454,
+      "line": 460,
       "match": "fn send_term_then_force(state: &Rc<RefCell<GitRunState>>) {",
       "kind": "runtime-shared-state",
       "ownership": "One GitRunState is retained by its owned operation/grace sources and asynchronous communication/wait callbacks; it contains no UI or workspace reference.",
@@ -27,7 +27,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 470,
+      "line": 476,
       "match": "fn force_exit(state: &Rc<RefCell<GitRunState>>) {",
       "kind": "runtime-shared-state",
       "ownership": "One GitRunState is retained by its owned operation/grace sources and asynchronous communication/wait callbacks; it contains no UI or workspace reference.",
@@ -35,7 +35,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 484,
+      "line": 490,
       "match": "fn start_uncancelled_wait(state: &Rc<RefCell<GitRunState>>) {",
       "kind": "runtime-shared-state",
       "ownership": "One GitRunState is retained by its owned operation/grace sources and asynchronous communication/wait callbacks; it contains no UI or workspace reference.",
@@ -43,7 +43,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 531,
+      "line": 537,
       "match": "fn finish_reaped(state: &Rc<RefCell<GitRunState>>) {",
       "kind": "runtime-shared-state",
       "ownership": "One GitRunState is retained by its owned operation/grace sources and asynchronous communication/wait callbacks; it contains no UI or workspace reference.",
@@ -51,7 +51,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 579,
+      "line": 585,
       "match": "state: &Rc<RefCell<GitRunState>>,",
       "kind": "runtime-shared-state",
       "ownership": "One GitRunState is retained by its owned operation/grace sources and asynchronous communication/wait callbacks; it contains no UI or workspace reference.",
@@ -155,7 +155,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 226,
+      "line": 230,
       "match": "let flags = gio::SubprocessFlags::STDIN_PIPE",
       "kind": "runtime-git-subprocess",
       "ownership": "The typed /app/bin/git runner owns this subprocess and its stdin/stdout/stderr capture until communication settles and uncancelled wait succeeds.",
@@ -163,7 +163,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 227,
+      "line": 231,
       "match": "| gio::SubprocessFlags::STDOUT_PIPE",
       "kind": "runtime-git-subprocess",
       "ownership": "The typed /app/bin/git runner owns this subprocess and its stdin/stdout/stderr capture until communication settles and uncancelled wait succeeds.",
@@ -171,7 +171,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 228,
+      "line": 232,
       "match": "| gio::SubprocessFlags::STDERR_PIPE;",
       "kind": "runtime-git-subprocess",
       "ownership": "The typed /app/bin/git runner owns this subprocess and its stdin/stdout/stderr capture until communication settles and uncancelled wait succeeds.",
@@ -179,7 +179,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 229,
+      "line": 233,
       "match": "let launcher = gio::SubprocessLauncher::new(flags);",
       "kind": "runtime-git-subprocess",
       "ownership": "The typed /app/bin/git runner owns this subprocess and its stdin/stdout/stderr capture until communication settles and uncancelled wait succeeds.",
@@ -187,7 +187,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 323,
+      "line": 329,
       "match": "subprocess: gio::Subprocess,",
       "kind": "runtime-git-subprocess",
       "ownership": "The typed /app/bin/git runner owns this subprocess and its stdin/stdout/stderr capture until communication settles and uncancelled wait succeeds.",
@@ -195,7 +195,7 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 341,
+      "line": 347,
       "match": "subprocess: gio::Subprocess,",
       "kind": "runtime-git-subprocess",
       "ownership": "The typed /app/bin/git runner owns this subprocess and its stdin/stdout/stderr capture until communication settles and uncancelled wait succeeds.",
@@ -203,11 +203,11 @@
     },
     {
       "path": "src/git_process.rs",
-      "line": 559,
-      "match": "pub(super) struct TestChild(gio::Subprocess);",
+      "line": 565,
+      "match": "pub(crate) struct TestChild(gio::Subprocess);",
       "kind": "runtime-git-subprocess",
-      "ownership": "The typed /app/bin/git runner owns this subprocess and its stdin/stdout/stderr capture until communication settles and uncancelled wait succeeds.",
-      "justification": "Only typed production operations construct argv with fixed environment and sandbox Git. Cancellation and deadlines retain child supervision; mutation timeout waits through TERM and force-exit grace. Output caps are checked after communicate buffering; bounded streaming remains separate P3 work."
+      "ownership": "The cfg(test) boundary wrapper owns a reference to an observed test child for fixture teardown.",
+      "justification": "Only the approved subprocess boundary exposes force-and-wait cleanup; GTK fixtures cannot access Gio subprocess control directly. Test teardown reaps observed children even after an assertion failure, while normal completion remains owned by the actual supervisor."
     },
     {
       "path": "src/git_process/lifecycle_matrix_tests.rs",

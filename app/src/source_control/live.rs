@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use gtk4::{gio, glib, prelude::*};
 
@@ -9,7 +9,9 @@ use crate::git_status::GitStatusSnapshot;
 use crate::source_control::{SourceControlState, SourceStateRef};
 
 use super::live_scheduler::{LiveScheduler, ScheduledRefresh};
+use super::operation_bridge;
 use super::refresh::{RefreshOrigin, refresh_status, refresh_status_with_origin};
+use super::slots::RefreshTicket;
 
 const PORTAL_POLL: Duration = Duration::from_secs(4);
 
@@ -50,10 +52,6 @@ impl SourceControlLiveRefresh {
 
     pub(super) fn schedule(&self) {
         self.scheduler.schedule();
-    }
-
-    pub(super) fn index_lock_exists(&self) -> bool {
-        self.scheduler.index_lock_exists()
     }
 
     pub(super) fn refresh_metadata_monitors(&mut self) {
@@ -129,78 +127,120 @@ pub(super) fn install(state: &SourceStateRef) {
             }
         }),
     );
-    state.borrow_mut().live_refresh = Some(live);
+    state.borrow_mut().live_refresh = Some(Rc::new(std::cell::RefCell::new(live)));
 }
 
 pub(super) fn cancel(state: &SourceStateRef) {
-    if let Some(mut live) = state.borrow_mut().live_refresh.take() {
-        live.cancel();
+    let (live, recovery) = {
+        let mut state = state.borrow_mut();
+        (state.live_refresh.take(), state.recovery_source.take())
+    };
+    if let Some(recovery) = recovery {
+        recovery.remove();
+    }
+    if let Some(live) = live {
+        live.borrow_mut().cancel();
     }
 }
 
 pub(super) fn index_lock_exists(state: &SourceStateRef) -> bool {
-    state
-        .borrow()
-        .live_refresh
-        .as_ref()
-        .is_some_and(SourceControlLiveRefresh::index_lock_exists)
+    operation_bridge::native_index_lock_exists(state)
 }
 
 pub(super) fn schedule(state: &SourceStateRef) {
-    if let Some(live) = state.borrow().live_refresh.as_ref() {
-        live.schedule();
+    let live = state.borrow().live_refresh.as_ref().map(Rc::clone);
+    if let Some(live) = live {
+        live.borrow().schedule();
+        return;
     }
+    schedule_recovery(state, None);
 }
 
-pub(super) fn sync_branch_monitor(state: &SourceStateRef, snapshot: &GitStatusSnapshot) {
-    if let Some(live) = state.borrow_mut().live_refresh.as_mut() {
-        live.refresh_metadata_monitors();
+fn schedule_recovery(state: &SourceStateRef, lock_blocked_since: Option<Instant>) {
+    if state.borrow().recovery_source.is_some() {
+        return;
+    }
+    let weak = Rc::downgrade(state);
+    let source = glib::timeout_add_local_once(super::live_scheduler::DEBOUNCE, move || {
+        let Some(state) = weak.upgrade() else {
+            return;
+        };
+        state.borrow_mut().recovery_source.take();
+        if index_lock_exists(&state) {
+            let started = lock_blocked_since.unwrap_or_else(Instant::now);
+            if started.elapsed() < super::live_scheduler::LOCK_WAIT_LIMIT {
+                schedule_recovery(&state, Some(started));
+                return;
+            }
+            refresh_status_with_origin(&state, RefreshOrigin::LockWaitExpired);
+            return;
+        }
+        refresh_status(&state);
+    });
+    state.borrow_mut().recovery_source = Some(source);
+}
+
+pub(super) fn sync_branch_monitor(
+    state: &SourceStateRef,
+    snapshot: &GitStatusSnapshot,
+    ticket: &RefreshTicket,
+    complete: Rc<dyn Fn()>,
+) {
+    if !operation_bridge::is_refresh_current(state, ticket) {
+        complete();
+        return;
+    }
+    let live = state.borrow().live_refresh.as_ref().map(Rc::clone);
+    let Some(live) = live else {
+        complete();
+        return;
+    };
+    live.borrow_mut().refresh_metadata_monitors();
+    if !operation_bridge::is_refresh_current(state, ticket) {
+        complete();
+        return;
     }
     if snapshot.detached {
-        clear_branch_monitor(state);
+        clear_branch_monitor(&live);
+        complete();
         return;
     }
     let Some(branch) = snapshot.branch.clone() else {
-        clear_branch_monitor(state);
+        clear_branch_monitor(&live);
+        complete();
         return;
     };
     if branch == "(detached)" {
-        clear_branch_monitor(state);
+        clear_branch_monitor(&live);
+        complete();
         return;
     }
-    let (process, cancellable) = {
-        let state = state.borrow();
-        let Some(process) = state.process.clone() else {
-            return;
-        };
-        let Some(cancellable) = state.cancellable.clone() else {
-            return;
-        };
-        (process, cancellable)
+    let Some(process) = state.borrow().process.clone() else {
+        complete();
+        return;
     };
+    let ticket = ticket.clone();
+    let cancellable = ticket.cancellable().clone();
     let weak = Rc::downgrade(state);
-    let cancellable_for_callback = cancellable.clone();
     process.resolve_branch_ref_path(
         &branch,
         &cancellable,
         Rc::new(move |result| {
-            if cancellable_for_callback.is_cancelled() {
-                return;
+            if let Some(state) = weak.upgrade()
+                && operation_bridge::is_refresh_current(&state, &ticket)
+            {
+                let live = state.borrow().live_refresh.as_ref().map(Rc::clone);
+                if let Some(live) = live {
+                    live.borrow_mut().rebind_branch_ref(result.ok());
+                }
             }
-            let Some(state) = weak.upgrade() else {
-                return;
-            };
-            if let Some(live) = state.borrow_mut().live_refresh.as_mut() {
-                live.rebind_branch_ref(result.ok());
-            }
+            complete();
         }),
     );
 }
 
-fn clear_branch_monitor(state: &SourceStateRef) {
-    if let Some(live) = state.borrow_mut().live_refresh.as_mut() {
-        live.rebind_branch_ref(None);
-    }
+fn clear_branch_monitor(live: &Rc<std::cell::RefCell<SourceControlLiveRefresh>>) {
+    live.borrow_mut().rebind_branch_ref(None);
 }
 
 pub(super) fn saved_file_in_repo(state: &SourceControlState, file: &gio::File) -> bool {

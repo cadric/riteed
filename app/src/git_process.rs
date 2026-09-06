@@ -15,6 +15,8 @@ mod ops;
 mod repo;
 mod support;
 #[cfg(test)]
+pub(crate) mod test_hooks;
+#[cfg(test)]
 pub(crate) mod test_support;
 use lifecycle::{
     GitCapture, GitDeadlineConfig, GitLifecycle, GitRunOutput, GitSpec, capture_result,
@@ -223,6 +225,8 @@ fn run_git_with_deadlines(
     callback: GitCallback<GitRunOutput>,
     deadlines: GitDeadlineConfig,
 ) {
+    #[cfg(test)]
+    let (spec, deadlines) = test_hooks::prepare(spec, deadlines, cancellable);
     let flags = gio::SubprocessFlags::STDIN_PIPE
         | gio::SubprocessFlags::STDOUT_PIPE
         | gio::SubprocessFlags::STDERR_PIPE;
@@ -246,6 +250,8 @@ fn run_git_with_deadlines(
             return;
         }
     };
+    #[cfg(test)]
+    test_hooks::started(&spec.env, TestChild(subprocess.clone()));
     let stdin_bytes = glib::Bytes::from_owned(spec.stdin.unwrap_or_default());
     #[cfg(test)]
     if let Some(observer) = deadlines.child_started.as_ref() {
@@ -556,10 +562,10 @@ fn finish_reaped(state: &Rc<RefCell<GitRunState>>) {
 
 #[cfg(test)]
 #[derive(Clone)]
-pub(super) struct TestChild(gio::Subprocess);
+pub(crate) struct TestChild(gio::Subprocess);
 #[cfg(test)]
 impl TestChild {
-    pub(super) fn force_reap(&self) -> bool {
+    pub(crate) fn force_reap(&self) -> bool {
         self.0.force_exit();
         self.0.wait(None::<&gio::Cancellable>).is_ok()
     }

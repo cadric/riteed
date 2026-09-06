@@ -278,3 +278,9 @@ pub(crate) mod test_support {
         guard
     }
 }
+
+#[cfg(test)]
+mod gtk_tests_source_ownership;
+
+#[cfg(test)]
+mod gtk_tests_source_operations;

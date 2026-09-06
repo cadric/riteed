@@ -614,6 +614,21 @@ fn exercise_core_surfaces_actions() {
     crate::markdown::render_tests::exercise_markdown_renderer();
 }
 
+fn exercise_source_control_ownership(test_app: &adw::Application) {
+    run_gtk_flow("source-control-status-diff-ownership", || {
+        crate::gtk_tests_source_ownership::exercise_status_diff_ownership(test_app);
+    });
+    run_gtk_flow("source-control-index-lock-entry-guards", || {
+        crate::gtk_tests_source_ownership::exercise_index_lock_entry_guards(test_app);
+    });
+    run_gtk_flow("source-control-reentrant-root-change", || {
+        crate::gtk_tests_source_ownership::exercise_reentrant_root_change(test_app);
+    });
+    run_gtk_flow("source-control-mutation-grace-root-round-trip", || {
+        crate::gtk_tests_source_operations::exercise_mutation_grace_root_round_trip(test_app);
+    });
+}
+
 #[test]
 fn gtk_surfaces_and_editor_flow_work() {
     let _guard = crate::test_support::init_gtk_for_tests();
@@ -683,6 +698,7 @@ fn gtk_surfaces_and_editor_flow_work() {
     run_gtk_flow("v9-source-control", || {
         crate::gtk_tests_v9::exercise_v9_source_control(&test_app);
     });
+    exercise_source_control_ownership(&test_app);
     run_gtk_flow("v10-chrome-palette", || {
         crate::gtk_tests_v10::exercise_chrome_palette(&test_app);
     });
