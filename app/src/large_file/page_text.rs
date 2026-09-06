@@ -9,6 +9,7 @@ pub(crate) struct PageText {
 }
 
 #[must_use]
+// PARSER-BOUNDARY: id=large_file_paged_reader
 pub(crate) fn decode_page_window(offset: u64, bytes: &[u8]) -> PageText {
     let leading_trim = leading_incomplete_len(offset, bytes);
     let trailing_trim = trailing_incomplete_len(&bytes[leading_trim..]);
@@ -86,6 +87,18 @@ fn utf8_sequence_len(byte: u8) -> Option<usize> {
 #[cfg(test)]
 mod tests {
     use super::decode_page_window;
+    use proptest::prelude::*;
+    use proptest::test_runner::FileFailurePersistence;
+
+    fn bounded_proptest_config() -> ProptestConfig {
+        ProptestConfig {
+            cases: 64,
+            failure_persistence: Some(Box::new(FileFailurePersistence::SourceParallel(
+                ".proptest-regressions",
+            ))),
+            ..ProptestConfig::default()
+        }
+    }
 
     #[test]
     fn trims_danish_letter_split_at_page_end() {
@@ -136,5 +149,29 @@ mod tests {
         let decoded = decode_page_window(0, b"a\xffb");
 
         assert!(decoded.text.contains('\u{fffd}'));
+    }
+
+    proptest! {
+        #![proptest_config(bounded_proptest_config())]
+
+        #[test]
+        fn proptest_page_window_offsets_are_bounded(
+            offset in any::<u64>(),
+            bytes in prop::collection::vec(any::<u8>(), 0..16_384),
+        ) {
+            let decoded = decode_page_window(offset, &bytes);
+            prop_assert!(decoded.visible_start <= decoded.visible_end);
+            if let Ok(length) = u64::try_from(bytes.len())
+                && let Some(raw_end) = offset.checked_add(length)
+            {
+                prop_assert!(decoded.visible_start >= offset);
+                prop_assert!(decoded.visible_end <= raw_end);
+                prop_assert!(decoded.next_offset <= raw_end);
+                prop_assert!(decoded.visible_end <= decoded.next_offset);
+                if !bytes.is_empty() {
+                    prop_assert!(decoded.next_offset > offset);
+                }
+            }
+        }
     }
 }

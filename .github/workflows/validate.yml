@@ -299,7 +299,7 @@ jobs:
               if [ -d fuzz ]; then
                 rustup toolchain install nightly --profile minimal --component rust-src
                 cargo install cargo-fuzz --version 0.13.1 --locked
-                for target in markdown_parse frontmatter_split git_status_parse diff_compute unsupported_scanner; do
+                for target in markdown_parse frontmatter_split git_status_parse diff_compute unsupported_scanner page_text_decode; do
                   (cd fuzz && cargo +nightly fuzz run "$target" -- -max_total_time=1800)
                 done
               fi

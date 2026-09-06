@@ -17,6 +17,9 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 ### Changed
 - Scheduled stress validation now runs monthly instead of daily while keeping
   manual workflow dispatch available for release and high-risk change checks.
+- Added offset-framed fuzz and property coverage for paged UTF-8 decoding, with
+  policy checks for Cargo registration, semantic seeds, registry mapping, and
+  active scheduled/manual CI execution.
 
 ### Fixed
 - Saving during window close no longer aborts the app. Close callbacks are

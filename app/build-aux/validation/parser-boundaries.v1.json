@@ -95,16 +95,18 @@
     {
       "id": "large_file_paged_reader",
       "kind": "untrusted-file-byte-boundary",
-      "source_paths": ["app/src/large_file/reader.rs"],
-      "entrypoints": ["large_file::reader::read_window"],
-      "real_input_shape": "User-selected local, portal, or mounted document file bytes read through async Gio windows without loading the whole file into GtkTextBuffer.",
+      "source_paths": ["app/src/large_file/reader.rs", "app/src/large_file/page_text.rs"],
+      "entrypoints": ["large_file::reader::read_window", "large_file::page_text::decode_page_window"],
+      "real_input_shape": "User-selected local, portal, or mounted document file bytes read through async Gio windows and decoded from arbitrary byte windows without loading the whole file into GtkTextBuffer.",
       "coverage": [
         {"type": "unit", "path": "app/src/large_file/reader.rs", "target": "read_window_records_offset_and_eof", "input_shape_asserted": "Window metadata for a bounded paged read"},
-        {"type": "unit", "path": "app/src/large_file/reader.rs", "target": "short_nonzero_read_requests_more_bytes", "input_shape_asserted": "Short non-EOF reads continue filling the requested window"}
+        {"type": "unit", "path": "app/src/large_file/reader.rs", "target": "short_nonzero_read_requests_more_bytes", "input_shape_asserted": "Short non-EOF reads continue filling the requested window"},
+        {"type": "property", "path": "app/src/large_file/page_text.rs", "target": "proptest_page_window_offsets_are_bounded", "input_shape_asserted": "Arbitrary byte windows and u64 offsets preserve ordered bounded progress when checked arithmetic succeeds"},
+        {"type": "fuzz", "path": "app/fuzz/fuzz_targets/page_text_decode.rs", "target": "page_text_decode", "input_shape_asserted": "Eight little-endian offset bytes followed by arbitrary paged document bytes"}
       ],
       "gaps": [],
       "reviewed_exceptions": [],
-      "last_reviewed": "2026-05-31"
+      "last_reviewed": "2026-09-06"
     },
     {
       "id": "large_file_streaming_search",

@@ -365,8 +365,8 @@
     },
     {
       "file": "stress-fuzz.policy.json",
-      "sha256": "501478ab65b585e49b176f3b7bb5f4ae647b01b28e9ace411b5dce5ef5dde1e3",
-      "bytes": 11771
+      "sha256": "0fe8763d205007aefea6d293070bbd5f520dc3127cbbc12d42e8a2026af0836d",
+      "bytes": 13096
     },
     {
       "file": "validation-tooling.policy.json",

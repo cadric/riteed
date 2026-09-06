@@ -150,6 +150,7 @@ The application ID is authoritative and must stay consistent across:
 - Release governance must keep offline policy checks deterministic; live GitHub ruleset/environment checks belong only in the token-scoped governance job and must enforce the exact reviewed actors from release policy.
 - Local release-critical crate patches must keep their patch manifest, upstream `.crate` anchor, allowed-file diff checksum, unsafe/FFI baseline, and binary artifact marker in sync.
 - Parser, untrusted-input, fuzz, and stress-boundary changes must follow `policy/stress-fuzz.policy.json` and keep parser-boundary evidence current.
+- Every policy-required fuzz target must have an exact Cargo bin registration, policy-declared semantic seeds, parser-boundary coverage, and an active scheduled/manual CI invocation.
 - `gettext`, alternate GUI frameworks, generic config crates, and broad async runtimes are forbidden unless policy is explicitly revised.
 - `Cargo.lock` must be committed.
 
