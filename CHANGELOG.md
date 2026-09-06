@@ -40,6 +40,11 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 - Cancelled Git subprocesses are force-terminated and reaped without querying
   exit status before GIO has completed its wait, avoiding fatal GLib criticals
   during rapid stress-runner repository switches.
+- Git operation callbacks now wait for owned child cleanup; timed-out mutations
+  receive a TERM grace interval before forced termination, while cancelled
+  mutations retain their deadline until their child has exited. Read-only I/O
+  failures trigger immediate cleanup; failed child waits retain supervision
+  with a bounded diagnostic and retry interval.
 
 ## 0.3.8 - 2026-07-06
 

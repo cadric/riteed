@@ -210,116 +210,12 @@
       "justification": "Async GIO enumeration and file loading complete across callbacks, so generation-checked shared state keeps late results out of the current UI without blocking the GTK main loop."
     },
     {
-      "path": "src/git_process.rs",
-      "line": 25,
-      "match": "operation: Rc<RefCell<Option<glib::SourceId>>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The typed Git process boundary owns the removable operation-timeout source handle.",
-      "justification": "Completed Git subprocesses remove this pending GLib timeout source immediately so stale local callbacks cannot survive into later main-context iterations or tests."
-    },
-    {
-      "path": "src/git_process.rs",
-      "line": 26,
-      "match": "grace: Rc<RefCell<Option<glib::SourceId>>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The typed Git process boundary owns the removable post-cancel kill-grace source handle.",
-      "justification": "Timeout cancellation installs a short fallback kill source only while the Git subprocess is unfinished, and completion removes it before the source can outlive the owning main-context turn."
-    },
-    {
-      "path": "src/git_process.rs",
-      "line": 291,
-      "match": "let flags = gio::SubprocessFlags::STDIN_PIPE",
-      "kind": "runtime-git-subprocess",
-      "ownership": "The typed Git process boundary owns the Gio subprocess pipe flags.",
-      "justification": "V9 allows subprocess use only here to run bundled /app/bin/git with typed operations, no shell, bounded output, fixed env, and reviewable argv construction."
-    },
-    {
-      "path": "src/git_process.rs",
-      "line": 292,
-      "match": "| gio::SubprocessFlags::STDOUT_PIPE",
-      "kind": "runtime-git-subprocess",
-      "ownership": "The typed Git process boundary owns stdout capture for sandbox Git.",
-      "justification": "Git status, attributes, blob reads, and commit responses are bounded and parsed only through this reviewed runner."
-    },
-    {
-      "path": "src/git_process.rs",
-      "line": 293,
-      "match": "| gio::SubprocessFlags::STDERR_PIPE;",
-      "kind": "runtime-git-subprocess",
-      "ownership": "The typed Git process boundary owns stderr capture for sandbox Git.",
-      "justification": "Captured stderr is size-capped and mapped to user-facing errors without exposing a generic command runner."
-    },
-    {
-      "path": "src/git_process.rs",
-      "line": 294,
-      "match": "let launcher = gio::SubprocessLauncher::new(flags);",
-      "kind": "runtime-git-subprocess",
-      "ownership": "The typed Git process boundary owns subprocess creation.",
-      "justification": "All Git subprocess invocations go through the allowlisted operation methods in this file and use bundled /app/bin/git, no host PATH lookup, no shell, and deterministic environment overrides."
-    },
-    {
-      "path": "src/git_process.rs",
-      "line": 369,
-      "match": "subprocess: &gio::Subprocess,",
-      "kind": "runtime-git-subprocess",
-      "ownership": "The typed Git process boundary owns post-communication subprocess completion.",
-      "justification": "Git stdout/stderr capture now waits for the reviewed /app/bin/git subprocess to exit before reading status, avoiding GLib status precondition criticals while preserving bounded output handling."
-    },
-    {
-      "path": "src/git_process.rs",
-      "line": 399,
-      "match": "subprocess: &gio::Subprocess,",
-      "kind": "runtime-git-subprocess",
-      "ownership": "The typed Git process boundary owns timeout supervision for one Gio subprocess.",
-      "justification": "The timeout path only observes and cancels subprocesses created by the reviewed /app/bin/git runner, keeping sandbox Git operations bounded without adding a generic command surface."
-    },
-    {
-      "path": "src/git_process.rs",
-      "line": 401,
-      "match": "finished: Rc<Cell<bool>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The typed Git process boundary owns one completion flag shared by the communicate callback and timeout grace callback.",
-      "justification": "The GLib timeout has no Gio cancellable handle of its own, so a main-thread Cell prevents late timeout cleanup from force-ending an already completed Git subprocess."
-    },
-    {
-      "path": "src/git_process.rs",
-      "line": 402,
-      "match": "timed_out: Rc<Cell<bool>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The typed Git process boundary owns one timeout flag shared by the communicate callback and timeout callback.",
-      "justification": "The GLib timeout cancels through the same Gio cancellable as user cancellation, so a main-thread Cell preserves the timeout cause until result mapping reports a degraded timeout state."
-    },
-    {
-      "path": "src/git_process.rs",
-      "line": 430,
-      "match": "fn kill_unfinished_git(subprocess: &gio::Subprocess) {",
-      "kind": "runtime-git-subprocess",
-      "ownership": "The typed Git process boundary owns forced termination of timed-out or kill-on-cancel Git subprocesses.",
-      "justification": "Only subprocesses spawned by this reviewed /app/bin/git boundary reach this helper, mutating user-cancel paths bypass it, and the helper exits early for completed processes before calling Gio force_exit."
-    },
-    {
       "path": "src/git_process/test_support.rs",
       "line": 138,
       "match": "let slot: Rc<RefCell<Option<Result<T, GitProcessError>>>> = Rc::new(RefCell::new(None));",
       "kind": "runtime-shared-state",
       "ownership": "The Git process test support owns a one-shot callback result slot.",
       "justification": "GTK Git fixture setup runs through the typed Git subprocess boundary and pumps the GLib main context until each setup command callback completes."
-    },
-    {
-      "path": "src/git_process/tests.rs",
-      "line": 429,
-      "match": "let slot: Rc<RefCell<Option<Result<T, GitProcessError>>>> = Rc::new(RefCell::new(None));",
-      "kind": "runtime-shared-state",
-      "ownership": "Git process unit tests own this callback result slot.",
-      "justification": "The slot bridges the asynchronous Gio subprocess callback into deterministic test assertions without affecting runtime application state."
-    },
-    {
-      "path": "src/git_process/tests.rs",
-      "line": 444,
-      "match": "let slot: Rc<RefCell<Option<Result<T, GitProcessError>>>> = Rc::new(RefCell::new(None));",
-      "kind": "runtime-shared-state",
-      "ownership": "Git process unit tests own this callback result slot.",
-      "justification": "The slot bridges the asynchronous Gio subprocess callback into deterministic test assertions without affecting runtime application state."
     },
     {
       "path": "src/project_tree_model.rs",

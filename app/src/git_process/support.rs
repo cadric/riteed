@@ -7,7 +7,7 @@ const GIT_BIN: &str = "/app/bin/git";
 const GIT_BIN: &str = "/usr/bin/git";
 const FALSE_BIN: &str = "/usr/bin/false";
 
-use super::GitProcessError;
+use super::{GitProcessError, GitSpec};
 
 pub(super) fn base_args() -> Vec<String> {
     [
@@ -48,4 +48,38 @@ pub(super) fn identity_part_is_valid(value: &str) -> bool {
 pub(super) fn stderr_text(bytes: &[u8]) -> String {
     std::str::from_utf8(bytes)
         .map_or_else(|_| String::from("Git command failed."), ToOwned::to_owned)
+}
+
+pub(super) fn detect_repo_spec(folder: &str, path_format_absolute: bool) -> GitSpec {
+    let mut argv = base_args();
+    argv.extend(["-C", folder, "rev-parse"].map(String::from));
+    if path_format_absolute {
+        argv.push(String::from("--path-format=absolute"));
+    }
+    argv.extend(
+        [
+            "--show-toplevel",
+            "--absolute-git-dir",
+            "--git-common-dir",
+            "--git-path",
+            "HEAD",
+            "--git-path",
+            "index",
+            "--git-path",
+            "index.lock",
+            "--git-path",
+            "refs/heads",
+            "--git-path",
+            "packed-refs",
+        ]
+        .map(String::from),
+    );
+    GitSpec {
+        argv,
+        env: Vec::new(),
+        stdin: None,
+        stdout_cap: 16 * 1024,
+        allow_failure: false,
+        kill_on_cancel: true,
+    }
 }
