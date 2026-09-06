@@ -29,6 +29,8 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
   that replace a reload no longer block later reload attempts.
 - Pending file opens reserve their tabs and only clear their own registration,
   so overlapping opens and close/reopen callbacks cannot hijack another request.
+- Markdown parsing now treats CRLF as one line ending, preserving a single
+  paragraph and soft break instead of inserting a blank line.
 - Policy validation now rejects skipped release/governance gates, uses a tested
   exact-commit release-check decision, and accounts for every Cargo source.
 - Policy scanners now handle multiline UI XML and Rust comment/async scopes,

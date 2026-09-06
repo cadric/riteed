@@ -2,6 +2,7 @@ use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::PathBuf;
 use std::rc::Rc;
+use std::time::{Duration, SystemTime};
 
 use gtk4::{gio, prelude::*};
 
@@ -39,7 +40,7 @@ impl DocumentReadFixture {
         self.file().uri().to_string()
     }
 
-    pub(super) fn replace_with_directory(&self) {
+    pub(super) fn replace_with_externally_modified_directory(&self) {
         let removed = fs::remove_file(&self.0);
         assert!(
             removed.is_ok(),
@@ -47,6 +48,16 @@ impl DocumentReadFixture {
         );
         let created = fs::create_dir(&self.0);
         assert!(created.is_ok(), "create failed-save target: {created:?}");
+        let target = fs::File::open(&self.0);
+        assert!(target.is_ok(), "open failed-save directory: {target:?}");
+        let Ok(target) = target else {
+            unreachable!("failed-save directory open was asserted above");
+        };
+        let modified = target.set_modified(SystemTime::now() + Duration::from_hours(1));
+        assert!(
+            modified.is_ok(),
+            "set controlled external-modification time: {modified:?}"
+        );
     }
 
     pub(super) fn replace_directory_with_file(&self, bytes: &[u8]) {

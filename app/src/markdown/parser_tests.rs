@@ -1,4 +1,7 @@
+use std::borrow::Cow;
+
 use crate::markdown::model::{MarkdownDiagnosticKind, MdBlock, MdInline};
+use crate::markdown::normalize::parser_input;
 use crate::markdown::parse_document;
 use proptest::prelude::*;
 use proptest::test_runner::FileFailurePersistence;
@@ -49,6 +52,39 @@ fn parses_commonmark_blocks_and_inlines() {
             .iter()
             .any(|block| matches!(block, MdBlock::ThematicBreak { .. }))
     );
+}
+
+#[test]
+fn normalizes_crlf_as_one_line_ending() {
+    assert_eq!(parser_input("a\r\nb").as_ref(), "a\nb");
+}
+
+#[test]
+fn normalization_preserves_lone_cr_controls_and_borrowed_input() {
+    assert_eq!(
+        parser_input("a\rb\0c\u{7f}d\u{fffd}e\n\tf").as_ref(),
+        "a\nb c d e\n\tf"
+    );
+    let unchanged = "plain\n\ttext";
+    assert!(matches!(
+        parser_input(unchanged),
+        Cow::Borrowed(value) if value == unchanged
+    ));
+}
+
+#[test]
+fn parses_crlf_as_one_paragraph_with_soft_break() {
+    let document = parse_document("Line 1\r\nLine 2");
+
+    assert!(matches!(
+        document.body.blocks.as_slice(),
+        [MdBlock::Paragraph { inlines, .. }]
+            if matches!(
+                inlines.as_slice(),
+                [MdInline::Text(first, _), MdInline::SoftBreak(_), MdInline::Text(second, _)]
+                    if first == "Line 1" && second == "Line 2"
+            )
+    ));
 }
 
 #[test]

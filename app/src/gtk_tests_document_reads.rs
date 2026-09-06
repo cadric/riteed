@@ -8,7 +8,7 @@ use crate::dialogs::encoding::{
     DecodeFailureResponse, queue_decode_failure_responses_for_tests,
     queue_encoding_choices_for_tests,
 };
-use crate::dialogs::{self, ExternalReloadResponse};
+use crate::dialogs::{self, ExternalReloadResponse, StaleSaveResponse};
 use crate::editor_format::LineEndingMode;
 use crate::editor_monitor::{ExternalFileEvent, PendingExternalState};
 use crate::editor_tab::{BannerActionKind, ReloadCause, ReloadResult, SaveKind, SaveResult};
@@ -478,9 +478,13 @@ fn exercise_failed_save_releases_superseded_reload(test_app: &adw::Application) 
     );
     assert!(tab.is_loading());
     insert_accepted_edit(&tab, "local edit");
-    fixture.replace_with_directory();
+    fixture.replace_with_externally_modified_directory();
+    let Some(failed_path) = fixture.file().path() else {
+        unreachable!("document read fixture has a native path");
+    };
 
     let save_result = Rc::new(RefCell::new(None));
+    dialogs::queue_stale_save_responses_for_tests(&[StaleSaveResponse::SaveAnyway]);
     tab.request_save(
         window.widget(),
         false,
@@ -493,9 +497,10 @@ fn exercise_failed_save_releases_superseded_reload(test_app: &adw::Application) 
         }),
     );
     spin_until("superseding save fails", || save_result.borrow().is_some());
+    dialogs::queue_stale_save_responses_for_tests(&[]);
     assert!(matches!(
         save_result.borrow().as_ref(),
-        Some(SaveResult::Failed(_))
+        Some(SaveResult::Failed(AppError::WriteFailed(path, _))) if path == &failed_path
     ));
     spin_until("superseded reload callback settles", || {
         first_reload.borrow().is_some()

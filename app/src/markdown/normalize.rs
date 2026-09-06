@@ -2,7 +2,12 @@ use std::borrow::Cow;
 
 pub(crate) fn parser_input(body: &str) -> Cow<'_, str> {
     if body.chars().any(markdown_character_needs_normalization) {
-        Cow::Owned(body.chars().map(normalize_markdown_character).collect())
+        Cow::Owned(
+            body.replace("\r\n", "\n")
+                .chars()
+                .map(normalize_markdown_character)
+                .collect(),
+        )
     } else {
         Cow::Borrowed(body)
     }

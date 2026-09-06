@@ -8,7 +8,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use gtk4::{gio, glib, prelude::*};
 use libadwaita as adw;
 
-use crate::dialogs::{self, UnsavedResponse};
+use crate::dialogs::{self, StaleSaveResponse, UnsavedResponse};
 use crate::editor_tab::EditorTab;
 use crate::settings::AppSettings;
 use crate::window::Window;
@@ -280,8 +280,10 @@ pub(crate) fn exercise_cancel_and_failure(app: &adw::Application) {
     assert!(fs::remove_file(fixture.directory.join("saved.txt")).is_ok());
     assert!(fs::create_dir(fixture.directory.join("saved.txt")).is_ok());
     dialogs::queue_unsaved_responses_for_tests(&[UnsavedResponse::Save]);
+    dialogs::queue_stale_save_responses_for_tests(&[StaleSaveResponse::SaveAnyway]);
     fixture.window.request_close_current_tab();
     fixture.settled();
+    dialogs::queue_stale_save_responses_for_tests(&[]);
     assert!(fixture.attached(&tab));
     assert_eq!(tab.buffer_text(), "unsaved");
     assert!(tab.is_dirty());

@@ -6,14 +6,17 @@
       "kind": "parser",
       "source_paths": ["app/src/markdown/parser.rs", "app/src/markdown/normalize.rs"],
       "entrypoints": ["riteed::fuzzing::parse_markdown_bytes", "markdown::parse_document"],
-      "real_input_shape": "Replacement-decoded Markdown document text after file loading and document limits, including CommonMark blocks, code fences, links, images, literal HTML, and frontmatter-adjacent body text.",
+      "real_input_shape": "Replacement-decoded Markdown document text after file loading and document limits, including CRLF and lone-CR line endings, ASCII controls, CommonMark blocks, code fences, links, images, literal HTML, and frontmatter-adjacent body text.",
       "coverage": [
-        {"type": "fuzz", "path": "app/fuzz/fuzz_targets/markdown_parse.rs", "target": "markdown_parse", "input_shape_asserted": "Markdown document bytes decoded with replacement before pulldown-cmark parsing"},
+        {"type": "fuzz", "path": "app/fuzz/fuzz_targets/markdown_parse.rs", "target": "markdown_parse", "input_shape_asserted": "Markdown document bytes decoded with replacement before pulldown-cmark parsing, including the retained CRLF soft-break seed at app/fuzz/corpus/markdown_parse/crlf-softbreak.md"},
+        {"type": "unit", "path": "app/src/markdown/parser_tests.rs", "target": "normalizes_crlf_as_one_line_ending", "input_shape_asserted": "CRLF collapses to exactly one newline before Markdown parsing"},
+        {"type": "unit", "path": "app/src/markdown/parser_tests.rs", "target": "parses_crlf_as_one_paragraph_with_soft_break", "input_shape_asserted": "Two Markdown source lines separated by CRLF parse as one paragraph containing one soft break"},
+        {"type": "unit", "path": "app/src/markdown/parser_tests.rs", "target": "normalization_preserves_lone_cr_controls_and_borrowed_input", "input_shape_asserted": "Lone CR, ASCII controls, replacement characters, LF, tabs, and unchanged borrowed input retain their normalization behavior"},
         {"type": "corpus", "path": "app/fuzz/corpus/markdown_parse/basic.md", "target": "markdown_parse", "input_shape_asserted": "Seed includes frontmatter-adjacent CommonMark, links, inline code, lists, and fenced code"}
       ],
       "gaps": [],
       "reviewed_exceptions": [],
-      "last_reviewed": "2026-05-26"
+      "last_reviewed": "2026-09-05"
     },
     {
       "id": "frontmatter_split",
