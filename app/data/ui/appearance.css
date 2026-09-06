@@ -150,6 +150,6 @@
 }
 
 .riteed-source-control-active-row {
-  background: alpha(@accent_bg_color, 0.16);
+  background: alpha(var(--accent-bg-color), 0.16);
   border-radius: 6px;
 }

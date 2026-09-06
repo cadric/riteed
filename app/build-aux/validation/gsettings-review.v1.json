@@ -67,7 +67,7 @@
     },
     {
       "path": "src/settings/appearance.rs",
-      "line": 70,
+      "line": 73,
       "match": "let _changed = settings.set_enum(KEY_THEME, preference.enum_value());",
       "kind": "gsettings-write",
       "key": "theme",
@@ -77,7 +77,7 @@
       "key": "compare-view-mode",
       "trigger": "Explicit compare options menu change updates the persisted compare/review preference and immediately rebuilds the active compare or review display.",
       "path": "src/settings/compare.rs",
-      "line": 95,
+      "line": 96,
       "match": "let _changed = settings.set_enum(KEY_COMPARE_VIEW_MODE, mode.enum_value());",
       "kind": "gsettings-write"
     },
@@ -85,7 +85,7 @@
       "key": "compare-collapse-unchanged",
       "trigger": "Explicit compare options menu change updates the persisted compare/review preference and immediately rebuilds the active compare or review display.",
       "path": "src/settings/compare.rs",
-      "line": 121,
+      "line": 124,
       "match": "let _changed = settings.set_boolean(KEY_COMPARE_COLLAPSE_UNCHANGED, enabled);",
       "kind": "gsettings-write"
     },
@@ -93,7 +93,7 @@
       "key": "compare-context-lines",
       "trigger": "Explicit compare options menu change updates the persisted compare/review preference and immediately rebuilds the active compare or review display.",
       "path": "src/settings/compare.rs",
-      "line": 146,
+      "line": 151,
       "match": "let _changed = settings.set_int(KEY_COMPARE_CONTEXT_LINES, lines);",
       "kind": "gsettings-write"
     },
@@ -101,7 +101,7 @@
       "key": "compare-ignore-whitespace",
       "trigger": "Explicit compare options menu change updates the persisted compare/review preference and immediately rebuilds the active compare or review display.",
       "path": "src/settings/compare.rs",
-      "line": 170,
+      "line": 177,
       "match": "let _changed = settings.set_boolean(KEY_COMPARE_IGNORE_WHITESPACE, enabled);",
       "kind": "gsettings-write"
     },
@@ -109,13 +109,13 @@
       "key": "compare-word-wrap",
       "trigger": "Explicit compare options menu change updates the persisted compare/review preference and immediately rebuilds the active compare or review display.",
       "path": "src/settings/compare.rs",
-      "line": 194,
+      "line": 203,
       "match": "let _changed = settings.set_boolean(KEY_COMPARE_WORD_WRAP, enabled);",
       "kind": "gsettings-write"
     },
     {
       "path": "src/settings/display.rs",
-      "line": 23,
+      "line": 24,
       "match": "let _changed = settings.set_boolean(KEY_WORD_WRAP, enabled);",
       "kind": "gsettings-write",
       "key": "word-wrap",
@@ -123,7 +123,7 @@
     },
     {
       "path": "src/settings/display.rs",
-      "line": 47,
+      "line": 50,
       "match": "let _changed = settings.set_boolean(KEY_SHOW_LINE_NUMBERS, enabled);",
       "kind": "gsettings-write",
       "key": "show-line-numbers",
@@ -131,7 +131,7 @@
     },
     {
       "path": "src/settings/display.rs",
-      "line": 71,
+      "line": 76,
       "match": "let _changed = settings.set_boolean(KEY_SHOW_MINIMAP, enabled);",
       "kind": "gsettings-write",
       "key": "show-minimap",
@@ -139,7 +139,7 @@
     },
     {
       "path": "src/settings/editor.rs",
-      "line": 21,
+      "line": 24,
       "match": "let _changed = settings.set_string(KEY_EDITOR_FONT, font);",
       "kind": "gsettings-write",
       "key": "editor-font",
@@ -147,7 +147,7 @@
     },
     {
       "path": "src/settings/large_file.rs",
-      "line": 70,
+      "line": 73,
       "match": "let _changed = settings.set_int(KEY_FULL_FEATURE_LIMIT_MIB, limits.full_feature);",
       "kind": "gsettings-write",
       "key": "large-file-full-feature-limit-mib",
@@ -155,7 +155,7 @@
     },
     {
       "path": "src/settings/large_file.rs",
-      "line": 71,
+      "line": 74,
       "match": "let _changed = settings.set_int(KEY_EDITOR_LIMIT_MIB, limits.editor);",
       "kind": "gsettings-write",
       "key": "large-file-editor-limit-mib",
@@ -163,7 +163,7 @@
     },
     {
       "path": "src/settings/large_file.rs",
-      "line": 73,
+      "line": 76,
       "match": "settings.set_int(KEY_STRONG_WARNING_LIMIT_MIB, limits.strong_warning);",
       "kind": "gsettings-write",
       "key": "large-file-strong-warning-limit-mib",
@@ -171,7 +171,7 @@
     },
     {
       "path": "src/settings/large_file.rs",
-      "line": 74,
+      "line": 77,
       "match": "let _changed = settings.set_int(KEY_VIEWER_ONLY_LIMIT_MIB, limits.viewer_only);",
       "kind": "gsettings-write",
       "key": "large-file-viewer-only-limit-mib",
@@ -179,7 +179,7 @@
     },
     {
       "path": "src/settings/large_file.rs",
-      "line": 106,
+      "line": 111,
       "match": "let _changed = settings.set_boolean(KEY_ALWAYS_ALLOW_LARGE_FILE_EDIT, enabled);",
       "kind": "gsettings-write",
       "key": "always-allow-large-file-edit",
@@ -187,7 +187,7 @@
     },
     {
       "path": "src/settings/git.rs",
-      "line": 26,
+      "line": 27,
       "match": "let _changed_name = settings.set_string(KEY_GIT_USER_NAME, name);",
       "kind": "gsettings-write",
       "key": "git-user-name",
@@ -195,7 +195,7 @@
     },
     {
       "path": "src/settings/git.rs",
-      "line": 27,
+      "line": 28,
       "match": "let _changed_email = settings.set_string(KEY_GIT_USER_EMAIL, email);",
       "kind": "gsettings-write",
       "key": "git-user-email",
@@ -203,7 +203,7 @@
     },
     {
       "path": "src/settings/indentation.rs",
-      "line": 26,
+      "line": 27,
       "match": "let _changed = settings.set_boolean(KEY_INSERT_SPACES_INSTEAD_OF_TABS, enabled);",
       "kind": "gsettings-write",
       "key": "insert-spaces-instead-of-tabs",
@@ -211,7 +211,7 @@
     },
     {
       "path": "src/settings/indentation.rs",
-      "line": 53,
+      "line": 56,
       "match": "let _changed = settings.set_int(KEY_TAB_WIDTH, width);",
       "kind": "gsettings-write",
       "key": "tab-width",
@@ -219,7 +219,7 @@
     },
     {
       "path": "src/settings/indentation.rs",
-      "line": 80,
+      "line": 85,
       "match": "let _changed = settings.set_int(KEY_INDENT_WIDTH, width);",
       "kind": "gsettings-write",
       "key": "indent-width",
@@ -227,7 +227,7 @@
     },
     {
       "path": "src/settings/language.rs",
-      "line": 79,
+      "line": 82,
       "match": "let _changed = settings.set_enum(KEY_LANGUAGE, language.enum_value());",
       "kind": "gsettings-write",
       "key": "language",
@@ -235,7 +235,7 @@
     },
     {
       "path": "src/settings/presentation.rs",
-      "line": 211,
+      "line": 212,
       "match": "let _changed = settings.set_enum(KEY_EDITOR_PALETTE, palette.enum_value());",
       "kind": "gsettings-write",
       "key": "editor-palette",
@@ -243,7 +243,7 @@
     },
     {
       "path": "src/settings/presentation.rs",
-      "line": 237,
+      "line": 240,
       "match": "let _changed = settings.set_enum(KEY_WINDOW_PALETTE, palette.enum_value());",
       "kind": "gsettings-write",
       "key": "window-palette",
@@ -251,7 +251,7 @@
     },
     {
       "path": "src/settings/presentation.rs",
-      "line": 261,
+      "line": 266,
       "match": "let _changed = settings.set_boolean(KEY_HIGHLIGHT_CURRENT_LINE, enabled);",
       "kind": "gsettings-write",
       "key": "highlight-current-line",
@@ -259,7 +259,7 @@
     },
     {
       "path": "src/settings/presentation.rs",
-      "line": 285,
+      "line": 292,
       "match": "let _changed = settings.set_boolean(KEY_AUTOSAVE_ENABLED, enabled);",
       "kind": "gsettings-write",
       "key": "autosave-enabled",
@@ -267,7 +267,7 @@
     },
     {
       "path": "src/settings/project.rs",
-      "line": 25,
+      "line": 26,
       "match": "let _changed = settings.set_string(KEY_PROJECT_FOLDER_URI, uri);",
       "kind": "gsettings-write",
       "key": "project-folder-uri",
@@ -275,7 +275,7 @@
     },
     {
       "path": "src/settings/project.rs",
-      "line": 51,
+      "line": 54,
       "match": "let _changed = settings.set_string(KEY_PROJECT_FOLDER_DISPLAY_NAME, name);",
       "kind": "gsettings-write",
       "key": "project-folder-display-name",
@@ -283,7 +283,7 @@
     },
     {
       "path": "src/settings/project.rs",
-      "line": 75,
+      "line": 80,
       "match": "let _changed = settings.set_boolean(KEY_PROJECT_SIDEBAR_VISIBLE, visible);",
       "kind": "gsettings-write",
       "key": "project-sidebar-visible",
@@ -291,7 +291,7 @@
     },
     {
       "path": "src/settings/project.rs",
-      "line": 99,
+      "line": 106,
       "match": "let _changed = settings.set_boolean(KEY_PROJECT_SHOW_HIDDEN, show_hidden);",
       "kind": "gsettings-write",
       "key": "project-show-hidden",
@@ -299,7 +299,7 @@
     },
     {
       "path": "src/settings/selected_document.rs",
-      "line": 23,
+      "line": 26,
       "match": "let _changed = settings.set_string(KEY_SESSION_SELECTED_FILE, uri);",
       "kind": "gsettings-write",
       "key": "session-selected-file",
@@ -307,7 +307,7 @@
     },
     {
       "path": "src/settings/source_control.rs",
-      "line": 59,
+      "line": 60,
       "match": "let _changed = settings.set_enum(KEY_SOURCE_CONTROL_VIEW_MODE, mode.enum_value());",
       "kind": "gsettings-write",
       "key": "source-control-view-mode",
@@ -331,7 +331,7 @@
     },
     {
       "path": "src/settings/window_session.rs",
-      "line": 102,
+      "line": 104,
       "match": "let _changed = settings.set_strv(KEY_RECENT_FILES, files);",
       "kind": "gsettings-write",
       "key": "recent-files",
@@ -339,7 +339,7 @@
     },
     {
       "path": "src/settings/window_session.rs",
-      "line": 130,
+      "line": 134,
       "match": "let _changed = settings.set_strv(KEY_SESSION_FILES, files);",
       "kind": "gsettings-write",
       "key": "session-files",

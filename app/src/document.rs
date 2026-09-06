@@ -71,10 +71,6 @@ impl DocumentState {
             .map(|path| display_path(path))
     }
 
-    pub fn set_saved(&mut self, path: PathBuf) {
-        self.set_saved_with_display_path(path, None);
-    }
-
     pub fn set_saved_with_display_path(&mut self, path: PathBuf, display_path: Option<PathBuf>) {
         self.path = Some(path);
         self.display_path = display_path;

@@ -42,7 +42,7 @@ pub(crate) fn compare_row_count_for_texts_for_tests(
 }
 
 #[cfg(feature = "fuzzing")]
-pub(crate) fn fuzz_compute_diff(reference_text: &str, current_text: &str) -> (bool, usize) {
+pub(crate) fn fuzz_compute_diff(reference_text: &str, current_text: &str) -> (bool, usize, bool) {
     compare::fuzz_compute_diff(reference_text, current_text)
 }
 
@@ -430,11 +430,6 @@ impl EditorTab {
         self.state.borrow().external.writability
     }
 
-    #[cfg(test)]
-    pub fn set_writability_for_tests(&self, writability: Writability) {
-        self.state.borrow_mut().external.writability = writability;
-    }
-
     #[must_use]
     pub fn should_show_stale_save_conflict(&self) -> bool {
         self.state.borrow().external.pending.is_content_changed()
@@ -464,6 +459,11 @@ impl EditorTab {
     }
 
     fn sync_presentation(&self) {
+        #[cfg(test)]
+        {
+            let mut state = self.state.borrow_mut();
+            state.ui.presentation_sync_count = state.ui.presentation_sync_count.saturating_add(1);
+        }
         if let Some(page) = self.page() {
             page.set_title(&self.title());
             page.set_tooltip(&self.subtitle());

@@ -121,6 +121,20 @@
       "kind": "i18n-short-string"
     },
     {
+      "resolution": "This plural-sensitive addition count appears in a reviewed file boundary beside its path, status badge and removal count.",
+      "path": "src/editor_tab/compare/review_session.rs",
+      "line": 539,
+      "match": "&ngettext(\"%d addition\", \"%d additions\", additions_plural),",
+      "kind": "i18n-short-string"
+    },
+    {
+      "resolution": "This plural-sensitive removal count appears in a reviewed file boundary beside its path, status badge and addition count.",
+      "path": "src/editor_tab/compare/review_session.rs",
+      "line": 544,
+      "match": "&ngettext(\"%d removal\", \"%d removals\", removals_plural),",
+      "kind": "i18n-short-string"
+    },
+    {
       "resolution": "This compact status appears inside the compare or Source Control panel where the surrounding controls identify the state being reported.",
       "path": "src/editor_tab/compare/status.rs",
       "line": 63,

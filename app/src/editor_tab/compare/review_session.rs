@@ -246,13 +246,6 @@ impl ReviewSession {
     }
 
     #[must_use]
-    pub(in crate::editor_tab) fn current_file_for_line(&self, line: usize) -> Option<ReviewFileId> {
-        self.rendered_lines
-            .get(line)
-            .map(|rendered| rendered.file_id.clone())
-    }
-
-    #[must_use]
     pub(in crate::editor_tab) fn open_target_for_line(&self, line: usize) -> Option<gio::File> {
         let rendered = self.rendered_lines.get(line)?;
         let file = self
@@ -535,20 +528,31 @@ fn skipped_marker_row(file: &ReviewFileEntry, reason: String) -> CompareDisplayR
     })
 }
 
-fn file_boundary_label_parts(
+pub(super) fn file_boundary_label_parts(
     path: &str,
     status_badge: &str,
     additions: usize,
     removals: usize,
 ) -> String {
-    let additions_text = count_text(additions, "%d addition", "%d additions");
-    let removals_text = count_text(removals, "%d removal", "%d removals");
+    let additions_plural = plural_selection_count(additions);
+    let additions_text = format_count(
+        &ngettext("%d addition", "%d additions", additions_plural),
+        additions,
+    );
+    let removals_plural = plural_selection_count(removals);
+    let removals_text = format_count(
+        &ngettext("%d removal", "%d removals", removals_plural),
+        removals,
+    );
     format!("{path} ({status_badge}, {additions_text}, {removals_text})")
 }
 
-fn count_text(count: usize, singular: &str, plural: &str) -> String {
-    let plural_count = u32::try_from(count).map_or(u32::MAX, |value| value);
-    ngettext(singular, plural, plural_count).replace("%d", &count.to_string())
+fn format_count(template: &str, count: usize) -> String {
+    template.replace("%d", &count.to_string())
+}
+
+pub(super) fn plural_selection_count(count: usize) -> u32 {
+    u32::try_from(count).map_or(u32::MAX, |value| value)
 }
 
 fn path_display(raw_path: &[u8]) -> String {

@@ -15,6 +15,8 @@ mod change_list;
 mod clipboard;
 mod controller;
 mod diff;
+#[cfg(test)]
+mod diff_tests;
 mod display;
 mod gutter;
 mod hatch;
@@ -69,13 +71,8 @@ pub(crate) use review_session::{ReviewFileInput, ReviewScrollTarget};
 pub(crate) use testing::row_count_for_texts_for_tests;
 
 #[cfg(feature = "fuzzing")]
-pub(crate) fn fuzz_compute_diff(reference_text: &str, current_text: &str) -> (bool, usize) {
-    let computation =
-        diff::compute_diff_with_options(reference_text, current_text, diff::DiffOptions::default());
-    (
-        computation.skip_reason.is_some(),
-        computation.model.changed_row_count(),
-    )
+pub(crate) fn fuzz_compute_diff(reference_text: &str, current_text: &str) -> (bool, usize, bool) {
+    diff::fuzz_compute_diff(reference_text, current_text)
 }
 
 pub(in crate::editor_tab) fn review_toolbar() -> gtk4::Box {

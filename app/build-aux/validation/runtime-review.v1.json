@@ -3,15 +3,7 @@
   "sites": [
     {
       "path": "src/app.rs",
-      "line": 39,
-      "match": "state: Rc<RefCell<AppState>>,",
-      "kind": "runtime-shared-state",
-      "ownership": "The application controller owns shared multi-window lifecycle state.",
-      "justification": "App actions and lifecycle signals route to the last-focused editor window and maintain a window registry without global statics."
-    },
-    {
-      "path": "src/app.rs",
-      "line": 98,
+      "line": 96,
       "match": "pub(crate) fn install_for_tests(app: &adw::Application, state: &Rc<RefCell<AppState>>) {",
       "kind": "runtime-shared-state",
       "ownership": "GTK tests reuse the shared application-state container.",
@@ -19,7 +11,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 114,
+      "line": 112,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
@@ -27,7 +19,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 158,
+      "line": 156,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
@@ -35,7 +27,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 167,
+      "line": 165,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
@@ -43,7 +35,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 246,
+      "line": 244,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
@@ -51,7 +43,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 309,
+      "line": 307,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
@@ -59,7 +51,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 352,
+      "line": 350,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
@@ -67,7 +59,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 362,
+      "line": 360,
       "match": "fn resolve_window(state: &Rc<RefCell<AppState>>) -> Option<Rc<Window>> {",
       "kind": "runtime-shared-state",
       "ownership": "Active editor window resolution reads shared application state.",
@@ -75,7 +67,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 376,
+      "line": 374,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
@@ -83,7 +75,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 412,
+      "line": 410,
       "match": "state: &Rc<RefCell<AppState>>,",
       "kind": "runtime-shared-state",
       "ownership": "The application object owns this AppState handoff for app actions, activation, and startup restore callbacks.",
@@ -91,7 +83,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 426,
+      "line": 424,
       "match": "fn register_window(state: &Rc<RefCell<AppState>>, window: &Rc<Window>) {",
       "kind": "runtime-shared-state",
       "ownership": "Window registration mutates shared application state.",
@@ -99,7 +91,7 @@
     },
     {
       "path": "src/app.rs",
-      "line": 465,
+      "line": 463,
       "match": "fn install_display_services(display: &gdk::Display, state: &Rc<RefCell<AppState>>) {",
       "kind": "runtime-shared-state",
       "ownership": "Startup display service installation mutates shared application state.",
@@ -131,7 +123,7 @@
     },
     {
       "path": "src/dialogs/encoding.rs",
-      "line": 289,
+      "line": 278,
       "match": "callback: RefCell<Option<EncodingCallback>>,",
       "kind": "runtime-shared-state",
       "ownership": "The encoding chooser owns its one-shot response callback for the dialog lifetime.",
@@ -139,7 +131,7 @@
     },
     {
       "path": "src/dialogs/encoding.rs",
-      "line": 290,
+      "line": 279,
       "match": "handled: Cell<bool>,",
       "kind": "runtime-shared-state",
       "ownership": "The encoding chooser owns its close/response guard.",
@@ -379,7 +371,7 @@
     },
     {
       "path": "src/editor_tab/compare.rs",
-      "line": 109,
+      "line": 106,
       "match": "presentation: Rc<std::cell::RefCell<DiffPresentation>>,",
       "kind": "runtime-shared-state",
       "ownership": "The compare controller owns the tab-local rendered presentation rows and custom line-number gutter model.",
@@ -387,7 +379,7 @@
     },
     {
       "path": "src/editor_tab/compare.rs",
-      "line": 110,
+      "line": 107,
       "match": "display_model: Rc<std::cell::RefCell<CompareDisplayModel>>,",
       "kind": "runtime-shared-state",
       "ownership": "The compare controller owns the tab-local collapsed display model shared by split rendering and hunk navigation.",
@@ -395,16 +387,16 @@
     },
     {
       "path": "src/editor_tab/compare.rs",
-      "line": 111,
+      "line": 108,
       "match": "row_model: Rc<std::cell::RefCell<DiffRowModel>>,",
       "kind": "runtime-shared-state",
       "ownership": "The compare controller owns the tab-local logical diff row model.",
       "justification": "Presentation rendering, hunk navigation, status, and test accessors must share one ephemeral row model so manual Compare and Git compare cannot drift into parallel diff states."
     },
-    {"ownership": "Each compare controller owns presentation and view-mode state shared with its pane, gutter, and breakpoint callbacks.", "justification": "Compare panes rebuild asynchronously from user actions and settings changes, so small shared cells keep UI callbacks synchronized without global state.", "path": "src/editor_tab/compare.rs", "line": 112, "match": "unified_presentation: Rc<std::cell::RefCell<UnifiedPresentation>>,", "kind": "runtime-shared-state"},
-    {"ownership": "Each compare controller owns presentation and view-mode state shared with its pane, gutter, and breakpoint callbacks.", "justification": "Compare panes rebuild asynchronously from user actions and settings changes, so small shared cells keep UI callbacks synchronized without global state.", "path": "src/editor_tab/compare.rs", "line": 125, "match": "view_mode_cell: Rc<Cell<CompareViewMode>>,", "kind": "runtime-shared-state"},
-    {"ownership": "Each compare controller owns the tab-local user minimap visibility state shared with narrow-width breakpoint callbacks.", "justification": "Compare panes need to suppress minimaps on narrow allocations while still honoring the user's global minimap preference when space returns.", "path": "src/editor_tab/compare.rs", "line": 126, "match": "minimap_user_visible: Rc<Cell<bool>>,", "kind": "runtime-shared-state"},
-    {"ownership": "Each compare controller owns the tab-local narrow-width minimap suppression state shared with settings updates.", "justification": "The compare minimap breakpoint must coordinate with later preference changes without global state or stale closure-local visibility.", "path": "src/editor_tab/compare.rs", "line": 127, "match": "minimap_width_suppressed: Rc<Cell<bool>>,", "kind": "runtime-shared-state"},
+    {"ownership": "Each compare controller owns presentation and view-mode state shared with its pane, gutter, and breakpoint callbacks.", "justification": "Compare panes rebuild asynchronously from user actions and settings changes, so small shared cells keep UI callbacks synchronized without global state.", "path": "src/editor_tab/compare.rs", "line": 109, "match": "unified_presentation: Rc<std::cell::RefCell<UnifiedPresentation>>,", "kind": "runtime-shared-state"},
+    {"ownership": "Each compare controller owns presentation and view-mode state shared with its pane, gutter, and breakpoint callbacks.", "justification": "Compare panes rebuild asynchronously from user actions and settings changes, so small shared cells keep UI callbacks synchronized without global state.", "path": "src/editor_tab/compare.rs", "line": 122, "match": "view_mode_cell: Rc<Cell<CompareViewMode>>,", "kind": "runtime-shared-state"},
+    {"ownership": "Each compare controller owns the tab-local user minimap visibility state shared with narrow-width breakpoint callbacks.", "justification": "Compare panes need to suppress minimaps on narrow allocations while still honoring the user's global minimap preference when space returns.", "path": "src/editor_tab/compare.rs", "line": 123, "match": "minimap_user_visible: Rc<Cell<bool>>,", "kind": "runtime-shared-state"},
+    {"ownership": "Each compare controller owns the tab-local narrow-width minimap suppression state shared with settings updates.", "justification": "The compare minimap breakpoint must coordinate with later preference changes without global state or stale closure-local visibility.", "path": "src/editor_tab/compare.rs", "line": 124, "match": "minimap_width_suppressed: Rc<Cell<bool>>,", "kind": "runtime-shared-state"},
     {"ownership": "The compare controller layout helper returns the tab-local adaptive view-mode cell owned by the CompareController.", "justification": "The helper is a construction boundary for the existing view-mode cell so controller initialization stays under the line cap without duplicating adaptive breakpoint state.", "path": "src/editor_tab/compare/controller.rs", "line": 553, "match": "Rc<Cell<CompareViewMode>>,", "kind": "runtime-shared-state"},
     {"ownership": "The compare controller construction helpers use a local alias for the two per-controller minimap visibility cells.", "justification": "The alias keeps constructor signatures compact while the cells remain owned by the CompareController and shared only with its breakpoint callbacks.", "path": "src/editor_tab/compare/controller.rs", "line": 42, "match": "type CompareMinimapVisibilityCells = (Rc<Cell<bool>>, Rc<Cell<bool>>);", "kind": "runtime-shared-state"},
     {
@@ -414,6 +406,14 @@
       "kind": "runtime-shared-state",
       "ownership": "The compare diff unit tests own one thread-local line-diff call counter.",
       "justification": "The Finding 5.1 regression test must prove each non-large compare path uses one full line diff while avoiding cross-test interference under parallel cargo test execution."
+    },
+    {
+      "path": "src/editor_tab/compare/diff.rs",
+      "line": 17,
+      "match": "static LINE_TOKENIZATION_CALLS: Cell<usize> = const { Cell::new(0) };",
+      "kind": "runtime-shared-state",
+      "ownership": "The compare diff unit tests own one thread-local original-line tokenization counter.",
+      "justification": "RIT-GEN-036 regression coverage proves accepted compares build exactly one original token vector per side without cross-test interference under parallel cargo test execution."
     },
     {
       "path": "src/editor_tab/compare/gutter.rs",
@@ -535,6 +535,14 @@
       "kind": "runtime-shared-state",
       "ownership": "Compare scroll synchronization owns a shared handle to the tab-local logical row model.",
       "justification": "Programmatic first-hunk and hunk-navigation scrolls verify the target presentation row against the current row count without copying diff state into the scroll helper."
+    },
+    {
+      "path": "src/large_file/search.rs",
+      "line": 68,
+      "match": "state: Rc<RefCell<SearchState>>,",
+      "kind": "runtime-shared-state",
+      "ownership": "Each large-file search owns one accumulator shared only by its sequential async window callbacks.",
+      "justification": "Carry and capped match offsets are updated within a scoped main-context borrow that ends before completion callbacks or recursive read dispatch, avoiding per-window vector copies and reentrant borrows."
     }
   ]
 }

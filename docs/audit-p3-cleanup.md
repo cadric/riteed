@@ -1,7 +1,85 @@
 # Audit P3 cleanup evidence
 
-This pass starts from integrated local main `6aaffc3e`. Findings are closed
-only after their implementation and validation; the overall pass is ongoing.
+The pass began on integrated local main `6aaffc3e`, and its first implementation
+series merged as signed main commit
+`28d754729ae575e0078804e379bb29e1110785e0`. The editor cleanup series then
+continued from that exact commit through `050d8dd88b4b876684c39197c6dc262e56cf761e`.
+The implemented and characterized work is complete; two explicitly behavioral
+follow-ups remain deferred rather than being reported as fixes.
+
+## Finding and commit reconciliation
+
+- RIT-GEN-019 was absorbed by P2 commit
+  `9c880913d9cdbc63cc365fc77630995853d6aacf`.
+- RIT-GEN-020 is implemented by
+  `43a61c80b8e1111f35c11c7c85a278f908010db9`.
+- RIT-GEN-021 is implemented by
+  `06d41c4117b3acdff23f8097e4e6b280abb35ff0` and
+  `5fae365637a3e867d9247af7654523c7a7303e31`; the integrated versions are
+  included in `28d754729ae575e0078804e379bb29e1110785e0`.
+- RIT-GEN-022 is characterization commit
+  `ce26e22b63697c11dd2fdfe04b1f5cd9cd2a9b88`; the safe request ownership
+  already existed, so no crash repair is claimed.
+- RIT-GEN-023, RIT-GEN-025, RIT-GEN-026 and RIT-GEN-027 are implemented by
+  `868ca7842cedf18a911301079d3af99f00cbb5df`,
+  `9c4ad7ab57c4300605526672f3210f02ccfcc50e`,
+  `c2f2f2f8f8a5919b51c37723aa684b7b2e7d07b9` and
+  `4ae225c669727e604bcd235bc89eb78e6e07a9cb`, respectively.
+- RIT-GEN-028 is implemented by
+  `1c0976573a97370bfbceb8902a00ffe6e2a4f4a8` and included in merged main
+  `28d754729ae575e0078804e379bb29e1110785e0`.
+- RIT-GEN-029 is implemented by
+  `6b30525ae9dc074e10c621563c609a17b6d95e7e`; RIT-GEN-030 required no test-file
+  rename and therefore has no implementation commit of its own.
+- RIT-GEN-031 and RIT-GEN-036 are implemented together by
+  `050d8dd88b4b876684c39197c6dc262e56cf761e`.
+- RIT-GEN-032 is the README correction in the final documentation commit.
+- RIT-GEN-033, RIT-GEN-034 and the safe dead-surface part of RIT-GEN-037 are
+  implemented by `b0526b9d79c65901e81a618ecbcd9abf91402810`.
+- RIT-GEN-035 remains deferred because `ExternalFileEvent::Moved` is live and
+  needs a separate behavioral decision. RIT-GEN-037's optional maximized-state
+  enhancement is likewise deferred.
+- RIT-GEN-038 is implemented by
+  `fa9775f821b79181449dc704d8f8b7e0dbadd476` and
+  `5d7218c0963b1373e737f2595a1e964a8c0eebe4`, included in merged main
+  `28d754729ae575e0078804e379bb29e1110785e0`, and closed with remote evidence
+  in `cc16be013a52eddefaae7b01611dbe2294b2f5e7`.
+
+## RIT-GEN-020: whitespace-ignore line identity (Task 1)
+
+Whitespace-ignore diffing now normalizes one element for each token produced by
+the existing `line_slices` tokenizer and passes those elements directly to
+`similar::TextDiff::diff_slices`. Each normalized element retains its original
+LF, CRLF, lone-CR or absent ending. The row model and presentation continue to
+use the original tokens, so no sentinel or synthetic newline changes displayed
+text or file semantics.
+
+The pre-fix RED compared `"a\n   "` with `"a\nb"`: the unterminated
+whitespace-only reference token had no row. The reverse input lost the current
+token, and the same omission occurred against empty input and a trailing
+newline. The focused GREEN covers those cases, original presentation text,
+LF/CRLF/lone CR, interior blanks, Unicode whitespace, trailing-newline
+boundaries, ignore=false, and property-generated total, unique, in-range
+round trips for every original token. Existing hidden-whitespace, inline,
+hunk and lone-CR regressions remain in the full suite.
+
+The `diff_compute` fuzz adapter runs both default and whitespace-ignore
+computations and asserts the same total/unique row-map invariant. Its committed
+midpoint-split seed contains an unterminated whitespace-only reference tail;
+explicit one-input replay executes that target path. The parser-boundary
+registry now records the fuzz assertion, deterministic corpus seed and property
+evidence. Task 11 subsequently completed the token-reuse cleanup documented
+below.
+
+Final strict validation passed 473 library tests plus the stress-binary unit
+test and UI smoke. Coverage passed at 84.6% against the unchanged 80% minimum.
+The fixed-seed `cargo +nightly fuzz run` replay passed with one executed input.
+The first strict attempt correctly rejected shifted runtime-review anchors;
+their existing ownership evidence was re-anchored without semantic changes.
+The corrected gate then found a constant-assertion Clippy violation in the new
+test helper; the helper now asserts the actual optional mapping without a lint
+exception. Environment-only Mesa/portal/bus diagnostics remained non-fatal in
+the isolated Xvfb/D-Bus run. No Flatpak build or desktop test was performed.
 
 ## RIT-GEN-022: pending-open ownership characterization
 
@@ -139,12 +217,38 @@ closed. Live governance also checks the exact main-only environment policy and
 proves the credential name is absent at repository scope and present once at
 environment scope.
 
-The old remote layout remains active, so `POLICY-RIT-GEN-038` stays typed and
-open. No environment, secret, ruleset, workflow run or other GitHub state was
-changed by this local implementation. On 2026-09-06 the repository owner
-approved the bounded activation, but the exact before/after/inverse context
-payload and post-merge main/PR evidence remain pending; see
-`docs/github-ruleset-governance.md`.
+### Remote closure, 2026-09-06
+
+The owner-approved activation moved the credential to the main-only
+`ruleset-governance-live` environment, removed the repository copy, and changed
+exactly one required context in ruleset `16713108` from
+`ruleset-governance` to `governance-static`. Reviewed before, after and inverse
+payloads prove that all other protections and contexts were preserved. All
+eight owner-side read-permission probes passed before secret migration.
+
+PR #38 passed its six required contexts and CodeQL, then merged normally as
+signed main commit `28d754729ae575e0078804e379bb29e1110785e0`. Main Validate
+`34043264885`, CodeQL `34043264871`, exact-SHA static and live jobs, the live
+decisive step, and the release evidence collector/checker all succeeded.
+Dependabot PR #39 then passed all six required contexts and CodeQL on rebased
+head `a207805fca54738cfcab46ed072807cfa9daabe8`; its real synthetic checkout and
+static identity assertion succeeded while live governance correctly skipped.
+PR #39 remains unmerged. No release, tag, signing operation or dependency merge
+was performed. This evidence closes `RIT-GEN-038`; its typed remediation is
+removed while all governance enforcement remains unchanged.
+
+### Historical pre-activation status
+
+The remaining Task 8 text records the local implementation and pending remote
+state before activation. Its open-state statements are historical and are
+superseded by the closure evidence above.
+
+The old remote layout remained active during the local implementation, so
+`POLICY-RIT-GEN-038` stayed typed and open at that checkpoint. No environment,
+secret, ruleset, workflow run or other GitHub state was changed by that local
+task. The exact before/after/inverse context payload and post-merge main/PR
+evidence were still pending then; the remote-closure section above supersedes
+that state.
 
 Final local validation passed 328 policy/tooling tests with one intentional
 live-token skip, 42 focused policy unit tests, strict policy-pack validation,
@@ -163,8 +267,243 @@ source is a policy identifier, not a PAT value, and no credential-value access
 was demonstrated. The follow-up nevertheless minimizes diagnostic data: both
 checks retain their decisions but report only the failing scope. A synthetic
 identifier regression was RED against the PR head and now proves the helper
-errors and actual CLI stdout do not repeat that identifier. Remote CodeQL rerun
-evidence remains pending.
+errors and actual CLI stdout do not repeat that identifier. The remote CodeQL
+rerun then passed as part of the closure evidence above.
+
+## RIT-GEN-023: rootless project sidebar state (Task 13)
+
+The `project-sidebar-visible` change-state handler previously committed the
+requested boolean before borrowing project state and checking for an active
+root. A no-root true request therefore left the Gio action at true even though
+the sidebar stayed closed. The project-search action also entered project
+search unconditionally.
+
+The handler now acquires the mutable state borrow first. A missing root resets
+the action to false and returns; a valid root delegates directly to
+`sidebar_state::set_sidebar_visibility`, which remains the single owner of the
+action state, animation, callback and GSettings persistence. Project search
+returns before either sidebar or search activation when no root exists.
+
+The existing failed-root GTK restore scenario now fails setup explicitly,
+reads the actual Gio action state rather than the action-enabled tuple, drives
+the real change-state handler, and proves `win.find-in-files` is enabled before
+invoking it. It asserts false action state and closed search after both paths,
+no additional settings writes, and retention of the remembered true
+preference. Existing valid-root toggle and restore coverage remains in the
+same full GTK flow.
+
+The pre-fix focused RED exited 101: the direct no-root toggle produced
+`Some(true)` instead of `Some(false)`. With the minimal reorder and search
+guard, the same complete GTK flow passed. Existing runtime-review anchors for
+`window_project.rs` precede the edited handler and remain exact; no ownership
+or justification metadata changed.
+
+## RIT-GEN-026: steady-state editor presentation (Task 3)
+
+GTK documents `TextBuffer::changed` as a content-change signal and
+`TextBuffer::modified-changed` as firing when the modified bit flips. Riteed's
+two callbacks both rebuilt tab presentation, so every edit after the document
+was already dirty repeated title, tooltip, indicator and visual-state work.
+
+The content-change callback now retains dirty-generation accounting, Markdown
+preview scheduling and Source Control minimap stale checks, but leaves title
+presentation to the existing modified-state transition callback. Save, open,
+compare and other explicit presentation call sites remain unchanged.
+
+The real GTK regression opens a named file and fails setup if its window or tab
+is missing. It first establishes the legitimate clean-to-dirty transition and
+observes the dirty tab indicator, then resets a per-tab `cfg(test)` counter
+before a six-edit steady-state burst. The pre-fix RED counted six presentation
+rebuilds; the focused GREEN counted zero. A real save writes the burst text,
+clears the dirty indicator, and retains the file title, proving that removing
+the content-change call did not remove dirty or save presentation updates.
+
+The Task 9 opportunistic rename was not taken: `gtk_tests_v13.rs` remains a
+small feature-level GTK suite, and no existing feature-named status-flow file
+would accept this one flow without unrelated module/test movement.
+
+## RIT-GEN-025: native encoding dialog shell (Task 5)
+
+The encoding chooser previously set `AdwDialog:title` but placed its content
+directly in the dialog. The title was therefore assistive metadata rather than
+a visible header, and the dialog had no native header close control.
+
+The chooser now passes its existing title through `build_dialog_shell`, reuses
+the shell's content box, and keeps the existing 420-pixel width and
+`follows-content-size=true` behavior. No gettext string changed or was added.
+Current libadwaita documentation confirms that an `AdwHeaderBar` inside an
+`AdwDialog` adapts its decoration layout to a close-only control, and that an
+`AdwWindowTitle` is the supported custom title widget.
+
+The dialog-lifecycle GTK flow now fails explicitly if its window fixture cannot
+be built. In each of the existing ten encoding rounds it traverses the actual
+presented widget tree and requires a visible `AdwWindowTitle` containing the
+fixture title, plus a visible button-role control containing the
+`window-close-symbolic` image. The definitive pre-fix RED observed both states
+as `(false, false)` instead of `(true, true)`. Focused GREEN passed all rounds,
+and the existing encoding leak canary continued to clear after every real
+dialog close.
+
+Removing the direct dialog/content builders shifted two existing runtime-review
+anchors. Only their line numbers were updated; their matches, ownership and
+justifications are unchanged. There were no encoding-dialog i18n-review anchors
+to move.
+
+## RIT-GEN-027: shared streaming-search accumulator (Task 6)
+
+Large-file search previously passed owned carry and match vectors into every
+recursive async window step. The callback cloned the carry before extending it
+and cloned every match collected so far before scanning the next 256 KiB
+window, making accumulated-offset copying grow with both chunk count and match
+count.
+
+Each search now creates one `Rc<RefCell<SearchState>>` containing the bounded
+cross-window carry and match offsets. Processing takes the carry out for the
+combined scan, keeps `current_start` equal to the old carry length, derives the
+same saturating base offset, and either stores the bounded suffix for the next
+window or moves the terminal match vector into `SearchOutcome`. The scoped
+mutable borrow ends before invoking the caller or recursively dispatching the
+next Gio read, so a reentrant completion cannot observe an active borrow.
+
+The exact 10,000-match cap and `reached_cap` result, cancellation checks,
+retained stream ownership, scanned-window offset and cross-chunk stitching are
+unchanged. Task 6 retained `scanned_bytes` for the Task 10 cleanup documented
+below. This was a characterization refactor rather than a defect repair: the
+same seven focused
+search tests passed before and after, including match-cap, cancellation,
+retained-stream, byte-offset and cross-chunk cases; no artificial RED was
+introduced. The existing parser-boundary mapping and test targets remain
+exact, and its review date plus the new shared-state runtime anchor were
+refreshed. The source shift also reanchors the existing test callback result
+cell without changing its ownership or justification.
+
+## RIT-GEN-031 and RIT-GEN-036: review counts and diff token reuse (Task 11)
+
+The compare byte cap still runs before any original line-token vector is
+allocated. For accepted byte sizes, the reference and current texts are each
+tokenized exactly once through the existing `line_slices` helper. Their vector
+lengths drive the unchanged 20,000-line and 10,000,000-line-product limits,
+and the same vectors then feed whitespace normalization and `build_row_model`.
+Normal comparison still performs one `TextDiff::from_lines`; no second splitter
+or changed threshold was introduced.
+
+A thread-local test counter measured four original-tokenization calls for an
+accepted pair before the refactor and guards two afterward, while the existing
+line-diff counter continues to guard one expensive diff. Byte-limit rejection
+guards zero tokenization calls. Existing minus-one, exact and plus-one tests
+cover byte, line and product limits, and Task 1's deterministic/property tests
+retain original row identity for LF, CRLF, lone CR, blank, empty, trailing-line
+and Unicode-whitespace cases in both compare modes. This is a performance
+characterization refactor, so no artificial RED was introduced.
+
+The Source Control review boundary already rendered `%d addition` versus
+`%d additions` and `%d removal` versus `%d removals`, but the generic
+`count_text` parameters hid both pairs from extraction. The pre-fix focused
+extractor probe found zero of the two required pairs. Both literal pairs now
+remain at their `ngettext` call sites, while a formatting-only helper replaces
+`%d` after plural selection. Selection still saturates counts to `u32::MAX`,
+but substitution displays the complete `usize` value.
+
+The checked-in POT and Danish PO add exactly those two existing plural pairs.
+Danish uses `%d tilføjelse`/`%d tilføjelser` and
+`%d fjernelse`/`%d fjernelser`, preserving the placeholder. No gettext keyword,
+extractor wrapper or unrelated count idiom changed. The parser registry now
+records the tokenization guard, and runtime/i18n review artifacts own the new
+thread-local counter and two short plural call sites.
+
+## RIT-GEN-033, RIT-GEN-034 and RIT-GEN-037: dead surfaces (Task 10)
+
+Fresh word-boundary searches immediately before deletion found only the
+definitions of `current_line_ending_mode`, `current_review_file`,
+`set_writability_for_tests` and `Document::set_saved`. Those four unused
+getters/wrappers were removed while preserving the live
+`set_current_line_ending_mode`, `set_saved_with_display_path`, writability
+accessor and review-open-target behavior. The audit's `is_acknowledged`
+classification was incorrect: the document-read GTK regression calls it, so it
+remains unchanged.
+
+The first compiler pass exposed two direct dependent dead surfaces. Removing
+the empty pre-run read left the private `RiteedApp.state` field unread. The
+owned `adw::Application` already owns startup, action, activate and open signal
+handlers with strong clones of the same state, so removing the field does not
+shorten state lifetime. Removing `current_review_file` likewise left
+`ReviewSession::current_file_for_line` with no caller. Fresh searches confirmed
+both facts before the field and helper were removed; no dead-code suppression
+was added.
+
+`SearchOutcome::scanned_bytes` was written by search completion but read only
+by one test assertion. The field, outcome initializers and assertion were
+removed; the scan still computes `next_offset` for the same retained-stream
+window progression. Match offsets, cap reporting, cancellation and cross-chunk
+behavior remain covered by the existing tests.
+
+The remaining safe RIT-GEN-037 cleanup removes the empty window-vector clone
+performed before `Application::run`, when activation cannot yet have created a
+window, and drops the only crate-wide reference to the unregistered
+`win.focus-project-sidebar` accelerator. The CSS file already uses modern
+custom properties throughout, so its lone `alpha(@accent_bg_color, 0.16)` use
+now reads `alpha(var(--accent-bg-color), 0.16)`. The optional maximized-state
+enhancement remains deferred because it is not a dead-code correction.
+
+RIT-GEN-035 remains deferred as approved. `ExternalFileEvent::Moved` has real
+runtime and test references, while deciding whether to wire production monitor
+events into that path or delete the behavior requires a separate behavioral
+decision. The batch-2-owned allow annotation was not touched. This task is
+deletion characterization, so no artificial RED was introduced. Exact runtime
+review anchors shifted by the deletions and were reanchored without changing
+their ownership or justification.
+
+## RIT-GEN-029: test-only settings backend (Task 9)
+
+Fresh source inspection found no non-test or stress caller of
+`AppSettings::new_for_tests`: direct callers live in `cfg(test)` GTK/settings
+modules or explicit test branches, and `src/bin` has no caller. The complete
+Memory family is therefore now gated with `cfg(test)` rather than broadening
+the predicate to stress.
+
+The gate covers the `Rc`/`Mutex` imports, Memory enum variant and structs,
+constructor, helper imports and functions, subscription noop, write logger and
+every backend site across the 14 settings files. There are 63
+`SettingsBackend::Memory` sites in total: one constructor and 62 match arms.
+The non-test `record_memory_write` noop was removed because its type and only
+possible callers are now test-only. Production has no fallback arm: GSettings
+is the only compiled backend.
+
+This is a pure compile-surface cleanup, not a behavior repair, so no artificial
+RED was introduced. Unit and GTK tests still compile the same Memory backend.
+The stress-feature and no-default-feature checks instead prove that release
+configurations compile without it. The `dialogs::lifecycle` module already has
+module-level `cfg(test)` in `dialogs.rs`; adding redundant annotations to its
+three functions would not narrow the binary further and was intentionally
+avoided. Existing GSettings review entries were reanchored to their shifted
+production write lines without changing keys, triggers or ownership.
+
+RIT-GEN-030 required no opportunistic rename in this pass. No version-named GTK
+test file was touched for RIT-GEN-029, and moving one would add unrelated churn;
+the earlier Task 3 decision to retain the focused v13 file remains unchanged.
+
+## RIT-GEN-032: README accuracy (Task 14)
+
+The README now names the four actual Preferences pages—General, Appearance,
+Editor and Source Control—and identifies V15 as the next roadmap milestone.
+This is documentation correction only; no UI, version, policy or validation
+tooling changed.
+
+## Final validation and remaining external work (Task 15)
+
+The final code strict gate is the terminal Task 11 run: 476 library tests, the
+stress-binary unit test and UI smoke passed, and the strict policy wrapper
+reported OK. It was intentionally not duplicated after documentation-only
+edits. The one final aggregate coverage run passed at 84.7% against the
+unchanged 80.0% minimum.
+
+Parent-run root checks also passed: strict policy-pack validation reported OK,
+and the 329-test tooling suite completed OK with one expected skip because the
+live GitHub token was not injected into the unit-test environment. Separate
+main and Dependabot governance CI supplied the live evidence. The final
+merge/main CI,
+force-clean local Flatpak rebuild/install and manual acceptance remain parent-
+owned follow-up work and are not claimed here.
 
 ## Validation environment
 

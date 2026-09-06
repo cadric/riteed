@@ -5,7 +5,9 @@ use crate::document_limits::{
     DEFAULT_VIEWER_ONLY_LIMIT_MIB, FileThresholds,
 };
 
-use super::{AppSettings, SettingsBackend, record_memory_write, with_memory, with_memory_mut};
+use super::{AppSettings, SettingsBackend};
+#[cfg(test)]
+use super::{record_memory_write, with_memory, with_memory_mut};
 
 const KEY_FULL_FEATURE_LIMIT_MIB: &str = "large-file-full-feature-limit-mib";
 const KEY_EDITOR_LIMIT_MIB: &str = "large-file-editor-limit-mib";
@@ -42,6 +44,7 @@ impl AppSettings {
                 strong_warning: settings.int(KEY_STRONG_WARNING_LIMIT_MIB),
                 viewer_only: settings.int(KEY_VIEWER_ONLY_LIMIT_MIB),
             },
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => with_memory(memory, |state| LargeFileLimitValues {
                 full_feature: state.large_file.full_feature,
                 editor: state.large_file.editor,
@@ -73,6 +76,7 @@ impl AppSettings {
                     settings.set_int(KEY_STRONG_WARNING_LIMIT_MIB, limits.strong_warning);
                 let _changed = settings.set_int(KEY_VIEWER_ONLY_LIMIT_MIB, limits.viewer_only);
             }
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 with_memory_mut(memory, |state| {
                     state.large_file.full_feature = limits.full_feature;
@@ -94,6 +98,7 @@ impl AppSettings {
             SettingsBackend::GSettings(settings) => {
                 settings.boolean(KEY_ALWAYS_ALLOW_LARGE_FILE_EDIT)
             }
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => with_memory(memory, |state| {
                 state.large_file.always_allow_large_file_edit
             }),
@@ -105,6 +110,7 @@ impl AppSettings {
             SettingsBackend::GSettings(settings) => {
                 let _changed = settings.set_boolean(KEY_ALWAYS_ALLOW_LARGE_FILE_EDIT, enabled);
             }
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 with_memory_mut(memory, |state| {
                     state.large_file.always_allow_large_file_edit = enabled;

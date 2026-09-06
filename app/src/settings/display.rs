@@ -11,6 +11,7 @@ impl AppSettings {
     pub fn word_wrap(&self) -> bool {
         match &self.backend {
             SettingsBackend::GSettings(settings) => settings.boolean(KEY_WORD_WRAP),
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 super::with_memory(memory, |state| state.display.word_wrap)
             }
@@ -22,6 +23,7 @@ impl AppSettings {
             SettingsBackend::GSettings(settings) => {
                 let _changed = settings.set_boolean(KEY_WORD_WRAP, enabled);
             }
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 super::with_memory_mut(memory, |state| {
                     state.display.word_wrap = enabled;
@@ -35,6 +37,7 @@ impl AppSettings {
     pub fn show_line_numbers(&self) -> bool {
         match &self.backend {
             SettingsBackend::GSettings(settings) => settings.boolean(KEY_SHOW_LINE_NUMBERS),
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 super::with_memory(memory, |state| state.display.show_line_numbers)
             }
@@ -46,6 +49,7 @@ impl AppSettings {
             SettingsBackend::GSettings(settings) => {
                 let _changed = settings.set_boolean(KEY_SHOW_LINE_NUMBERS, enabled);
             }
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 super::with_memory_mut(memory, |state| {
                     state.display.show_line_numbers = enabled;
@@ -59,6 +63,7 @@ impl AppSettings {
     pub fn show_minimap(&self) -> bool {
         match &self.backend {
             SettingsBackend::GSettings(settings) => settings.boolean(KEY_SHOW_MINIMAP),
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 super::with_memory(memory, |state| state.display.show_minimap)
             }
@@ -70,6 +75,7 @@ impl AppSettings {
             SettingsBackend::GSettings(settings) => {
                 let _changed = settings.set_boolean(KEY_SHOW_MINIMAP, enabled);
             }
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 super::with_memory_mut(memory, |state| {
                     state.display.show_minimap = enabled;

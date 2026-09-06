@@ -50,16 +50,6 @@ impl EditorTab {
     }
 
     #[must_use]
-    pub fn current_line_ending_mode(&self) -> crate::editor_format::LineEndingMode {
-        self.state
-            .borrow()
-            .document
-            .document
-            .format()
-            .line_ending_mode()
-    }
-
-    #[must_use]
     pub fn can_reopen_with_encoding(&self) -> bool {
         self.is_document()
             && self.saved_file().is_some()

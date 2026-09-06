@@ -1,4 +1,6 @@
+#[cfg(test)]
 use std::rc::Rc;
+#[cfg(test)]
 use std::sync::Mutex;
 
 use gtk4::{gio, glib, prelude::*};
@@ -21,9 +23,11 @@ pub struct AppSettings {
 #[derive(Clone)]
 enum SettingsBackend {
     GSettings(gio::Settings),
+    #[cfg(test)]
     Memory(Rc<Mutex<MemorySettings>>),
 }
 
+#[cfg(test)]
 #[derive(Clone)]
 struct MemorySettings {
     theme: ThemePreference,
@@ -40,10 +44,10 @@ struct MemorySettings {
     compare: MemoryCompareSettings,
     project: MemoryProjectSettings,
     large_file: MemoryLargeFileSettings,
-    #[cfg(test)]
     write_log: Vec<String>,
 }
 
+#[cfg(test)]
 #[derive(Clone)]
 struct MemoryDisplaySettings {
     word_wrap: bool,
@@ -51,6 +55,7 @@ struct MemoryDisplaySettings {
     show_minimap: bool,
 }
 
+#[cfg(test)]
 #[derive(Clone)]
 struct MemoryIndentationSettings {
     insert_spaces_instead_of_tabs: bool,
@@ -58,6 +63,7 @@ struct MemoryIndentationSettings {
     indent_width: i32,
 }
 
+#[cfg(test)]
 #[derive(Clone)]
 struct MemoryPresentationSettings {
     editor_palette: EditorPalette,
@@ -66,6 +72,7 @@ struct MemoryPresentationSettings {
     autosave_enabled: bool,
 }
 
+#[cfg(test)]
 #[derive(Clone)]
 struct MemoryWindowSessionSettings {
     window_width: i32,
@@ -74,11 +81,13 @@ struct MemoryWindowSessionSettings {
     session_files: Vec<String>,
 }
 
+#[cfg(test)]
 #[derive(Clone)]
 struct MemorySelectedDocumentSettings {
     session_selected_file: String,
 }
 
+#[cfg(test)]
 #[derive(Clone)]
 struct MemoryCompareSettings {
     view_mode: CompareViewMode,
@@ -88,6 +97,7 @@ struct MemoryCompareSettings {
     word_wrap: bool,
 }
 
+#[cfg(test)]
 #[derive(Clone)]
 struct MemoryProjectSettings {
     folder_uri: String,
@@ -96,6 +106,7 @@ struct MemoryProjectSettings {
     show_hidden: bool,
 }
 
+#[cfg(test)]
 #[derive(Clone)]
 struct MemoryLargeFileSettings {
     full_feature: i32,
@@ -119,6 +130,7 @@ impl AppSettings {
         }
     }
 
+    #[cfg(test)]
     #[must_use]
     pub fn new_for_tests() -> Self {
         Self {
@@ -174,7 +186,6 @@ impl AppSettings {
                     viewer_only: crate::document_limits::DEFAULT_VIEWER_ONLY_LIMIT_MIB,
                     always_allow_large_file_edit: false,
                 },
-                #[cfg(test)]
                 write_log: Vec::new(),
             }))),
         }
@@ -184,6 +195,7 @@ impl AppSettings {
     pub(crate) fn write_log_for_tests(&self) -> Vec<String> {
         match &self.backend {
             SettingsBackend::GSettings(_) => Vec::new(),
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => with_memory(memory, |state| state.write_log.clone()),
         }
     }
@@ -199,6 +211,7 @@ impl AppSettings {
                 let handler = settings.connect_changed(Some(key), move |_, _| callback());
                 SettingsSubscription::new(settings, handler)
             }
+            #[cfg(test)]
             SettingsBackend::Memory(_) => SettingsSubscription::noop(),
         }
     }
@@ -218,6 +231,7 @@ impl SettingsSubscription {
         }
     }
 
+    #[cfg(test)]
     #[must_use]
     fn noop() -> Self {
         Self {
@@ -255,6 +269,7 @@ const fn sanitize_editor_width(value: i32, fallback: i32) -> i32 {
     }
 }
 
+#[cfg(test)]
 fn with_memory<T>(memory: &Rc<Mutex<MemorySettings>>, read: impl Fn(&MemorySettings) -> T) -> T {
     match memory.lock() {
         Ok(guard) => read(&guard),
@@ -262,6 +277,7 @@ fn with_memory<T>(memory: &Rc<Mutex<MemorySettings>>, read: impl Fn(&MemorySetti
     }
 }
 
+#[cfg(test)]
 fn with_memory_mut(memory: &Rc<Mutex<MemorySettings>>, write: impl Fn(&mut MemorySettings)) {
     match memory.lock() {
         Ok(mut guard) => write(&mut guard),
@@ -276,9 +292,6 @@ fn with_memory_mut(memory: &Rc<Mutex<MemorySettings>>, write: impl Fn(&mut Memor
 fn record_memory_write(state: &mut MemorySettings, key: &str) {
     state.write_log.push(String::from(key));
 }
-
-#[cfg(not(test))]
-fn record_memory_write(_state: &mut MemorySettings, _key: &str) {}
 
 #[cfg(test)]
 mod tests;

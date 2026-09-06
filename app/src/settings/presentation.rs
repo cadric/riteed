@@ -199,6 +199,7 @@ impl AppSettings {
             SettingsBackend::GSettings(settings) => {
                 EditorPalette::from_enum_value(settings.enum_(KEY_EDITOR_PALETTE))
             }
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 super::with_memory(memory, |state| state.presentation.editor_palette)
             }
@@ -210,6 +211,7 @@ impl AppSettings {
             SettingsBackend::GSettings(settings) => {
                 let _changed = settings.set_enum(KEY_EDITOR_PALETTE, palette.enum_value());
             }
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 super::with_memory_mut(memory, |state| {
                     state.presentation.editor_palette = palette;
@@ -225,6 +227,7 @@ impl AppSettings {
             SettingsBackend::GSettings(settings) => {
                 WindowPalette::from_enum_value(settings.enum_(KEY_WINDOW_PALETTE))
             }
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 super::with_memory(memory, |state| state.presentation.window_palette)
             }
@@ -236,6 +239,7 @@ impl AppSettings {
             SettingsBackend::GSettings(settings) => {
                 let _changed = settings.set_enum(KEY_WINDOW_PALETTE, palette.enum_value());
             }
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 super::with_memory_mut(memory, |state| {
                     state.presentation.window_palette = palette;
@@ -249,6 +253,7 @@ impl AppSettings {
     pub fn highlight_current_line(&self) -> bool {
         match &self.backend {
             SettingsBackend::GSettings(settings) => settings.boolean(KEY_HIGHLIGHT_CURRENT_LINE),
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 super::with_memory(memory, |state| state.presentation.highlight_current_line)
             }
@@ -260,6 +265,7 @@ impl AppSettings {
             SettingsBackend::GSettings(settings) => {
                 let _changed = settings.set_boolean(KEY_HIGHLIGHT_CURRENT_LINE, enabled);
             }
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 super::with_memory_mut(memory, |state| {
                     state.presentation.highlight_current_line = enabled;
@@ -273,6 +279,7 @@ impl AppSettings {
     pub fn autosave_enabled(&self) -> bool {
         match &self.backend {
             SettingsBackend::GSettings(settings) => settings.boolean(KEY_AUTOSAVE_ENABLED),
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 super::with_memory(memory, |state| state.presentation.autosave_enabled)
             }
@@ -284,6 +291,7 @@ impl AppSettings {
             SettingsBackend::GSettings(settings) => {
                 let _changed = settings.set_boolean(KEY_AUTOSAVE_ENABLED, enabled);
             }
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 super::with_memory_mut(memory, |state| {
                     state.presentation.autosave_enabled = enabled;

@@ -1,3 +1,8 @@
+msgid "%d addition"
+msgid_plural "%d additions"
+msgstr[0] ""
+msgstr[1] ""
+
 msgid "%1$d changed line - %2$d/%3$d"
 msgid_plural "%1$d changed lines - %2$d/%3$d"
 msgstr[0] ""
@@ -32,6 +37,11 @@ msgstr[1] ""
 
 msgid "%d more file skipped (review limit reached)."
 msgid_plural "%d more files skipped (review limit reached)."
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "%d removal"
+msgid_plural "%d removals"
 msgstr[0] ""
 msgstr[1] ""
 

@@ -14,6 +14,7 @@ impl AppSettings {
             SettingsBackend::GSettings(settings) => {
                 settings.boolean(KEY_INSERT_SPACES_INSTEAD_OF_TABS)
             }
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => super::with_memory(memory, |state| {
                 state.indentation.insert_spaces_instead_of_tabs
             }),
@@ -25,6 +26,7 @@ impl AppSettings {
             SettingsBackend::GSettings(settings) => {
                 let _changed = settings.set_boolean(KEY_INSERT_SPACES_INSTEAD_OF_TABS, enabled);
             }
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 super::with_memory_mut(memory, |state| {
                     state.indentation.insert_spaces_instead_of_tabs = enabled;
@@ -40,6 +42,7 @@ impl AppSettings {
             SettingsBackend::GSettings(settings) => {
                 sanitize_editor_width(settings.int(KEY_TAB_WIDTH), 4).cast_unsigned()
             }
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => super::with_memory(memory, |state| {
                 sanitize_editor_width(state.indentation.tab_width, 4).cast_unsigned()
             }),
@@ -52,6 +55,7 @@ impl AppSettings {
             SettingsBackend::GSettings(settings) => {
                 let _changed = settings.set_int(KEY_TAB_WIDTH, width);
             }
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 super::with_memory_mut(memory, |state| {
                     state.indentation.tab_width = width;
@@ -67,6 +71,7 @@ impl AppSettings {
             SettingsBackend::GSettings(settings) => {
                 sanitize_editor_width(settings.int(KEY_INDENT_WIDTH), 4)
             }
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => super::with_memory(memory, |state| {
                 sanitize_editor_width(state.indentation.indent_width, 4)
             }),
@@ -79,6 +84,7 @@ impl AppSettings {
             SettingsBackend::GSettings(settings) => {
                 let _changed = settings.set_int(KEY_INDENT_WIDTH, width);
             }
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 super::with_memory_mut(memory, |state| {
                     state.indentation.indent_width = width;

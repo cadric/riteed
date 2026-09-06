@@ -64,6 +64,7 @@ pub(crate) enum TempFileFixture {
     V11Reference,
     V11SaveSync,
     V11WideCurrent,
+    V13StatusPresentation,
     WindowCloseA,
     WindowCloseB,
 }
@@ -115,6 +116,7 @@ impl TempFileFixture {
     pub(crate) const V11_REFERENCE: Self = Self::V11Reference;
     pub(crate) const V11_SAVE_SYNC: Self = Self::V11SaveSync;
     pub(crate) const V11_WIDE_CURRENT: Self = Self::V11WideCurrent;
+    pub(crate) const V13_STATUS_PRESENTATION: Self = Self::V13StatusPresentation;
     pub(crate) const WINDOW_CLOSE_A: Self = Self::WindowCloseA;
     pub(crate) const WINDOW_CLOSE_B: Self = Self::WindowCloseB;
 
@@ -203,6 +205,7 @@ impl TempFileFixture {
             Self::V11Reference => "riteed-v11-reference.rs",
             Self::V11SaveSync => "riteed-v11-save-sync.txt",
             Self::V11WideCurrent => "riteed-v11-wide-current.txt",
+            Self::V13StatusPresentation => "riteed-v13-status-presentation.txt",
             Self::WindowCloseA => "riteed-window-close-a.txt",
             Self::WindowCloseB => "riteed-window-close-b.txt",
         }

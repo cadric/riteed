@@ -82,7 +82,7 @@ pub mod fuzzing {
     }
 
     #[must_use]
-    pub fn compute_diff_bytes(bytes: &[u8]) -> (bool, usize) {
+    pub fn compute_diff_bytes(bytes: &[u8]) -> (bool, usize, bool) {
         let split = bytes
             .iter()
             .position(|byte| *byte == 0)

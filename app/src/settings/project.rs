@@ -13,6 +13,7 @@ impl AppSettings {
             SettingsBackend::GSettings(settings) => {
                 settings.string(KEY_PROJECT_FOLDER_URI).to_string()
             }
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 super::with_memory(memory, |state| state.project.folder_uri.clone())
             }
@@ -24,6 +25,7 @@ impl AppSettings {
             SettingsBackend::GSettings(settings) => {
                 let _changed = settings.set_string(KEY_PROJECT_FOLDER_URI, uri);
             }
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 super::with_memory_mut(memory, |state| {
                     state.project.folder_uri = String::from(uri);
@@ -39,6 +41,7 @@ impl AppSettings {
             SettingsBackend::GSettings(settings) => {
                 settings.string(KEY_PROJECT_FOLDER_DISPLAY_NAME).to_string()
             }
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 super::with_memory(memory, |state| state.project.folder_display_name.clone())
             }
@@ -50,6 +53,7 @@ impl AppSettings {
             SettingsBackend::GSettings(settings) => {
                 let _changed = settings.set_string(KEY_PROJECT_FOLDER_DISPLAY_NAME, name);
             }
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 super::with_memory_mut(memory, |state| {
                     state.project.folder_display_name = String::from(name);
@@ -63,6 +67,7 @@ impl AppSettings {
     pub fn project_sidebar_visible(&self) -> bool {
         match &self.backend {
             SettingsBackend::GSettings(settings) => settings.boolean(KEY_PROJECT_SIDEBAR_VISIBLE),
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 super::with_memory(memory, |state| state.project.sidebar_visible)
             }
@@ -74,6 +79,7 @@ impl AppSettings {
             SettingsBackend::GSettings(settings) => {
                 let _changed = settings.set_boolean(KEY_PROJECT_SIDEBAR_VISIBLE, visible);
             }
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 super::with_memory_mut(memory, |state| {
                     state.project.sidebar_visible = visible;
@@ -87,6 +93,7 @@ impl AppSettings {
     pub fn project_show_hidden(&self) -> bool {
         match &self.backend {
             SettingsBackend::GSettings(settings) => settings.boolean(KEY_PROJECT_SHOW_HIDDEN),
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 super::with_memory(memory, |state| state.project.show_hidden)
             }
@@ -98,6 +105,7 @@ impl AppSettings {
             SettingsBackend::GSettings(settings) => {
                 let _changed = settings.set_boolean(KEY_PROJECT_SHOW_HIDDEN, show_hidden);
             }
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 super::with_memory_mut(memory, |state| {
                     state.project.show_hidden = show_hidden;

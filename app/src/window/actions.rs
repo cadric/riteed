@@ -93,6 +93,9 @@ impl Window {
     }
 
     pub(super) fn open_project_search(self: &Rc<Self>) {
+        if self.project.current_root_file().is_none() {
+            return;
+        }
         self.project.set_sidebar_visible(true);
         self.open_search_with_scope(SearchScope::Project, false);
     }

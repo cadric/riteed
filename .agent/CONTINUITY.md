@@ -2,6 +2,157 @@
 
 ## OUTCOMES
 
+- 2026-09-06 audit P3 final documentation closure (Tasks 14, 4 and 15): README
+  now names the actual General, Appearance, Editor and Source Control
+  Preferences pages and V15 as the next milestone. RIT-GEN-024 is refuted:
+  `EditorZoomController::drop` already removed its CSS provider in pre-audit
+  commit `063944c8ce70efd32a13ea3ad6b775163a7f2815`, so no runtime change or
+  defect claim was made. The audit evidence now distinguishes the historical
+  `6aaffc3e` starting point, merged main
+  `28d754729ae575e0078804e379bb29e1110785e0`, the editor cleanup commits,
+  characterization-only RIT-GEN-022, and the still-deferred RIT-GEN-035 moved-
+  file decision plus optional RIT-GEN-037 maximized-state enhancement. Fresh
+  searches confirmed `set_saved` and `_keep_state_alive` remain absent while
+  `ExternalFileEvent::Moved` remains live. Task 11's terminal strict gate is
+  the final code-strict evidence (476 library tests plus stress/UI); it was not
+  duplicated after documentation-only edits. Final aggregate coverage passed
+  at 84.7% (minimum 80%). Parent-run strict policy-pack passed, and the
+  329-test tooling suite completed OK; its one skip requires a live GitHub
+  token, which was intentionally absent from the unit environment and is
+  covered by separate successful live governance evidence. Final merge/main
+  CI, the user-requested
+  force-clean Flatpak rebuild/install and manual acceptance remain pending and
+  are not claimed. No code, policy, dependency, version or remote state changed
+  in this documentation batch.
+
+- 2026-09-06 audit P3 Task 11 (RIT-GEN-031, RIT-GEN-036): accepted compares
+  now allocate exactly one original `line_slices` vector per side after the
+  unchanged byte cap, reuse their lengths for line/product limits, and pass
+  the same vectors through whitespace normalization and row modelling. A
+  thread-local test counter characterized four original tokenization passes
+  before the refactor and guards two afterward; normal mode still uses one
+  `TextDiff::from_lines`, while byte, line, product and Task 1 mapping
+  boundaries remain unchanged. No artificial performance RED was claimed.
+  The existing review-file addition/removal count strings now appear at two
+  literal `ngettext` call sites, closing the real extraction gap without a new
+  keyword or wrapper. Plural selection saturates to `u32::MAX`, displayed
+  counts retain the full `usize`, and the POT plus Danish catalog contain
+  exactly the two existing pairs (`tilføjelse`/`tilføjelser` and
+  `fjernelse`/`fjernelser`) with `%d` preserved. The pre-fix extraction probe
+  found zero of two pairs; the same probe afterward found both. Parser,
+  runtime and i18n review evidence is synchronized. No dependency, policy,
+  remote state or Flatpak installation changed; aggregate coverage and final
+  installed-Flatpak/manual validation remain pending later integration work.
+
+- 2026-09-06 audit P3 Task 10 (RIT-GEN-033, RIT-GEN-034, RIT-GEN-037): fresh
+  word-boundary searches confirmed and removed the unused line-ending getter,
+  current-review-file getter, test writability setter and `Document::set_saved`
+  wrapper while preserving their live setters and
+  `set_saved_with_display_path`. `SearchOutcome::scanned_bytes` and its sole
+  assertion were removed; the internal next-window offset remains explicit.
+  Compiler validation exposed two dependent dead surfaces: `RiteedApp.state`
+  had no read after the empty clone disappeared, while app-owned startup,
+  action and lifecycle callbacks retain strong state handles; and
+  `current_file_for_line` had only served the removed review getter. Both were
+  removed without suppression.
+  The pre-run empty window clone and obsolete unregistered-accelerator assert
+  were deleted, and the lone legacy accent CSS use now matches the file's
+  existing `var(--accent-bg-color)` syntax. `is_acknowledged` remains because a
+  live document-read GTK flow calls it. RIT-GEN-035's moved-file behavior and
+  RIT-GEN-037's optional maximized-state enhancement remain deliberately
+  deferred; the batch-2-owned allow is unchanged. This was deletion
+  characterization with no artificial RED, user-visible copy, dependency,
+  policy, remote state or Flatpak installation change.
+
+- 2026-09-06 audit P3 Task 9 (RIT-GEN-029): the complete in-memory settings
+  backend is now `cfg(test)`-only, including its structs, constructor, helper
+  imports, 63 backend sites across 14 settings files, subscription noop and
+  write logger. The unusable non-test write-logger noop was removed; release,
+  stress and no-default-feature builds retain GSettings as their sole backend.
+  Fresh caller inspection found no production or stress consumer. The dialog
+  lifecycle helpers were already protected by their module-level `cfg(test)`
+  and were intentionally not annotated again. RIT-GEN-030 required no rename:
+  no version-named GTK file was otherwise touched, and Task 3's focused v13
+  decision remains valid. No user-visible string, dependency, policy, remote
+  state or Flatpak installation changed.
+
+- 2026-09-06 audit P3 Task 6 (RIT-GEN-027): large-file search now owns one
+  `Rc<RefCell<SearchState>>` for its bounded cross-chunk carry and capped match
+  offsets instead of cloning both vectors through every recursive async step.
+  Each window borrows only while updating the accumulator; the borrow ends
+  before either the terminal callback or the next read is dispatched, keeping
+  reentrant callbacks safe. Match cap, reached-cap reporting, cross-chunk base
+  and current-start math, cancellation, retained-stream lifetime and
+  the `scanned_bytes` field were unchanged in Task 6; Task 10 then removed the
+  field. This was a characterization refactor: all seven focused search tests
+  passed before and after, with no artificial RED.
+  Per-task coverage is explicitly deferred to the aggregate final gate; no
+  dependency, policy, user-visible string, remote state or Flatpak installation
+  changed.
+
+- 2026-09-06 audit P3 Task 5 (RIT-GEN-025): the encoding chooser now uses the
+  shared AdwDialog shell, giving its existing title a visible `AdwWindowTitle`
+  and its header a real accessible close button without new user-visible copy.
+  The existing 420-pixel content width and content-following size behavior are
+  retained. A real GTK pre-fix RED observed both visible-title and real-close
+  states as false; focused GREEN asserts the visible `WindowTitle("Choose")`
+  and `window-close-symbolic` button in all ten existing close/reopen rounds,
+  while the encoding leak canary still clears after every close. Runtime-review
+  anchors were moved to the unchanged callback/handled fields. No dependency,
+  policy, remote state or Flatpak installation changed.
+
+- 2026-09-06 audit P3 Task 3 (RIT-GEN-026): ordinary content changes still
+  advance the dirty generation and schedule Markdown preview and Source Control
+  minimap work, but no longer rebuild tab title presentation on every edit.
+  `modified-changed` remains the single dirty-transition refresh path. A
+  per-tab, test-only counter measured six rebuilds for six steady-state edits
+  in the pre-fix RED and zero after the one-line callback removal. The real GTK
+  flow establishes a clean tab, observes the dirty indicator, performs the
+  steady-state burst, saves the file, and observes the clean indicator while
+  retaining the file title. No user-visible string, dependency, policy,
+  remote state or Flatpak installation changed.
+
+- 2026-09-06 audit P3 Task 13 (RIT-GEN-023): a request to show the project
+  sidebar can no longer commit a true Gio action state when no project root is
+  active, and `win.find-in-files` leaves project search closed in that state.
+  The handler now obtains the controller borrow and validates the root before
+  mutation; no-root requests restore false, while `sidebar_state` remains the
+  single owner of valid-root action state and GSettings persistence. The real
+  failed-restore GTK flow asserts actual action state, action enablement and
+  invocation, search visibility and unchanged writes. Its pre-fix RED observed
+  `Some(true)` instead of `Some(false)` after the direct toggle; focused GREEN
+  passed the complete GTK flow. No user-visible string, dependency, policy,
+  remote state or Flatpak installation changed.
+
+- 2026-09-06 audit P3 Task 8 remote closure (RIT-GEN-038): the approved
+  activation placed the governance credential only in the main-restricted
+  `ruleset-governance-live` environment, removed the repository copy, and
+  replaced exactly one required context in ruleset `16713108` with
+  `governance-static`; all other protections remained intact. PR #38 passed
+  six required contexts plus CodeQL and merged normally as signed main commit
+  `28d754729ae575e0078804e379bb29e1110785e0`. Its main Validate and CodeQL
+  runs, exact-SHA static/live checkouts, live decisive step and local release
+  evidence collector/checker all succeeded. Rebased Dependabot PR #39 also
+  passed six required contexts plus CodeQL, with its actual synthetic checkout
+  and identity assertion verified while live governance correctly skipped;
+  it remains unmerged. This terminal evidence closes the typed remediation,
+  with no release, tag, signing operation or dependency merge performed. The
+  earlier Task 8 entry below is retained as historical pre-activation state.
+
+- 2026-09-06 audit P3 Task 1 (RIT-GEN-020): whitespace-ignore compare now
+  preserves one normalized slice per original `line_slices` token, including
+  unterminated whitespace-only tails, while retaining original tokens for row
+  mapping and rendering. The pre-fix focused RED lost reference/current line
+  identity in six cases; focused GREEN passed eight deterministic/property
+  tests across LF, CRLF, lone CR, blank/empty/trailing-newline and Unicode
+  whitespace inputs with both option states. `diff_compute` now fuzzes default
+  and ignore=true mapping invariants, and its deterministic tail seed replayed
+  successfully. Final strict validation passed 473 library tests plus the
+  stress unit and UI smoke; coverage passed at 84.6%. Parser/runtime review
+  evidence, audit docs and CHANGELOG are synchronized. Task 11 later completed
+  the planned token reuse; no dependency, lockfile, policy semantics,
+  user-visible strings, remote state or Flatpak installation changed in Task 1.
+
 - 2026-09-06 audit P3 Task 8 local implementation (RIT-GEN-038): Validate now
   separates the unconditional tokenless `governance-static` PR context from
   protected-main `governance-live`. Publish collection and decision require

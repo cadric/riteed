@@ -15,6 +15,22 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 ## Unreleased
 
 ### Changed
+- Corrected the README's Preferences page list and next-milestone pointer, and
+  finalized the audit P3 evidence without treating characterized or deferred
+  findings as repaired defects.
+- Accepted compares now tokenize each original input once and reuse those line
+  vectors for limit checks, whitespace-aware diffing and row mapping.
+- Removed unused internal document, editor, review and large-file outcome
+  surfaces, plus vestigial lifecycle/accelerator checks, and normalized the
+  remaining legacy accent CSS variable syntax.
+- Release builds no longer include the in-memory settings backend and helpers
+  used only by unit and GTK tests; production settings remain GSettings-only.
+- Large-file search now reuses one bounded match-and-carry accumulator across
+  streamed chunks instead of copying all collected offsets for every chunk.
+- Activated the split GitHub governance boundary: pull requests now require
+  the tokenless static context, while live governance and its environment-only
+  credential are restricted to protected main. Exact-main and Dependabot runs
+  verified the enforced context and publish-evidence provenance.
 - Characterized close/reopen ownership with held real open completions, so
   cancelled old requests cannot clear a successor's pending registration.
 - Expanded regression coverage for overlapping file opens and the complete
@@ -26,6 +42,16 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
   active scheduled/manual CI execution.
 
 ### Fixed
+- Source Control review addition and removal counts are now extracted as
+  plural gettext messages, including Danish singular and plural forms.
+- The encoding chooser now has a visible native dialog header and accessible
+  close control instead of exposing its title only to assistive metadata.
+- Editing an already-dirty document no longer rebuilds tab title presentation
+  on every keystroke; dirty and saved indicator transitions still refresh.
+- Project sidebar toggles and project search now remain closed when no project
+  folder is active, without changing the remembered sidebar preference.
+- Compare reviews that ignore leading and trailing whitespace now retain every
+  original line, including an unterminated whitespace-only final line.
 - Split GitHub governance into an unconditional tokenless static check and a
   protected-main live check. Flatpak publish preflight now requires complete,
   provenance-bound evidence that the newest live check's decisive step ran

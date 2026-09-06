@@ -305,11 +305,11 @@ impl WindowProjectController {
                 let Some(value) = value.and_then(glib::Variant::get::<bool>) else {
                     return;
                 };
-                action.set_state(&value.to_variant());
                 let Ok(mut state) = state.try_borrow_mut() else {
                     return;
                 };
                 if state.root.is_none() {
+                    action.set_state(&false.to_variant());
                     return;
                 }
                 sidebar_state::set_sidebar_visibility(&mut state, value);

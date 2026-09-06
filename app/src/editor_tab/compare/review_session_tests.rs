@@ -1,4 +1,6 @@
-use super::review_session::{ReviewFileInput, ReviewSession};
+use super::review_session::{
+    ReviewFileInput, ReviewSession, file_boundary_label_parts, plural_selection_count,
+};
 use crate::editor_tab::{
     ReviewFileId, ReviewFileSpec, ReviewKind, ReviewSnapshotFingerprint, ReviewTabSpec,
 };
@@ -120,6 +122,29 @@ fn review_path_display_preserves_escape_and_fallback_contracts() {
     assert_eq!(session.files[0].file_id.raw_path, control_path);
     assert_eq!(session.files[1].file_id.raw_path, invalid_path);
     assert_eq!(session.files[2].file_id.raw_path, empty_path);
+}
+
+#[test]
+fn file_boundary_counts_select_singular_and_plural_forms() {
+    assert_eq!(
+        file_boundary_label_parts("file.txt", "M", 1, 1),
+        "file.txt (M, 1 addition, 1 removal)"
+    );
+    assert_eq!(
+        file_boundary_label_parts("file.txt", "M", 0, 2),
+        "file.txt (M, 0 additions, 2 removals)"
+    );
+}
+
+#[test]
+fn file_boundary_counts_saturate_plural_selection_but_display_full_usize() {
+    let count = usize::MAX;
+
+    assert_eq!(plural_selection_count(count), u32::MAX);
+    assert_eq!(
+        file_boundary_label_parts("file.txt", "M", count, count),
+        format!("file.txt (M, {count} additions, {count} removals)")
+    );
 }
 
 fn spec() -> ReviewTabSpec {

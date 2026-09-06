@@ -1,8 +1,8 @@
 use gtk4::prelude::SettingsExt;
 
-use crate::settings::{
-    AppSettings, SettingsBackend, record_memory_write, with_memory, with_memory_mut,
-};
+use crate::settings::{AppSettings, SettingsBackend};
+#[cfg(test)]
+use crate::settings::{record_memory_write, with_memory, with_memory_mut};
 
 const KEY_SOURCE_CONTROL_VIEW_MODE: &str = "source-control-view-mode";
 
@@ -47,6 +47,7 @@ impl AppSettings {
             SettingsBackend::GSettings(settings) => {
                 SourceControlViewMode::from_enum_value(settings.enum_(KEY_SOURCE_CONTROL_VIEW_MODE))
             }
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 with_memory(memory, |state| state.source_control_view_mode)
             }
@@ -58,6 +59,7 @@ impl AppSettings {
             SettingsBackend::GSettings(settings) => {
                 let _changed = settings.set_enum(KEY_SOURCE_CONTROL_VIEW_MODE, mode.enum_value());
             }
+            #[cfg(test)]
             SettingsBackend::Memory(memory) => {
                 with_memory_mut(memory, |state| {
                     state.source_control_view_mode = mode;
