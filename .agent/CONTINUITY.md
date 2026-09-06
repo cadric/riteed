@@ -2,6 +2,22 @@
 
 ## OUTCOMES
 
+- 2026-09-06 release 0.3.9 preparation: all audit P3 work was integrated through
+  PRs 38 and 40; main `4c84755e` passed Validate and CodeQL, and its force-clean
+  local Flatpak build/install completed. Manual acceptance has not been
+  reported. The two clean P3 worktrees were removed at the owner's request;
+  source branches remain and ignored evidence is archived locally under
+  `docs/superpowers/worktree-archive/2026-09-06/`. The patch release preserves
+  the entire former Unreleased body, aligns Cargo and AppStream at 0.3.9, and
+  corrects README beta/build/schedule guidance. Roadmap milestones are unchanged.
+  Sandbox permissions and signing/rollback protections remain intact; the
+  approved daily-to-monthly scheduled validation change is explicitly documented.
+  Release-candidate strict app and policy-pack gates passed, as did fresh live
+  governance and full changelog-preservation/version-consistency checks.
+  Coverage was not repeated for metadata/docs-only changes (P3: 84.7%, floor
+  80%, unchanged runtime source). Independent release-delta review approved.
+  Candidate CI, push and publication are not claimed here.
+
 - 2026-09-06 audit P3 final documentation closure (Tasks 14, 4 and 15): README
   now names the actual General, Appearance, Editor and Source Control
   Preferences pages and V15 as the next milestone. RIT-GEN-024 is refuted:

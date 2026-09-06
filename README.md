@@ -3,8 +3,7 @@
 ![Riteed editing a Python project from the beta Flatpak build](docs/screenshots/4.png)
 
 Riteed is a small native GNOME text editor written in Rust. The current source
-version is `0.3.8`, an early public beta. It is useful for daily local editing
-and compare work, but it is not feature complete.
+version is `0.3.9`, an early public beta. It is not feature complete.
 
 The application lives under `app/`. The repository root also contains the
 roadmap, policy, and validation tooling used to keep the app strict, native,
@@ -13,8 +12,8 @@ and Flatpak-first.
 ## Status
 
 - Early beta: expect rough edges and missing features.
-- Released as source through `v0.3.8`; no stable `1.0` yet and no Flathub
-  submission.
+- No stable `1.0` yet and no Flathub submission. Published beta snapshots
+  are listed under [GitHub Releases](https://github.com/cadric/riteed/releases).
 - A self-updating beta Flatpak channel is published directly from this
   repository through GitHub Pages.
 - Target platform: GNOME on Linux, packaged through Flatpak.
@@ -53,7 +52,6 @@ and Flatpak-first.
 
 - Not a full IDE.
 - No push, pull, branch management, merge editor, terminal, debugger, or LSP.
-- No external beta program yet.
 - No stable API or release promise before `1.0`.
 
 ## Layout
@@ -65,7 +63,7 @@ and Flatpak-first.
   working notes.
 - `stress/` - corpus generator, JSON stress scripts, Git stress repositories,
   and Valgrind suppressions used by the `riteed-stress` developer binary and
-  the nightly stress CI job.
+  the monthly scheduled stress CI job.
 - `policy/` - machine-readable policy files used to validate the app.
 - `tools/` - hard-fail validation tooling.
 - `scripts/` - thin wrappers around the root tooling plus small maintenance
@@ -122,12 +120,13 @@ flatpak-builder --show-manifest \
   app/build-aux/io.github.cadric.Riteed.yml
 ```
 
-Build the local Flatpak from the repository root:
+Build the local Flatpak from the repository root on `main` or an `integrate/*`
+branch. The wrapper checks branch integration before building and verifies the
+installed user Flatpak afterward:
 
 ```bash
-flatpak-builder --user --install --force-clean \
-  app/build-dir app/build-aux/io.github.cadric.Riteed.yml
-flatpak run io.github.cadric.Riteed
+scripts/local-flatpak-build
+flatpak run --user io.github.cadric.Riteed
 ```
 
 GitHub Actions validates the root tooling, the app subtree, GTK tests with
@@ -195,7 +194,7 @@ RITEED_STRESS_SCRIPT=../stress/scripts/open-save-search.json \
 ```
 
 The full stress suite (proptest, cargo-fuzz, Git stress repos, Flatpak stress
-smoke) runs as a scheduled GitHub Actions job and can also be triggered
+smoke) runs monthly as a scheduled GitHub Actions job and can also be triggered
 manually.
 
 ## License
