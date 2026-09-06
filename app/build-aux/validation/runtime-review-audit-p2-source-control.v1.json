@@ -3,7 +3,7 @@
   "sites": [
     {
       "path": "src/git_process/test_hooks.rs",
-      "line": 45,
+      "line": 48,
       "match": "static HOOKS: RefCell<Option<Hooks>> = const { RefCell::new(None) };",
       "kind": "runtime-shared-state",
       "ownership": "Test-only thread-local hooks retain one repository-scoped callback/child observer or one identity-owned controlled mutation override.",
@@ -11,7 +11,7 @@
     },
     {
       "path": "src/git_process/test_hooks.rs",
-      "line": 46,
+      "line": 49,
       "match": "static CONTROLLED_MUTATION: RefCell<Option<ControlledEntry>> = const { RefCell::new(None) };",
       "kind": "runtime-shared-state",
       "ownership": "Test-only thread-local hooks retain one repository-scoped callback/child observer or one identity-owned controlled mutation override.",

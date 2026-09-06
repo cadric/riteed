@@ -55,6 +55,9 @@ The format follows Keep a Changelog. Riteed is still pre-1.0; 0.x entries descri
 - Git review tabs escape control and bidirectional filename characters so
   rendered buffer lines stay aligned with review navigation while raw Git path
   bytes remain unchanged for file identity and actions.
+- Clean modified files reuse their current Source Control minimap data across
+  cursor moves, avoiding a Git child process for every movement while still
+  refreshing after rapid edits become clean.
 
 ## 0.3.8 - 2026-07-06
 

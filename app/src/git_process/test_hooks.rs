@@ -1,6 +1,7 @@
 use std::cell::RefCell;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 
 use gtk4::gio;
@@ -41,6 +42,8 @@ struct ControlledEntry {
 
 pub(crate) struct ControlledMutationGuard(Rc<()>);
 
+static SPAWN_COUNT: AtomicUsize = AtomicUsize::new(0);
+
 thread_local! {
     static HOOKS: RefCell<Option<Hooks>> = const { RefCell::new(None) };
     static CONTROLLED_MUTATION: RefCell<Option<ControlledEntry>> = const { RefCell::new(None) };
@@ -48,6 +51,10 @@ thread_local! {
 
 pub(crate) fn install(hooks: Option<Hooks>) {
     HOOKS.with(|slot| *slot.borrow_mut() = hooks);
+}
+
+pub(crate) fn spawn_count_for_tests() -> usize {
+    SPAWN_COUNT.load(Ordering::Relaxed)
 }
 
 pub(crate) fn install_controlled_mutation(mutation: ControlledMutation) -> ControlledMutationGuard {
@@ -146,6 +153,7 @@ fn dispatched(
     }
 }
 pub(crate) fn started(env: &[(String, String)], child: TestChild) {
+    SPAWN_COUNT.fetch_add(1, Ordering::Relaxed);
     let observer = HOOKS.with(|slot| {
         let hooks = slot.borrow();
         hooks

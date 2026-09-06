@@ -64,6 +64,9 @@ fn refresh_tab_without_cancel(state: &SourceStateRef, tab: Option<Rc<EditorTab>>
         tab.mark_source_control_minimap_pending(source);
         return;
     }
+    if tab.source_control_minimap_is_current(&source) {
+        return;
+    }
     match reference_for_entry(&entry) {
         ReferenceInput::Empty => tab.apply_source_control_minimap_diff(MinimapDiffInput {
             source,

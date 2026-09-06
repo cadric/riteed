@@ -56,6 +56,21 @@ pub(super) struct MinimapDiffAttachment {
 }
 
 impl EditorTab {
+    #[must_use]
+    pub(crate) fn source_control_minimap_is_current(&self, source: &str) -> bool {
+        let current_text = self.buffer_text();
+        let state = self.state.borrow();
+        !state.ui.minimap_diff.stale
+            && state
+                .ui
+                .minimap_diff
+                .applied
+                .as_ref()
+                .is_some_and(|applied| {
+                    applied.source == source && applied.text == text_fingerprint(&current_text)
+                })
+    }
+
     pub(crate) fn apply_source_control_minimap_diff(
         self: &std::rc::Rc<Self>,
         input: MinimapDiffInput,
